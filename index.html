@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Перудо — калькулятор, тренажёр, партия и дуэль с CFR</title>
+
+  <!-- Стили игрового стола (покерный стол, вид сверху) -->
+  <link rel="stylesheet" href="src/table.css">
+
+  <style>
+    /* ===== Общая тема приложения ===== */
+    :root {
+      --bg: #14161c;
+      --card: #1e222b;
+      --fg: #e8eaf0;
+      --mut: #8b93a5;
+      --ok: #3ecf8e;
+      --bad: #ef5b5b;
+      --acc: #6ea8fe;
+      --warn: #f5b84b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 16px system-ui, sans-serif;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 8px 0 12px;
+    }
+
+    nav {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+      color: var(--fg);
+      background: #2a2f3b;
+      border: 1px solid #3a4152;
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+
+    input[type=checkbox] {
+      padding: 0;
+    }
+
+    input[type=range] {
+      padding: 0;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: var(--acc);
+    }
+
+    button.on {
+      background: var(--acc);
+      color: #111;
+      border-color: var(--acc);
+    }
+
+    button.bad {
+      background: var(--bad);
+      color: #111;
+    }
+
+    button.calza {
+      background: var(--warn);
+      color: #111;
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 8px 0;
+    }
+
+    label {
+      color: var(--mut);
+      font-size: 14px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #2a2f3b;
+      border: 1px solid #3a4152;
+      border-radius: 10px;
+      padding: 3px 10px 3px 12px;
+      font-weight: 700;
+      font-size: 20px;
+      white-space: nowrap;
+    }
+
+    .chip.xl {
+      font-size: 30px;
+      padding: 6px 16px;
+    }
+
+    .chip.xl .pd {
+      width: 52px;
+      height: 52px;
+      padding: 7px;
+    }
+
+    .chip em {
+      font-style: normal;
+      color: var(--mut);
+      font-weight: 400;
+    }
+
+    .pf {
+      padding: 2px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid transparent;
+    }
+
+    .pf.sel {
+      border-color: var(--acc);
+      background: #32406a;
+    }
+
+    .pf .pd {
+      margin: 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    td,
+    th {
+      padding: 6px 8px;
+      border-bottom: 1px solid #2f3543;
+      text-align: center;
+    }
+
+    td:first-child {
+      text-align: left;
+    }
+
+    tr.turn td {
+      background: #26304a;
+    }
+
+    tr.dead td {
+      opacity: .4;
+    }
+
+    .bar {
+      height: 8px;
+      background: #2f3543;
+      border-radius: 4px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      background: var(--acc);
+    }
+
+    .big {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .g {
+      color: var(--ok);
+    }
+
+    .r {
+      color: var(--bad);
+    }
+
+    .m {
+      color: var(--mut);
+    }
+
+    .warn {
+      color: var(--warn);
+    }
+
+    .hide {
+      display: none;
+    }
+
+    small {
+      color: var(--mut);
+    }
+
+    #gHistory,
+    #gReview {
+      max-height: 340px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .rh {
+      margin: 10px 0 4px;
+      padding: 4px 8px;
+      background: #262b37;
+      border-radius: 6px;
+      color: var(--mut);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .lg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 2px;
+      border-bottom: 1px solid #262b37;
+      flex-wrap: wrap;
+    }
+
+    .lg .chip {
+      font-size: 16px;
+      padding: 1px 8px 1px 10px;
+    }
+
+    .lg.dudo {
+      background: #2d2330;
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin: 3px 0;
+    }
+
+    .pn {
+      font-weight: 700;
+      min-width: 84px;
+    }
+
+    .c0 {
+      color: #6ea8fe;
+    }
+
+    .c1 {
+      color: #f5b84b;
+    }
+
+    .c2 {
+      color: #3ecf8e;
+    }
+
+    .c3 {
+      color: #ef8bd0;
+    }
+
+    .c4 {
+      color: #b794f6;
+    }
+
+    .c5 {
+      color: #f08a5d;
+    }
+
+    .rv {
+      display: flex;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      margin: 5px 0;
+      background: #242934;
+      border-left: 4px solid #3a4152;
+      align-items: flex-start;
+    }
+
+    .rv.good {
+      border-left-color: var(--ok);
+    }
+
+    .rv.meh {
+      border-left-color: var(--warn);
+    }
+
+    .rv.bad {
+      border-left-color: var(--bad);
+    }
+
+    .rv .bd {
+      font-weight: 800;
+      width: 20px;
+      text-align: center;
+    }
+
+    .rv.good .bd {
+      color: var(--ok);
+    }
+
+    .rv.meh .bd {
+      color: var(--warn);
+    }
+
+    .rv.bad .bd {
+      color: var(--bad);
+    }
+
+    .rv .chip {
+      font-size: 15px;
+      padding: 1px 6px 1px 8px;
+    }
+
+    .mx {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: #242934;
+      margin: 2px;
+    }
+
+    .mx.sel {
+      outline: 2px solid var(--acc);
+    }
+
+    .mx .chip {
+      font-size: 15px;
+      padding: 1px 6px 1px 8px;
+    }
+
+    #gPrev,
+    #gFeed {
+      min-height: 24px;
+    }
+
+    /* ===== Двухколоночная раскладка партии ===== */
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .game-main {
+      min-width: 0;
+    }
+
+    .game-side {
+      min-width: 0;
+    }
+
+    /* Сайдбар прилипает к верху, пока левая колонка скроллится */
+    .game-side {
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .game-side #gReview,
+    .game-side #gHistory {
+      max-height: 36vh;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    /* Стол в левой колонке — компактнее, чтобы влезал целиком */
+    .game-main #gameTable {
+      max-width: 100%;
+      height: clamp(360px, 42vw, 560px);
+    }
+
+    /* Кнопка «Новая партия» на всю ширину карточки */
+    .game-new-btn {
+      width: 100%;
+      font-weight: 700;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    /* Свёрнутые настройки партии */
+    .game-settings>summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 4px;
+      cursor: pointer;
+      list-style: none;
+      border-radius: 8px;
+      user-select: none;
+    }
+
+    .game-settings>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .game-settings>summary::before {
+      content: "▸";
+      color: var(--mut);
+      margin-right: 4px;
+      transition: transform .15s ease;
+    }
+
+    .game-settings[open]>summary::before {
+      transform: rotate(90deg);
+    }
+
+    .game-settings>summary:hover {
+      background: #262b37;
+    }
+
+    #gConfigSummary {
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .game-settings-body {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #2f3543;
+    }
+
+    .game-settings-help {
+      display: block;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    /* Схлопывание в одну колонку на средних экранах */
+    @media (max-width: 1100px) {
+      .game-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .game-side {
+        position: static;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+      }
+
+      .game-side #gReview,
+      .game-side #gHistory {
+        max-height: 340px;
+      }
+
+      .game-main #gameTable {
+        height: clamp(340px, 55vw, 520px);
+      }
+    }
+
+    /* Общая форма кубика (используется во всём приложении) */
+    .pd {
+      display: inline-grid;
+      grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+      width: 44px;
+      height: 44px;
+      padding: 6px;
+      gap: 2px;
+      border-radius: 9px;
+      background: #f4f4f0;
+      vertical-align: middle;
+      margin: 2px;
+      flex: none;
+    }
+
+    .pd i {
+      border-radius: 50%;
+      background: transparent;
+    }
+
+    .pd i.on {
+      background: #1a1a1a;
+    }
+
+    .pd.wild {
+      background: var(--warn);
+    }
+
+    .pd.s {
+      width: 30px;
+      height: 30px;
+      padding: 4px;
+      gap: 1px;
+      border-radius: 7px;
+    }
+
+    .pd.xs {
+      width: 22px;
+      height: 22px;
+      padding: 3px;
+      gap: 1px;
+      border-radius: 5px;
+      margin: 1px;
+    }
+
+    /* Блок прямых советов в режиме «Новичок» */
+    #gAdvice {
+      min-height: 0;
+    }
+
+    #gAdvice:empty {
+      display: none;
+    }
+
+    #gAdvice .advice {
+      margin: 6px 0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #26304a;
+      color: #d8e2f5;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    #gAdvice .advice.good {
+      background: #1e3a2c;
+      color: #b8e6c8;
+    }
+
+    /* Раскрывающаяся подсказка «как это посчитано» в упражнениях */
+    .calc-hint {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #1f2430;
+      border: 1px solid #2f3543;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .calc-hint>summary {
+      cursor: pointer;
+      color: var(--acc);
+      user-select: none;
+      list-style: none;
+      font-weight: 600;
+    }
+
+    .calc-hint>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .calc-hint>summary::before {
+      content: "▸";
+      display: inline-block;
+      margin-right: 6px;
+      transition: transform .15s ease;
+    }
+
+    .calc-hint[open]>summary::before {
+      transform: rotate(90deg);
+    }
+
+    .calc-hint-body {
+      margin-top: 8px;
+      line-height: 1.5;
+      color: #c8d0e0;
+    }
+
+    .calc-hint-body p {
+      margin: 8px 0;
+    }
+
+    .calc-hint-body b {
+      color: var(--fg);
+    }
+
+    .calc-hint-body sub,
+    .calc-hint-body sup {
+      font-size: 75%;
+    }
+
+    /* Быстрый расчёт в уме во время партии */
+    #gPractical:empty {
+      display: none;
+    }
+
+    #gPractical {
+      margin: 8px 0;
+      padding: 8px 12px;
+      background: #1a2436;
+      border-left: 3px solid var(--acc);
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #c8d0e0;
+    }
+
+    #gPractical .ph-title {
+      font-weight: 700;
+      color: var(--acc);
+      margin-bottom: 4px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    #gPractical .ph-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2px 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #gPractical .ph-grid>span:nth-child(odd) {
+      color: var(--mut);
+    }
+
+    #gPractical .ph-grid>span:nth-child(even) {
+      text-align: right;
+    }
+
+    #gPractical .ph-divider {
+      grid-column: 1 / -1;
+      border-top: 1px solid #2f3543;
+      margin: 4px 0 2px;
+    }
+
+    #gPractical .ph-total {
+      grid-column: 1 / -1;
+      font-weight: 700;
+      color: #d8e2f5;
+      margin-top: 2px;
+    }
+
+    #gPractical .ph-total b {
+      color: var(--fg);
+      background: #253047;
+      padding: 1px 8px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    #gPractical .ph-note {
+      margin-top: 6px;
+      color: var(--mut);
+      font-size: 12px;
+    }
+
+    #gPractical .ph-note b {
+      color: var(--fg);
+    }
+
+    @media (max-width: 720px) {
+      #gPractical {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>🎲 Перудо: калькулятор, тренажёр, партия и дуэль с CFR</h1>
+
+    <nav>
+      <button class="tab-btn on" data-t="calc">Калькулятор</button>
+      <button class="tab-btn" data-t="train">Тренажёр</button>
+      <button class="tab-btn" data-t="drill">Упражнения</button>
+      <button class="tab-btn" data-t="game">Партия</button>
+      <button class="tab-btn" data-t="duel">Дуэль (CFR)</button>
+      <button class="tab-btn" data-t="stats">Статистика</button>
+      <button class="tab-btn" data-t="sim">Симуляция</button>
+    </nav>
+
+    <!-- ================= КАЛЬКУЛЯТОР ================= -->
+    <section id="calc">
+      <div class="card">
+        <div class="row">
+          <label>Всего кубиков <input id="cN" type="number" min="1" max="60" value="15" style="width:80px"></label>
+          <label>Порог <input id="cT" type="number" min="0.05" max="0.95" step="0.05" value="0.5"
+              style="width:80px"></label>
+          <label><input id="cW" type="checkbox" checked> единицы — джокеры</label>
+        </div>
+        <div class="row"><label>Ваши кубики:</label><span id="cHand"></span></div>
+        <div class="row" id="cPad"></div>
+        <div class="row">
+          <button id="cUndo">Убрать последний</button>
+          <button id="cClr">Очистить</button>
+          <button id="cRnd">Случайная рука</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <b>Ставка соперника</b>
+        <div class="row">
+          <input id="cQ" type="number" min="1" value="7" style="width:80px"> ×
+          <select id="cF"></select>
+          <span id="cRes" class="big"></span>
+        </div>
+        <div class="row">
+          <label>Кубиков у игроков, ставивших на эту цифру
+            <input id="cK" type="number" min="0" max="60" value="0" style="width:70px">
+          </label>
+          <label>Доверие к ставкам
+            <input id="cTr" type="range" min="0" max="0.6" step="0.05" value="0.25">
+            <span id="cTrV">0.25</span>
+          </label>
+        </div>
+        <div id="cRead"></div>
+      </div>
+
+      <div class="card">
+        <b>Ваши лучшие ставки</b>
+        <div id="cTbl"></div>
+      </div>
+    </section>
+
+    <!-- ================= ТРЕНАЖЁР ================= -->
+    <section id="train" class="hide">
+      <div class="card">
+        <div class="row">
+          <label>Режим <select id="tMode"></select></label>
+          <label>Порог <input id="tT" type="number" min="0.05" max="0.95" step="0.05" value="0.5"
+              style="width:80px"></label>
+          <button id="tNew">Новая ситуация</button>
+          <button id="tReset">Сбросить статистику</button>
+        </div>
+        <small id="tDesc"></small>
+      </div>
+      <div class="card">
+        <div id="tInfo" class="m"></div>
+        <div style="margin:8px 0">Ваши кубики: <span id="tHand"></span></div>
+        <div style="margin:10px 0">Ставка соперника: <span id="tBid"></span></div>
+        <div class="row">
+          <button class="bad" id="tDudo">Не верю!</button>
+          <span class="m">или повысить:</span>
+          <input id="tQ" type="number" min="1" style="width:80px"> ×
+          <select id="tF"></select>
+          <button id="tRaise">Ставлю</button>
+        </div>
+        <div id="tFb" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <b>Статистика</b>
+        <div id="tStat" class="m"></div>
+        <small>Ошибочные ситуации попадают в очередь и возвращаются, пока вы не решите их верно два раза подряд.</small>
+      </div>
+    </section>
+
+    <!-- ================= УПРАЖНЕНИЯ ================= -->
+    <section id="drill" class="hide">
+      <div class="card">
+        <b>Оценка в уме</b>
+        <p class="m">Ожидание = ваши кубики нужной цифры (с джокерами) + неизвестные × 1/3 (для единиц × 1/6).
+          Безопасная ставка — наибольшее количество с шансом не ниже 50%.</p>
+        <div id="dAq"></div>
+        <div class="row">
+          <label>Ожидаемое количество <input id="dA1" type="text" style="width:90px"></label>
+          <label>Безопасная ставка (кол-во) <input id="dA2" type="number" style="width:90px"></label>
+          <button id="dACheck">Проверить</button>
+          <button id="dANew">Новое</button>
+        </div>
+        <div id="dAfb"></div>
+      </div>
+      <div class="card">
+        <b>Правило единиц</b>
+        <div id="dBq" style="margin:8px 0"></div>
+        <div class="row">
+          <input id="dB1" type="number" style="width:90px">
+          <button id="dBCheck">Проверить</button>
+          <button id="dBNew">Новое</button>
+        </div>
+        <div id="dBfb"></div>
+      </div>
+    </section>
+
+    <!-- ================= ПАРТИЯ ================= -->
+    <section id="game" class="hide">
+      <div class="game-layout">
+
+        <!-- ===== Левая колонка: ход и стол ===== -->
+        <div class="game-main">
+
+          <div class="card">
+            <div id="gStatus" class="big"></div>
+            <div id="gMeta" class="m" style="margin:7px 0"></div>
+            <div>Ваши кубики: <span id="gHand"></span></div>
+            <div style="margin:12px 0">
+              <span class="m">Текущая ставка:</span> <span id="gBid"></span>
+            </div>
+            <div class="row">
+              <button class="bad" id="gDudo">Не верю!</button>
+              <button class="calza" id="gCalza">Calza</button>
+              <span class="m">или повысить:</span>
+              <button id="gMinus">−</button>
+              <input id="gQ" type="number" min="1" style="width:70px;text-align:center">
+              <button id="gPlus">+</button>
+              <span class="m">×</span>
+              <span id="gPick" class="row" style="margin:0;gap:4px"></span>
+              <button id="gRaise">Ставлю</button>
+            </div>
+            <div id="gPrev"></div>
+            <div id="gAdvice"></div>
+            <div id="gPractical"></div>
+            <div id="gFeed"></div>
+            <div id="gLog" style="margin-top:6px"></div>
+          </div>
+
+          <div class="card">
+            <div id="gameTable" style="margin:0"></div>
+          </div>
+
+        </div>
+
+        <!-- ===== Правая колонка: партия, разбор, журнал ===== -->
+        <aside class="game-side">
+
+          <div class="card">
+            <button id="gNew" class="game-new-btn">🎲 Новая партия</button>
+
+            <details id="gSettingsDetails" class="game-settings">
+              <summary class="game-settings-summary">
+                <span>⚙️ Настройки</span>
+                <span id="gConfigSummary" class="m"></span>
+              </summary>
+
+              <div class="game-settings-body">
+                <div class="row">
+                  <label>Кубиков каждому
+                    <input id="gDice" type="number" min="1" max="10" value="5" style="width:70px">
+                  </label>
+                  <label>Ботов
+                    <input id="gBots" type="number" min="1" max="5" value="3" style="width:70px">
+                  </label>
+                </div>
+
+                <div class="row">
+                  <label>Режим помощи
+                    <select id="gAssist">
+                      <option value="novice">Новичок</option>
+                      <option value="training" selected>Тренировка</option>
+                      <option value="game">Игра (без подсказок)</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="row">
+                  <label>Темп
+                    <select id="gSpeed">
+                      <option value="step">Пошагово</option>
+                      <option value="slow">Медленно</option>
+                      <option value="normal" selected>Нормально</option>
+                      <option value="fast">Быстро</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="row">
+                  <label><input id="gCalzaOpt" type="checkbox"> Calza</label>
+                  <label><input id="gPalificoOpt" type="checkbox"> Палифико</label>
+                </div>
+
+                <small class="game-settings-help">
+                  Единицы — джокеры, кроме ставок на единицы. С обычной цифры на единицы — половина с округлением
+                  вверх, с единиц на обычную — больше удвоенного. Calza: ставка точна — получаете кубик;
+                  нет — теряете. Палифико: раунд без джокеров с фиксированной цифрой.
+                  Изменение настроек запускает новую партию.
+                </small>
+              </div>
+            </details>
+          </div>
+
+          <div class="card">
+            <b>Разбор ваших ходов</b>
+            <div id="gReview" style="margin-top:8px"></div>
+            <small>Оценка идёт по модели приложения: вероятность по вашим кубикам с поправкой на чужие ставки
+              (доверие 0.2). Порог — 50%.</small>
+          </div>
+
+          <div class="card">
+            <b>Журнал партии</b>
+            <div id="gHistory" style="margin-top:8px"></div>
+          </div>
+
+          <div id="gSummary"></div>
+
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- ================= ДУЭЛЬ ================= -->
+    <section id="duel" class="hide">
+      <div class="card">
+        <b>Дуэль 1 на 1 кубик: оптимальная стратегия (CFR+)</b>
+        <p class="m">Один раунд, у каждого по одному кубику, единицы — джокеры, первая ставка не на единицы.
+          Проигравший проверку выбывает. Решатель считается в вашем браузере.</p>
+        <div class="row">
+          <button id="dSolve">Рассчитать равновесие</button>
+          <button id="dStart">Играть против оптимального бота</button>
+        </div>
+        <div id="dInfo" class="m"></div>
+        <div id="dOpen" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <b>Игра</b>
+        <div id="dPlay" class="m">Нажмите «Играть» — решение посчитается автоматически.</div>
+      </div>
+    </section>
+
+    <!-- ================= СТАТИСТИКА ================= -->
+    <section id="stats" class="hide">
+      <div class="row">
+        <button id="stExport">Экспорт JSON</button>
+        <button id="stClear" class="bad">Сбросить всё</button>
+      </div>
+      <div class="card">
+        <b>Сводка</b>
+        <p class="m">
+          Тренажёр: <span id="stGood">0</span> / <span id="stTotal">0</span>.
+          В очереди повторов: <span id="stQueue">0</span>.
+        </p>
+        <div id="stByMode"></div>
+        <div id="stGames"></div>
+      </div>
+      <div id="stOut"></div>
+    </section>
+
+    <!-- ================= СИМУЛЯЦИЯ ================= -->
+    <section id="sim" class="hide">
+      <div class="card">
+        <div class="row">
+          <label>Всего кубиков <input id="sN" type="number" min="2" max="60" value="15" style="width:80px"></label>
+          <label>Бросков <input id="sR" type="number" value="100000" step="10000" style="width:100px"></label>
+          <label><input id="sW" type="checkbox" checked> джокеры</label>
+          <button id="sGo">Запустить Монте-Карло</button>
+        </div>
+        <small>Проверка формулы: бросаем все кубики много раз и смотрим, как часто ставка оказывается верной,
+          когда рук никто не видит.</small>
+        <div id="sOut" style="margin-top:10px"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Скрипты ===== -->
+  <!-- core.js — UMD-модуль, устанавливает window.Perudo (глобальные вероятности) -->
+  <script src="src/core.js"></script>
+
+  <!-- app_v2.js — ES-модуль, подтянет engine/rules/assist/storage/table -->
+  <script type="module" src="src/app_v2.js"></script>
+
+  <!-- Обновление сводки настроек партии «5×4 · Тренировка · Calza» -->
+  <script>
+    (function () {
+      function init() {
+        const summary = document.getElementById('gConfigSummary');
+        const details = document.getElementById('gSettingsDetails');
+        if (!summary || !details) return;
+
+        const dice = document.getElementById('gDice');
+        const bots = document.getElementById('gBots');
+        const assist = document.getElementById('gAssist');
+        const calza = document.getElementById('gCalzaOpt');
+        const pal = document.getElementById('gPalificoOpt');
+
+        const labels = { novice: 'Новичок', training: 'Тренировка', game: 'Игра' };
+
+        function update() {
+          const d = dice?.value || '5';
+          const b = bots?.value || '3';
+          const a = labels[assist?.value || 'training'] || 'Тренировка';
+
+          const extras = [];
+          if (calza?.checked) extras.push('Calza');
+          if (pal?.checked) extras.push('Палифико');
+
+          const players = (Number(b) || 3) + 1;
+          summary.textContent =
+            `${d}×${players} · ${a}` + (extras.length ? ` · ${extras.join(', ')}` : '');
+        }
+
+        [dice, bots, assist, calza, pal].forEach(function (el) {
+          if (el) el.addEventListener('change', update);
+        });
+
+        // По умолчанию раскрываем настройки, если партия ещё не начиналась
+        details.open = true;
+        update();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+
+</html>

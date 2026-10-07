@@ -1,0 +1,341 @@
+/* src/table.css — покерный стол (вид сверху), стили мест игроков.
+   Объединяет три inline-<style> из старого index.html.
+   Классы согласованы с src/table.js:
+     .game-table — контейнер стола (эллипс)
+     .table-center — центральный круг со ставкой
+     .seat — место игрока
+     .seat-avatar / .seat-info / .seat-hand / .seat-turn-indicator
+*/
+
+/* ============ Контейнер стола ============ */
+
+#gameTable,
+#gTable {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  height: clamp(440px, 58vw, 640px);
+  margin: 20px auto;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ============ Эллипс-стол (деревянный, вид сверху) ============ */
+
+#gameTable > .game-table,
+#gTable > .game-table {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  border: 10px solid #5a3218;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at center, rgba(116, 67, 35, .18), transparent 65%),
+    repeating-linear-gradient(
+      8deg,
+      rgba(70, 35, 16, .16) 0 2px,
+      rgba(190, 117, 57, .12) 3px 7px,
+      rgba(74, 37, 17, .14) 8px 11px
+    ),
+    linear-gradient(135deg, #9c5b2d, #6d3b20 48%, #a66332);
+  box-shadow:
+    inset 0 0 0 5px rgba(218, 154, 91, .22),
+    inset 0 -18px 35px rgba(35, 15, 5, .4),
+    0 15px 35px rgba(0, 0, 0, .48);
+}
+
+/* Внутренний обод — тонкая линия по фетру */
+#gameTable > .game-table::before,
+#gTable > .game-table::before {
+  content: "";
+  position: absolute;
+  inset: 7%;
+  border: 2px solid rgba(238, 185, 117, .18);
+  border-radius: 50%;
+  box-shadow: inset 0 0 45px rgba(30, 12, 3, .3);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ============ Центр стола ============ */
+
+#gameTable .table-center,
+#gTable .table-center {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  width: min(230px, 31%);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  padding: 18px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 220, 155, .2);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(54, 27, 12, .82), rgba(37, 17, 8, .62));
+  box-shadow:
+    inset 0 0 25px rgba(0, 0, 0, .38),
+    0 5px 20px rgba(0, 0, 0, .25);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#gameTable .table-bid,
+#gTable .table-bid {
+  color: #fff1cf;
+  font-size: clamp(18px, 2.5vw, 30px);
+  font-weight: 800;
+  text-shadow: 0 2px 4px #241006;
+}
+
+#gameTable .table-bid-empty,
+#gTable .table-bid-empty {
+  color: #d6b895;
+  font-size: 15px;
+}
+
+#gameTable .bid-by,
+#gTable .bid-by {
+  display: block;
+  margin-top: 6px;
+  color: #e4c7a3;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+#gameTable .table-meta,
+#gTable .table-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: #e7c7a0;
+  font-size: 12px;
+}
+
+#gameTable .palifico-badge,
+#gTable .palifico-badge {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #ffd34e;
+  color: #2b1302;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+/* ============ Место игрока ============ */
+
+#gameTable .seat,
+#gTable .seat {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 132px;
+  padding: 7px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  transform: translate(-50%, -50%);
+  transition:
+    transform .25s ease,
+    opacity .25s ease,
+    border-color .25s ease,
+    background .25s ease;
+}
+
+#gameTable .seat.active,
+#gTable .seat.active {
+  z-index: 5;
+  border-color: #ffd66b;
+  background: rgba(61, 29, 12, .58);
+  box-shadow:
+    0 0 0 3px rgba(255, 214, 107, .16),
+    0 5px 18px rgba(0, 0, 0, .3);
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+#gameTable .seat.eliminated,
+#gTable .seat.eliminated {
+  opacity: .38;
+  filter: grayscale(1);
+}
+
+/* Индикатор активного хода */
+#gameTable .seat-turn-indicator,
+#gTable .seat-turn-indicator {
+  position: absolute;
+  top: -28px;
+  color: #ffd66b;
+  font-size: 24px;
+  animation: perudo-turn-pulse 1.2s ease-in-out infinite;
+}
+
+/* ============ Аватар ============ */
+
+#gameTable .seat-avatar,
+#gTable .seat-avatar {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  overflow: hidden;
+  border: 3px solid #f7e0bd;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, .38);
+}
+
+#gameTable .seat-avatar svg,
+#gTable .seat-avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#gameTable .seat-style,
+#gTable .seat-style {
+  position: absolute;
+  right: -7px;
+  bottom: -5px;
+  padding: 2px 4px;
+  border-radius: 50%;
+  background: #fff8e9;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, .35);
+  font-size: 15px;
+}
+
+/* ============ Информация об игроке ============ */
+
+#gameTable .seat-info,
+#gTable .seat-info {
+  min-width: 100px;
+  margin-top: 5px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 220, 170, .15);
+  border-radius: 7px;
+  background: rgba(35, 16, 7, .86);
+  color: #fff;
+  text-align: center;
+}
+
+#gameTable .seat-name,
+#gTable .seat-name {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#gameTable .seat-dice,
+#gTable .seat-dice {
+  color: #e5c8a6;
+  font-size: 12px;
+}
+
+#gameTable .seat-bid,
+#gTable .seat-bid {
+  margin-top: 2px;
+}
+
+/* ============ Рука игрока (мини-кубики) ============ */
+
+#gameTable .seat-hand,
+#gTable .seat-hand {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+#gameTable .seat-hand .pd,
+#gTable .seat-hand .pd {
+  width: 18px;
+  height: 18px;
+  padding: 3px;
+  border-radius: 4px;
+  margin: 0;
+}
+
+/* ============ Анимации ============ */
+
+@keyframes perudo-turn-pulse {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50%      { opacity: .65; transform: translateY(-4px); }
+}
+
+/* ============ Мобильная адаптация ============ */
+
+@media (max-width: 720px) {
+  #gameTable,
+  #gTable {
+    height: 430px;
+  }
+
+  #gameTable > .game-table,
+  #gTable > .game-table {
+    border-width: 7px;
+  }
+
+  #gameTable .table-center,
+  #gTable .table-center {
+    width: 145px;
+    padding: 10px;
+  }
+
+  #gameTable .seat,
+  #gTable .seat {
+    width: 92px;
+    padding: 3px;
+  }
+
+  #gameTable .seat-avatar,
+  #gTable .seat-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  #gameTable .seat-info,
+  #gTable .seat-info {
+    min-width: 75px;
+    padding: 3px 5px;
+  }
+
+  #gameTable .seat-name,
+  #gTable .seat-name {
+    max-width: 80px;
+    font-size: 11px;
+  }
+
+  #gameTable .seat-dice,
+  #gTable .seat-dice {
+    font-size: 10px;
+  }
+
+  #gameTable .seat-hand,
+  #gTable .seat-hand {
+    display: none;
+  }
+}
+
+/* ============ Уважение к настройкам ОС ============ */
+
+@media (prefers-reduced-motion: reduce) {
+  #gameTable .seat,
+  #gameTable .seat.active,
+  #gTable .seat,
+  #gTable .seat.active {
+    transition: none;
+    transform: translate(-50%, -50%);
+  }
+
+  #gameTable .seat-turn-indicator,
+  #gTable .seat-turn-indicator {
+    animation: none;
+  }
+}
