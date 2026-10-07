@@ -690,6 +690,497 @@
         padding: 6px 10px;
       }
     }
+
+    /* ============ Тренажёр: мобильный лэйаут ============ */
+
+    /* Верхняя панель — компактная строка */
+    .trainer-top {
+      padding: 8px 12px;
+    }
+
+    .trainer-top-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .trainer-new {
+      padding: 8px 14px;
+      font-weight: 700;
+      background: var(--acc);
+      color: #111;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .trainer-settings-more {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--mut);
+    }
+
+    .trainer-settings-more>summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #262b37;
+      color: var(--mut);
+    }
+
+    .trainer-settings-more>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .trainer-settings-more[open]>summary {
+      color: var(--fg);
+    }
+
+    .trainer-settings-body {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #2f3543;
+      width: 100%;
+    }
+
+    /* Теги с контекстом */
+    .trainer-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .trainer-chip {
+      padding: 3px 9px;
+      border-radius: 12px;
+      background: #2a2f3b;
+      color: var(--mut);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .trainer-chip b {
+      color: var(--fg);
+      font-weight: 700;
+    }
+
+    .trainer-chip.trainer-wild {
+      background: #3a3020;
+      color: #e0b060;
+    }
+
+    .trainer-chip.trainer-repeat {
+      background: #3a2530;
+      color: #f080a0;
+    }
+
+    /* Рука */
+    .trainer-hand-label {
+      color: var(--mut);
+      font-size: 12px;
+      margin-bottom: 4px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .trainer-hand {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .trainer-hand .pd {
+      width: 46px;
+      height: 46px;
+      padding: 6px;
+      margin: 0;
+    }
+
+    /* Ставка соперника */
+    .trainer-bid-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #1a1f28;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    /* Кнопки ответа */
+    .trainer-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .trainer-actions #tDudo {
+      padding: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    .trainer-raise {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .trainer-raise button {
+      padding: 10px 18px;
+      font-size: 15px;
+    }
+
+    /* Фидбек — компактно и только когда есть */
+    .trainer-feedback:empty {
+      display: none;
+    }
+
+    .trainer-feedback {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #1a1f28;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .trainer-feedback .big {
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .trainer-feedback p {
+      margin: 4px 0;
+    }
+
+    /* Статистика — свёрнута */
+    .trainer-stats-card>summary {
+      cursor: pointer;
+      list-style: none;
+      font-weight: 700;
+      padding: 4px 0;
+      color: var(--fg);
+    }
+
+    .trainer-stats-card>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .trainer-stats-card>summary::before {
+      content: "▸";
+      display: inline-block;
+      margin-right: 6px;
+      transition: transform .15s ease;
+    }
+
+    .trainer-stats-card[open]>summary::before {
+      transform: rotate(90deg);
+    }
+
+    .trainer-stats-card[open]>summary {
+      margin-bottom: 8px;
+    }
+
+    /* ===== Мобильная оптимизация ===== */
+    @media (max-width: 720px) {
+      main {
+        padding: 8px;
+      }
+
+      #train .card {
+        padding: 10px;
+        margin-bottom: 8px;
+      }
+
+      /* Ещё компактнее верх */
+      .trainer-top {
+        padding: 8px 10px;
+      }
+
+      .trainer-new {
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+
+      /* Кубики в руке — в одну строку, покрупнее */
+      .trainer-hand .pd {
+        width: 44px;
+        height: 44px;
+        padding: 5px;
+      }
+
+      /* Кнопки — крупные и палец-френдли */
+      .trainer-actions #tDudo {
+        padding: 16px;
+        font-size: 18px;
+      }
+
+      .trainer-raise button {
+        padding: 12px 20px;
+        font-size: 16px;
+      }
+
+      /* Фидбек — минимальные отступы */
+      .trainer-feedback {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .trainer-feedback .big {
+        font-size: 14px;
+      }
+    }
+
+    /* ============ Упражнения: мобильный лэйаут ============ */
+
+    .drill-top {
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .drill-tabs {
+      display: flex;
+      gap: 3px;
+      background: #1a1f28;
+      border-radius: 8px;
+      padding: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .drill-tab {
+      flex: 1;
+      padding: 8px 10px;
+      border: none;
+      background: transparent;
+      color: var(--mut);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: inherit;
+    }
+
+    .drill-tab:hover {
+      color: var(--fg);
+    }
+
+    .drill-tab.on {
+      background: var(--acc);
+      color: #111;
+    }
+
+    .drill-new {
+      padding: 8px 14px;
+      font-weight: 700;
+      background: var(--acc);
+      color: #111;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .drill-board {
+      padding: 14px;
+    }
+
+    .drill-question {
+      padding: 10px 12px;
+      background: #1a1f28;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .drill-question .pd {
+      width: 28px;
+      height: 28px;
+      padding: 4px;
+      margin: 2px;
+    }
+
+    .drill-label {
+      display: block;
+      color: var(--mut);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin: 12px 0 4px;
+    }
+
+    .drill-input {
+      display: block;
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 18px;
+      text-align: center;
+      border-radius: 10px;
+      background: #1a1f28;
+      border: 1px solid #2f3543;
+      color: var(--fg);
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    .drill-input:focus {
+      outline: none;
+      border-color: var(--acc);
+    }
+
+    .drill-check {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 10px;
+      background: var(--acc);
+      color: #111;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .drill-check:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Свёрнутая формула */
+    .drill-hint {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .drill-hint>summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 8px 0;
+      color: var(--acc);
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .drill-hint>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .drill-hint>summary::before {
+      content: "▸";
+      display: inline-block;
+      margin-right: 6px;
+      transition: transform .15s ease;
+    }
+
+    .drill-hint[open]>summary::before {
+      transform: rotate(90deg);
+    }
+
+    .drill-hint-body {
+      margin-top: 6px;
+      padding: 10px 12px;
+      background: #1a1f28;
+      border-radius: 8px;
+      line-height: 1.55;
+      color: #c8d0e0;
+    }
+
+    .drill-hint-body p {
+      margin: 6px 0;
+    }
+
+    .drill-hint-body b {
+      color: var(--fg);
+    }
+
+    /* Фидбек — скрыт, пока пуст */
+    .drill-feedback:empty {
+      display: none;
+    }
+
+    .drill-feedback {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #1a1f28;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .drill-feedback p {
+      margin: 4px 0;
+    }
+
+    .drill-feedback .g,
+    .drill-feedback .r {
+      font-weight: 600;
+    }
+
+    /* ===== Мобильная оптимизация ===== */
+    @media (max-width: 720px) {
+      #drill .card {
+        padding: 10px;
+        margin-bottom: 8px;
+      }
+
+      .drill-board {
+        padding: 12px;
+      }
+
+      .drill-input {
+        padding: 14px;
+        font-size: 20px;
+      }
+
+      .drill-check {
+        padding: 16px;
+        font-size: 17px;
+      }
+
+      .drill-tab {
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+
+      .drill-new {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .drill-question {
+        font-size: 13px;
+        padding: 8px 10px;
+        margin-bottom: 10px;
+      }
+
+      .drill-question .pd {
+        width: 24px;
+        height: 24px;
+      }
+
+      .drill-label {
+        margin: 10px 0 3px;
+      }
+    }
   </style>
 </head>
 
@@ -752,61 +1243,127 @@
 
     <!-- ================= ТРЕНАЖЁР ================= -->
     <section id="train" class="hide">
-      <div class="card">
-        <div class="row">
-          <label>Режим <select id="tMode"></select></label>
-          <label>Порог <input id="tT" type="number" min="0.05" max="0.95" step="0.05" value="0.5"
-              style="width:80px"></label>
-          <button id="tNew">Новая ситуация</button>
-          <button id="tReset">Сбросить статистику</button>
+
+      <!-- Компактная верхняя панель: новая ситуация + свёрнутые настройки -->
+      <div class="card trainer-top">
+        <div class="trainer-top-row">
+          <button id="tNew" class="trainer-new">🔄 Новая ситуация</button>
+          <details class="trainer-settings-more">
+            <summary>
+              ⚙️ <span id="tSettingsHint">Классика · порог 0.5</span>
+            </summary>
+            <div class="trainer-settings-body">
+              <div class="row">
+                <label>Режим <select id="tMode"></select></label>
+                <label>Порог <input id="tT" type="number" min="0.05" max="0.95" step="0.05" value="0.5"
+                    style="width:80px"></label>
+              </div>
+              <div class="row">
+                <button id="tReset">Сбросить статистику</button>
+              </div>
+              <small id="tDesc"></small>
+            </div>
+          </details>
         </div>
-        <small id="tDesc"></small>
       </div>
-      <div class="card">
-        <div id="tInfo" class="m"></div>
-        <div style="margin:8px 0">Ваши кубики: <span id="tHand"></span></div>
-        <div style="margin:10px 0">Ставка соперника: <span id="tBid"></span></div>
-        <div class="row">
+
+      <!-- Основной блок: должен влезать на мобильном в один экран -->
+      <div class="card trainer-board">
+        <div id="tInfo" class="trainer-chips"></div>
+
+        <div class="trainer-hand-label">Ваши кубики</div>
+        <div id="tHand" class="trainer-hand"></div>
+
+        <div class="trainer-bid-row">
+          <span class="m">Соперник:</span>
+          <span id="tBid"></span>
+        </div>
+
+        <div class="trainer-actions">
           <button class="bad" id="tDudo">Не верю!</button>
-          <span class="m">или повысить:</span>
-          <input id="tQ" type="number" min="1" style="width:80px"> ×
-          <select id="tF"></select>
-          <button id="tRaise">Ставлю</button>
+          <div class="trainer-raise">
+            <span class="m">или</span>
+            <input id="tQ" type="number" min="1" style="width:60px">
+            <span class="m">×</span>
+            <select id="tF"></select>
+            <button id="tRaise">Ставлю</button>
+          </div>
         </div>
-        <div id="tFb" style="margin-top:10px"></div>
+
+        <div id="tFb" class="trainer-feedback"></div>
       </div>
-      <div class="card">
-        <b>Статистика</b>
+
+      <!-- Статистика — свёрнута -->
+      <details class="card trainer-stats-card">
+        <summary>📊 Статистика</summary>
         <div id="tStat" class="m"></div>
         <small>Ошибочные ситуации попадают в очередь и возвращаются, пока вы не решите их верно два раза подряд.</small>
-      </div>
+      </details>
     </section>
 
     <!-- ================= УПРАЖНЕНИЯ ================= -->
+    <!-- ================= УПРАЖНЕНИЯ ================= -->
     <section id="drill" class="hide">
-      <div class="card">
-        <b>Оценка в уме</b>
-        <p class="m">Ожидание = ваши кубики нужной цифры (с джокерами) + неизвестные × 1/3 (для единиц × 1/6).
-          Безопасная ставка — наибольшее количество с шансом не ниже 50%.</p>
-        <div id="dAq"></div>
-        <div class="row">
-          <label>Ожидаемое количество <input id="dA1" type="text" style="width:90px"></label>
-          <label>Безопасная ставка (кол-во) <input id="dA2" type="number" style="width:90px"></label>
-          <button id="dACheck">Проверить</button>
-          <button id="dANew">Новое</button>
+
+      <!-- Переключатель упражнений + кнопка «Новое» -->
+      <div class="card drill-top">
+        <div class="drill-tabs" role="tablist">
+          <button class="drill-tab on" data-drill="A" role="tab" aria-pressed="true">
+            Оценка в уме
+          </button>
+          <button class="drill-tab" data-drill="B" role="tab" aria-pressed="false">
+            Правило единиц
+          </button>
         </div>
-        <div id="dAfb"></div>
+        <button id="dNew" class="drill-new">🔄 Новое</button>
       </div>
-      <div class="card">
-        <b>Правило единиц</b>
-        <div id="dBq" style="margin:8px 0"></div>
-        <div class="row">
-          <input id="dB1" type="number" style="width:90px">
-          <button id="dBCheck">Проверить</button>
-          <button id="dBNew">Новое</button>
-        </div>
-        <div id="dBfb"></div>
+
+      <!-- Упражнение A -->
+      <div class="card drill-board" id="dPanelA" role="tabpanel">
+        <div id="dAq" class="drill-question"></div>
+
+        <label class="drill-label" for="dA1">Ожидаемое количество</label>
+        <input id="dA1" type="text" class="drill-input" inputmode="decimal" placeholder="например, 5.3">
+
+        <label class="drill-label" for="dA2">Безопасная ставка (кол-во)</label>
+        <input id="dA2" type="number" class="drill-input" inputmode="numeric" placeholder="например, 5">
+
+        <button id="dACheck" class="drill-check">Проверить</button>
+
+        <details class="drill-hint">
+          <summary>Как это посчитать</summary>
+          <div class="drill-hint-body">
+            <p><b>Ожидание:</b> E[X] = свои + неизвестные × p. Для обычной цифры p = 1/3
+              (сама грань + 1-джокер), для единиц и Palifico p = 1/6.</p>
+            <p><b>Безопасная ставка:</b> наибольшее q, при котором P(X ≥ q) ≥ 0.5.
+              На практике ≈ E[X], округлённое к ближайшему при большом столе
+              и вниз — при малом.</p>
+          </div>
+        </details>
+
+        <div id="dAfb" class="drill-feedback"></div>
       </div>
+
+      <!-- Упражнение B -->
+      <div class="card drill-board hide" id="dPanelB" role="tabpanel">
+        <div id="dBq" class="drill-question"></div>
+
+        <label class="drill-label" for="dB1">Минимальное количество</label>
+        <input id="dB1" type="number" class="drill-input" inputmode="numeric" placeholder="например, 5">
+
+        <button id="dBCheck" class="drill-check">Проверить</button>
+
+        <details class="drill-hint">
+          <summary>Как это посчитать</summary>
+          <div class="drill-hint-body">
+            <p><b>С обычной цифры на единицы:</b> ⌈q / 2⌉ — половина с округлением вверх.</p>
+            <p><b>С единиц на обычную цифру:</b> 2q + 1 — больше удвоенного.</p>
+          </div>
+        </details>
+
+        <div id="dBfb" class="drill-feedback"></div>
+      </div>
+
     </section>
 
     <!-- ================= ПАРТИЯ ================= -->

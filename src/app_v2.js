@@ -243,16 +243,30 @@ function setupTrainer() {
     if ($('#tDesc')) $('#tDesc').textContent = m.d;
     if ($('#tInfo')) {
       $('#tInfo').innerHTML =
-        `${cur.item ? '🔁 <b>Повтор вашей прошлой ошибки.</b> ' : ''}` +
-        `Всего кубиков: ${cur.n}, у вас ${cur.h.length}, неизвестных: ${cur.n - cur.h.length}. ` +
-        `Единицы ${m.wild ? '— джокеры' : 'не джокеры'}.`;
+        (cur.item ? `<span class="trainer-chip trainer-repeat">🔁 повтор</span>` : '') +
+        `<span class="trainer-chip">🎲 всего <b>${cur.n}</b></span>` +
+        `<span class="trainer-chip">👤 у вас <b>${cur.h.length}</b></span>` +
+        `<span class="trainer-chip">❓ чужих <b>${cur.n - cur.h.length}</b></span>` +
+        `<span class="trainer-chip ${m.wild ? 'trainer-wild' : ''}">` +
+        (m.wild ? '✨ единицы — джокеры' : '⚪ единицы обычные') +
+        `</span>`;
     }
     if ($('#tHand')) $('#tHand').innerHTML = renderHand(cur.h, m.wild);
     if ($('#tBid')) $('#tBid').innerHTML = renderBid(cur.q, cur.f);
     if ($('#tQ')) $('#tQ').value = cur.q;
     if ($('#tF')) $('#tF').value = Math.min(6, cur.f + 1);
     if ($('#tFb')) $('#tFb').innerHTML = '';
+    updateSettingsHint();
     updateStat();
+  }
+  function updateSettingsHint() {
+    const el = $('#tSettingsHint');
+    if (!el) return;
+    const mk = $('#tMode').value;
+    const m = MODES[mk];
+    const thr = (+$('#tT').value || 0.5).toFixed(2);
+    const shortName = m.name.split('(')[0].trim();
+    el.textContent = `${shortName} · порог ${thr}`;
   }
 
   function bestRaiseThreshold() {
@@ -332,7 +346,17 @@ function setupTrainer() {
   };
 
   if ($('#tNew')) $('#tNew').onclick = newSituation;
-  if ($('#tMode')) $('#tMode').onchange = newSituation;
+
+  if ($('#tMode')) {
+    $('#tMode').onchange = () => {
+      updateSettingsHint();   // ← сначала обновляем подпись
+      newSituation();          // ← потом генерируем новую ситуацию
+    };
+  }
+
+  if ($('#tT')) {
+    $('#tT').addEventListener('input', updateSettingsHint);
+  }
   if ($('#tReset')) $('#tReset').onclick = () => {
     S.n = 0; S.good = 0; S.byMode = {};
     S.drill = { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };
@@ -452,7 +476,27 @@ function setupDrill() {
     }
   };
 
-  if ($('#dANew')) $('#dANew').onclick = newA;
+  /* ============================================================
+   Табы A/B — переключение между панелями без скролла.
+   Раньше это делали две кнопки #dANew и #dBNew (каждая со своей
+   панелью). Теперь одна кнопка #dNew + переключатель.
+   ============================================================ */
+  let activeDrill = 'A';
+
+  document.querySelectorAll('.drill-tab').forEach((btn) => {
+    btn.onclick = () => {
+      activeDrill = btn.dataset.drill;   // 'A' или 'B'
+      document.querySelectorAll('.drill-tab').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      const panelA = $('#dPanelA');
+      const panelB = $('#dPanelB');
+      if (panelA) panelA.classList.toggle('hide', activeDrill !== 'A');
+      if (panelB) panelB.classList.toggle('hide', activeDrill !== 'B');
+    };
+  });
 
   const checkB = $('#dBCheck');
   if (checkB) checkB.onclick = () => {
@@ -492,7 +536,14 @@ function setupDrill() {
     }
   };
 
-  if ($('#dBNew')) $('#dBNew').onclick = newB;
+  // Одна кнопка «Новое» — работает для активного таба
+  const newBtn = $('#dNew');
+  if (newBtn) {
+    newBtn.onclick = () => {
+      if (activeDrill === 'A') newA();
+      else newB();
+    };
+  }
 
   newA();
   newB();
