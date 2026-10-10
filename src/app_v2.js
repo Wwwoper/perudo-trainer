@@ -556,11 +556,11 @@ let gameLogEntries = [];
 let reviewEntries = [];
 let selectedFace = 2;
 let botTimer = null;
-let lastRenderedRound = 0;
+let lastBidKey = '';
 let lastLoggedRound = 0;
 
 function setupGame() {
-  if ($('#gNew')) $('#gNew').onclick = startNewGame;
+  $$('[data-action="new-game"]').forEach((b) => { b.onclick = startNewGame; });
   if ($('#gDudo')) $('#gDudo').onclick = onPlayerDudo;
   if ($('#gCalza')) $('#gCalza').onclick = onPlayerCalza;
   if ($('#gRaise')) $('#gRaise').onclick = onPlayerRaise;
@@ -574,6 +574,9 @@ function setupGame() {
     renderPick();
   };
   if ($('#gQ')) $('#gQ').oninput = () => { renderPick(); renderPractical(); };
+  // На телефоне количество меняется кнопками «−/+»: системная клавиатура
+  // закрыла бы панель действий.
+  if ($('#gQ') && window.matchMedia?.('(pointer: coarse)').matches) $('#gQ').readOnly = true;
 
   startNewGame();
 }
@@ -622,7 +625,7 @@ function startNewGame() {
 
   gameLogEntries = [];
   reviewEntries = [];
-  lastRenderedRound = 0;
+  lastBidKey = '';
   lastLoggedRound = 0;
 
   startGame(game);
@@ -644,11 +647,13 @@ function addGameLog(type, html) {
     el.innerHTML = gameLogEntries
       .map((e) => {
         const cls = e.type === 'dudo' ? 'dudo' : e.type === 'rh' ? 'rh' : '';
-        return `<div class="lg ${cls}">${e.html}</div>`;
+        return `<div class="log-row ${cls}">${e.html}</div>`;
       })
       .join('');
     el.scrollTop = el.scrollHeight;
   }
+  const feed = $('#gFeed');
+  if (feed) feed.innerHTML = html;
 }
 
 function addReview(kind, prob, text) {
@@ -773,14 +778,13 @@ function renderPractical() {
   el.innerHTML = `
     <div class="ph-title">🔢 Безопасная ставка — быстрый расчёт для грани ${face}${wildNote}</div>
     <div class="ph-grid">
-      <span>Всего кубиков на столе</span><span>${total}</span>
-      <span>Ваших в руке</span><span>${me.hand.length}</span>
-      <span>Неизвестных кубиков</span><span>${unknown}</span>
-      <span class="ph-divider"></span>
-      <span>Своих «${face}» + джокеров</span><span>${own}</span>
-      <span>Неизвестные / ${denom}</span><span>${unknown} / ${denom} ≈ ${third.toFixed(1)}</span>
-      <div class="ph-total">Безопасная ставка (грань ${face}) ≈ <b>${safe}</b></div>
+      <div class="ph-row"><span>Всего кубиков на столе</span><span>${total}</span></div>
+      <div class="ph-row"><span>Ваших в руке</span><span>${me.hand.length}</span></div>
+      <div class="ph-row"><span>Неизвестных кубиков</span><span>${unknown}</span></div>
+      <div class="ph-row ph-row-sep"><span>Своих «${face}» + джокеров</span><span>${own}</span></div>
+      <div class="ph-row"><span>Неизвестные / ${denom}</span><span>${unknown} / ${denom} ≈ ${third.toFixed(1)}</span></div>
     </div>
+    <div class="ph-total">Безопасная ставка (грань ${face}) ≈ <b>${safe}</b></div>
     <div class="ph-note">
       ${own} + ${third.toFixed(1)} = ${E.toFixed(1)} → округляем до ${safe}.
       Шанс, что ${safe}×${face} верна: <b>${pct(pSafe)}</b>.
@@ -807,7 +811,7 @@ function renderGame() {
 
   const tableEl = $('#gameTable');
   if (tableEl) {
-    tableEl.innerHTML = renderTable(gameViewForRender(), game.currentPlayer, assistConfig);
+    tableEl.innerHTML = renderTable(gameViewForRender(), game.currentPlayer);
   }
 
   const me = game.players[0];
@@ -830,27 +834,18 @@ function renderGame() {
 
   if ($('#gMeta')) {
     $('#gMeta').innerHTML =
-      `Раунд ${game.round}. Всего кубиков на столе: ${total}.` +
-      (game.palifico ? ' <b class="warn">ПАЛИФИКО: единицы не джокеры, цифра зафиксирована.</b>' : '');
+      `Раунд ${game.round} · 🎲 ${total}` +
+      (game.palifico ? ' · <b class="warn">ПАЛИФИКО</b>' : '');
   }
 
   if ($('#gHand')) $('#gHand').innerHTML = renderHand(me.hand, !game.palifico);
 
-  if ($('#gBid')) {
+  const oddsEl = $('#gDudoOdds');
+  if (oddsEl) {
     const b = game.bid;
-    if (b) {
-      const q = b.q, f = b.f;
-      let extra = '';
-      if (assistConfig.showCurrentBidOdds && b.playerId !== 'human' && me.alive) {
-        const p = P.probBid(q, f, total, me.hand, !game.palifico);
-        extra = ` <span class="m">шанс:</span> <b class="${p >= 0.5 ? 'g' : 'r'}">${pct(p)}</b>`;
-      }
-      $('#gBid').innerHTML =
-        `${renderBid(q, f, 'xl')} <span class="m">— ${b.playerName}</span>${extra}`;
-    } else {
-      $('#gBid').innerHTML =
-        `<span class="m">ставок ещё нет — начните с любой${game.palifico ? '' : ' (кроме единиц)'}</span>`;
-    }
+    oddsEl.textContent = (assistConfig.showCurrentBidOdds && b && b.playerId !== 'human' && me.alive)
+      ? `верна на ${pct(P.probBid(b.q, b.f, total, me.hand, !game.palifico))}`
+      : '';
   }
 
   const dis = game.state !== 'active' || game.currentPlayer !== 0 || !me.alive;
@@ -870,6 +865,15 @@ function renderGame() {
     const el = $(s);
     if (el) el.disabled = dis;
   });
+  $('#gDock')?.classList.toggle('is-waiting', dis);
+
+  // Новый раунд: сначала выбираем минимальную легальную ставку,
+  // и только затем строим кнопки граней по актуальному selectedFace.
+  const bidKey = `${game.round}:${game.bid ? `${game.bid.q}x${game.bid.f}` : '-'}`;
+  if (bidKey !== lastBidKey) {
+    lastBidKey = bidKey;
+    resetBidInput();
+  }
 
   const pick = $('#gPick');
   if (pick) {
@@ -878,17 +882,21 @@ function renderGame() {
       const b = document.createElement('button');
       b.className = 'pf' + (f === selectedFace ? ' sel' : '');
       b.innerHTML = renderDie(f, 's');
-      b.disabled = dis;
-      b.onclick = () => { selectedFace = f; renderPick(); renderPractical(); };
+      // legal() не убывает по количеству: если нет допустимой ставки на
+      // total кубиков, то нет её и на меньшее количество.
+      b.disabled = dis || !legal(total, f, game.bid, { wild: !game.palifico });
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', `Цифра ${f}`);
+      b.setAttribute('aria-checked', String(f === selectedFace));
+      b.onclick = () => {
+        selectedFace = f;
+        renderGame();
+      };
       pick.append(b);
     }
   }
 
-  if (game.round !== lastRenderedRound) {
-    lastRenderedRound = game.round;
-    resetBidInput();
-  }
-  ensureLegalBidInput();
+  // Ручной выбор грани не должен принудительно заменяться автоматической нормализацией.
   updatePrev();
   renderAdvice();
   renderPractical();
@@ -924,26 +932,36 @@ function ensureLegalBidInput() {
 }
 
 function updatePrev() {
-  const el = $('#gPrev');
-  if (!el) return;
-  if (!game || game.state !== 'active' || game.currentPlayer !== 0 || !game.players[0].alive) {
-    el.innerHTML = '';
+  const err = $('#gPrev');
+  if (err) err.innerHTML = '';
+
+  const raise = $('#gRaise');
+  if (!raise) return;
+
+  const myTurn = game && game.state === 'active'
+    && game.currentPlayer === 0 && game.players[0].alive;
+  if (!myTurn) {                      // disabled уже выставлен в renderGame
+    raise.innerHTML = '<span class="btn-main">Ставлю</span>';
     return;
   }
+
   const total = totalDice();
   const q = +($('#gQ')?.value || 1);
   const f = selectedFace;
+  const ok = legal(q, f, game.bid, { wild: !game.palifico });
 
-  if (!legal(q, f, game.bid, { wild: !game.palifico })) {
-    el.innerHTML = `<span class="r">Ставка недопустима: она должна быть выше текущей${game.palifico ? ' (Палифико: та же цифра, больше количество)' : ''}.</span>`;
+  raise.disabled = !ok;
+  if (!ok) {
+    const why = game.palifico ? 'та же цифра' : 'слишком мало';
+    raise.innerHTML = `<span class="btn-main">Ставлю ${q}×${f}</span><span class="btn-sub">${why}</span>`;
     return;
   }
+
   const me = game.players[0];
   const p = P.probBid(q, f, total, me.hand, !game.palifico);
-  const hint = assistConfig.showFutureBidOdds
-    ? ` <span class="m">— шанс:</span> <b class="${p >= 0.5 ? 'g' : 'r'}">${pct(p)}</b>`
-    : '';
-  el.innerHTML = `<span class="m">Ваша ставка</span> ${renderBid(q, f)}${hint}`;
+  const odds = assistConfig.showFutureBidOdds
+    ? `<span class="btn-sub">шанс ${pct(p)}</span>` : '';
+  raise.innerHTML = `<span class="btn-main">Ставлю ${q}×${f}</span>${odds}`;
 }
 
 // ----- Ходы игрока -----
@@ -970,7 +988,7 @@ function onPlayerRaise() {
     return;
   }
 
-  addGameLog('', `${renderBid(q, f)}`);
+  addGameLog('', `<span class="pn c0">Вы</span> ${renderBid(q, f)}`);
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
   if (game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
@@ -1251,11 +1269,11 @@ function runDuelBot() {
     }
     const act = node.acts[idx];
     if (act === 'D') {
-      D.log.push(`<div class="lg"><span class="pn c1">Бот</span> <b class="r">не верит!</b></div>`);
+      D.log.push(`<div class="log-row"><span class="pn c1">Бот</span> <b class="r">не верит!</b></div>`);
       endDuel(node.p, node);
       return;
     }
-    D.log.push(`<div class="lg"><span class="pn c1">Бот</span> ${renderBid(act.q, act.f)}</div>`);
+    D.log.push(`<div class="log-row"><span class="pn c1">Бот</span> ${renderBid(act.q, act.f)}</div>`);
     let k = 0;
     for (const a of node.acts) {
       if (a === 'D') continue;
@@ -1331,13 +1349,13 @@ function moveDuel(i) {
     `${(pr * 100).toFixed(0)}% ${pr < 0.05 ? '<b class="r">— редкое отклонение</b>' : '<b class="g">— в рамках</b>'}.`;
 
   if (act === 'D') {
-    D.log.push(`<div class="lg"><span class="pn c0">Вы</span> <b class="r">не верю!</b></div>`);
+    D.log.push(`<div class="log-row"><span class="pn c0">Вы</span> <b class="r">не верю!</b></div>`);
     endDuel(D.role, node);
     renderDuel();
     return;
   }
 
-  D.log.push(`<div class="lg"><span class="pn c0">Вы</span> ${renderBid(act.q, act.f)}</div>`);
+  D.log.push(`<div class="log-row"><span class="pn c0">Вы</span> ${renderBid(act.q, act.f)}</div>`);
   let k = 0;
   for (const a of node.acts) {
     if (a === 'D') continue;

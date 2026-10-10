@@ -1,39 +1,55 @@
 // table.js — игровой стол на 2-6 игроков
+//
+// Разметка стола:
+//   #gameTable.table-stage
+//     .table-felt      — только декор (эллипс), ничего не обрезает
+//     .table-center    — центральный круг со ставкой
+//     .seat × N        — места игроков, позиционируются CSS-переменными
+//
+// Позиции мест — это пары [x%, y%] от размеров .table-stage.
+// Для каждого места два набора: d — широкий стол, m — портретный телефон.
+// CSS сам выбирает набор и зажимает центр места так, чтобы оно целиком
+// помещалось в сцену (см. table.css, .seat).
 
 import { BOT_STYLES } from './bots.js';
 
-const SEAT_POSITIONS = {
-  2: [
-    { left: '50%', top: '88%' },
-    { left: '50%', top: '12%' },
-  ],
-  3: [
-    { left: '50%', top: '88%' },
-    { left: '18%', top: '26%' },
-    { left: '82%', top: '26%' },
-  ],
-  4: [
-    { left: '50%', top: '88%' },
-    { left: '12%', top: '50%' },
-    { left: '50%', top: '12%' },
-    { left: '88%', top: '50%' },
-  ],
-  5: [
-    { left: '50%', top: '88%' },
-    { left: '12%', top: '34%' },
-    { left: '30%', top: '12%' },
-    { left: '70%', top: '12%' },
-    { left: '88%', top: '34%' },
-  ],
-  6: [
-    { left: '50%', top: '88%' },
-    { left: '10%', top: '50%' },
-    { left: '25%', top: '15%' },
-    { left: '50%', top: '10%' },
-    { left: '75%', top: '15%' },
-    { left: '90%', top: '50%' },
-  ],
+const SEAT_LAYOUTS = {
+  2: {
+    d: [[50, 90], [50, 10]],
+    m: [[50, 90], [50, 10]],
+  },
+  3: {
+    d: [[50, 90], [18, 28], [82, 28]],
+    m: [[50, 90], [20, 24], [80, 24]],
+  },
+  4: {
+    d: [[50, 90], [11, 50], [50, 10], [89, 50]],
+    m: [[50, 90], [16, 52], [50, 10], [84, 52]],
+  },
+  5: {
+    d: [[50, 90], [11, 62], [24, 18], [76, 18], [89, 62]],
+    m: [[50, 90], [16, 64], [22, 24], [78, 24], [84, 64]],
+  },
+  6: {
+    d: [[50, 90], [10, 64], [14, 22], [50, 10], [86, 22], [90, 64]],
+    m: [[50, 90], [15, 66], [15, 32], [50, 10], [85, 32], [85, 66]],
+  },
 };
+
+/** Раскладка мест для count игроков (2–6). Чистая функция. */
+export function seatLayouts(count) {
+  const n = Math.max(2, Math.min(Number(count) || 2, 6));
+  const L = SEAT_LAYOUTS[n];
+  return L.d.map((d, i) => ({ d, m: L.m[i] }));
+}
+
+/** Подпись места. Человек всегда «Вы» — имя из движка уже может быть «Вы». */
+export function seatLabel(player) {
+  return player.isHuman ? 'Вы' : String(player.name ?? '');
+}
+
+const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+export const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
 export function renderDie(value, size = 'md', wild = false) {
   const PIPS = {
@@ -62,81 +78,83 @@ export function renderHiddenDice(count) {
   ).join('');
 }
 
+// Размер кубика внутри чипа зависит от размера чипа:
+//   xs — у места игрока, lg — в центре стола, xl — крупная ставка, по умолчанию — компактный.
+const CHIP_DIE_SIZE = { xs: 'xs', lg: 's', xl: '' };
+
 export function renderBid(q, f, cls = '') {
-  return `<span class="chip ${cls}">${q}<em>×</em>${renderDie(f, cls ? '' : 's')}</span>`;
+  const dieSize = CHIP_DIE_SIZE[cls] ?? 's';
+  return `<span class="chip ${cls}">${q}<em>×</em>${renderDie(f, dieSize)}</span>`;
 }
 
-export function renderSeat(player, position, isActive, showHand = false, style = null) {
-  const pos = position;
-  if (!pos) return '';
+export function renderSeat(player, layout, isActive, style = null) {
+  if (!layout) return '';
 
   const avatarSvg = player.avatar || generateDefaultAvatar(player.gender);
-  const handHtml = showHand ? renderHand(player.hand, true, 'sm') : renderHiddenDice(player.dice);
   const styleIcon = style ? BOT_STYLES[style]?.icon || '' : '';
+  const bidHtml = player.lastBid
+    ? renderBid(player.lastBid.q, player.lastBid.f, 'xs')
+    : '';
+
+  const cls = [
+    'seat',
+    isActive ? 'active' : '',
+    !player.alive ? 'eliminated' : '',
+    player.isHuman ? 'human' : '',
+  ].filter(Boolean).join(' ');
 
   return `
-    <div class="seat ${isActive ? 'active' : ''} ${!player.alive ? 'eliminated' : ''}"
-         style="left: ${pos.left}; top: ${pos.top};"
-         data-player-id="${player.id}">
+    <div class="${cls}"
+         style="--x:${layout.d[0]}%;--y:${layout.d[1]}%;--mx:${layout.m[0]}%;--my:${layout.m[1]}%"
+         data-player-id="${escapeHtml(player.id)}">
       <div class="seat-avatar">
         ${avatarSvg}
         ${styleIcon ? `<span class="seat-style">${styleIcon}</span>` : ''}
       </div>
       <div class="seat-info">
-        <div class="seat-name">${player.name}${player.isHuman ? ' (вы)' : ''}</div>
-        <div class="seat-dice">🎲 ${player.dice}</div>
-        ${player.lastBid ? `<div class="seat-bid">${renderBid(player.lastBid.q, player.lastBid.f, 'xs')}</div>` : ''}
+        <div class="seat-name">${escapeHtml(seatLabel(player))}</div>
+        <div class="seat-meta">
+          <span class="seat-dice">🎲 ${player.dice}</span>${bidHtml}
+        </div>
       </div>
-      <div class="seat-hand">${handHtml}</div>
-      ${isActive ? '<div class="seat-turn-indicator">➤</div>' : ''}
     </div>
   `;
 }
 
-export function renderTable(game, currentPlayerIndex, assistConfig) {
-  const count = Math.max(2, Math.min(game.players.length, 6));
-  const layout = SEAT_POSITIONS[count];
+export function renderTable(game, currentPlayerIndex) {
+  const layouts = seatLayouts(game.players.length);
 
-  const seats = game.players.map((p, i) => {
-    const isActive = i === currentPlayerIndex;
-    const showHand = Boolean(p.isHuman);
-    const seatPosition = layout[i] || layout[layout.length - 1];
-    return renderSeat(p, seatPosition, isActive, showHand, p.style);
-  });
+  const seats = game.players.map((p, i) =>
+    renderSeat(p, layouts[i] || layouts[layouts.length - 1], i === currentPlayerIndex, p.style));
 
-  const totalDice = game.players.reduce((s, p) => s + p.dice, 0);
   const b = game.bid;
   const bq = b ? (b.q ?? b.quantity) : null;
   const bf = b ? (b.f ?? b.face) : null;
 
   const bidHtml = (b && bq != null && bf != null)
-    ? `<div class="table-bid">${renderBid(bq, bf, 'lg')} <span class="bid-by">— ${b.playerName}</span></div>`
+    ? `<div class="table-bid">${renderBid(bq, bf, 'lg')}<span class="bid-by">${escapeHtml(b.playerName)}</span></div>`
     : '<div class="table-bid table-bid-empty">Ставок ещё нет</div>';
 
   return `
-    <div class="game-table" data-players="${game.players.length}">
-      <div class="table-center">
-        ${bidHtml}
-        <div class="table-meta">
-          <span>Раунд ${game.round}</span>
-          <span>🎲 ${totalDice}</span>
-          ${game.palifico ? '<span class="palifico-badge">ПАЛИФИКО</span>' : ''}
-        </div>
-      </div>
-      ${seats.join('')}
+    <div class="table-felt" aria-hidden="true"></div>
+    <div class="table-center">
+      ${bidHtml}
+      ${game.palifico ? '<span class="palifico-badge">ПАЛИФИКО</span>' : ''}
     </div>
+    ${seats.join('')}
   `;
 }
 
-function generateDefaultAvatar(gender = 'male') {
+export function generateDefaultAvatar(gender = 'male') {
   const color1 = gender === 'female' ? '#D94AD9' : '#4A90D9';
+  const mouth = gender === 'female'
+    ? `<path d="M 30 65 Q 50 80 70 65" stroke="${color1}" stroke-width="3" fill="none"/>`
+    : `<path d="M 35 65 L 65 65 L 60 75 L 40 75 Z" fill="${color1}"/>`;
   return `
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
       <circle cx="50" cy="50" r="48" fill="#F0F0F0" stroke="${color1}" stroke-width="3"/>
       <circle cx="50" cy="40" r="18" fill="${color1}"/>
-      ${gender === 'female'
-        ? '<path d="M 30 65 Q 50 80 70 65" stroke="${color1}" stroke-width="3" fill="none"/>'
-        : '<path d="M 35 65 L 65 65 L 60 75 L 40 75 Z" fill="${color1}"/>'}
+      ${mouth}
     </svg>
   `;
 }

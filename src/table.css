@@ -1,34 +1,53 @@
-/* src/table.css — покерный стол (вид сверху), стили мест игроков.
-   Объединяет три inline-<style> из старого index.html.
+/* src/table.css — игровой стол (вид сверху), места игроков.
    Классы согласованы с src/table.js:
-     .game-table — контейнер стола (эллипс)
-     .table-center — центральный круг со ставкой
-     .seat — место игрока
-     .seat-avatar / .seat-info / .seat-hand / .seat-turn-indicator
+     .table-stage   — сцена (#gameTable), ничего не обрезает
+     .table-felt    — деревянный эллипс, только декор
+     .table-center  — центральный круг со ставкой
+     .seat          — место игрока (аватар, имя, число кубиков, последняя ставка)
+
+   Главное правило: места лежат НЕ внутри эллипса, а рядом с ним, поэтому
+   border-radius / overflow эллипса их не обрезают. Центр места зажат
+   через clamp() так, что место целиком остаётся в сцене при любом размере.
 */
 
-/* ============ Контейнер стола ============ */
+/* ============ Токены стола ============ */
 
-#gameTable,
-#gTable {
-  position: relative;
-  width: 100%;
-  max-width: 960px;
-  height: clamp(440px, 58vw, 640px);
-  margin: 20px auto;
-  overflow: hidden;
-  isolation: isolate;
+:root {
+  --seat-w: 168px;   /* широкий стол: «пилюля» — аватар слева, текст справа */
+  --seat-h: 60px;
+  --avatar: 44px;
 }
 
-/* ============ Эллипс-стол (деревянный, вид сверху) ============ */
+@media (max-width: 719px) {
+  :root {
+    --seat-w: 88px;  /* телефон: вертикальная карточка */
+    --seat-h: 100px;
+    --avatar: 36px;
+  }
+}
 
-#gameTable > .game-table,
-#gTable > .game-table {
+/* ============ Сцена ============ */
+
+.table-stage {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: clamp(380px, 48vw, 560px);
   margin: 0;
-  overflow: hidden;
+  isolation: isolate;
+  /* overflow не задаём: места не должны обрезаться */
+}
+
+@media (max-width: 719px) {
+  .table-stage {
+    height: clamp(380px, 115vw, 500px);
+  }
+}
+
+/* ============ Стол (дерево, вид сверху) ============ */
+
+.table-felt {
+  position: absolute;
+  inset: calc(var(--seat-h) * .45) calc(var(--seat-w) * .35);
   border: 10px solid #5a3218;
   border-radius: 50%;
   background:
@@ -47,8 +66,7 @@
 }
 
 /* Внутренний обод — тонкая линия по фетру */
-#gameTable > .game-table::before,
-#gTable > .game-table::before {
+.table-felt::before {
   content: "";
   position: absolute;
   inset: 7%;
@@ -56,21 +74,20 @@
   border-radius: 50%;
   box-shadow: inset 0 0 45px rgba(30, 12, 3, .3);
   pointer-events: none;
-  z-index: 1;
 }
 
 /* ============ Центр стола ============ */
 
-#gameTable .table-center,
-#gTable .table-center {
+.table-center {
   position: absolute;
   z-index: 2;
   top: 50%;
   left: 50%;
-  width: min(230px, 31%);
+  /* Круг задаём высотой: она не больше места между верхним и нижним рядом мест.
+     Ширину даёт aspect-ratio. */
+  height: min(220px, calc(100% - 2 * var(--seat-h) - 8px));
   aspect-ratio: 1 / 1;
-  height: auto;
-  padding: 18px;
+  padding: 12px;
   transform: translate(-50%, -50%);
   border: 2px solid rgba(255, 220, 155, .2);
   border-radius: 50%;
@@ -83,24 +100,21 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
 }
 
-#gameTable .table-bid,
-#gTable .table-bid {
+.table-bid {
   color: #fff1cf;
-  font-size: clamp(18px, 2.5vw, 30px);
   font-weight: 800;
   text-shadow: 0 2px 4px #241006;
 }
 
-#gameTable .table-bid-empty,
-#gTable .table-bid-empty {
+.table-bid-empty {
   color: #d6b895;
   font-size: 15px;
 }
 
-#gameTable .bid-by,
-#gTable .bid-by {
+.bid-by {
   display: block;
   margin-top: 6px;
   color: #e4c7a3;
@@ -108,19 +122,7 @@
   font-weight: 500;
 }
 
-#gameTable .table-meta,
-#gTable .table-meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 10px;
-  color: #e7c7a0;
-  font-size: 12px;
-}
-
-#gameTable .palifico-badge,
-#gTable .palifico-badge {
+.palifico-badge {
   padding: 1px 6px;
   border-radius: 4px;
   background: #ffd34e;
@@ -129,61 +131,56 @@
   font-weight: 900;
 }
 
-/* ============ Место игрока ============ */
+/* ============ Место игрока ============
+   --x/--y (широкий стол) и --mx/--my (телефон) задаёт table.js.
+   left/top — центр места, но не ближе половины размера места к краю сцены. */
 
-#gameTable .seat,
-#gTable .seat {
+.seat {
+  --px: var(--x);
+  --py: var(--y);
   position: absolute;
   z-index: 3;
+  box-sizing: border-box;
+  width: var(--seat-w);
+  height: var(--seat-h);
+  left: clamp(calc(var(--seat-w) / 2), var(--px), calc(100% - var(--seat-w) / 2));
+  top: clamp(calc(var(--seat-h) / 2), var(--py), calc(100% - var(--seat-h) / 2));
+  transform: translate(-50%, -50%);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 132px;
-  padding: 7px;
+  gap: 8px;
+  padding: 6px 8px;
   border: 2px solid transparent;
   border-radius: 14px;
-  transform: translate(-50%, -50%);
+  background: rgba(35, 16, 7, .72);
   transition:
-    transform .25s ease,
-    opacity .25s ease,
     border-color .25s ease,
-    background .25s ease;
+    background .25s ease,
+    box-shadow .25s ease;
 }
 
-#gameTable .seat.active,
-#gTable .seat.active {
+/* Активный ход: только свечение рамки. Без scale — масштаб выносил место за сцену. */
+.seat.active {
   z-index: 5;
   border-color: #ffd66b;
-  background: rgba(61, 29, 12, .58);
+  background: rgba(61, 29, 12, .85);
   box-shadow:
-    0 0 0 3px rgba(255, 214, 107, .16),
-    0 5px 18px rgba(0, 0, 0, .3);
-  transform: translate(-50%, -50%) scale(1.08);
+    0 0 0 3px rgba(255, 214, 107, .18),
+    0 0 18px rgba(255, 214, 107, .3);
 }
 
-#gameTable .seat.eliminated,
-#gTable .seat.eliminated {
+.seat.eliminated {
   opacity: .38;
   filter: grayscale(1);
 }
 
-/* Индикатор активного хода */
-#gameTable .seat-turn-indicator,
-#gTable .seat-turn-indicator {
-  position: absolute;
-  top: -28px;
-  color: #ffd66b;
-  font-size: 24px;
-  animation: perudo-turn-pulse 1.2s ease-in-out infinite;
-}
-
 /* ============ Аватар ============ */
 
-#gameTable .seat-avatar,
-#gTable .seat-avatar {
+.seat-avatar {
   position: relative;
-  width: 58px;
-  height: 58px;
+  flex: none;
+  width: var(--avatar);
+  height: var(--avatar);
   overflow: hidden;
   border: 3px solid #f7e0bd;
   border-radius: 50%;
@@ -191,41 +188,35 @@
   box-shadow: 0 3px 9px rgba(0, 0, 0, .38);
 }
 
-#gameTable .seat-avatar svg,
-#gTable .seat-avatar svg {
+.seat-avatar svg {
   display: block;
   width: 100%;
   height: 100%;
 }
 
-#gameTable .seat-style,
-#gTable .seat-style {
+/* Значок стиля бота. Лежит внутри .seat-avatar (overflow: hidden), поэтому
+   сидит внутри круга, в правом нижнем углу, и не выходит за него. */
+.seat-style {
   position: absolute;
-  right: -7px;
-  bottom: -5px;
-  padding: 2px 4px;
+  right: 0;
+  bottom: 0;
+  padding: 1px 2px;
   border-radius: 50%;
   background: #fff8e9;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, .35);
-  font-size: 15px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+  font-size: 11px;
+  line-height: 1;
 }
 
 /* ============ Информация об игроке ============ */
 
-#gameTable .seat-info,
-#gTable .seat-info {
-  min-width: 100px;
-  margin-top: 5px;
-  padding: 4px 8px;
-  border: 1px solid rgba(255, 220, 170, .15);
-  border-radius: 7px;
-  background: rgba(35, 16, 7, .86);
+.seat-info {
+  flex: 1;
+  min-width: 0;
   color: #fff;
-  text-align: center;
 }
 
-#gameTable .seat-name,
-#gTable .seat-name {
+.seat-name {
   overflow: hidden;
   font-size: 13px;
   font-weight: 800;
@@ -233,109 +224,58 @@
   white-space: nowrap;
 }
 
-#gameTable .seat-dice,
-#gTable .seat-dice {
+.seat-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: #e5c8a6;
   font-size: 12px;
+  white-space: nowrap;
 }
 
-#gameTable .seat-bid,
-#gTable .seat-bid {
-  margin-top: 2px;
-}
+/* ============ Телефон: вертикальная карточка, вторая пара координат ============ */
 
-/* ============ Рука игрока (мини-кубики) ============ */
-
-#gameTable .seat-hand,
-#gTable .seat-hand {
-  display: flex;
-  gap: 2px;
-  margin-top: 4px;
-}
-
-#gameTable .seat-hand .pd,
-#gTable .seat-hand .pd {
-  width: 18px;
-  height: 18px;
-  padding: 3px;
-  border-radius: 4px;
-  margin: 0;
-}
-
-/* ============ Анимации ============ */
-
-@keyframes perudo-turn-pulse {
-  0%, 100% { opacity: 1; transform: translateY(0); }
-  50%      { opacity: .65; transform: translateY(-4px); }
-}
-
-/* ============ Мобильная адаптация ============ */
-
-@media (max-width: 720px) {
-  #gameTable,
-  #gTable {
-    height: 430px;
+@media (max-width: 719px) {
+  .seat {
+    --px: var(--mx);
+    --py: var(--my);
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px;
+    text-align: center;
   }
 
-  #gameTable > .game-table,
-  #gTable > .game-table {
-    border-width: 7px;
+  .seat-info {
+    flex: none;
+    width: 100%;
   }
 
-  #gameTable .table-center,
-  #gTable .table-center {
-    width: 145px;
-    padding: 10px;
-  }
-
-  #gameTable .seat,
-  #gTable .seat {
-    width: 92px;
-    padding: 3px;
-  }
-
-  #gameTable .seat-avatar,
-  #gTable .seat-avatar {
-    width: 42px;
-    height: 42px;
-  }
-
-  #gameTable .seat-info,
-  #gTable .seat-info {
-    min-width: 75px;
-    padding: 3px 5px;
-  }
-
-  #gameTable .seat-name,
-  #gTable .seat-name {
-    max-width: 80px;
+  .seat-name {
     font-size: 11px;
   }
 
-  #gameTable .seat-dice,
-  #gTable .seat-dice {
-    font-size: 10px;
+  .seat-meta {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 4px;
+    font-size: 11px;
   }
 
-  #gameTable .seat-hand,
-  #gTable .seat-hand {
-    display: none;
+  .table-felt {
+    border-width: 7px;
+  }
+
+  .table-center {
+    height: min(128px, calc(100% - 2 * var(--seat-h) - 8px));
+    padding: 8px;
   }
 }
 
 /* ============ Уважение к настройкам ОС ============ */
 
 @media (prefers-reduced-motion: reduce) {
-  #gameTable .seat,
-  #gameTable .seat.active,
-  #gTable .seat,
-  #gTable .seat.active {
+  .seat {
     transition: none;
-    transform: translate(-50%, -50%);
-  }
-
-  #gameTable .seat-turn-indicator,
-  #gTable .seat-turn-indicator {
-    animation: none;
   }
 }
