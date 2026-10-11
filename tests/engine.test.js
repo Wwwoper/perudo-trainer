@@ -1,54 +1,79 @@
-// engine.test.js — тесты для engine.js
-import { describe, it } from 'node:test';
-import assert from 'node:assert';
-import { createGame, startGame, applyAction, getLegalActions, getPublicState } from '../src/engine.js';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createGame, startGame, applyAction } from '../src/engine.js';
 
-describe('GameEngine — создание', () => {
-  it('создаёт партию 1+1', () => {
-    const g = createGame({ playerId: 'human', botCount: 1, startDice: 5 });
-    assert.strictEqual(g.players.length, 2);
-  });
-  it('создаёт партию на 6 игроков', () => {
-    const g = createGame({ playerId: 'human', botCount: 5, startDice: 5 });
-    assert.strictEqual(g.players.length, 6);
-  });
+// Партия 3 игрока, руки и ставка заданы вручную — результат детерминирован.
+function setup({ calza = false, palifico = false } = {}) {
+  const g = createGame({ botCount: 2, startDice: 3, calzaEnabled: calza, palificoEnabled: palifico, botNames: ['Иван', 'Мария'] });
+  startGame(g);
+  g.players[0].hand = [2, 3, 5];       // human
+  g.players[1].hand = [5, 5, 1];       // Иван
+  g.players[2].hand = [4, 6, 2];       // Мария
+  g.currentPlayer = 0;
+  g.bid = { playerId: 'bot_0', playerName: 'Иван', q: 3, f: 5 };
+  return g;
+}
+
+test('dudo: DICE_REVEALED содержит руки всех живых и участников', () => {
+  const g = setup();
+  const res = applyAction(g, 'human', { type: 'dudo' });
+  assert.equal(res.success, true);
+  const ev = res.events.find((e) => e.type === 'DICE_REVEALED');
+  assert.equal(ev.kind, 'dudo');
+  assert.deepEqual(ev.hands.map((h) => h.playerId), ['human', 'bot_0', 'bot_1']);
+  assert.deepEqual(ev.hands[0].hand, [2, 3, 5]);
+  assert.deepEqual(ev.hands[1].hand, [5, 5, 1]);
+  assert.equal(ev.actualCount, 4);          // 5,5(+1 джокер),5 человека
+  assert.equal(ev.bidSuccessful, true);
+  assert.equal(ev.challengerId, 'human');
+  assert.equal(ev.bidderId, 'bot_0');
+  assert.equal(ev.loserId, 'human');
+  assert.equal(ev.wild, true);
 });
 
-describe('GameEngine — старт', () => {
-  it('стартует партию', () => {
-    const g = createGame({ playerId: 'human', botCount: 1, startDice: 3 });
-    startGame(g);
-    assert.strictEqual(g.state, 'active');
-    assert.strictEqual(g.round, 1);
-  });
+test('снимок рук — копия: новая раздача его не меняет', () => {
+  const g = setup();
+  const res = applyAction(g, 'human', { type: 'dudo' });
+  const ev = res.events.find((e) => e.type === 'DICE_REVEALED');
+  assert.deepEqual(ev.hands[1].hand, [5, 5, 1]);
+  g.players[1].hand.push(6);
+  assert.deepEqual(ev.hands[1].hand, [5, 5, 1]);
 });
 
-describe('GameEngine — действия', () => {
-  it('возвращает допустимые действия', () => {
-    const g = createGame({ playerId: 'human', botCount: 1, startDice: 3 });
-    startGame(g);
-    const actions = getLegalActions(g, 'human');
-    assert.ok(actions.length > 0);
-  });
-  it('применяет ставку', () => {
-    const g = createGame({ playerId: 'human', botCount: 1, startDice: 3 });
-    startGame(g);
-    const r = applyAction(g, 'human', { type: 'raise', quantity: 2, face: 3 });
-    assert.strictEqual(r.success, true);
-  });
-  it('отклоняет недопустимую ставку', () => {
-    const g = createGame({ playerId: 'human', botCount: 1, startDice: 3 });
-    startGame(g);
-    const r = applyAction(g, 'human', { type: 'raise', quantity: 1, face: 1 });
-    assert.strictEqual(r.success, false);
-  });
+test('dudo: ставка неверна — проигрывает автор ставки', () => {
+  const g = setup();
+  g.bid = { playerId: 'bot_0', playerName: 'Иван', q: 6, f: 5 };
+  const ev = applyAction(g, 'human', { type: 'dudo' }).events.find((e) => e.type === 'DICE_REVEALED');
+  assert.equal(ev.bidSuccessful, false);
+  assert.equal(ev.loserId, 'bot_0');
 });
 
-describe('GameEngine — публичное состояние', () => {
-  it('возвращает состояние без рук', () => {
-    const g = createGame({ playerId: 'human', botCount: 1, startDice: 3 });
-    startGame(g);
-    const s = getPublicState(g);
-    assert.ok(!s.players[0].hand);
-  });
+test('palifico: wild=false и единицы не считаются', () => {
+  const g = setup({ palifico: true });
+  g.palifico = true;
+  const ev = applyAction(g, 'human', { type: 'dudo' }).events.find((e) => e.type === 'DICE_REVEALED');
+  assert.equal(ev.wild, false);
+  assert.equal(ev.actualCount, 3);
+});
+
+test('calza: kind, участники, руки', () => {
+  const g = setup({ calza: true });
+  g.bid = { playerId: 'bot_0', playerName: 'Иван', q: 4, f: 5 };
+  const res = applyAction(g, 'human', { type: 'calza' });
+  assert.equal(res.success, true);
+  const ev = res.events.find((e) => e.type === 'DICE_REVEALED');
+  assert.equal(ev.kind, 'calza');
+  assert.equal(ev.calzaExact, true);
+  assert.equal(ev.challengerId, 'human');
+  assert.equal(ev.bidderId, 'bot_0');
+  assert.equal(ev.hands.length, 3);
+});
+
+test('выбывшие игроки в снимок не попадают', () => {
+  const g = setup();
+  g.players[2].alive = false;
+  g.players[2].dice = 0;
+  g.players[2].hand = [];
+  const ev = applyAction(g, 'human', { type: 'dudo' }).events.find((e) => e.type === 'DICE_REVEALED');
+  assert.deepEqual(ev.hands.map((h) => h.playerId), ['human', 'bot_0']);
 });

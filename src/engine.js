@@ -308,6 +308,14 @@ export function applyAction(game, playerId, action) {
   return { success: true, events: newEvents };
 }
 
+// Снимок рук всех живых игроков на момент вскрытия. Следом startRound() заново
+// раздаёт кубики, поэтому интерфейс сможет показать вскрытие только по этому снимку.
+function handsSnapshot(game) {
+  return game.players
+    .filter((p) => p.alive)
+    .map((p) => ({ playerId: p.id, hand: p.hand.slice() }));
+}
+
 function resolveDudo(game) {
   const bid = game.bid;
   const bidPlayerIndex = game.players.findIndex((p) => p.id === bid.playerId);
@@ -328,9 +336,15 @@ function resolveDudo(game) {
 
   emitEvent(game, {
     type: 'DICE_REVEALED',
+    kind: 'dudo',
     bid,
     actualCount: count,
     bidSuccessful,
+    wild,
+    challengerId: game.players[challengerIndex].id,
+    bidderId: bid.playerId,
+    loserId: game.players[loserIndex].id,
+    hands: handsSnapshot(game),
   });
 
   game.players[loserIndex].dice--;
@@ -373,9 +387,14 @@ function resolveCalza(game, challengerIndex) {
   const exact = count === bid.q;
   emitEvent(game, {
     type: 'DICE_REVEALED',
+    kind: 'calza',
     bid,
     actualCount: count,
     calzaExact: exact,
+    wild,
+    challengerId: game.players[challengerIndex].id,
+    bidderId: bid.playerId,
+    hands: handsSnapshot(game),
   });
 
   const challenger = game.players[challengerIndex];

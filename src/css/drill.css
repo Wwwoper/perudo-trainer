@@ -1,0 +1,241 @@
+/* ============ Упражнения: мобильный лэйаут ============ */
+
+.drill-top {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.drill-tabs {
+  display: flex;
+  gap: 3px;
+  background: #1a1f28;
+  border-radius: 8px;
+  padding: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.drill-tab {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--mut);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: inherit;
+}
+
+.drill-tab:hover {
+  color: var(--fg);
+}
+
+.drill-tab.on {
+  background: var(--acc);
+  color: #111;
+}
+
+.drill-new {
+  padding: 8px 14px;
+  font-weight: 700;
+  background: var(--acc);
+  color: #111;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.drill-board {
+  padding: 14px;
+}
+
+.drill-question {
+  padding: 10px 12px;
+  background: #1a1f28;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.drill-question .die {
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  margin: 2px;
+}
+
+.drill-label {
+  display: block;
+  color: var(--mut);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin: 12px 0 4px;
+}
+
+.drill-input {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 10px;
+  background: #1a1f28;
+  border: 1px solid #2f3543;
+  color: var(--fg);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.drill-input:focus {
+  outline: none;
+  border-color: var(--acc);
+}
+
+.drill-check {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 10px;
+  background: var(--acc);
+  color: #111;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.drill-check:hover {
+  filter: brightness(1.1);
+}
+
+/* Свёрнутая формула */
+.drill-hint {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.drill-hint>summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 8px 0;
+  color: var(--acc);
+  font-weight: 600;
+  user-select: none;
+}
+
+.drill-hint>summary::-webkit-details-marker {
+  display: none;
+}
+
+.drill-hint>summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform .15s ease;
+}
+
+.drill-hint[open]>summary::before {
+  transform: rotate(90deg);
+}
+
+.drill-hint-body {
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: #1a1f28;
+  border-radius: 8px;
+  line-height: 1.55;
+  color: #c8d0e0;
+}
+
+.drill-hint-body p {
+  margin: 6px 0;
+}
+
+.drill-hint-body b {
+  color: var(--fg);
+}
+
+/* Фидбек — скрыт, пока пуст */
+.drill-feedback:empty {
+  display: none;
+}
+
+.drill-feedback {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #1a1f28;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.drill-feedback p {
+  margin: 4px 0;
+}
+
+.drill-feedback .text-ok,
+.drill-feedback .text-bad {
+  font-weight: 600;
+}
+
+/* ===== Мобильная оптимизация ===== */
+@media (max-width: 720px) {
+  #drill .card {
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+
+  .drill-board {
+    padding: 12px;
+  }
+
+  .drill-input {
+    padding: 14px;
+    font-size: 20px;
+  }
+
+  .drill-check {
+    padding: 16px;
+    font-size: 17px;
+  }
+
+  .drill-tab {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .drill-new {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .drill-question {
+    font-size: 13px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  .drill-question .die {
+    width: 24px;
+    height: 24px;
+  }
+
+  .drill-label {
+    margin: 10px 0 3px;
+  }
+}

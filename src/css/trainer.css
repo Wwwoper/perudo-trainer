@@ -1,0 +1,248 @@
+/* ============ Тренажёр: мобильный лэйаут ============ */
+
+/* Верхняя панель — компактная строка */
+.trainer-top {
+  padding: 8px 12px;
+}
+
+.trainer-top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trainer-new {
+  padding: 8px 14px;
+  font-weight: 700;
+  background: var(--acc);
+  color: #111;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.trainer-settings-more {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--mut);
+}
+
+.trainer-settings-more>summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #262b37;
+  color: var(--mut);
+}
+
+.trainer-settings-more>summary::-webkit-details-marker {
+  display: none;
+}
+
+.trainer-settings-more[open]>summary {
+  color: var(--fg);
+}
+
+.trainer-settings-body {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #2f3543;
+  width: 100%;
+}
+
+/* Теги с контекстом */
+.trainer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.trainer-chip {
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: #2a2f3b;
+  color: var(--mut);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.trainer-chip b {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.trainer-chip.trainer-wild {
+  background: #3a3020;
+  color: #e0b060;
+}
+
+.trainer-chip.trainer-repeat {
+  background: #3a2530;
+  color: #f080a0;
+}
+
+/* Рука */
+.trainer-hand-label {
+  color: var(--mut);
+  font-size: 12px;
+  margin-bottom: 4px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.trainer-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.trainer-hand .die {
+  width: 46px;
+  height: 46px;
+  padding: 6px;
+  margin: 0;
+}
+
+/* Ставка соперника */
+.trainer-bid-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #1a1f28;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+/* Кнопки ответа */
+.trainer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trainer-actions #tDudo {
+  padding: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.trainer-raise {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.trainer-raise button {
+  padding: 10px 18px;
+  font-size: 15px;
+}
+
+/* Фидбек — компактно и только когда есть */
+.trainer-feedback:empty {
+  display: none;
+}
+
+.trainer-feedback {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #1a1f28;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.trainer-feedback .big {
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.trainer-feedback p {
+  margin: 4px 0;
+}
+
+/* Статистика — свёрнута */
+.trainer-stats-card>summary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+  padding: 4px 0;
+  color: var(--fg);
+}
+
+.trainer-stats-card>summary::-webkit-details-marker {
+  display: none;
+}
+
+.trainer-stats-card>summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform .15s ease;
+}
+
+.trainer-stats-card[open]>summary::before {
+  transform: rotate(90deg);
+}
+
+.trainer-stats-card[open]>summary {
+  margin-bottom: 8px;
+}
+
+/* ===== Мобильная оптимизация ===== */
+@media (max-width: 720px) {
+  main {
+    padding: 8px;
+  }
+
+  #train .card {
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+
+  /* Ещё компактнее верх */
+  .trainer-top {
+    padding: 8px 10px;
+  }
+
+  .trainer-new {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  /* Кубики в руке — в одну строку, покрупнее */
+  .trainer-hand .die {
+    width: 44px;
+    height: 44px;
+    padding: 5px;
+  }
+
+  /* Кнопки — крупные и палец-френдли */
+  .trainer-actions #tDudo {
+    padding: 16px;
+    font-size: 18px;
+  }
+
+  .trainer-raise button {
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+
+  /* Фидбек — минимальные отступы */
+  .trainer-feedback {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .trainer-feedback .big {
+    font-size: 14px;
+  }
+}

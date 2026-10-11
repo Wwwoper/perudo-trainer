@@ -11,7 +11,9 @@ import {
   migrateIfNeeded, get, set,
 } from './storage.js';
 import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
-import { renderTable, renderDie, renderHand, renderBid } from './table.js';
+import { renderTable, renderDie, renderHand, renderBid, escapeHtml } from './table.js';
+import { buildGameResult, resultHeadline, pluralDice } from './result.js';
+import { buildReveal, dieMatches } from './reveal.js';
 
 // ================= Общие утилиты =================
 
@@ -87,10 +89,66 @@ let assistConfig = createAssistConfig('training');
 // ================= Вкладки =================
 
 function setupTabs() {
+  // Края ленты гаснут только там, где есть куда прокручивать
+  const nav = $('.app-header nav');
+  const updateFade = () => {
+    if (!nav) return;
+    const max = nav.scrollWidth - nav.clientWidth;
+    nav.style.setProperty('--fade-l', nav.scrollLeft > 2 ? '24px' : '0px');
+    nav.style.setProperty('--fade-r', nav.scrollLeft < max - 2 ? '24px' : '0px');
+  };
+  nav?.addEventListener('scroll', updateFade, { passive: true });
+  window.addEventListener('resize', updateFade);
+  document.fonts?.ready.then(updateFade);
+  updateFade();
+
+  // Компактное меню разделов: в партии на телефоне шапка прячется, лента открывается кнопкой ☰ в HUD.
+  const header = $('.app-header');
+  const toggle = $('#navToggle');
+  const scrim = $('#navScrim');
+  const isOpen = () => !!header?.classList.contains('nav-open');
+  const setMenu = (open, { focus = false } = {}) => {
+    if (!header || !toggle) return;
+    header.classList.toggle('nav-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    if (scrim) scrim.hidden = !open;
+    if (open) (nav?.querySelector('.tab-btn.on') || nav?.querySelector('.tab-btn'))?.focus();
+    else if (focus) toggle.focus();
+  };
+  toggle?.addEventListener('click', () => setMenu(!isOpen()));
+  scrim?.addEventListener('click', () => setMenu(false, { focus: true }));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) setMenu(false, { focus: true });
+  });
+  nav?.addEventListener('keydown', (e) => {
+    if (!isOpen() || !['ArrowDown', 'ArrowUp'].includes(e.key)) return;
+    const items = [...nav.querySelectorAll('.tab-btn')];
+    const i = items.indexOf(document.activeElement);
+    if (i < 0) return;
+    e.preventDefault();
+    items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+  });
+  // Телефон повернули или окно растянули — меню в прежнем виде не нужно.
+  window.matchMedia?.('(min-width: 1100px)').addEventListener?.('change', () => setMenu(false));
+  document.body.dataset.tab = $('.tab-btn.on')?.dataset.t || 'calc';
+
   $$('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      $$('.tab-btn').forEach((b) => b.classList.toggle('on', b === btn));
+      $$('.tab-btn').forEach((b) => {
+        b.classList.toggle('on', b === btn);
+        if (b === btn) b.setAttribute('aria-current', 'page');
+        else b.removeAttribute('aria-current');
+      });
       const target = btn.dataset.t;
+      document.body.dataset.tab = target;
+      const wasOpen = isOpen();
+      setMenu(false);
+      // Лента могла быть скрыта (меню ☰): прокручиваем к вкладке и пересчитываем края, когда она уже на экране
+      requestAnimationFrame(() => {
+        btn.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+        updateFade();
+      });
+      if (wasOpen) (target === 'game' ? toggle : btn)?.focus();
       TABS.forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('hide', id !== target);
@@ -151,7 +209,7 @@ function setupCalculator() {
     if ($('#cRes')) {
       const verdict = p >= t ? 'ВЕРЮ / можно повышать осторожно' : 'НЕ ВЕРЮ';
       $('#cRes').innerHTML =
-        `${renderBid(q, f)} <b>${pct(p)}</b> → <span class="${p >= t ? 'g' : 'r'}">${verdict}</span>`;
+        `${renderBid(q, f)} <b>${pct(p)}</b> → <span class="${p >= t ? 'text-ok' : 'text-bad'}">${verdict}</span>`;
     }
 
     const unk = n - hand.length;
@@ -161,8 +219,8 @@ function setupCalculator() {
 
     if ($('#cRead')) {
       $('#cRead').innerHTML = kF > 0
-        ? `С учётом чтения ставок (${kF} куб. у ставивших на эту цифру, доверие ${tr.toFixed(2)}): <b class="${pr >= t ? 'g' : 'r'}">${pct(pr)}</b>`
-        : '<span class="m">Чтобы учесть чужие ставки, укажите, сколько кубиков у игроков, поставивших на эту цифру.</span>';
+        ? `С учётом чтения ставок (${kF} куб. у ставивших на эту цифру, доверие ${tr.toFixed(2)}): <b class="${pr >= t ? 'text-ok' : 'text-bad'}">${pct(pr)}</b>`
+        : '<span class="muted">Чтобы учесть чужие ставки, укажите, сколько кубиков у игроков, поставивших на эту цифру.</span>';
     }
 
     if ($('#cTbl')) {
@@ -243,16 +301,30 @@ function setupTrainer() {
     if ($('#tDesc')) $('#tDesc').textContent = m.d;
     if ($('#tInfo')) {
       $('#tInfo').innerHTML =
-        `${cur.item ? '🔁 <b>Повтор вашей прошлой ошибки.</b> ' : ''}` +
-        `Всего кубиков: ${cur.n}, у вас ${cur.h.length}, неизвестных: ${cur.n - cur.h.length}. ` +
-        `Единицы ${m.wild ? '— джокеры' : 'не джокеры'}.`;
+        (cur.item ? `<span class="trainer-chip trainer-repeat">🔁 повтор</span>` : '') +
+        `<span class="trainer-chip">🎲 всего <b>${cur.n}</b></span>` +
+        `<span class="trainer-chip">👤 у вас <b>${cur.h.length}</b></span>` +
+        `<span class="trainer-chip">❓ чужих <b>${cur.n - cur.h.length}</b></span>` +
+        `<span class="trainer-chip ${m.wild ? 'trainer-wild' : ''}">` +
+        (m.wild ? '✨ единицы — джокеры' : '⚪ единицы обычные') +
+        `</span>`;
     }
     if ($('#tHand')) $('#tHand').innerHTML = renderHand(cur.h, m.wild);
     if ($('#tBid')) $('#tBid').innerHTML = renderBid(cur.q, cur.f);
     if ($('#tQ')) $('#tQ').value = cur.q;
     if ($('#tF')) $('#tF').value = Math.min(6, cur.f + 1);
     if ($('#tFb')) $('#tFb').innerHTML = '';
+    updateSettingsHint();
     updateStat();
+  }
+  function updateSettingsHint() {
+    const el = $('#tSettingsHint');
+    if (!el) return;
+    const mk = $('#tMode').value;
+    const m = MODES[mk];
+    const thr = (+$('#tT').value || 0.5).toFixed(2);
+    const shortName = m.name.split('(')[0].trim();
+    el.textContent = `${shortName} · порог ${thr}`;
   }
 
   function bestRaiseThreshold() {
@@ -266,8 +338,8 @@ function setupTrainer() {
   function hint() {
     const b = bestRaiseThreshold();
     return b
-      ? `<p class="m">Самая сильная безопасная ставка: ${renderBid(b.q, b.f)} (${pct(b.p)}).</p>`
-      : '<p class="m">Безопасных повышений выше порога нет — «Не верю» часто лучший выбор.</p>';
+      ? `<p class="muted">Самая сильная безопасная ставка: ${renderBid(b.q, b.f)} (${pct(b.p)}).</p>`
+      : '<p class="muted">Безопасных повышений выше порога нет — «Не верю» часто лучший выбор.</p>';
   }
 
   function answer(good, html) {
@@ -294,7 +366,7 @@ function setupTrainer() {
     persist();
     if ($('#tFb')) {
       $('#tFb').innerHTML =
-        `<div class="big ${good ? 'g' : 'r'}">${good ? '✓ Хорошее решение' : '✗ Сомнительное решение'}</div>${html}`;
+        `<div class="big ${good ? 'text-ok' : 'text-bad'}">${good ? '✓ Хорошее решение' : '✗ Сомнительное решение'}</div>${html}`;
     }
   }
 
@@ -332,7 +404,17 @@ function setupTrainer() {
   };
 
   if ($('#tNew')) $('#tNew').onclick = newSituation;
-  if ($('#tMode')) $('#tMode').onchange = newSituation;
+
+  if ($('#tMode')) {
+    $('#tMode').onchange = () => {
+      updateSettingsHint();   // ← сначала обновляем подпись
+      newSituation();          // ← потом генерируем новую ситуацию
+    };
+  }
+
+  if ($('#tT')) {
+    $('#tT').addEventListener('input', updateSettingsHint);
+  }
   if ($('#tReset')) $('#tReset').onclick = () => {
     S.n = 0; S.good = 0; S.byMode = {};
     S.drill = { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };
@@ -415,9 +497,9 @@ function setupDrill() {
         : `1/3 (грань ${f} + 1-джокер)`;
 
       $('#dAfb').innerHTML =
-        `<p class="${ok1 ? 'g' : 'r'}">Ожидание: ${isNaN(a1) ? '—' : a1} → точное ${exp.toFixed(1)} = ` +
+        `<p class="${ok1 ? 'text-ok' : 'text-bad'}">Ожидание: ${isNaN(a1) ? '—' : a1} → точное ${exp.toFixed(1)} = ` +
         `${ownCnt} (ваши, с джокерами) + ${unk} × ${f === 1 ? '1/6' : '1/3'}.</p>` +
-        `<p class="${ok2 ? 'g' : 'r'}">Безопасная ставка (шанс ≥ 50%): ваш ответ ${isNaN(a2) ? '—' : a2}, точно ${safe} ` +
+        `<p class="${ok2 ? 'text-ok' : 'text-bad'}">Безопасная ставка (шанс ≥ 50%): ваш ответ ${isNaN(a2) ? '—' : a2}, точно ${safe} ` +
         `(${pct(pSafe)}). Допуск ±1 — это тренировка прикидки в уме.</p>` +
 
         `<details class="calc-hint">` +
@@ -443,7 +525,7 @@ function setupDrill() {
         `• q = ${safe + 1}: P ≈ <b>${pct(pSafe1)}</b> &lt; 50% ✘<br>` +
         `Значит, безопасная ставка — <b>${safe}</b>.</p>` +
 
-        `<p class="m">Замечание: E[X] и «безопасная ставка» — разные величины. ` +
+        `<p class="muted">Замечание: E[X] и «безопасная ставка» — разные величины. ` +
         `E[X] — среднее, а 50%-й порог лежит <i>ниже</i> среднего, потому что биномиальное ` +
         `распределение скошено вправо. Отсюда правило: безопасная ставка обычно на 1–2 меньше E[X].</p>` +
 
@@ -452,7 +534,27 @@ function setupDrill() {
     }
   };
 
-  if ($('#dANew')) $('#dANew').onclick = newA;
+  /* ============================================================
+   Табы A/B — переключение между панелями без скролла.
+   Раньше это делали две кнопки #dANew и #dBNew (каждая со своей
+   панелью). Теперь одна кнопка #dNew + переключатель.
+   ============================================================ */
+  let activeDrill = 'A';
+
+  document.querySelectorAll('.drill-tab').forEach((btn) => {
+    btn.onclick = () => {
+      activeDrill = btn.dataset.drill;   // 'A' или 'B'
+      document.querySelectorAll('.drill-tab').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      const panelA = $('#dPanelA');
+      const panelB = $('#dPanelB');
+      if (panelA) panelA.classList.toggle('hide', activeDrill !== 'A');
+      if (panelB) panelB.classList.toggle('hide', activeDrill !== 'B');
+    };
+  });
 
   const checkB = $('#dBCheck');
   if (checkB) checkB.onclick = () => {
@@ -465,7 +567,7 @@ function setupDrill() {
 
     if ($('#dBfb')) {
       $('#dBfb').innerHTML =
-        `<p class="${ok ? 'g' : 'r'}">${ok ? 'Верно' : 'Неверно'}: ` +
+        `<p class="${ok ? 'text-ok' : 'text-bad'}">${ok ? 'Верно' : 'Неверно'}: ` +
         (d.down
           ? `с обычной цифры на единицы — половина ставки с округлением вверх: ⌈${d.q}/2⌉ = ${exp}`
           : `с единиц на обычную цифру — больше удвоенного: ${d.q}×2+1 = ${exp}`) +
@@ -492,10 +594,113 @@ function setupDrill() {
     }
   };
 
-  if ($('#dBNew')) $('#dBNew').onclick = newB;
+  // Одна кнопка «Новое» — работает для активного таба
+  const newBtn = $('#dNew');
+  if (newBtn) {
+    newBtn.onclick = () => {
+      if (activeDrill === 'A') newA();
+      else newB();
+    };
+  }
 
   newA();
   newB();
+}
+
+// ================= Боковая панель партии =================
+// Вкладки (Расчёт / Журнал / Разбор / Настройки). На ноутбуке — колонка справа,
+// на телефоне и планшете — нижняя шторка, которую открывают кнопки в HUD.
+
+function setupSidePanel() {
+  const side = $('#gSide');
+  if (!side) return;
+
+  const backdrop = $('#gBackdrop');
+  const body = side.querySelector('.side-body');
+  const tabs = [...side.querySelectorAll('[role="tab"]')];
+  const wide = window.matchMedia('(min-width: 1101px)');
+  const panelOf = (tab) => document.getElementById(tab.getAttribute('aria-controls'));
+  let opener = null;
+
+  function select(tab) {
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      panelOf(t).hidden = !on;
+    });
+    if (tab.id === 'tabLog' || tab.id === 'tabReview') body.scrollTop = body.scrollHeight;
+  }
+
+  const selected = () => tabs.find((t) => t.getAttribute('aria-selected') === 'true');
+
+  function open(tabId, from) {
+    if (tabId) select(document.getElementById(tabId));
+    opener = from || null;
+    side.classList.add('is-open');
+    side.setAttribute('role', 'dialog');
+    side.setAttribute('aria-modal', 'true');
+    if (backdrop) backdrop.hidden = false;
+    selected()?.focus();
+  }
+
+  function close() {
+    if (!side.classList.contains('is-open')) return;
+    side.classList.remove('is-open');
+    side.removeAttribute('role');
+    side.removeAttribute('aria-modal');
+    if (backdrop) backdrop.hidden = true;
+    opener?.focus?.();
+    opener = null;
+  }
+
+  tabs.forEach((t) => t.addEventListener('click', () => select(t)));
+
+  // Стрелки ←/→ между вкладками
+  side.querySelector('[role="tablist"]').addEventListener('keydown', (e) => {
+    const i = tabs.indexOf(document.activeElement);
+    if (i < 0 || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    e.preventDefault();
+    const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+    next.focus();
+    select(next);
+  });
+
+  // Пока шторка открыта, Tab ходит только внутри неё
+  side.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab' || !side.classList.contains('is-open')) return;
+    const items = [...side.querySelectorAll('button, input, select, a[href]')]
+      .filter((el) => !el.disabled && el.tabIndex >= 0 && el.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  $$('[data-open-tab]').forEach((b) => b.addEventListener('click', () => {
+    const tab = document.getElementById(b.dataset.openTab);
+    if (wide.matches) select(tab);        // панель уже на экране
+    else open(b.dataset.openTab, b);
+  }));
+
+  backdrop?.addEventListener('click', close);
+  side.querySelector('.sheet-close')?.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  wide.addEventListener?.('change', (e) => { if (e.matches) close(); });
+
+  sideApi.close = close;
+  // Режим «Игра» — без подсказок, поэтому по умолчанию журнал; иначе расчёт.
+  sideApi.pick = () => select(document.getElementById(
+    assistConfig.showFutureBidOdds ? 'tabCalc' : 'tabLog'));
+  sideApi.select = (tabId) => {
+    const tab = document.getElementById(tabId);
+    if (tab) select(tab);
+  };
+  sideApi.keepAtEnd = (panelId) => {
+    const panel = document.getElementById(panelId);
+    if (panel && !panel.hidden) body.scrollTop = body.scrollHeight;
+  };
 }
 
 // ================= Партия (движок + стол) =================
@@ -505,11 +710,17 @@ let gameLogEntries = [];
 let reviewEntries = [];
 let selectedFace = 2;
 let botTimer = null;
-let lastRenderedRound = 0;
+let lastBidKey = '';
+
+// Заполняется в setupSidePanel(): закрыть шторку, выбрать вкладку по режиму помощи,
+// удержать журнал внизу. До инициализации — безопасные заглушки.
+const sideApi = { close() {}, pick() {}, select() {}, keepAtEnd() {} };
 let lastLoggedRound = 0;
 
 function setupGame() {
-  if ($('#gNew')) $('#gNew').onclick = startNewGame;
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="new-game"]')) startNewGame();
+  });
   if ($('#gDudo')) $('#gDudo').onclick = onPlayerDudo;
   if ($('#gCalza')) $('#gCalza').onclick = onPlayerCalza;
   if ($('#gRaise')) $('#gRaise').onclick = onPlayerRaise;
@@ -523,7 +734,12 @@ function setupGame() {
     renderPick();
   };
   if ($('#gQ')) $('#gQ').oninput = () => { renderPick(); renderPractical(); };
+  // На телефоне количество меняется кнопками «−/+»: системная клавиатура
+  // закрыла бы панель действий.
+  if ($('#gQ') && window.matchMedia?.('(pointer: coarse)').matches) $('#gQ').readOnly = true;
 
+  setupResultDialog();
+  setupReveal();
   startNewGame();
 }
 
@@ -544,6 +760,8 @@ function startNewGame() {
   const botSpeed = $('#gSpeed')?.value || 'normal';
 
   assistConfig = createAssistConfig(assistMode);
+  sideApi.close();
+  sideApi.pick();
 
   const characters = [];
   const stylesOrder = ['careful', 'bluffer', 'smart'];
@@ -571,7 +789,9 @@ function startNewGame() {
 
   gameLogEntries = [];
   reviewEntries = [];
-  lastRenderedRound = 0;
+  lastBidKey = '';
+  hideRevealUi();
+  hideResultUi();
   lastLoggedRound = 0;
 
   startGame(game);
@@ -592,12 +812,14 @@ function addGameLog(type, html) {
   if (el) {
     el.innerHTML = gameLogEntries
       .map((e) => {
-        const cls = e.type === 'dudo' ? 'dudo' : e.type === 'rh' ? 'rh' : '';
-        return `<div class="lg ${cls}">${e.html}</div>`;
+        const cls = e.type === 'dudo' ? 'dudo' : e.type === 'round' ? 'round-head' : '';
+        return `<div class="log-row ${cls}">${e.html}</div>`;
       })
       .join('');
-    el.scrollTop = el.scrollHeight;
+    sideApi.keepAtEnd('panLog');
   }
+  const feed = $('#gFeed');
+  if (feed) feed.innerHTML = html;
 }
 
 function addReview(kind, prob, text) {
@@ -611,25 +833,27 @@ function renderReview() {
   const el = $('#gReview');
   if (!el) return;
   if (!reviewEntries.length) {
-    el.innerHTML = '<span class="m">Здесь появится оценка ваших ходов.</span>';
+    el.innerHTML = '<span class="muted">Здесь появится оценка ваших ходов.</span>';
     return;
   }
   el.innerHTML = reviewEntries.map((e) => `
-    <div class="rv ${e.v.code}">
-      <span class="bd">${e.v.code === 'good' ? '✓' : e.v.code === 'meh' ? '~' : '✗'}</span>
+    <div class="review-row ${e.v.code}">
+      <span class="review-badge">${e.v.code === 'good' ? '✓' : e.v.code === 'meh' ? '~' : '✗'}</span>
       <div>
         <b>Раунд ${e.round}.</b> ${e.text}
-        ${e.outcome ? `<div class="m">${e.outcome}</div>` : ''}
+        ${e.outcome ? `<div class="muted">${e.outcome}</div>` : ''}
       </div>
     </div>
   `).join('');
-  el.scrollTop = el.scrollHeight;
+  sideApi.keepAtEnd('panReview');
 }
 
 // ----- Рендер -----
 
 function gameViewForRender() {
   return {
+    state: game.state,
+    winner: game.winner,
     round: game.round,
     palifico: game.palifico,
     bid: game.bid,
@@ -722,14 +946,13 @@ function renderPractical() {
   el.innerHTML = `
     <div class="ph-title">🔢 Безопасная ставка — быстрый расчёт для грани ${face}${wildNote}</div>
     <div class="ph-grid">
-      <span>Всего кубиков на столе</span><span>${total}</span>
-      <span>Ваших в руке</span><span>${me.hand.length}</span>
-      <span>Неизвестных кубиков</span><span>${unknown}</span>
-      <span class="ph-divider"></span>
-      <span>Своих «${face}» + джокеров</span><span>${own}</span>
-      <span>Неизвестные / ${denom}</span><span>${unknown} / ${denom} ≈ ${third.toFixed(1)}</span>
-      <div class="ph-total">Безопасная ставка (грань ${face}) ≈ <b>${safe}</b></div>
+      <div class="ph-row"><span>Всего кубиков на столе</span><span>${total}</span></div>
+      <div class="ph-row"><span>Ваших в руке</span><span>${me.hand.length}</span></div>
+      <div class="ph-row"><span>Неизвестных кубиков</span><span>${unknown}</span></div>
+      <div class="ph-row ph-row-sep"><span>Своих «${face}» + джокеров</span><span>${own}</span></div>
+      <div class="ph-row"><span>Неизвестные / ${denom}</span><span>${unknown} / ${denom} ≈ ${third.toFixed(1)}</span></div>
     </div>
+    <div class="ph-total">Безопасная ставка (грань ${face}) ≈ <b>${safe}</b></div>
     <div class="ph-note">
       ${own} + ${third.toFixed(1)} = ${E.toFixed(1)} → округляем до ${safe}.
       Шанс, что ${safe}×${face} верна: <b>${pct(pSafe)}</b>.
@@ -748,7 +971,7 @@ function renderGame() {
     if (game.round > 1) {
       const totalNow = totalDice();
       const starterName = game.players[game.currentPlayer]?.name || '';
-      addGameLog('rh',
+      addGameLog('round',
         `— Раунд ${game.round} · кубиков на столе: ${totalNow} · начинает: ${starterName}` +
         (game.palifico ? ' · ПАЛИФИКО' : '') + ' —');
     }
@@ -756,7 +979,7 @@ function renderGame() {
 
   const tableEl = $('#gameTable');
   if (tableEl) {
-    tableEl.innerHTML = renderTable(gameViewForRender(), game.currentPlayer, assistConfig);
+    tableEl.innerHTML = renderTable(gameViewForRender(), game.currentPlayer);
   }
 
   const me = game.players[0];
@@ -766,7 +989,8 @@ function renderGame() {
   if ($('#gStatus')) {
     let txt;
     if (game.state === 'finished') {
-      txt = me.alive && aliveCnt === 1 ? '🏆 Вы выиграли партию!' : '🏁 Партия завершена.';
+      const h = resultHeadline(buildGameResult(game));
+      txt = `${h.icon} ${escapeHtml(h.title)}`;
     } else if (!me.alive) {
       txt = 'Вы выбыли, партия идёт без вас…';
     } else if (game.currentPlayer === 0) {
@@ -779,27 +1003,18 @@ function renderGame() {
 
   if ($('#gMeta')) {
     $('#gMeta').innerHTML =
-      `Раунд ${game.round}. Всего кубиков на столе: ${total}.` +
-      (game.palifico ? ' <b class="warn">ПАЛИФИКО: единицы не джокеры, цифра зафиксирована.</b>' : '');
+      `Раунд ${game.round} · 🎲 ${total}` +
+      (game.palifico ? ' · <b class="warn">ПАЛИФИКО</b>' : '');
   }
 
   if ($('#gHand')) $('#gHand').innerHTML = renderHand(me.hand, !game.palifico);
 
-  if ($('#gBid')) {
+  const oddsEl = $('#gDudoOdds');
+  if (oddsEl) {
     const b = game.bid;
-    if (b) {
-      const q = b.q, f = b.f;
-      let extra = '';
-      if (assistConfig.showCurrentBidOdds && b.playerId !== 'human' && me.alive) {
-        const p = P.probBid(q, f, total, me.hand, !game.palifico);
-        extra = ` <span class="m">шанс:</span> <b class="${p >= 0.5 ? 'g' : 'r'}">${pct(p)}</b>`;
-      }
-      $('#gBid').innerHTML =
-        `${renderBid(q, f, 'xl')} <span class="m">— ${b.playerName}</span>${extra}`;
-    } else {
-      $('#gBid').innerHTML =
-        `<span class="m">ставок ещё нет — начните с любой${game.palifico ? '' : ' (кроме единиц)'}</span>`;
-    }
+    oddsEl.textContent = (assistConfig.showCurrentBidOdds && b && b.playerId !== 'human' && me.alive)
+      ? `верна на ${pct(P.probBid(b.q, b.f, total, me.hand, !game.palifico))}`
+      : '';
   }
 
   const dis = game.state !== 'active' || game.currentPlayer !== 0 || !me.alive;
@@ -819,25 +1034,39 @@ function renderGame() {
     const el = $(s);
     if (el) el.disabled = dis;
   });
+  $('#gDock')?.classList.toggle('is-waiting', dis);
+  $('.game-main')?.classList.toggle('is-finished', game.state === 'finished');
+
+  // Новый раунд: сначала выбираем минимальную легальную ставку,
+  // и только затем строим кнопки граней по актуальному selectedFace.
+  const bidKey = `${game.round}:${game.bid ? `${game.bid.q}x${game.bid.f}` : '-'}`;
+  if (bidKey !== lastBidKey) {
+    lastBidKey = bidKey;
+    resetBidInput();
+  }
 
   const pick = $('#gPick');
   if (pick) {
     pick.innerHTML = '';
     for (let f = 1; f <= 6; f++) {
       const b = document.createElement('button');
-      b.className = 'pf' + (f === selectedFace ? ' sel' : '');
+      b.className = 'face-btn' + (f === selectedFace ? ' sel' : '');
       b.innerHTML = renderDie(f, 's');
-      b.disabled = dis;
-      b.onclick = () => { selectedFace = f; renderPick(); renderPractical(); };
+      // legal() не убывает по количеству: если нет допустимой ставки на
+      // total кубиков, то нет её и на меньшее количество.
+      b.disabled = dis || !legal(total, f, game.bid, { wild: !game.palifico });
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', `Цифра ${f}`);
+      b.setAttribute('aria-checked', String(f === selectedFace));
+      b.onclick = () => {
+        selectedFace = f;
+        renderGame();
+      };
       pick.append(b);
     }
   }
 
-  if (game.round !== lastRenderedRound) {
-    lastRenderedRound = game.round;
-    resetBidInput();
-  }
-  ensureLegalBidInput();
+  // Ручной выбор грани не должен принудительно заменяться автоматической нормализацией.
   updatePrev();
   renderAdvice();
   renderPractical();
@@ -873,26 +1102,36 @@ function ensureLegalBidInput() {
 }
 
 function updatePrev() {
-  const el = $('#gPrev');
-  if (!el) return;
-  if (!game || game.state !== 'active' || game.currentPlayer !== 0 || !game.players[0].alive) {
-    el.innerHTML = '';
+  const err = $('#gPrev');
+  if (err) err.innerHTML = '';
+
+  const raise = $('#gRaise');
+  if (!raise) return;
+
+  const myTurn = game && game.state === 'active'
+    && game.currentPlayer === 0 && game.players[0].alive;
+  if (!myTurn) {                      // disabled уже выставлен в renderGame
+    raise.innerHTML = '<span class="btn-main">Ставлю</span>';
     return;
   }
+
   const total = totalDice();
   const q = +($('#gQ')?.value || 1);
   const f = selectedFace;
+  const ok = legal(q, f, game.bid, { wild: !game.palifico });
 
-  if (!legal(q, f, game.bid, { wild: !game.palifico })) {
-    el.innerHTML = `<span class="r">Ставка недопустима: она должна быть выше текущей${game.palifico ? ' (Палифико: та же цифра, больше количество)' : ''}.</span>`;
+  raise.disabled = !ok;
+  if (!ok) {
+    const why = game.palifico ? 'та же цифра' : 'слишком мало';
+    raise.innerHTML = `<span class="btn-main">Ставлю ${q}×${f}</span><span class="btn-sub">${why}</span>`;
     return;
   }
+
   const me = game.players[0];
   const p = P.probBid(q, f, total, me.hand, !game.palifico);
-  const hint = assistConfig.showFutureBidOdds
-    ? ` <span class="m">— шанс:</span> <b class="${p >= 0.5 ? 'g' : 'r'}">${pct(p)}</b>`
-    : '';
-  el.innerHTML = `<span class="m">Ваша ставка</span> ${renderBid(q, f)}${hint}`;
+  const odds = assistConfig.showFutureBidOdds
+    ? `<span class="btn-sub">шанс ${pct(p)}</span>` : '';
+  raise.innerHTML = `<span class="btn-main">Ставлю ${q}×${f}</span>${odds}`;
 }
 
 // ----- Ходы игрока -----
@@ -919,7 +1158,7 @@ function onPlayerRaise() {
     return;
   }
 
-  addGameLog('', `${renderBid(q, f)}`);
+  addGameLog('', `<span class="player-name c0">Вы</span> ${renderBid(q, f)}`);
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
   if (game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
@@ -946,16 +1185,17 @@ function onPlayerDudo() {
       (revealed.bidSuccessful ? 'ставка верна' : 'ставка ложна') + '.';
   }
 
-  addGameLog('dudo', `<b class="r">НЕ ВЕРЮ</b> (${renderBid(q, f)})`);
+  addGameLog('dudo', `<b class="text-bad">НЕ ВЕРЮ</b> (${renderBid(q, f)})`);
   if (revealed) {
-    addGameLog('rh',
+    addGameLog('round',
       `Проверка: на столе ${revealed.actualCount} из ${q} — ` +
       (revealed.bidSuccessful ? 'ставка верна' : 'ставка ложна') + '.');
   }
 
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
-  if (game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
+  presentReveal(res.events);
+  continueFlow();
 }
 
 function onPlayerCalza() {
@@ -982,6 +1222,93 @@ function onPlayerCalza() {
   addGameLog('dudo', `<b class="warn">CALZA</b> (${renderBid(q, f)})`);
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
+  presentReveal(res.events);
+  continueFlow();
+}
+
+// ----- Вскрытие кубиков после «Не верю» / Calza -----
+
+let revealTimer = null;
+const REVEAL_MS = { slow: 9000, normal: 6000, fast: 3500 };   // «Пошагово» — только по кнопке
+
+const revealIsOpen = () => !!$('#gReveal')?.open;
+
+function revealTone(m) {
+  const me = m.rows.find((r) => r.isHuman);
+  if (!me) return '';
+  if (m.kind === 'dudo') {
+    if (me.isLoser) return 'is-bad';
+    return me.isBidder || me.isChallenger ? 'is-good' : '';
+  }
+  if (!me.isChallenger) return '';
+  return m.verdict === 'calza_exact' ? 'is-good' : 'is-bad';
+}
+
+function presentReveal(events) {
+  const dlg = $('#gReveal');
+  if (!game || !dlg || dlg.open || typeof dlg.showModal !== 'function') return false;
+  if ($('#gRevealOpt')?.checked === false) return false;
+  if ($('#game')?.classList.contains('hide')) return false;
+  const m = buildReveal(events, game.players);
+  if (!m) return false;
+
+  $('#gRevealTitle').textContent = m.headline;
+  $('#gRevealBid').innerHTML =
+    `Ставка · ${escapeHtml(m.bid.playerName)}: ${renderBid(m.bid.q, m.bid.f)}` +
+    (m.wild ? '' : ' · палифико, единицы не джокеры');
+  $('#gRevealRows').innerHTML = m.rows.map((r) => {
+    const role = [r.isBidder ? 'ставил' : '', r.isChallenger ? 'проверял' : ''].filter(Boolean).join(', ');
+    const dice = r.hand.map((d) => {
+      const html = renderDie(d, 'xs', m.wild && d === 1);
+      return dieMatches(d, m.bid.f, m.wild) ? html.replace('class="die', 'class="die hit') : html;
+    }).join('');
+    return `<li class="reveal-row ${r.isLoser ? 'is-loser' : ''}">` +
+      `<span class="reveal-name">${escapeHtml(r.name)}${role ? `<small>${role}</small>` : ''}</span>` +
+      `<span class="reveal-hand" aria-label="Кубики: ${r.hand.join(', ')}">${dice}</span>` +
+      `<span class="reveal-hit ${r.matches ? '' : 'zero'}" aria-label="Совпало: ${r.matches}">${r.matches ? '+' + r.matches : '0'}</span></li>`;
+  }).join('');
+  const verdict = $('#gRevealVerdict');
+  verdict.textContent = m.verdictText;
+  verdict.className = `reveal-verdict ${revealTone(m)}`;
+  $('#gRevealOutcome').textContent = m.outcomeText;
+
+  const speed = $('#gSpeed')?.value || 'normal';
+  const ms = REVEAL_MS[speed];
+  const bar = $('#gRevealBar');
+  const timerBox = bar?.parentElement;
+  if (bar) {
+    bar.classList.remove('run');
+    void bar.offsetWidth;                         // перезапуск анимации
+    if (ms) { bar.style.setProperty('--reveal-ms', `${ms}ms`); bar.classList.add('run'); }
+    if (timerBox) timerBox.style.visibility = ms ? 'visible' : 'hidden';
+  }
+
+  clearTimeout(revealTimer);
+  revealTimer = ms ? setTimeout(() => { if (dlg.open) dlg.close(); }, ms) : null;
+  dlg.showModal();
+  dlg.scrollTop = 0;                    // автофокус на кнопке не должен прятать заголовок
+  return true;
+}
+
+function setupReveal() {
+  const dlg = $('#gReveal');
+  if (!dlg) return;
+  $('#gRevealNext')?.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  // В окне одна кнопка: Tab не должен выпускать фокус в интерфейс браузера.
+  dlg.addEventListener('keydown', (e) => { if (e.key === 'Tab') { e.preventDefault(); $('#gRevealNext')?.focus(); } });
+  dlg.addEventListener('close', () => {
+    clearTimeout(revealTimer);
+    revealTimer = null;
+    continueFlow();
+    // Партия закончилась этим вскрытием: окно итога — после него, а не поверх.
+    if (game && game.state === 'finished') scheduleResultDialog(300);
+  });
+}
+
+// Дальше ходят боты — но не пока на экране вскрытие.
+function continueFlow() {
+  if (!game || revealIsOpen()) return;
   if (game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
 }
 
@@ -1054,15 +1381,15 @@ function runBotTurn() {
 
   let desc;
   if (action.type === 'raise') desc = renderBid(action.quantity, action.face);
-  else if (action.type === 'dudo') desc = '<b class="r">НЕ ВЕРЮ</b>';
+  else if (action.type === 'dudo') desc = '<b class="text-bad">НЕ ВЕРЮ</b>';
   else desc = '<b class="warn">CALZA</b>';
-  addGameLog('', `<span class="pn c${idx}">${bot.name}</span> ${desc}`);
+  addGameLog('', `<span class="player-name c${idx}">${bot.name}</span> ${desc}`);
 
   if (action.type === 'dudo') {
     const revealed = res.events.find((e) => e.type === 'DICE_REVEALED');
     if (revealed) {
       const bidQ = revealed.bid?.q ?? revealed.bid?.quantity;
-      addGameLog('rh',
+      addGameLog('round',
         `Проверка: на столе ${revealed.actualCount} из ${bidQ} — ` +
         (revealed.bidSuccessful ? 'ставка верна' : 'ставка ложна') + '.');
     }
@@ -1070,13 +1397,92 @@ function runBotTurn() {
 
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
-  if (game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
+  if (action.type !== 'raise') presentReveal(res.events);
+  continueFlow();
 }
 
 // ----- Финализация -----
 
+// Итог партии подводится один раз: renderGame() вызывается много раз, в том числе
+// уже после финала, и без этой защиты история и статистика дублировались бы.
+let finalizedGameId = null;
+let resultTimer = null;
+let resultOpener = null;
+const RESULT_DIALOG_DELAY_MS = 700;
+
+function hideRevealUi() {
+  clearTimeout(revealTimer);
+  revealTimer = null;
+  const dlg = $('#gReveal');
+  if (dlg?.open) dlg.close();
+}
+
+function hideResultUi() {
+  clearTimeout(resultTimer);
+  resultTimer = null;
+  const dlg = $('#gResultDialog');
+  if (dlg?.open) dlg.close();
+  const banner = $('#gSummary');
+  if (banner) banner.innerHTML = '';
+  const card = $('#gResultCard');
+  if (card) { card.innerHTML = ''; card.hidden = true; }
+}
+
+function fillResultDialog(result) {
+  const h = resultHeadline(result);
+  $('#gResultIcon').textContent = h.icon;
+  $('#gResultTitle').textContent = h.title;
+  $('#gResultLead').textContent = h.lead;
+  $('#gResultStand').innerHTML = result.standings.map((r) =>
+    `<li class="${r.id === result.winnerId ? 'is-winner' : ''}">` +
+    `<span>${r.id === result.winnerId ? '👑 ' : ''}${escapeHtml(r.name)}</span>` +
+    `<span>${r.alive ? pluralDice(r.dice) : 'выбыл'}</span></li>`).join('');
+}
+
+function showResultDialog() {
+  const dlg = $('#gResultDialog');
+  const result = buildGameResult(game);
+  if (!dlg || !result || dlg.open || typeof dlg.showModal !== 'function') return false;
+  if ($('#game')?.classList.contains('hide')) return false;   // вкладка «Партия» не на экране
+  fillResultDialog(result);
+  resultOpener = document.activeElement;
+  dlg.showModal();
+  return true;
+}
+
+function setupResultDialog() {
+  const dlg = $('#gResultDialog');
+  if (!dlg) return;
+  $('#gResultView')?.addEventListener('click', () => dlg.close());
+  // После закрытия фокус возвращается туда, откуда окно открыли; если там уже ничего нет —
+  // на «Сыграть ещё» в баннере (нативный диалог в Chromium оставляет фокус на скрытой кнопке).
+  dlg.addEventListener('close', () => {
+    const usable = (el) => el && el.isConnected && !el.disabled && !el.closest('dialog') && el.offsetParent !== null;
+    const target = usable(resultOpener) ? resultOpener : $('#gSummary [data-action="new-game"]');
+    resultOpener = null;
+    target?.focus?.();
+  });
+  // Клик по подложке: у диалога нет собственных отступов, поэтому target === dialog — это именно подложка.
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  // Tab ходит по кругу внутри окна (нативный диалог иначе выпускает фокус в интерфейс браузера).
+  dlg.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const items = [...dlg.querySelectorAll('button:not([disabled])')];
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  // Баннер: «Итоги» заново открывает окно.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-result-details]')) showResultDialog();
+  });
+}
+
 function finalizeGame() {
-  if (!game) return;
+  if (!game || finalizedGameId === game.id) return;
+  finalizedGameId = game.id;
 
   const me = game.players[0];
   const aliveCnt = game.players.filter((p) => p.alive).length;
@@ -1101,24 +1507,56 @@ function finalizeGame() {
   if (won) stats.totalWins = (stats.totalWins || 0) + 1;
   setStats(stats);
 
-  const el = $('#gSummary');
-  if (!el) return;
+  const result = buildGameResult(game);
+  const h = resultHeadline(result);
 
-  const good = reviewEntries.filter((e) => e.v.code === 'good').length;
-  const meh = reviewEntries.filter((e) => e.v.code === 'meh').length;
-  const bad = reviewEntries.filter((e) => e.v.code === 'bad').length;
-  const acc = reviewEntries.length ? (good + 0.5 * meh) / reviewEntries.length : null;
+  // 1) Баннер над столом (на телефоне — закреплён внизу вместо панели действий)
+  const banner = $('#gSummary');
+  if (banner && result) {
+    banner.innerHTML = `
+      <div class="card result-banner ${result.isHumanWinner ? 'is-win' : 'is-lose'}" role="group" aria-label="Итог партии">
+        <div class="result-banner-text">
+          <b>${h.icon} ${escapeHtml(h.title)}</b>
+          <span class="muted">${escapeHtml(h.lead)}</span>
+        </div>
+        <div class="result-banner-actions">
+          <button type="button" class="btn-primary" data-action="new-game">Сыграть ещё</button>
+          <button type="button" data-result-details>Итоги</button>
+        </div>
+      </div>`;
+  }
 
-  el.innerHTML = `
-    <div class="card">
+  // 2) Подробности — в начале боковой панели
+  const card = $('#gResultCard');
+  if (card) {
+    const good = reviewEntries.filter((e) => e.v.code === 'good').length;
+    const meh = reviewEntries.filter((e) => e.v.code === 'meh').length;
+    const bad = reviewEntries.filter((e) => e.v.code === 'bad').length;
+    const acc = reviewEntries.length ? (good + 0.5 * meh) / reviewEntries.length : null;
+    card.innerHTML = `
       <b>Итог партии: ${won ? 'победа 🏆' : 'поражение'}</b>
       <p>Решений: ${reviewEntries.length}. Точность по модели: <b>${acc == null ? '—' : pct(acc)}</b>.</p>
       <table>
         <tr><th></th><th>✓ верно</th><th>~ спорно</th><th>✗ ошибка</th></tr>
         <tr><td>Решения</td><td>${good}</td><td>${meh}</td><td>${bad}</td></tr>
-      </table>
-    </div>
-  `;
+      </table>`;
+    card.hidden = false;
+    sideApi.select('tabReview');
+  }
+
+  // 3) Окно — чуть позже, чтобы успеть увидеть итог последней проверки
+  scheduleResultDialog(RESULT_DIALOG_DELAY_MS);
+}
+
+function scheduleResultDialog(delay) {
+  if (!game) return;
+  const gameId = game.id;
+  clearTimeout(resultTimer);
+  resultTimer = setTimeout(() => {
+    if (!game || game.id !== gameId || game.state !== 'finished') return;
+    if (revealIsOpen()) return;          // его закрытие само вызовет scheduleResultDialog
+    showResultDialog();
+  }, delay);
 }
 
 // ================= Дуэль (CFR) =================
@@ -1174,7 +1612,7 @@ function renderOpening() {
     }
     t += '</tr>';
   }
-  el.innerHTML = '<p class="m">Оптимальные частоты первой ставки в зависимости от вашего кубика:</p>' + t + '</table>';
+  el.innerHTML = '<p class="muted">Оптимальные частоты первой ставки в зависимости от вашего кубика:</p>' + t + '</table>';
 }
 
 function startDuel() {
@@ -1200,11 +1638,11 @@ function runDuelBot() {
     }
     const act = node.acts[idx];
     if (act === 'D') {
-      D.log.push(`<div class="lg"><span class="pn c1">Бот</span> <b class="r">не верит!</b></div>`);
+      D.log.push(`<div class="log-row"><span class="player-name c1">Бот</span> <b class="text-bad">не верит!</b></div>`);
       endDuel(node.p, node);
       return;
     }
-    D.log.push(`<div class="lg"><span class="pn c1">Бот</span> ${renderBid(act.q, act.f)}</div>`);
+    D.log.push(`<div class="log-row"><span class="player-name c1">Бот</span> ${renderBid(act.q, act.f)}</div>`);
     let k = 0;
     for (const a of node.acts) {
       if (a === 'D') continue;
@@ -1230,7 +1668,7 @@ function endDuel(caller, node) {
   set('perudo.duelStats', duelStats);
 
   D.result = `Проверка ${renderBid(q, f)}: вместе <b>${c}</b>. ` +
-    (meWin ? '<b class="g">Вы выиграли раунд 🎉</b>' : '<b class="r">Вы проиграли раунд</b>') +
+    (meWin ? '<b class="text-ok">Вы выиграли раунд 🎉</b>' : '<b class="text-bad">Вы проиграли раунд</b>') +
     `. Ваш кубик: ${renderDie(D.hs[D.role] + 1, 'xs', D.hs[D.role] === 0)}, ` +
     `кубик бота: ${renderDie(D.hs[1 - D.role] + 1, 'xs', D.hs[1 - D.role] === 0)}.`;
 }
@@ -1242,8 +1680,8 @@ function renderDuel() {
   const my = D.hs[D.role];
 
   let html = `<div>Ваш кубик: ${renderDie(my + 1, '', my === 0)} ` +
-    `<span class="m">· вы ${D.role === 0 ? 'открываете' : 'отвечаете'}</span></div>` +
-    `<div style="margin:8px 0">${D.log.join('') || '<span class="m">Ставок ещё нет</span>'}</div>`;
+    `<span class="muted">· вы ${D.role === 0 ? 'открываете' : 'отвечаете'}</span></div>` +
+    `<div style="margin:8px 0">${D.log.join('') || '<span class="muted">Ставок ещё нет</span>'}</div>`;
 
   if (D.over) {
     html += `<p>${D.result}</p>`;
@@ -1253,8 +1691,8 @@ function renderDuel() {
       }</button>`).join('') + '</div>';
   }
 
-  html += `<div class="m" style="margin-top:6px">${D.fb || ''}</div>` +
-    `<p class="m">Сессия: партий ${duelStats.games}, побед ${duelStats.wins}; ` +
+  html += `<div class="muted" style="margin-top:6px">${D.fb || ''}</div>` +
+    `<p class="muted">Сессия: партий ${duelStats.games}, побед ${duelStats.wins}; ` +
     `редких отклонений от оптимума: ${duelStats.dev} из ${duelStats.moves}.</p>`;
 
   el.innerHTML = html;
@@ -1277,16 +1715,16 @@ function moveDuel(i) {
   set('perudo.duelStats', duelStats);
 
   D.fb = `Ваш ход ${act === 'D' ? '«Не верю»' : act.q + '×' + act.f}: оптимальная частота ` +
-    `${(pr * 100).toFixed(0)}% ${pr < 0.05 ? '<b class="r">— редкое отклонение</b>' : '<b class="g">— в рамках</b>'}.`;
+    `${(pr * 100).toFixed(0)}% ${pr < 0.05 ? '<b class="text-bad">— редкое отклонение</b>' : '<b class="text-ok">— в рамках</b>'}.`;
 
   if (act === 'D') {
-    D.log.push(`<div class="lg"><span class="pn c0">Вы</span> <b class="r">не верю!</b></div>`);
+    D.log.push(`<div class="log-row"><span class="player-name c0">Вы</span> <b class="text-bad">не верю!</b></div>`);
     endDuel(D.role, node);
     renderDuel();
     return;
   }
 
-  D.log.push(`<div class="lg"><span class="pn c0">Вы</span> ${renderBid(act.q, act.f)}</div>`);
+  D.log.push(`<div class="log-row"><span class="player-name c0">Вы</span> ${renderBid(act.q, act.f)}</div>`);
   let k = 0;
   for (const a of node.acts) {
     if (a === 'D') continue;
@@ -1317,7 +1755,7 @@ function renderStats() {
     const byMode = stats.byMode || {};
     const keys = Object.keys(byMode);
     if (!keys.length) {
-      byModeEl.innerHTML = '<p class="m">Тренажёр ещё не использовался.</p>';
+      byModeEl.innerHTML = '<p class="muted">Тренажёр ещё не использовался.</p>';
     } else {
       let h = '<table><tr><th>Режим</th><th>Всего</th><th>Верно</th><th>Процент</th></tr>';
       for (const k of keys) {
@@ -1331,7 +1769,7 @@ function renderStats() {
   const gamesEl = $('#stGames');
   if (gamesEl) {
     if (!history.length) {
-      gamesEl.innerHTML = '<p class="m">Сыгранных партий пока нет.</p>';
+      gamesEl.innerHTML = '<p class="muted">Сыгранных партий пока нет.</p>';
     } else {
       const wins = history.filter((g) => g.won).length;
       let h = `<p>Сыграно: ${history.length}, побед: ${wins} (${pct(wins / history.length)}).</p>`;
@@ -1430,6 +1868,7 @@ function bootstrap() {
   setupCalculator();
   setupTrainer();
   setupDrill();
+  setupSidePanel();
   setupGame();
   setupDuel();
   setupStats();
@@ -1448,6 +1887,7 @@ window.__perudo_v2 = {
   get duelTree() { return duelTree; },
   get duelState() { return duelState; },
   startNewGame,
+  renderGame,
   solveNow,
   startDuel,
   moveDuel,

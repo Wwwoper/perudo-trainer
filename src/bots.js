@@ -68,8 +68,8 @@ export function generateAvatar(gender = 'male') {
       <circle cx="50" cy="50" r="48" fill="${color2}" stroke="${color1}" stroke-width="3"/>
       <circle cx="50" cy="40" r="18" fill="${color1}"/>
       ${gender === 'female'
-        ? '<path d="M 30 65 Q 50 80 70 65" stroke="${color1}" stroke-width="3" fill="none"/>'
-        : '<path d="M 35 65 L 65 65 L 60 75 L 40 75 Z" fill="${color1}"/>'}
+        ? `<path d="M 30 65 Q 50 80 70 65" stroke="${color1}" stroke-width="3" fill="none"/>`
+        : `<path d="M 35 65 L 65 65 L 60 75 L 40 75 Z" fill="${color1}"/>`}
     </svg>
   `.trim();
 }
