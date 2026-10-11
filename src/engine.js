@@ -11,7 +11,9 @@ const MAX_EVENTS = 1000; // Ограничение журнала событий
 
 // ================= Модели данных =================
 
-export function createGame(config) {
+export const LIMITS = Object.freeze({ minDice: 1, maxDice: 10, minBots: 1, maxBots: 5 });
+
+export function createGame(config = {}) {
   const {
     playerId = 'human',
     botCount = 1,
@@ -22,6 +24,13 @@ export function createGame(config) {
     botSpeed = 'normal',
     botNames = null,
   } = config;
+
+  if (!Number.isInteger(startDice) || startDice < LIMITS.minDice || startDice > LIMITS.maxDice) {
+    throw new RangeError(`startDice: целое число от ${LIMITS.minDice} до ${LIMITS.maxDice}, получено ${startDice}`);
+  }
+  if (!Number.isInteger(botCount) || botCount < LIMITS.minBots || botCount > LIMITS.maxBots) {
+    throw new RangeError(`botCount: целое число от ${LIMITS.minBots} до ${LIMITS.maxBots}, получено ${botCount}`);
+  }
 
   const players = [];
 
@@ -59,8 +68,6 @@ export function createGame(config) {
     bid: null,
     bidHistory: [],
     palifico: false,
-    palificoStarter: null,
-    palificoFace: null,
     calzaEnabled,
     palificoEnabled,
     assistMode,
@@ -123,7 +130,8 @@ function addLog(game, message, type = 'info') {
    ============================================================= */
 export function canCalza(game) {
   if (!game.calzaEnabled || !game.bid) return false;
-  if (game.bid.playerId === 'human' && game.currentPlayer === 0) return false;
+  // Нельзя объявлять Calza на собственную ставку (id игрока не привязан к 'human').
+  if (game.bid.playerId === game.players[game.currentPlayer]?.id) return false;
   const minTotal = Math.ceil(game.config.startDice * game.players.length / 2);
   return countDice(game) >= minTotal;
 }
@@ -169,8 +177,6 @@ export function startRound(game, starterId) {
   // Сброс ставки
   game.bid = null;
   game.bidHistory = [];
-  game.palificoStarter = null;
-  game.palificoFace = null;
 
   // P0.2: Palifico действует ровно один раунд.
   // Сбрасываем флаг и включаем его заново только при «переходе к 1 кубику»,

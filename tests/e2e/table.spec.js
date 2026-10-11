@@ -1,294 +1,207 @@
 // tests/e2e/table.spec.js
+// Запуск: npm run test:e2e  (Playwright Test, а не `node --test`).
 import { test, expect } from '@playwright/test';
+
+/** Открывает вкладку панели (на телефоне — через кнопку в HUD / шторку). */
+async function openTab(page, tabId) {
+  const hudBtn = page.locator(`.hud-tab-btn[data-open-tab="${tabId}"]`);
+  // На узком экране панель — шторка, её открывает кнопка в HUD;
+  // на широком кнопки в HUD нет, вкладки видны всегда.
+  if (await hudBtn.isVisible()) await hudBtn.click();
+  else await page.locator('#' + tabId).click();
+}
+
+async function openSettings(page) {
+  await openTab(page, 'tabSettings');
+  await expect(page.locator('#panSettings')).toBeVisible();
+}
+
+/** Выставляет количество: на телефоне поле readonly, поэтому жмём «+»/«−». */
+async function setQuantity(page, n) {
+  const q = page.locator('#gQ');
+  for (let i = 0; i < 40; i++) {
+    const cur = Number(await q.inputValue());
+    if (cur === n) return;
+    await page.locator(cur < n ? '#gPlus' : '#gMinus').click();
+  }
+  throw new Error('Не удалось выставить количество ' + n);
+}
+
+/**
+ * Задаёт настройки и начинает новую партию через панель настроек.
+ * Вскрытие кубиков по умолчанию выключаем: модальное окно блокирует клики
+ * и ставит ботов на паузу (его проверяет отдельный тест).
+ */
+async function startGame(page, { bots, dice, assist, calza, reveal = false } = {}) {
+  await openSettings(page);
+  if (bots !== undefined) await page.locator('#gBots').fill(String(bots));
+  if (dice !== undefined) await page.locator('#gDice').fill(String(dice));
+  if (assist) await page.selectOption('#gAssist', assist);
+  if (calza !== undefined) await page.locator('#gCalzaOpt').setChecked(calza);
+  await page.locator('#gRevealOpt').setChecked(reveal);
+  // Партия создана и стол отрисован — дальше тесты работают уже с готовым столом.
+  // Если клик не сработал, он повторяется (настройки при этом не сбрасываются).
+  await expect(async () => {
+    await page.locator('#panSettings .side-start[data-action="new-game"]').click();
+    await expect(page.locator('#gameTable .seat').first()).toBeVisible({ timeout: 1_500 });
+  }).toPass({ timeout: 10_000 });
+}
+
+async function waitMyTurn(page) {
+  await page.waitForFunction(
+    () => document.querySelector('#gStatus')?.textContent?.includes('Ваш ход'),
+    null, { timeout: 10_000 });
+}
+
+/** Ждём, пока ход вернулся к нам и на столе лежит чужая ставка. */
+async function waitBotBid(page) {
+  await page.waitForFunction(() => {
+    const g = window.__perudo_v2?.game;
+    const s = document.querySelector('#gStatus')?.textContent || '';
+    return s.includes('Ваш ход') && g?.bid && g.bid.playerId !== 'human';
+  }, null, { timeout: 10_000 });
+}
+
+/** Боты получают руки, при которых они гарантированно повышают ставку. */
+async function rigBots(page, hand) {
+  await page.evaluate((h) => {
+    const g = window.__perudo_v2?.game;
+    for (let i = 1; i < g.players.length; i++) g.players[i].hand = [...h];
+  }, hand);
+}
 
 test.describe('Покерный стол в партии', () => {
   test.beforeEach(async ({ page }) => {
-    // Логируем ошибки JS, но НЕ бросаем из обработчика — иначе Playwright
-    // может странно вести себя с оставшимися действиями теста.
     page.on('pageerror', (err) => console.error('[pageerror]', err.message));
-
+    page.on('requestfailed', (r) => console.error('[requestfailed]', r.url(), r.failure()?.errorText));
     await page.goto('/');
-
-    // Точный селектор по data-атрибуту, а не по тексту.
-    await page.locator('.tab-btn[data-t="game"]').click();
-
-    // Ждём, пока секция партии и её поля действительно станут видимыми.
-    await expect(page.locator('#game')).toBeVisible({ timeout: 5_000 });
-    await expect(page.locator('#gBots')).toBeVisible({ timeout: 5_000 });
+    // ES-модули выполняются после загрузки страницы: пока app_v2.js не отработал,
+    // на вкладках нет обработчиков, и ранний клик тихо пропадает.
+    await page.waitForFunction(() => Boolean(window.__perudo_v2));
+    // Клик повторяется, пока вкладка не переключится: на медленной машине
+    // и при параллельных воркерах первый клик иногда теряется.
+    await expect(async () => {
+      await page.locator('.tab-btn[data-t="game"]').click();
+      await expect(page.locator('#game')).toBeVisible({ timeout: 1_000 });
+    }).toPass({ timeout: 10_000 });
+    // Поля настроек теперь лежат в скрытой вкладке — их открывает openSettings().
+    await expect(page.locator('#gameTable')).toBeVisible();
   });
 
   test('новая партия рисует стол, места игроков и центральную ставку', async ({ page }) => {
-    // Меняем настройки: 3 бота, 3 кубика
-    await page.locator('#gBots').fill('3');
-    await page.locator('#gDice').fill('3');
-    await page.getByRole('button', { name: 'Новая партия' }).click();
+    await startGame(page, { bots: 3, dice: 3 });
 
-    // Стол появился
-    await expect(page.locator('#gameTable .game-table')).toBeVisible();
-
-    // Четыре места: игрок + 3 бота
     await expect(page.locator('#gameTable .seat')).toHaveCount(4);
-
-    // Центр стола с раундом и числом кубиков
-    await expect(page.locator('#gameTable .table-center')).toContainText('Раунд');
-    await expect(page.locator('#gameTable .table-center')).toContainText('12'); // 4 × 3
-
-    // Активного игрока подсвечивает .active
+    // Центр стола: только ставка или «Ставок ещё нет»; раунд и число кубиков — в HUD.
+    await expect(page.locator('#gameTable .table-center')).toBeVisible();
+    await expect(page.locator('#gMeta')).toContainText('Раунд');
+    await expect(page.locator('#gMeta')).toContainText('12'); // 4 × 3
     await expect(page.locator('#gameTable .seat.active')).toHaveCount(1);
   });
 
   test('игрок может поставить, стол обновляет ставку', async ({ page }) => {
-    // Логируем всё, что пишет браузер, и все JS-ошибки
-    const logs = [];
-    page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
-    page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
+    await startGame(page, { bots: 2, dice: 2 });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2]);
 
-    await page.locator('#gBots').fill('2');
-    await page.locator('#gDice').fill('2');
-    await page.locator('#gNew').click();
-
-    // Ждём наш ход
-    await page.waitForFunction(() =>
-      document.querySelector('#gStatus')?.textContent?.includes('Ваш ход')
-      , { timeout: 10_000 });
-
-    // Явные проверки, что всё готово к ставке
-    await expect(page.locator('#gRaise')).toBeEnabled({ timeout: 5_000 });
+    await expect(page.locator('#gRaise')).toBeEnabled();
     await expect(page.locator('#gPick button')).toHaveCount(6);
 
-    // Ставим 1 × грань 3
-    await page.locator('#gQ').fill('1');
-    await page.locator('#gPick button').nth(2).click();
-
-    const prevBefore = await page.locator('#gPrev').textContent();
-    console.log('[TEST] gPrev до клика:', JSON.stringify(prevBefore));
-
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(2).click(); // грань 3
     await page.locator('#gRaise').click();
 
-    // Снимок состояния сразу после клика
-    const snap1 = await page.evaluate(() => {
-      const g = window.__perudo_v2?.game;
-      return {
-        gameState: g?.state,
-        currentPlayer: g?.currentPlayer,
-        bid: g?.bid,
-        qValue: document.querySelector('#gQ')?.value,
-        raiseDisabled: document.querySelector('#gRaise')?.disabled,
-        tableBidText: document.querySelector('#gameTable .table-bid')?.textContent,
-      };
-    });
-    console.log('[TEST] после клика:', JSON.stringify(snap1, null, 2));
-
-    // Через 300 мс — не успел ли бот ответить и обнулить bid
-    await page.waitForTimeout(300);
-    const snap2 = await page.evaluate(() => {
-      const g = window.__perudo_v2?.game;
-      return {
-        gameState: g?.state,
-        currentPlayer: g?.currentPlayer,
-        bid: g?.bid,
-        tableBidText: document.querySelector('#gameTable .table-bid')?.textContent,
-      };
-    });
-    console.log('[TEST] через 300 мс:', JSON.stringify(snap2, null, 2));
-
-    console.log('[TEST] browser console:');
-    for (const l of logs) console.log('   ', l);
-
-    // Оригинальная проверка
+    await expect(page.locator('#gameTable .table-bid')).toBeVisible();
     await expect(page.locator('#gameTable .table-bid')).toContainText('1');
+    await expect(page.locator('#gHistory')).not.toBeEmpty();
   });
 
   test('кнопка «Не верю» завершает раунд и обновляет стол', async ({ page }) => {
-    await page.locator('#gBots').fill('1');
-    await page.locator('#gDice').fill('2');
-    await page.getByRole('button', { name: 'Новая партия' }).click();
+    await startGame(page, { bots: 1, dice: 2 });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2]);
 
-    // 1. Игрок всегда ходит первым — ждём его ход.
-    await page.waitForFunction(() => {
-      return document.querySelector('#gStatus')?.textContent?.includes('Ваш ход');
-    }, { timeout: 10_000 });
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click(); // грань 2
+    await page.locator('#gRaise').click();
 
-    // 2. Делаем бота детерминированным: с двумя «2» он гарантированно
-    //    повышает на нашу ставку 1×2, а не вызывает dudo.
-    //    Без этого шага бот ~50% раз сразу говорил «Не верю»,
-    //    и тест скипался через test.skip().
-    //
-    //    own(hand, 2, wild=true) = 2 → need = 1 − 2 = −1 → probBid = 1.
-    //    p = 1 > dudoBelow у любого стиля → raise.
-    await page.evaluate(() => {
-      const g = window.__perudo_v2?.game;
-      if (!g) return;
-      for (let i = 1; i < g.players.length; i++) {
-        g.players[i].hand = [2, 2];
-      }
-    });
+    await waitBotBid(page);
+    await page.locator('#gDudo').click();
 
-    // 3. Делаем безопасно низкую ставку 1 × грань 2.
-    await page.locator('#gQ').fill('1');
-    await page.locator('#gPick button').nth(1).click();  // индекс 1 = грань 2
-    await page.getByRole('button', { name: 'Ставлю' }).click();
-
-    // 4. Ждём ответа бота: он обязательно повысит, и ход вернётся к нам.
-    //    Условие строгое — не только «Ваш ход», но и что на столе чужая ставка.
-    await page.waitForFunction(() => {
-      const g = window.__perudo_v2?.game;
-      const s = document.querySelector('#gStatus')?.textContent || '';
-      return s.includes('Ваш ход')
-        && g?.bid
-        && g.bid.playerId !== 'human';
-    }, { timeout: 10_000 });
-
-    // 5. Наш ход — жмём «Не верю!»
-    await page.getByRole('button', { name: 'Не верю!' }).click();
-
-    // 6. Журнал партии: появилась запись «НЕ ВЕРЮ».
-    await expect(page.locator('#gHistory')).toContainText(/НЕ ВЕРЮ/i, { timeout: 5_000 });
-
-    // 7. P1.7: проверяем, что результат Dudo действительно попал в журнал
-    //    через res.events из нового applyAction (а не через устаревший
-    //    game.events.slice(beforeLen)).
+    // Журнал находится во вкладке «Журнал» — открываем её.
+    await openTab(page, 'tabLog');
+    await expect(page.locator('#gHistory')).toContainText(/НЕ ВЕРЮ/i);
     await expect(page.locator('#gHistory')).toContainText(/Проверка/i);
   });
 
-  test('режим «Игра» не показывает проценты на столе', async ({ page }) => {
-    await page.selectOption('#gAssist', 'game');
-    await page.locator('#gBots').fill('2');
-    await page.locator('#gDice').fill('2');
-    await page.getByRole('button', { name: 'Новая партия' }).click();
+  test('вскрытие кубиков: окно показывается после «Не верю» и закрывается', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 2, reveal: true });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2]);
 
-    // Ждём наш ход
-    await page.waitForFunction(() => {
-      return document.querySelector('#gStatus')?.textContent?.includes('Ваш ход');
-    });
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
+    await page.locator('#gRaise').click();
+    await waitBotBid(page);
+    await page.locator('#gDudo').click();
 
-    // В блоке #gPrev не должно быть знака % — в честном режиме подсказок нет
-    const prev = await page.locator('#gPrev').textContent();
-    expect(prev || '').not.toMatch(/%/);
-
-    // И в карточке текущей ставки тоже
-    const bidCard = await page.locator('#gBid').textContent();
-    expect(bidCard || '').not.toMatch(/шанс/i);
+    const dlg = page.locator('#gReveal');
+    await expect(dlg).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dlg).toBeHidden();
   });
+
+  test('режим «Игра» не показывает проценты на столе', async ({ page }) => {
+    await startGame(page, { bots: 2, dice: 2, assist: 'game' });
+    await waitMyTurn(page);
+
+    expect((await page.locator('#gPrev').textContent()) || '').not.toMatch(/%/);
+    expect((await page.locator('#gameTable').textContent()) || '').not.toMatch(/%|шанс/i);
+  });
+
   test('режим «Новичок» показывает прямую рекомендацию', async ({ page }) => {
-    await page.selectOption('#gAssist', 'novice');
-    await page.locator('#gBots').fill('2');
-    await page.locator('#gDice').fill('3');
-    await page.getByRole('button', { name: 'Новая партия' }).click();
+    await startGame(page, { bots: 2, dice: 3, assist: 'novice' });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 3, 4]);
 
-    // 1. Ждём свой ход.
-    //    На первом ходу раунда #gAdvice ещё пуст — совет появляется
-    //    только когда на столе есть чужая ставка. Поэтому сначала
-    //    проверяем #gPractical, который считается независимо от bid.
-    await page.waitForFunction(() =>
-      document.querySelector('#gStatus')?.textContent?.includes('Ваш ход')
-    );
-
-    // 2. #gPractical показывается сразу в Новичке (по флагу showFutureBidOdds).
-    //    Это пошаговый расчёт безопасной ставки для выбранной грани.
+    // Подсказка «Расчёт» видна на вкладке «Расчёт».
+    await openTab(page, 'tabCalc');
     await expect(page.locator('#gPractical')).toBeVisible();
     await expect(page.locator('#gPractical')).toContainText(/Быстрый расчёт|Безопасная ставка/);
+    await page.keyboard.press('Escape'); // на телефоне закрывает шторку
 
-    // 3. Делаем безопасно низкую ставку 1×2, чтобы бот её повысил,
-    //    а не сразу проверил. Это гарантирует появление чужой ставки
-    //    и, соответственно, непустой #gAdvice.
-    await page.locator('#gQ').fill('1');
-    await page.locator('#gPick button').nth(1).click();   // индекс 1 = грань 2
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
     await page.locator('#gRaise').click();
+    await waitBotBid(page);
 
-    // 4. Ждём, пока ОБА бота ответят и ход снова вернётся к нам,
-    //    И при этом bid будет от не-human. Это предусловие для #gAdvice.
-    await page.waitForFunction(() => {
-      const g = window.__perudo_v2?.game;
-      const s = document.querySelector('#gStatus')?.textContent || '';
-      return s.includes('Ваш ход')
-        && g?.bid
-        && g.bid.playerId !== 'human';
-    }, { timeout: 10_000 });
-
-    // 5. Теперь #gAdvice содержит одну из двух формулировок:
-    //    «Лучше сказать “Не верю”» или «Ставка вероятна — лучше повысить».
-    //    «Безопасная ставка» из #gAdvice убрана (вариант 2) —
-    //    за неё отвечает #gPractical, проверенный выше.
     const advice = page.locator('#gAdvice');
     await expect(advice).toBeVisible();
     await expect(advice).toContainText(/Лучше сказать «Не верю»|Ставка вероятна/);
   });
 
   test('режим «Игра» не показывает прямые советы', async ({ page }) => {
-    await page.selectOption('#gAssist', 'game');
-    await page.locator('#gBots').fill('2');
-    await page.locator('#gDice').fill('2');
-    await page.getByRole('button', { name: 'Новая партия' }).click();
-
-    await page.waitForFunction(() =>
-      document.querySelector('#gStatus')?.textContent?.includes('Ваш ход')
-    );
-
+    await startGame(page, { bots: 2, dice: 2, assist: 'game' });
+    await waitMyTurn(page);
     await expect(page.locator('#gAdvice')).toBeEmpty();
   });
 
   test('Calza: доступна при включённой опции, скрыта при выключенной', async ({ page }) => {
-    // Сценарий A: опция выключена — кнопка скрыта классом .hide
-    await page.locator('#gCalzaOpt').uncheck();
-    await page.getByRole('button', { name: 'Новая партия' }).click();
+    await startGame(page, { calza: false });
     await expect(page.locator('#gCalza')).toHaveClass(/hide/);
 
-    // Сценарий B: опция включена, начинаем новую партию
-    await page.locator('#gCalzaOpt').check();
-    await page.locator('#gBots').fill('2');
-    await page.locator('#gDice').fill('3');
-    await page.getByRole('button', { name: 'Новая партия' }).click();
-
-    // 1. Ждём, пока партия создана и ход перешёл к игроку.
-    await page.waitForFunction(() =>
-      document.querySelector('#gStatus')?.textContent?.includes('Ваш ход')
-    );
-
-    // 2. Кнопка видима, но пока ставки нет — disabled.
+    await startGame(page, { bots: 2, dice: 3, calza: true });
+    await waitMyTurn(page);
     await expect(page.locator('#gCalza')).not.toHaveClass(/hide/);
     await expect(page.locator('#gCalza')).toBeDisabled();
 
-    // ↓↓↓ ВСТАВИТЬ ЗДЕСЬ ↓↓↓
-    //
-    // Подменяем руки ботов, чтобы каждый из них гарантированно повышал,
-    // а не вызывал Dudo. Иначе после нашей ставки 1×2 бот может сказать
-    // «Не верю», раунд перезапустится, ставки снова не будет —
-    // и #gCalza останется disabled.
-    //
-    // Даём каждому боту руку [2, 3, 4]:
-    //   own(hand, 2, wild=true) = 1  (одна «2»)
-    //   need = 1 - 1 = 0 → probBid(1, 2, ...) = 1
-    //   p = 1 > dudoBelow у любого стиля → raise
-    await page.evaluate(() => {
-      const g = window.__perudo_v2?.game;
-      if (!g) return;
-      for (let i = 1; i < g.players.length; i++) {
-        g.players[i].hand = [2, 3, 4];
-      }
-    });
-    // ↑↑↑ КОНЕЦ ВСТАВКИ ↑↑↑
-
-    // 3. Ставим 1 × грань 2 — это индекс 1, НЕ 0.
-    await page.locator('#gQ').fill('1');
+    await rigBots(page, [2, 3, 4]);
+    await setQuantity(page, 1);
     await page.locator('#gPick button').nth(1).click();
     await page.locator('#gRaise').click();
-
-    // Ставка должна пройти — проверим, что в #gPrev нет слова «недопустима».
     await expect(page.locator('#gPrev')).not.toContainText(/недопустима/i);
 
-    // 4. Ждём, пока ОБА бота ответят и ход снова вернётся к нам.
-    //    Проверяем не только статус, но и что bid принадлежит не нам —
-    //    это и есть предусловие для активной Calza.
-    await page.waitForFunction(() => {
-      const s = document.querySelector('#gStatus')?.textContent || '';
-      const g = window.__perudo_v2?.game;
-      return s.includes('Ваш ход')
-        && g?.bid
-        && g.bid.playerId !== 'human';
-    }, { timeout: 10_000 });
-
-    // 5. Теперь Calza должна быть активна.
+    await waitBotBid(page);
     await expect(page.locator('#gCalza')).toBeEnabled();
   });
 });

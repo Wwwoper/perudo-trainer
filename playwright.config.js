@@ -1,24 +1,20 @@
-// playwright.config.js
+// Конфигурация e2e-тестов (Playwright Test). Запуск: npm run test:e2e
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: 'tests/e2e',
   timeout: 30_000,
-  fullyParallel: false,          // партии последовательные, не мешают друг другу
-  reporter: [['list']],
-  use: {
-    baseURL: 'http://localhost:8000',
-    trace: 'on-first-retry',
-    video: 'retain-on-failure',
-  },
+  retries: 0,
+  reporter: 'list',
+  use: { baseURL: 'http://127.0.0.1:4173' },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
+    { name: 'phone', use: { ...devices['Pixel 7'] } },
   ],
-  // Playwright сам поднимет сервер и погасит его после тестов
   webServer: {
-    command: 'python3 -m http.server 8000',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 20_000,
+    command: 'node tests/e2e/static-server.mjs 4173',
+    url: 'http://127.0.0.1:4173',
+    reuseExistingServer: true,
+    stdout: 'ignore',
   },
 });

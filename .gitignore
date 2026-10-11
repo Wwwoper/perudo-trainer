@@ -4,3 +4,6 @@ test-results/
 playwright-report/
 .DS_Store
 /files
+__pycache__/
+*.pyc
+*.pyd

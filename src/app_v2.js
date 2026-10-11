@@ -1025,7 +1025,7 @@ function renderGame() {
 
   if ($('#gCalza')) {
     // P0.4: используем единое условие из движка.
-    const calzaAvailable = engineCanCalza(game) && game.bid && game.bid.playerId !== 'human';
+    const calzaAvailable = engineCanCalza(game) && game.bid && game.bid.playerId !== game.players[0].id;
     $('#gCalza').disabled = dis || !calzaAvailable;
     $('#gCalza').classList.toggle('hide', !game.calzaEnabled);
   }

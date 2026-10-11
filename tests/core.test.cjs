@@ -1,6 +1,17 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const P = require('../src/core.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+// core.js — классический скрипт (UMD, window.Perudo), его грузит <script> в index.html.
+// Из-за "type": "module" в package.json Node читал бы его как ES-модуль и падал,
+// поэтому выполняем исходник в изолированном контексте, как это делает браузер.
+const sandbox = { self: {} };
+vm.createContext(sandbox);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../src/core.js'), 'utf8'), sandbox, { filename: 'core.js' });
+const P = sandbox.self.Perudo;
+if (!P) throw new Error('core.js не создал Perudo');
 
 // Эталонные значения посчитаны исходным perudo.py
 const REF = [
