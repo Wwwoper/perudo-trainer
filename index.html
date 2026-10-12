@@ -14,22 +14,32 @@
   <link rel="stylesheet" href="src/css/components.css">
   <link rel="stylesheet" href="src/css/trainer.css">
   <link rel="stylesheet" href="src/css/drill.css">
+  <!-- Превью ссылки на приложение -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:site_name" content="Перудо">
+  <meta property="og:title" content="Перудо — тренажёр стратегии">
+  <meta property="og:description"
+    content="Играйте против ботов, считайте шансы и улучшайте стратегию прямо в браузере.">
+  <meta property="og:url" content="https://wwwoper.github.io/perudo-trainer/">
+  <meta property="og:image" content="https://wwwoper.github.io/perudo-trainer/docs/img/game-desktop.png">
+  <meta property="og:image:alt" content="Игровой стол тренажёра Перудо с кубиками и расчётом шансов">
 </head>
 
 <body>
   <main>
     <header class="app-header">
-    <h1>🎲 Перудо</h1>
+      <h1>🎲 Перудо</h1>
 
-    <nav id="mainNav" aria-label="Разделы">
-      <button class="tab-btn on" data-t="calc">Калькулятор</button>
-      <button class="tab-btn" data-t="train">Тренажёр</button>
-      <button class="tab-btn" data-t="drill">Упражнения</button>
-      <button class="tab-btn" data-t="game">Партия</button>
-      <button class="tab-btn" data-t="duel">Дуэль (CFR)</button>
-      <button class="tab-btn" data-t="stats">Статистика</button>
-      <button class="tab-btn" data-t="sim">Симуляция</button>
-    </nav>
+      <nav id="mainNav" aria-label="Разделы">
+        <button class="tab-btn on" data-t="calc">Калькулятор</button>
+        <button class="tab-btn" data-t="train">Тренажёр</button>
+        <button class="tab-btn" data-t="drill">Упражнения</button>
+        <button class="tab-btn" data-t="game">Партия</button>
+        <button class="tab-btn" data-t="duel">Дуэль (CFR)</button>
+        <button class="tab-btn" data-t="stats">Статистика</button>
+        <button class="tab-btn" data-t="sim">Симуляция</button>
+      </nav>
     </header>
     <div id="navScrim" class="nav-scrim" hidden></div>
 
@@ -209,8 +219,8 @@
         <div class="game-main">
 
           <header class="game-hud card">
-            <button id="navToggle" type="button" class="icon-btn hud-menu" aria-expanded="false"
-              aria-controls="mainNav" aria-label="Разделы приложения">☰</button>
+            <button id="navToggle" type="button" class="icon-btn hud-menu" aria-expanded="false" aria-controls="mainNav"
+              aria-label="Разделы приложения">☰</button>
             <div class="hud-status">
               <div id="gStatus" class="big" role="status" aria-live="polite"></div>
               <div id="gMeta" class="muted"></div>
@@ -289,7 +299,8 @@
 
             <div role="tabpanel" id="panCalc" aria-labelledby="tabCalc">
               <div id="gPractical"></div>
-              <p id="gPracticalEmpty" class="muted">Расчёт появится на вашем ходу в режимах «Новичок» и «Тренировка».</p>
+              <p id="gPracticalEmpty" class="muted">Расчёт появится на вашем ходу в режимах «Новичок» и «Тренировка».
+              </p>
             </div>
 
             <div role="tabpanel" id="panLog" aria-labelledby="tabLog" hidden>
@@ -368,7 +379,7 @@
         </aside>
 
       </div>
-    
+
       <dialog id="gReveal" class="reveal-dialog" aria-labelledby="gRevealTitle">
         <div class="reveal-body">
           <h2 id="gRevealTitle" class="reveal-title"></h2>
@@ -390,7 +401,8 @@
           <p id="gResultLead" class="muted"></p>
           <ol id="gResultStand" class="result-stand"></ol>
           <div class="result-actions">
-            <button type="button" id="gResultAgain" class="btn-primary" data-action="new-game" autofocus>Сыграть ещё</button>
+            <button type="button" id="gResultAgain" class="btn-primary" data-action="new-game" autofocus>Сыграть
+              ещё</button>
             <button type="button" id="gResultView">Посмотреть стол</button>
           </div>
         </div>
