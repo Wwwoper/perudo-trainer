@@ -254,7 +254,6 @@ tests/
 ├── __init__.py      делает папку пакетом для `python3 -m unittest`
 └── test_layout.py   тесты вёрстки в браузере (Playwright)
 docs/img/            скриншоты для README
-docs/change-proposal.md  история решений по доработкам
 ```
 
 ## Как устроен код
