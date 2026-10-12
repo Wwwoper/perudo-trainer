@@ -6,11 +6,17 @@ import { createGame, startGame, applyAction, canCalza as engineCanCalza }
 import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
 import {
-  getStats, setStats,
+  getStats, setStats, getBotMemory, setBotMemory,
   getTrainingQueue, setTrainingQueue, getGames,
   migrateIfNeeded, get, set,
 } from './storage.js';
-import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
+import {
+  BOT_STYLES, BOT_STYLE_IDS, STYLE_AUTO, STYLE_RANDOM,
+  generateCharacter, botDecide, pickBotStyles, noiseForLevel, DEFAULT_BOT_LEVEL,
+} from './bots.js';
+import {
+  createMemory, normalizeMemory, observeEvent, opponentModel, describeMemory,
+} from './memory.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml } from './table.js';
 import { buildGameResult, resultHeadline, pluralDice } from './result.js';
 import { buildReveal, dieMatches } from './reveal.js';
@@ -738,9 +744,96 @@ function setupGame() {
   // закрыла бы панель действий.
   if ($('#gQ') && window.matchMedia?.('(pointer: coarse)').matches) $('#gQ').readOnly = true;
 
+  setupBotStyles();
+  setupBotMind();
   setupResultDialog();
   setupReveal();
   startNewGame();
+}
+
+// ================= Стили ботов в настройках =================
+
+function botCountSetting() {
+  return Math.max(1, Math.min(5, +($('#gBots')?.value || 3)));
+}
+
+// По одному выпадающему списку на каждого бота; при смене числа ботов
+// уже сделанный выбор сохраняется.
+function setupBotStyles() {
+  const box = $('#gBotStyles');
+  if (!box) return;
+
+  const help = $('#gStyleHelp');
+  if (help) {
+    help.textContent = BOT_STYLE_IDS
+      .map((id) => `${BOT_STYLES[id].icon} ${BOT_STYLES[id].name} — ${BOT_STYLES[id].desc}`)
+      .join('. ') + '.';
+  }
+
+  const options = [
+    `<option value="${STYLE_AUTO}">По умолчанию</option>`,
+    `<option value="${STYLE_RANDOM}">🎲 Случайный</option>`,
+    ...BOT_STYLE_IDS.map((id) => `<option value="${id}">${BOT_STYLES[id].icon} ${BOT_STYLES[id].name}</option>`),
+  ].join('');
+
+  const render = () => {
+    const prev = [...box.querySelectorAll('select')].map((sel) => sel.value);
+    const n = botCountSetting();
+    let html = '';
+    for (let i = 0; i < n; i += 2) {
+      html += '<div class="field-row">';
+      for (let j = i; j < Math.min(i + 2, n); j++) {
+        html += `<label class="field">Бот ${j + 1}<select id="gBotStyle${j}" data-bot-style>${options}</select></label>`;
+      }
+      html += '</div>';
+    }
+    box.innerHTML = html;
+    box.querySelectorAll('select').forEach((sel, i) => { if (prev[i]) sel.value = prev[i]; });
+  };
+
+  $('#gBots')?.addEventListener('input', render);
+  $('#gBots')?.addEventListener('change', render);
+  render();
+}
+
+function chosenBotStyles(count) {
+  const choices = [...document.querySelectorAll('#gBotStyles select')].map((sel) => sel.value);
+  return pickBotStyles(count, choices);
+}
+
+// ================= Шум и память ботов =================
+
+// Что боты помнят об игроке (между партиями, в localStorage).
+let botMemory = normalizeMemory(getBotMemory());
+// Настройки применяются к новой партии, как и остальные.
+let gameBotLevel = DEFAULT_BOT_LEVEL;
+let gameMemoryOn = true;
+
+function renderMemoryInfo() {
+  const info = $('#gMemoryInfo');
+  if (info) info.textContent = describeMemory(botMemory);
+}
+
+function setupBotMind() {
+  $('#gMemoryReset')?.addEventListener('click', () => {
+    botMemory = createMemory();
+    setBotMemory(botMemory);
+    renderMemoryInfo();
+  });
+  renderMemoryInfo();
+}
+
+// Боты замечают, когда проверили ставку человека и она оказалась (не)ложной.
+function observeReveal(events) {
+  if (!gameMemoryOn || !game) return;
+  const humanId = game.players[0].id;
+  let next = botMemory;
+  for (const e of events || []) next = observeEvent(next, e, humanId);
+  if (next !== botMemory) {
+    botMemory = next;
+    setBotMemory(botMemory);
+    renderMemoryInfo();
+  }
 }
 
 function totalDice() {
@@ -752,20 +845,20 @@ function startNewGame() {
   clearTimeout(botTimer);
   if (!P) return;
 
-  const botCount = Math.max(1, Math.min(5, +($('#gBots')?.value || 3)));
+  const botCount = botCountSetting();
   const startDice = Math.max(1, Math.min(10, +($('#gDice')?.value || 5)));
   const calzaEnabled = !!$('#gCalzaOpt')?.checked;
   const palificoEnabled = !!$('#gPalificoOpt')?.checked;
   const assistMode = $('#gAssist')?.value || 'training';
   const botSpeed = $('#gSpeed')?.value || 'normal';
+  gameBotLevel = $('#gBotLevel')?.value || DEFAULT_BOT_LEVEL;
+  gameMemoryOn = $('#gMemoryOpt') ? $('#gMemoryOpt').checked : true;
 
   assistConfig = createAssistConfig(assistMode);
   sideApi.close();
   sideApi.pick();
 
-  const characters = [];
-  const stylesOrder = ['careful', 'bluffer', 'smart'];
-  for (let i = 0; i < botCount; i++) characters.push(generateCharacter(stylesOrder[i % 3]));
+  const characters = chosenBotStyles(botCount).map((style) => generateCharacter(style));
 
   game = createGame({
     playerId: 'human',
@@ -1179,6 +1272,7 @@ function onPlayerDudo() {
   const res = applyAction(game, 'human', { type: 'dudo' });
   if (!res.success) { reviewEntries.pop(); return; }
 
+  observeReveal(res.events);
   const revealed = res.events.find((e) => e.type === 'DICE_REVEALED');
   if (revealed) {
     entry.outcome = `На столе было ${revealed.actualCount} при ставке ${q} — ` +
@@ -1349,6 +1443,9 @@ function runBotTurn() {
       bid: game.bid ? { q: game.bid.q, f: game.bid.f } : null,
       rules: { wild: !game.palifico },
       style: BOT_STYLES[bot.style] || BOT_STYLES.smart,
+      noise: noiseForLevel(gameBotLevel),
+      opponent: gameMemoryOn && game.bid && game.bid.playerId === game.players[0].id
+        ? opponentModel(botMemory) : null,
       opps,
       canCalza: game.calzaEnabled && !!game.bid && game.bid.playerId !== bot.id && engineCanCalza(game),
     });
@@ -1386,6 +1483,7 @@ function runBotTurn() {
   addGameLog('', `<span class="player-name c${idx}">${bot.name}</span> ${desc}`);
 
   if (action.type === 'dudo') {
+    observeReveal(res.events);
     const revealed = res.events.find((e) => e.type === 'DICE_REVEALED');
     if (revealed) {
       const bidQ = revealed.bid?.q ?? revealed.bid?.quantity;
@@ -1808,8 +1906,10 @@ function setupStats() {
     if (!confirm('Сбросить всю статистику, очередь и историю партий?')) return;
     try {
       ['perudo.settings', 'perudo.userProfile', 'perudo.games',
-        'perudo.trainingQueue', 'perudo.duelStats'].forEach((k) => localStorage.removeItem(k));
+        'perudo.trainingQueue', 'perudo.duelStats', 'perudo.botMemory'].forEach((k) => localStorage.removeItem(k));
     } catch (e) { }
+    botMemory = createMemory();
+    renderMemoryInfo();
     setStats({ n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } });
     setTrainingQueue([]);
     set('perudo.games', []);

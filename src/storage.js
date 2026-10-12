@@ -7,6 +7,7 @@ const KEYS = {
   USER_PROFILE: 'perudo.userProfile',
   CHARACTERS: 'perudo.characters',
   CHARACTER_MEMORIES: 'perudo.characterMemories',
+  BOT_MEMORY: 'perudo.botMemory',
   GAMES: 'perudo.games',
   REVIEWS: 'perudo.reviews',
   TRAINING_QUEUE: 'perudo.trainingQueue',
@@ -42,6 +43,15 @@ export function getSettings() {
 
 export function setSettings(settings) {
   set(KEYS.SETTINGS, { ...getSettings(), ...settings });
+}
+
+// Что боты помнят об игроке (см. memory.js). Проверку формата делает normalizeMemory.
+export function getBotMemory() {
+  return get(KEYS.BOT_MEMORY, null);
+}
+
+export function setBotMemory(memory) {
+  set(KEYS.BOT_MEMORY, memory);
 }
 
 export function getStats() {

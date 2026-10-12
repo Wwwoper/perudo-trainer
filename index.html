@@ -312,6 +312,24 @@
                 </label>
               </div>
 
+              <!-- Стиль каждого бота: поля строит setupBotStyles() в app_v2.js -->
+              <div id="gBotStyles"></div>
+
+              <div class="field-row">
+                <label class="field">Уровень ботов
+                  <select id="gBotLevel">
+                    <option value="easy">Лёгкий — часто ошибаются</option>
+                    <option value="normal" selected>Обычный — иногда ошибаются</option>
+                    <option value="hard">Сильный — без ошибок</option>
+                  </select>
+                </label>
+              </div>
+              <label class="check"><input id="gMemoryOpt" type="checkbox" checked> Боты запоминают мою игру</label>
+              <small id="gMemoryInfo" class="game-settings-help"></small>
+              <div class="field-row">
+                <button type="button" id="gMemoryReset">Забыть мою игру</button>
+              </div>
+
               <div class="field-row">
                 <label class="field">Режим помощи
                   <select id="gAssist">
@@ -337,6 +355,7 @@
               <button type="button" class="btn-primary side-start" data-action="new-game">Начать новую партию</button>
               <span id="gConfigSummary" class="muted"></span>
 
+              <small id="gStyleHelp" class="game-settings-help"></small>
               <small class="game-settings-help">
                 Настройки применяются, когда вы начинаете новую партию.
                 Единицы — джокеры, кроме ставок на единицы. С обычной цифры на единицы — половина с округлением

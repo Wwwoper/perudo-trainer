@@ -2,21 +2,84 @@
 
 import { legal, minLegal } from './rules.js';
 
-// Стили ботов
+// Стили ботов.
+// raiseMin  — минимальная вероятность ставки, которую бот считает надёжной для повышения;
+// dudoBelow — ниже этой вероятности чужой ставки бот говорит «Не верю»;
+// bluff     — шанс, что вместо надёжной ставки бот рискнёт слабой;
+// calza     — умеет ли говорить Calza;
+// noise     — размах ошибки в оценке вероятности (±), как у человека, который считает «на глаз»;
+// adapt     — насколько бот меняет доверие к ставкам человека по тому, как тот блефовал раньше
+//             (0 — не учитывает совсем, 1 — учитывает сильнее всех);
+// trust     — зарезервировано (в решении пока не участвует).
 export const BOT_STYLES = {
   careful: {
     id: 'careful', name: 'Осторожный', icon: '🛡️',
-    raiseMin: 0.60, dudoBelow: 0.45, bluff: 0.03, trust: 0.20, calza: false,
+    desc: 'ставит только надёжно, почти не блефует',
+    raiseMin: 0.60, dudoBelow: 0.45, bluff: 0.03, trust: 0.20, calza: false, noise: 0.05, adapt: 0.4,
   },
   bluffer: {
     id: 'bluffer', name: 'Блефующий', icon: '🎭',
-    raiseMin: 0.40, dudoBelow: 0.30, bluff: 0.35, trust: 0.10, calza: false,
+    desc: 'часто завышает ставку: его стоит проверять',
+    raiseMin: 0.40, dudoBelow: 0.30, bluff: 0.35, trust: 0.10, calza: false, noise: 0.1, adapt: 0.15,
   },
   smart: {
     id: 'smart', name: 'Умный', icon: '🧠',
-    raiseMin: 0.50, dudoBelow: 0.50, bluff: 0.12, trust: 0.35, calza: true,
+    desc: 'считает вероятности и умеет говорить Calza',
+    raiseMin: 0.50, dudoBelow: 0.50, bluff: 0.12, trust: 0.35, calza: true, noise: 0.03, adapt: 1.0,
+  },
+  aggressor: {
+    id: 'aggressor', name: 'Агрессор', icon: '🔥',
+    desc: 'быстро взвинчивает ставки и редко проверяет',
+    raiseMin: 0.35, dudoBelow: 0.20, bluff: 0.30, trust: 0.05, calza: false, noise: 0.1, adapt: 0.1,
+  },
+  skeptic: {
+    id: 'skeptic', name: 'Скептик', icon: '🧐',
+    desc: 'не доверяет чужим ставкам и часто говорит «Не верю»',
+    raiseMin: 0.55, dudoBelow: 0.62, bluff: 0.05, trust: 0.15, calza: false, noise: 0.06, adapt: 0.5,
   },
 };
+
+export const BOT_STYLE_IDS = Object.freeze(Object.keys(BOT_STYLES));
+
+// Раздача стилей по умолчанию: три базовых по кругу (как было до выбора вручную).
+export const DEFAULT_STYLE_CYCLE = Object.freeze(['careful', 'bluffer', 'smart']);
+
+// Уровень ботов = во сколько раз умножается размах ошибок `noise` стиля.
+export const BOT_LEVELS = Object.freeze({
+  easy: { id: 'easy', name: 'Лёгкий', desc: 'часто ошибаются в расчётах', noise: 2.5 },
+  normal: { id: 'normal', name: 'Обычный', desc: 'иногда ошибаются, как люди', noise: 1 },
+  hard: { id: 'hard', name: 'Сильный', desc: 'считают без ошибок', noise: 0 },
+});
+export const DEFAULT_BOT_LEVEL = 'normal';
+
+/** Множитель шума для уровня; неизвестный уровень = обычный. */
+export function noiseForLevel(level) {
+  return (BOT_LEVELS[level] || BOT_LEVELS[DEFAULT_BOT_LEVEL]).noise;
+}
+
+// Самая большая поправка к оценке ставки по «памяти» о блефе соперника.
+export const MAX_MEMORY_SHIFT = 0.25;
+const MEMORY_BASE_RATE = 0.3;      // доля блефа, при которой поправки нет (= PRIOR_RATE из memory.js)
+
+export const STYLE_AUTO = 'auto';
+export const STYLE_RANDOM = 'random';
+
+/**
+ * Превращает выбор пользователя в список стилей для `count` ботов.
+ * choices[i]: id стиля | 'auto' (по умолчанию, по кругу) | 'random' (любой из всех).
+ * Незнакомое значение или его отсутствие считается 'auto', поэтому
+ * испорченные настройки не ломают создание партии.
+ */
+export function pickBotStyles(count, choices = [], rng = Math.random) {
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const c = choices[i];
+    if (c === STYLE_RANDOM) out.push(BOT_STYLE_IDS[Math.floor(rng() * BOT_STYLE_IDS.length)]);
+    else if (BOT_STYLES[c]) out.push(c);
+    else out.push(DEFAULT_STYLE_CYCLE[i % DEFAULT_STYLE_CYCLE.length]);
+  }
+  return out;
+}
 
 // Генератор имён
 const MALE_NAMES = ['Алексей', 'Дмитрий', 'Иван', 'Сергей', 'Николай', 'Андрей', 'Максим', 'Александр', 'Павел', 'Михаил'];
@@ -34,7 +97,7 @@ export function generateCharacter(style = 'random') {
   const gender = Math.random() < 0.5 ? 'male' : 'female';
   const name = generateName(gender);
   const styleKey = style === 'random'
-    ? ['careful', 'bluffer', 'smart'][Math.floor(Math.random() * 3)]
+    ? BOT_STYLE_IDS[Math.floor(Math.random() * BOT_STYLE_IDS.length)]
     : style;
 
   return {
@@ -87,6 +150,10 @@ export function generateColor() {
    ============================================================= */
 export function botDecide(state) {
   const { hand, publicState, bid, rules, style, opps, canCalza, rng = Math.random } = state;
+  // noise — множитель ошибок (0 по умолчанию: функция остаётся детерминированной);
+  // opponent = { bluffRate, samples } — что бот помнит о том, кто сделал текущую ставку.
+  const noiseMul = Number.isFinite(state.noise) ? Math.max(0, state.noise) : 0;
+  const opponent = state.opponent || null;
   const arch = style || BOT_STYLES.smart;
   const wild = !rules || rules.wild !== false;
 
@@ -112,7 +179,25 @@ export function botDecide(state) {
     return Math.min(1, s);
   };
 
-  const pr = (q, f) => probBid(q, f, publicState.totalDice, hand, wild);
+  const exact = (q, f) => probBid(q, f, publicState.totalDice, hand, wild);
+  const clamp01 = (x) => Math.min(1, Math.max(0, x));
+
+  // «Восприятие» бота: точная вероятность плюс ошибка. Для одной и той же ставки
+  // ошибка одна на весь ход, иначе бот противоречил бы сам себе.
+  const amp = (arch.noise || 0) * noiseMul;
+  const seen = new Map();
+  const pr = (q, f) => {
+    const p = exact(q, f);
+    if (!amp) return p;
+    const key = q * 10 + f;
+    if (!seen.has(key)) seen.set(key, (rng() * 2 - 1) * amp);
+    return clamp01(p + seen.get(key));
+  };
+
+  // Поправка к оценке чужой ставки: если соперник блефовал чаще обычного, верим меньше, и наоборот.
+  const memoryShift = opponent && Number.isFinite(opponent.bluffRate)
+    ? Math.max(-MAX_MEMORY_SHIFT, Math.min(MAX_MEMORY_SHIFT, (arch.adapt || 0) * (opponent.bluffRate - MEMORY_BASE_RATE)))
+    : 0;
 
   // Единый формат ставки — {q, f}. Дополнительно терпим legacy {quantity, face}.
   const bq = bid ? (bid.q ?? bid.quantity) : null;
@@ -128,7 +213,7 @@ export function botDecide(state) {
     const pe = (need < 0 || need > unknown)
       ? 0
       : comb(unknown, need) * Math.pow(pp, need) * Math.pow(1 - pp, unknown - need);
-    const pCurrent = pr(b.q, b.f);
+    const pCurrent = clamp01(pr(b.q, b.f) - memoryShift);
     if (pe >= 0.30 && pCurrent >= 0.25 && pCurrent <= 0.9) {
       return { type: 'calza', reason: `шанс точного совпадения ${(pe * 100).toFixed(0)}%` };
     }
@@ -136,7 +221,7 @@ export function botDecide(state) {
 
   // Dudo
   if (b) {
-    const p = pr(b.q, b.f);
+    const p = clamp01(pr(b.q, b.f) - memoryShift);
     if (p < arch.dudoBelow) {
       return { type: 'dudo', reason: `оценил ставку в ${(p * 100).toFixed(0)}%` };
     }
