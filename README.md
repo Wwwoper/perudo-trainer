@@ -4,6 +4,9 @@
 
 **▶ [Открыть приложение](https://wwwoper.github.io/perudo-trainer/)**
 
+[![tests](https://github.com/Wwwoper/perudo-trainer/actions/workflows/test.yml/badge.svg)](https://github.com/Wwwoper/perudo-trainer/actions/workflows/test.yml)
+[![Лицензия: MIT](https://img.shields.io/badge/%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F-MIT-blue)](LICENSE)
+
 Ничего устанавливать не нужно: приложение работает прямо в браузере на компьютере, планшете и телефоне, без регистрации и без рекламы.
 
 ![Партия на компьютере](docs/img/game-desktop.png)
@@ -229,6 +232,7 @@ index.html           разметка всех вкладок и небольш�
 package.json         скрипты npm (test, test:e2e, test:e2e:ui, start), devDependencies для e2e
 package-lock.json    зафиксированные версии npm-пакетов
 playwright.config.js настройки e2e-тестов (десктоп и телефон)
+.github/workflows/   проверка тестов на GitHub при каждом push и pull request
 LICENSE              лицензия MIT
 .nojekyll            отключает Jekyll на GitHub Pages
 README.md            это описание (GitHub показывает его на главной странице)

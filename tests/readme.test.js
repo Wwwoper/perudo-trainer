@@ -34,3 +34,9 @@ test('README: все локальные картинки существуют', 
 test('README: описание проекта не ссылается на несуществующий .github/README.md', () => {
   assert.doesNotMatch(readme, /\.github\/README\.md/);
 });
+
+test('README: бейдж тестов указывает на существующий workflow', () => {
+  const m = readme.match(/actions\/workflows\/([\w.-]+)\/badge\.svg/);
+  assert.ok(m, 'в README нет бейджа тестов');
+  assert.ok(existsSync(join(root, '.github', 'workflows', m[1])), `нет файла workflow ${m[1]}`);
+});
