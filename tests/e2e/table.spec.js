@@ -1,6 +1,7 @@
 // tests/e2e/table.spec.js
 // Запуск: npm run test:e2e  (Playwright Test, а не `node --test`).
 import { test, expect } from '@playwright/test';
+import { openTab as goTab } from './helpers.js';
 
 /** Открывает вкладку панели (на телефоне — через кнопку в HUD / шторку). */
 async function openTab(page, tabId) {
@@ -87,7 +88,7 @@ test.describe('Покерный стол в партии', () => {
     // Клик повторяется, пока вкладка не переключится: на медленной машине
     // и при параллельных воркерах первый клик иногда теряется.
     await expect(async () => {
-      await page.locator('.tab-btn[data-t="game"]').click();
+      await goTab(page, 'game');
       await expect(page.locator('#game')).toBeVisible({ timeout: 1_000 });
     }).toPass({ timeout: 10_000 });
     // Поля настроек теперь лежат в скрытой вкладке — их открывает openSettings().
@@ -258,7 +259,7 @@ test.describe('Покерный стол в партии', () => {
 
     await page.reload();
     await page.waitForFunction(() => Boolean(window.__perudo_v2));
-    await page.locator('.tab-btn[data-t="game"]').click();
+    await goTab(page, 'game');
     await openSettings(page);
     await expect(page.locator('#gMemoryInfo')).toContainText('проверено ставок — 1');
   });

@@ -116,18 +116,21 @@ function setupTabs() {
 
   // Компактное меню разделов: в партии на телефоне шапка прячется, лента открывается кнопкой ☰ в HUD.
   const header = $('.app-header');
-  const toggle = $('#navToggle');
+  // Кнопка ☰ есть в шапке каждого «компактного» раздела (партия, калькулятор, тренажёр, упражнения)
+  const toggles = $$('.hud-menu');
+  const toggleOf = (tab) => document.querySelector(`#${tab} .hud-menu`);
+  const COMPACT_TABS = ['game', 'calc', 'train', 'drill'];
   const scrim = $('#navScrim');
   const isOpen = () => !!header?.classList.contains('nav-open');
   const setMenu = (open, { focus = false } = {}) => {
-    if (!header || !toggle) return;
+    if (!header) return;
     header.classList.toggle('nav-open', open);
-    toggle.setAttribute('aria-expanded', String(open));
+    toggles.forEach((t) => t.setAttribute('aria-expanded', String(open)));
     if (scrim) scrim.hidden = !open;
     if (open) (nav?.querySelector('.tab-btn.on') || nav?.querySelector('.tab-btn'))?.focus();
-    else if (focus) toggle.focus();
+    else if (focus) toggleOf(document.body.dataset.tab)?.focus();
   };
-  toggle?.addEventListener('click', () => setMenu(!isOpen()));
+  toggles.forEach((t) => t.addEventListener('click', () => setMenu(!isOpen())));
   scrim?.addEventListener('click', () => setMenu(false, { focus: true }));
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && isOpen()) setMenu(false, { focus: true });
@@ -142,7 +145,11 @@ function setupTabs() {
   });
   // Телефон повернули или окно растянули — меню в прежнем виде не нужно.
   window.matchMedia?.('(min-width: 1100px)').addEventListener?.('change', () => setMenu(false));
-  document.body.dataset.tab = $('.tab-btn.on')?.dataset.t || 'calc';
+  const setTab = (tab) => {
+    document.body.dataset.tab = tab;
+    document.body.toggleAttribute('data-compact-nav', COMPACT_TABS.includes(tab));
+  };
+  setTab($('.tab-btn.on')?.dataset.t || 'calc');
 
   $$('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -152,7 +159,7 @@ function setupTabs() {
         else b.removeAttribute('aria-current');
       });
       const target = btn.dataset.t;
-      document.body.dataset.tab = target;
+      setTab(target);
       const wasOpen = isOpen();
       setMenu(false);
       // Лента могла быть скрыта (меню ☰): прокручиваем к вкладке и пересчитываем края, когда она уже на экране
@@ -160,11 +167,12 @@ function setupTabs() {
         btn.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: 'smooth' });
         updateFade();
       });
-      if (wasOpen) (target === 'game' ? toggle : btn)?.focus();
       TABS.forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('hide', id !== target);
       });
+      // Фокус — после смены раздела, иначе кнопка ☰ нового раздела ещё скрыта
+      if (wasOpen) (toggleOf(target) && COMPACT_TABS.includes(target) ? toggleOf(target) : btn)?.focus();
       if (target === 'stats') renderStats();
     });
   });

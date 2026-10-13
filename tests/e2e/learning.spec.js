@@ -2,9 +2,10 @@
 // Дымовые сценарии учебных вкладок: Калькулятор, Тренажёр, Упражнения.
 // Страхуют переделку вёрстки: после неё вкладки должны делать то же самое.
 import { test, expect } from '@playwright/test';
+import { openTab } from './helpers.js';
 
 async function open(page, tab) {
-  await page.click(`.tab-btn[data-t="${tab}"]`);
+  await openTab(page, tab);
 }
 
 test.describe('Учебные вкладки', () => {

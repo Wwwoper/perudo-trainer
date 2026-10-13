@@ -2,12 +2,13 @@
 // Статистика тренажёра и упражнений хранится в одном объекте (perudo.userProfile).
 // Ответ в одном разделе не должен стирать счётчики другого.
 import { test, expect } from '@playwright/test';
+import { openTab as goTab } from './helpers.js';
 
 const profile = (page) =>
   page.evaluate(() => JSON.parse(localStorage.getItem('perudo.userProfile') || 'null'));
 
 async function openTab(page, name) {
-  await page.click(`.tab-btn[data-t="${name}"]`);
+  await goTab(page, name);
 }
 
 async function answerTrainer(page) {
@@ -67,9 +68,9 @@ test('«Статистика» показывает названия режим�
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await page.click('.tab-btn[data-t="train"]');
+  await goTab(page, 'train');
   await page.click('#tDudo');                  // один ответ в режиме по умолчанию («Классика»)
-  await page.click('.tab-btn[data-t="stats"]');
+  await goTab(page, 'stats');
   const cell = page.locator('#stByMode tr').nth(1).locator('td').first();
   await expect(cell).toHaveText('Классика');
 });

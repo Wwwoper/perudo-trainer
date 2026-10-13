@@ -1,0 +1,24 @@
+/* ===== Учебные вкладки: Калькулятор, Тренажёр, Упражнения =====
+   Общая компоновка по принципам «Партии». Пороги совпадают с game.css:
+   телефон = max-width 719px или низкий ландшафт (max-height 500px при ширине до 1099px). */
+
+/* На широких экранах лента разделов в шапке, отдельная шапка раздела не нужна */
+.learn-hud {
+  display: none;
+}
+
+@media (max-width: 719px), (max-height: 500px) and (max-width: 1099px) {
+  .learn-hud {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap);
+    margin-bottom: var(--space-2);
+  }
+
+  .learn-hud-title {
+    margin: 0;
+    font-size: 1.125rem;
+    line-height: 1.2;
+  }
+}

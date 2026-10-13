@@ -56,7 +56,7 @@ class _Quiet(http.server.SimpleHTTPRequestHandler):
 def _tab(page, name):
     btn = page.locator(f'.tab-btn[data-t="{name}"]')
     if not btn.is_visible():
-        page.click("#navToggle")
+        page.locator(".hud-menu:visible").click()
     btn.click()
 
 

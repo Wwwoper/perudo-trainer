@@ -938,7 +938,7 @@
 
 /* ===== Компактная партия на телефоне: шапка схлопывается в кнопку ☰ в HUD =====
    «Телефон» = узкий экран или низкий (ландшафт). На остальных вкладках лента разделов остаётся.
-   Класс body[data-tab="game"] выставляет setupTabs() в app_v2.js. */
+   Класс body[data-compact-nav] выставляет setupTabs() в app_v2.js. */
 .hud-menu {
   display: none;
 }
@@ -955,18 +955,18 @@
 }
 
 @media (max-width: 719px), (max-height: 500px) and (max-width: 1099px) {
-  body[data-tab="game"] .hud-menu {
+  body[data-compact-nav] .hud-menu {
     display: inline-flex;
   }
 
-  body[data-tab="game"] .app-header {
+  body[data-compact-nav] .app-header {
     height: 0;
     margin: 0;
     overflow: visible;
   }
 
   /* Заголовок остаётся для скринридеров, но не торчит из-под HUD */
-  body[data-tab="game"] .app-header h1 {
+  body[data-compact-nav] .app-header h1 {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -976,11 +976,11 @@
     white-space: nowrap;
   }
 
-  body[data-tab="game"] .app-header nav {
+  body[data-compact-nav] .app-header nav {
     display: none;
   }
 
-  body[data-tab="game"] .app-header.nav-open nav {
+  body[data-compact-nav] .app-header.nav-open nav {
     position: fixed;
     top: 8px;
     left: 8px;
@@ -998,7 +998,7 @@
     mask-image: none;
   }
 
-  body[data-tab="game"] .app-header.nav-open nav button {
+  body[data-compact-nav] .app-header.nav-open nav button {
     min-height: 48px;
     text-align: left;
   }

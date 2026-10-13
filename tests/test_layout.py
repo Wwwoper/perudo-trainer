@@ -67,7 +67,7 @@ class LayoutTest(unittest.TestCase):
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(self.url)
-        page.click('button[data-t="game"]')
+        self.goto_tab(page, "game")
         page.evaluate(
             "([n, rev, dice]) => { document.querySelector('#gBots').value = n;"
             " document.querySelector('#gRevealOpt').checked = rev;"
@@ -81,7 +81,7 @@ class LayoutTest(unittest.TestCase):
         """Перейти на вкладку: на телефоне в партии лента спрятана за кнопкой ☰."""
         btn = page.locator(f'.tab-btn[data-t="{tab}"]')
         if not btn.is_visible():
-            page.click("#navToggle")
+            page.locator(".hud-menu:visible").click()
         btn.click()
 
     def is_compact(self, w, h):
@@ -464,16 +464,43 @@ class LayoutTest(unittest.TestCase):
                     self.assertLessEqual(page.locator(".app-header").bounding_box()["height"], 56)
                     self.assertFalse(page.locator("#navToggle").is_visible())
 
-    def test_other_tabs_keep_the_ribbon_on_phone(self):
+    def test_ribbon_stays_on_non_compact_tabs_on_phone(self):
         for w, h in [(360, 640), (390, 844), (844, 390)]:
             with self.subTest(w=w, h=h):
                 page = self.open_game(w, h, 3)
-                self.goto_tab(page, "calc")
+                self.goto_tab(page, "stats")
                 ys = [round(b["y"]) for b in self.boxes(page, ".app-header nav button")]
                 self.assertEqual(len(ys), 7)
                 self.assertLessEqual(max(ys) - min(ys), 1)
-                self.assertFalse(page.locator("#navToggle").is_visible())
+                self.assertFalse(page.locator(".hud-menu:visible").count())
                 self.assertGreater(page.locator(".app-header").bounding_box()["height"], 30)
+
+    def test_learning_tabs_use_menu_button_on_phone(self):
+        for w, h in [(360, 640), (390, 844), (844, 390)]:
+            for tab in ("calc", "train", "drill"):
+                with self.subTest(w=w, h=h, tab=tab):
+                    page = self.open_game(w, h, 3)
+                    self.goto_tab(page, tab)
+                    self.assertLessEqual(page.locator(".app-header").bounding_box()["height"], 1)
+                    self.assertFalse(page.locator("#mainNav").is_visible())
+                    tg = page.locator(f"#{tab} .hud-menu")
+                    self.assertTrue(tg.is_visible())
+                    box = tg.bounding_box()
+                    self.assertGreaterEqual(min(box["width"], box["height"]), 44)
+                    tg.click()
+                    self.assertTrue(page.locator("#mainNav").is_visible())
+                    self.assertEqual(tg.get_attribute("aria-expanded"), "true")
+                    page.keyboard.press("Escape")
+                    self.assertFalse(page.locator("#mainNav").is_visible())
+                    self.assertEqual(page.evaluate("document.activeElement.closest('section').id"), tab)
+
+    def test_learning_tabs_keep_ribbon_on_desktop(self):
+        for tab in ("calc", "train", "drill"):
+            with self.subTest(tab=tab):
+                page = self.open_game(1366, 768, 3)
+                self.goto_tab(page, tab)
+                self.assertTrue(page.locator("#mainNav").is_visible())
+                self.assertFalse(page.locator(f"#{tab} .learn-hud").is_visible())
 
     def test_menu_gives_the_table_more_room_on_phone(self):
         # до свёртки шапки стол был 328px (360×640) и 220px (844×390)
@@ -566,9 +593,9 @@ class LayoutTest(unittest.TestCase):
 
     def test_nav_scrolls_active_tab_into_view_and_marks_current(self):
         page = self.open_game(360, 640, 3)
-        self.goto_tab(page, "calc")                                    # из партии лента открывается кнопкой ☰
+        self.goto_tab(page, "stats")                                   # лента видна только на «обычных» вкладках
         nav = page.locator(".app-header nav").bounding_box()
-        for data_t in ["sim", "calc"]:
+        for data_t in ["sim", "stats"]:
             page.locator(f'.tab-btn[data-t="{data_t}"]').click()
             page.wait_for_timeout(700)                                 # smooth scroll
             b = page.locator(f'.tab-btn[data-t="{data_t}"]').bounding_box()
@@ -585,8 +612,10 @@ class LayoutTest(unittest.TestCase):
             return page.evaluate("""() => { const s = document.querySelector('.app-header nav').style;
                 return [s.getPropertyValue('--fade-l'), s.getPropertyValue('--fade-r')]; }""")
         page = self.open_game(360, 640, 3)
-        self.goto_tab(page, "calc")
-        page.wait_for_timeout(700)
+        self.goto_tab(page, "stats")
+        page.wait_for_timeout(700)                                     # дождаться плавной прокрутки к вкладке
+        page.evaluate("document.querySelector('.app-header nav').scrollLeft = 0")
+        page.wait_for_timeout(300)
         self.assertEqual(fades(page), ["0px", "24px"])                 # слева край, справа есть ещё
         page.locator('.tab-btn[data-t="sim"]').click()
         page.wait_for_timeout(700)
@@ -723,7 +752,7 @@ class LayoutTest(unittest.TestCase):
     def test_dialog_not_shown_over_another_tab(self):
         page = self.open_game(1366, 768, 1)
         self.play_out(page)
-        page.click('button[data-t="calc"]')
+        self.goto_tab(page, "calc")
         page.wait_for_timeout(1200)
         self.assertFalse(page.locator("#gResultDialog").evaluate("d => d.open"))
 
@@ -797,7 +826,7 @@ class LayoutTest(unittest.TestCase):
                 self.addCleanup(ctx.close)
                 page = ctx.new_page()
                 page.goto(self.url)
-                page.click('button[data-t="game"]')
+                self.goto_tab(page, "game")
                 page.wait_for_selector(".seat")
                 self.play_out(page)
                 page.wait_for_selector("#gResultDialog[open]", timeout=5000)
