@@ -6,7 +6,7 @@ import { createGame, startGame, applyAction, canCalza as engineCanCalza }
 import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
 import {
-  getStats, setStats, getBotMemory, setBotMemory,
+  getStats, setStats, updateStats, getBotMemory, setBotMemory,
   getTrainingQueue, setTrainingQueue, getGames,
   migrateIfNeeded, get, set,
 } from './storage.js';
@@ -254,10 +254,7 @@ function setupCalculator() {
 function setupTrainer() {
   if (!P) return;
 
-  const S = getStats();
-  S.drill = S.drill || { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };
-  S.byMode = S.byMode || {};
-
+  // Статистику не держим в переменной: её пишут и другие разделы (см. updateStats).
   let queue = getTrainingQueue();
   let cur = null;
   let answered = false;
@@ -273,13 +270,14 @@ function setupTrainer() {
     for (let f = 1; f <= 6; f++) faceSel.add(new Option(String(f), f));
   }
 
-  function persist() { setStats(S); setTrainingQueue(queue); updateStat(); }
+  function persist() { setTrainingQueue(queue); updateStat(); }
 
   function updateStat() {
     const el = $('#tStat');
     if (!el) return;
     const mk = $('#tMode').value;
-    const b = S.byMode[mk] || { n: 0, good: 0 };
+    const S = getStats();
+    const b = (S.byMode || {})[mk] || { n: 0, good: 0 };
     el.innerHTML = `Всего: ${S.n}, верных решений: ${S.good} (${S.n ? pct(S.good / S.n) : '—'}). ` +
       `В выбранном режиме: ${b.n ? `${b.good}/${b.n} (${pct(b.good / b.n)})` : '—'}. ` +
       `В очереди повторов: ${queue.length}.`;
@@ -353,10 +351,12 @@ function setupTrainer() {
     answered = true;
 
     const mk = $('#tMode').value;
-    S.n++;
-    S.byMode[mk] = S.byMode[mk] || { n: 0, good: 0 };
-    S.byMode[mk].n++;
-    if (good) { S.good++; S.byMode[mk].good++; }
+    updateStats((S) => {
+      S.n++;
+      S.byMode[mk] = S.byMode[mk] || { n: 0, good: 0 };
+      S.byMode[mk].n++;
+      if (good) { S.good++; S.byMode[mk].good++; }
+    });
 
     if (cur.item) {
       if (good) {
@@ -422,8 +422,10 @@ function setupTrainer() {
     $('#tT').addEventListener('input', updateSettingsHint);
   }
   if ($('#tReset')) $('#tReset').onclick = () => {
-    S.n = 0; S.good = 0; S.byMode = {};
-    S.drill = { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };
+    updateStats((S) => {
+      S.n = 0; S.good = 0; S.byMode = {};
+      S.drill = { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };
+    });
     queue = [];
     persist();
     newSituation();
@@ -439,13 +441,11 @@ let drillState = { A: null, B: null };
 function setupDrill() {
   if (!P) return;
 
-  const S = getStats();
-  S.drill = S.drill || { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };
-
   function saveDrill(k, good) {
-    S.drill[k].n++;
-    if (good) S.drill[k].good++;
-    setStats(S);
+    updateStats((S) => {
+      S.drill[k].n++;
+      if (good) S.drill[k].good++;
+    });
   }
 
   function newA() {
@@ -1600,10 +1600,10 @@ function finalizeGame() {
   });
   set('perudo.games', history.slice(-200));
 
-  const stats = getStats();
-  stats.totalGames = (stats.totalGames || 0) + 1;
-  if (won) stats.totalWins = (stats.totalWins || 0) + 1;
-  setStats(stats);
+  updateStats((stats) => {
+    stats.totalGames = (stats.totalGames || 0) + 1;
+    if (won) stats.totalWins = (stats.totalWins || 0) + 1;
+  });
 
   const result = buildGameResult(game);
   const h = resultHeadline(result);
