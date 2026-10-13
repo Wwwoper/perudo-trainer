@@ -62,3 +62,14 @@ test.describe('Статистика: разделы не затирают дру
     expect(p.drill.A.n).toBe(2);
   });
 });
+
+test('«Статистика» показывает названия режимов, а не идентификаторы', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.click('.tab-btn[data-t="train"]');
+  await page.click('#tDudo');                  // один ответ в режиме по умолчанию («Классика»)
+  await page.click('.tab-btn[data-t="stats"]');
+  const cell = page.locator('#stByMode tr').nth(1).locator('td').first();
+  await expect(cell).toHaveText('Классика');
+});

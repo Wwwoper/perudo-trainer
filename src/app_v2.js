@@ -86,6 +86,12 @@ const MODES = {
   },
 };
 
+/** Короткое название режима тренажёра: «Классика» из «Классика (5 кубиков у вас)». */
+function modeLabel(key) {
+  const m = MODES[key];
+  return m ? m.name.split('(')[0].trim() : String(key);
+}
+
 // ================= Инициализация =================
 
 migrateIfNeeded();
@@ -324,11 +330,8 @@ function setupTrainer() {
   function updateSettingsHint() {
     const el = $('#tSettingsHint');
     if (!el) return;
-    const mk = $('#tMode').value;
-    const m = MODES[mk];
     const thr = (+$('#tT').value || 0.5).toFixed(2);
-    const shortName = m.name.split('(')[0].trim();
-    el.textContent = `${shortName} · порог ${thr}`;
+    el.textContent = `${modeLabel($('#tMode').value)} · порог ${thr}`;
   }
 
   function bestRaiseThreshold() {
@@ -1858,7 +1861,7 @@ function renderStats() {
       let h = '<table><tr><th>Режим</th><th>Всего</th><th>Верно</th><th>Процент</th></tr>';
       for (const k of keys) {
         const d = byMode[k];
-        h += `<tr><td>${k}</td><td>${d.n}</td><td>${d.good}</td><td>${d.n ? pct(d.good / d.n) : '—'}</td></tr>`;
+        h += `<tr><td>${escapeHtml(modeLabel(k))}</td><td>${d.n}</td><td>${d.good}</td><td>${d.n ? pct(d.good / d.n) : '—'}</td></tr>`;
       }
       byModeEl.innerHTML = h + '</table>';
     }
