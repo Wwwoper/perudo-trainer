@@ -71,6 +71,28 @@ export function setStats(stats) {
   set(KEYS.USER_PROFILE, stats);
 }
 
+/**
+ * Меняет статистику «прочитал → изменил → записал» за один вызов.
+ *
+ * Статистику пишут сразу несколько разделов (тренажёр, упражнения, итог партии),
+ * и каждый сохраняет объект целиком. Если держать объект в переменной с момента
+ * загрузки страницы, запись одного раздела затирает счётчики другого.
+ * Поэтому перед каждым изменением читаем актуальное значение из хранилища.
+ *
+ * @param {(stats: object) => void} mutator меняет переданный объект на месте
+ * @returns {object} сохранённая статистика
+ */
+export function updateStats(mutator) {
+  const stats = getStats();
+  stats.byMode = stats.byMode || {};
+  stats.drill = stats.drill || {};
+  stats.drill.A = stats.drill.A || { n: 0, good: 0 };
+  stats.drill.B = stats.drill.B || { n: 0, good: 0 };
+  mutator(stats);
+  setStats(stats);
+  return stats;
+}
+
 export function getTrainingQueue() {
   return get(KEYS.TRAINING_QUEUE, []);
 }

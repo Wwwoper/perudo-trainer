@@ -10,7 +10,7 @@ global.localStorage = {
   removeItem: key => { delete mockStorage[key]; },
 };
 
-import { get, set, getSettings, setSettings, getStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion } from '../src/storage.js';
+import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion } from '../src/storage.js';
 
 describe('get/set', () => {
   it('сохраняет и загружает', () => {
@@ -57,5 +57,49 @@ describe('migrateIfNeeded', () => {
     mockStorage['perudo.schemaVersion'] = undefined;
     migrateIfNeeded();
     assert.strictEqual(getSchemaVersion(), 1);
+  });
+});
+
+describe('updateStats', () => {
+  const reset = () => { mockStorage['perudo.userProfile'] = undefined; };
+
+  it('меняет статистику и сохраняет результат', () => {
+    reset();
+    const res = updateStats((s) => { s.n += 1; s.good += 1; });
+    assert.strictEqual(res.n, 1);
+    assert.strictEqual(getStats().n, 1);
+    assert.strictEqual(getStats().good, 1);
+  });
+
+  it('читает актуальное значение перед каждым изменением', () => {
+    reset();
+    updateStats((s) => { s.n += 1; });
+    // другой раздел записал свои счётчики в промежутке
+    const other = getStats();
+    other.drill.A = { n: 3, good: 2 };
+    setStats(other);
+    updateStats((s) => { s.n += 1; });
+    const s = getStats();
+    assert.strictEqual(s.n, 2, 'свои счётчики копятся');
+    assert.deepStrictEqual(s.drill.A, { n: 3, good: 2 }, 'чужие счётчики не затёрты');
+  });
+
+  it('не затирает счётчики партий', () => {
+    reset();
+    updateStats((s) => { s.totalGames = 4; s.totalWins = 3; });
+    updateStats((s) => { s.n += 1; });
+    assert.strictEqual(getStats().totalGames, 4);
+    assert.strictEqual(getStats().totalWins, 3);
+  });
+
+  it('достраивает недостающие поля у старой записи', () => {
+    reset();
+    setStats({ n: 5, good: 2 });                // старый формат без byMode и drill
+    updateStats((s) => { s.drill.B.n += 1; s.byMode.classic = { n: 1, good: 1 }; });
+    const s = getStats();
+    assert.strictEqual(s.n, 5);
+    assert.strictEqual(s.drill.B.n, 1);
+    assert.deepStrictEqual(s.drill.A, { n: 0, good: 0 });
+    assert.deepStrictEqual(s.byMode.classic, { n: 1, good: 1 });
   });
 });
