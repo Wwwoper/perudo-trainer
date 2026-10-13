@@ -198,7 +198,7 @@
 }
 
 /* ===== Мобильная оптимизация ===== */
-@media (max-width: 720px) {
+@media (max-width: 719px) {
   main {
     padding: 8px;
   }

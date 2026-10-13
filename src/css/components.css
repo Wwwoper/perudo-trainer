@@ -193,7 +193,7 @@
   color: var(--fg);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 719px) {
   #gPractical {
     font-size: 12px;
     padding: 6px 10px;
