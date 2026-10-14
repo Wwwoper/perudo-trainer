@@ -636,6 +636,7 @@ function setupDrill() {
       const panelB = $('#dPanelB');
       if (panelA) panelA.classList.toggle('hide', activeDrill !== 'A');
       if (panelB) panelB.classList.toggle('hide', activeDrill !== 'B');
+      $$('[data-drill-for]').forEach((el) => el.classList.toggle('hide', el.dataset.drillFor !== activeDrill));
     };
   });
 

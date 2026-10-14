@@ -598,6 +598,58 @@ class LayoutTest(unittest.TestCase):
                     self.assertGreaterEqual(b["y"], 0, sel)
                     self.assertLessEqual(b["y"] + b["height"], h + 1, sel)
 
+    # ---------- Упражнения ----------
+
+    def open_drill(self, w, h):
+        ctx = self.browser.new_context(viewport={"width": w, "height": h})
+        page = ctx.new_page()
+        self.addCleanup(ctx.close)
+        page.goto(self.url)
+        self.goto_tab(page, "drill")
+        page.wait_for_selector("#dAq .die")
+        return page
+
+    def test_drill_has_no_hscroll_and_touch_sized_controls(self):
+        for w, h in VIEWPORTS:
+            for checked in (False, True):
+                with self.subTest(w=w, h=h, checked=checked):
+                    page = self.open_drill(w, h)
+                    if checked:
+                        page.fill("#dA1", "5")
+                        page.fill("#dA2", "5")
+                        page.click("#dACheck")
+                    self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                    small = page.evaluate("""() => [...document.querySelectorAll('#drill button, #drill input, #drill select, #drill summary')]
+                        .filter(e => e.offsetParent !== null && e.type !== 'checkbox')
+                        .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
+                        .map(e => e.id || e.className || e.textContent.trim())""")
+                    self.assertEqual(small, [])
+                    fonts = page.evaluate("""() => [...document.querySelectorAll('#drill input')]
+                        .filter(e => e.offsetParent !== null)
+                        .filter(e => parseFloat(getComputedStyle(e).fontSize) < 16).map(e => e.id)""")
+                    self.assertEqual(fonts, [])
+
+    def test_drill_segment_labels_not_truncated_and_check_visible(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_drill(w, h)
+                clipped = page.evaluate("""() => [...document.querySelectorAll('.drill-tab')]
+                    .filter(b => b.scrollWidth > b.clientWidth + 1).map(b => b.textContent.trim())""")
+                self.assertEqual(clipped, [])
+                b = page.locator("#dACheck").bounding_box()
+                self.assertLessEqual(b["y"] + b["height"], h + 1)
+
+    def test_drill_result_visible_after_check(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_drill(w, h)
+                page.fill("#dA1", "5")
+                page.fill("#dA2", "5")
+                page.click("#dACheck")
+                b = page.locator("#dAfb").bounding_box()
+                self.assertGreaterEqual(b["y"], 0)
+                self.assertLessEqual(b["y"] + b["height"], h + 1)
+
     def test_learning_tabs_keep_ribbon_on_desktop(self):
         for tab in ("calc", "train", "drill"):
             with self.subTest(tab=tab):

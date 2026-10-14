@@ -78,6 +78,9 @@
 }
 
 .calc-hint>summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
   cursor: pointer;
   color: var(--acc);
   user-select: none;

@@ -173,13 +173,15 @@
     grid-area: main;
   }
 
-  #tDock {
+  #tDock,
+  #dDock {
     max-height: calc(100vh - 2 * var(--space-3));
     overflow-y: auto;
   }
 
   #cDock,
-  #tDock {
+  #tDock,
+  #dDock {
     position: sticky;
     top: var(--space-3);
   }
@@ -221,7 +223,8 @@
 }
 
 @media (max-width: 719px) {
-  #tDock {
+  #tDock,
+  #dDock {
     max-height: 60vh;
     max-height: 60dvh;
     overflow-y: auto;
@@ -230,4 +233,33 @@
 
 .trainer-layout.is-answered .trainer-settings-more {
   margin-left: 0;
+}
+
+/* ===== Упражнения: панель проверки ===== */
+#dDock {
+  gap: var(--space-3);
+}
+
+#dDock .dock-buttons {
+  grid-template-columns: 1.6fr 1fr;
+}
+
+
+/* Телефон: панель всегда у нижнего края, даже если содержимого мало.
+   72 = шапка раздела (44 + 8) и отступы main (2 × 8) + запас */
+@media (max-width: 719px) {
+  .learn-layout {
+    grid-template-rows: auto 1fr;
+    min-height: calc(100vh - 72px);
+    min-height: calc(100dvh - 72px);
+  }
+
+  .learn-layout > .learn-main {
+    grid-row: 1;
+  }
+
+  .learn-layout > .action-dock {
+    grid-row: 2;
+    align-self: end;
+  }
 }

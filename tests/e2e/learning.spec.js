@@ -166,6 +166,34 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dAfb .calc-hint-body')).toBeVisible();
     });
 
+    test('панель проверки видна на экране, кнопки следуют за выбранным упражнением', async ({ page }) => {
+      await open(page, 'drill');
+      const vh = page.viewportSize().height;
+      for (const sel of ['#dACheck', '#dNew']) {
+        const b = await page.locator(sel).boundingBox();
+        expect(b.y + b.height, `${sel} в пределах экрана`).toBeLessThanOrEqual(vh + 1);
+      }
+      await expect(page.locator('#dBCheck')).toBeHidden();
+      await page.click('.drill-tab[data-drill="B"]');
+      await expect(page.locator('#dACheck')).toBeHidden();
+      await expect(page.locator('#dBCheck')).toBeVisible();
+    });
+
+    test('после проверки разбор виден на экране, подробный разбор прокручивается внутри панели', async ({ page }) => {
+      await open(page, 'drill');
+      await page.fill('#dA1', '5');
+      await page.fill('#dA2', '5');
+      await page.click('#dACheck');
+      const vh = page.viewportSize().height;
+      const fb = await page.locator('#dAfb').boundingBox();
+      expect(fb.y).toBeGreaterThanOrEqual(0);
+      expect(fb.y + fb.height).toBeLessThanOrEqual(vh + 1);
+      const before = await page.evaluate(() => document.documentElement.scrollHeight);
+      await page.locator('#dAfb .calc-hint summary').click();
+      const after = await page.evaluate(() => document.documentElement.scrollHeight);
+      expect(after - before, 'раскрытие разбора растягивает страницу не больше чем на 15% экрана').toBeLessThanOrEqual(vh * 0.15);
+    });
+
     test('«Правило единиц»: переключение, проверка и новый вопрос', async ({ page }) => {
       await open(page, 'drill');
       await page.click('.drill-tab[data-drill="B"]');

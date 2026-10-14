@@ -2,10 +2,6 @@
 
 .drill-top {
   padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 .drill-tabs {
@@ -20,17 +16,15 @@
 
 .drill-tab {
   flex: 1;
+  min-height: var(--tap);
   padding: 8px 10px;
   border: none;
   background: transparent;
   color: var(--mut);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   font-family: inherit;
 }
 
@@ -41,19 +35,6 @@
 .drill-tab.on {
   background: var(--acc);
   color: #111;
-}
-
-.drill-new {
-  padding: 8px 14px;
-  font-weight: 700;
-  background: var(--acc);
-  color: #111;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  white-space: nowrap;
-  font-family: inherit;
 }
 
 .drill-board {
@@ -88,6 +69,7 @@
 .drill-input {
   display: block;
   width: 100%;
+  min-height: var(--tap);
   padding: 12px 14px;
   font-size: 18px;
   text-align: center;
@@ -104,25 +86,6 @@
   border-color: var(--acc);
 }
 
-.drill-check {
-  display: block;
-  width: 100%;
-  margin-top: 16px;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 700;
-  border-radius: 10px;
-  background: var(--acc);
-  color: #111;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.drill-check:hover {
-  filter: brightness(1.1);
-}
-
 /* Свёрнутая формула */
 .drill-hint {
   margin-top: 12px;
@@ -132,7 +95,10 @@
 .drill-hint>summary {
   cursor: pointer;
   list-style: none;
-  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0;
   color: var(--acc);
   font-weight: 600;
   user-select: none;
@@ -176,11 +142,10 @@
 }
 
 .drill-feedback {
-  margin-top: 14px;
   padding: 10px 12px;
   border-radius: 8px;
   background: #1a1f28;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -195,7 +160,7 @@
 
 /* ===== Мобильная оптимизация ===== */
 @media (max-width: 719px) {
-  #drill .card {
+  .drill-layout .card {
     padding: 10px;
     margin-bottom: 8px;
   }
@@ -205,37 +170,23 @@
   }
 
   .drill-input {
-    padding: 14px;
+    padding: 12px;
     font-size: 20px;
   }
 
-  .drill-check {
-    padding: 16px;
-    font-size: 17px;
-  }
-
-  .drill-tab {
-    padding: 10px 8px;
-    font-size: 12px;
-  }
-
-  .drill-new {
-    padding: 10px 12px;
-    font-size: 12px;
-  }
-
   .drill-question {
-    font-size: 13px;
     padding: 8px 10px;
     margin-bottom: 10px;
   }
 
-  .drill-question .die {
-    width: 24px;
-    height: 24px;
-  }
-
   .drill-label {
     margin: 10px 0 3px;
+  }
+
+  /* Подробный разбор прокручивается внутри панели, а не растягивает страницу */
+  .drill-feedback {
+    max-height: 35vh;
+    max-height: 35dvh;
+    overflow-y: auto;
   }
 }

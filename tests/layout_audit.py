@@ -87,7 +87,7 @@ def measure_all(base_url, browser):
         page.fill("#dA2", "5")
         page.click("#dACheck")
         snap("drill A: after check", "#dAfb")
-        page.click("#dPanelA .calc-hint summary")
+        page.click("#dAfb .calc-hint summary")
         snap("drill A: hint open", "#dAfb")
         ctx.close()
     return rows
