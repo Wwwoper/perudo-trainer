@@ -480,24 +480,28 @@
           aria-label="Разделы приложения">☰</button>
         <h2 class="learn-hud-title">Дуэль (CFR)</h2>
       </header>
-      <div class="card">
-        <b>Дуэль 1 на 1 кубик: оптимальная стратегия (CFR+)</b>
-        <p class="muted">Один раунд, у каждого по одному кубику, единицы — джокеры, первая ставка не на единицы.
-          Проигравший проверку выбывает. Решатель считается в вашем браузере.</p>
-        <div class="row">
-          <button id="dSolve">Рассчитать равновесие</button>
-          <button id="dStart">Играть против оптимального бота</button>
+      <div class="learn-layout duel-layout" id="duelLayout">
+        <div class="learn-main">
+          <div class="card">
+            <b>Дуэль 1 на 1 кубик: оптимальная стратегия (CFR+)</b>
+            <p class="muted">Один раунд, у каждого по одному кубику, единицы — джокеры, первая ставка не на единицы.
+              Проигравший проверку выбывает. Решатель считается в вашем браузере.</p>
+            <div class="row">
+              <button id="dSolve">Рассчитать равновесие</button>
+            </div>
+            <div id="dInfo" class="muted"></div>
+            <div id="dOpen" class="table-scroll duel-open"></div>
+          </div>
         </div>
-        <div id="dInfo" class="muted"></div>
-        <div id="dOpen" style="margin-top:10px"></div>
-      </div>
-      <div class="card">
-        <b>Игра</b>
-        <div id="dPlay" class="muted">Нажмите «Играть» — решение посчитается автоматически.</div>
+
+        <!-- Игра: внизу экрана на телефоне, справа на широком -->
+        <div class="action-dock" id="duelDock">
+          <b>Игра</b>
+          <button id="dStart" class="btn-primary duel-start">Играть против оптимального бота</button>
+          <div id="dPlay" class="muted">Нажмите «Играть» — решение посчитается автоматически.</div>
+        </div>
       </div>
     </section>
-
-    <!-- ================= СТАТИСТИКА ================= -->
     <section id="stats" class="hide">
       <header class="learn-hud">
         <button type="button" class="icon-btn hud-menu" aria-expanded="false" aria-controls="mainNav"

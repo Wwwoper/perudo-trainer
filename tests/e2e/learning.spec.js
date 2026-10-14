@@ -209,4 +209,32 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dB1')).toHaveValue('');
     });
   });
+
+  test.describe('Дуэль', () => {
+    test('«Играть» считает равновесие и ведёт раунд до результата', async ({ page }) => {
+      await open(page, 'duel');
+      const vh = page.viewportSize().height;
+      const startBox = await page.locator('#dStart').boundingBox();
+      expect(startBox.y + startBox.height, 'кнопка «Играть» на экране').toBeLessThanOrEqual(vh + 1);
+      await page.click('#dStart');
+      await expect(page.locator('#dPlay [data-i]').first()).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator('#dOpen table')).toBeVisible();
+      // ходим первой доступной ставкой, пока раунд не закончится «Не верю!»
+      for (let i = 0; i < 12; i++) {
+        const done = await page.locator('#dPlay').innerText();
+        if (/выиграли раунд|проиграли раунд/.test(done)) break;
+        const moves = page.locator('#dPlay [data-i]');
+        await moves.nth((await moves.count()) - 1).click();   // последняя кнопка — «Не верю!» или самая высокая ставка
+      }
+      await expect(page.locator('#dPlay')).toContainText('раунд');
+      await expect(page.locator('#dPlay')).toContainText('Сессия: партий 1');
+    });
+
+    test('таблица равновесия не растягивает страницу вбок', async ({ page }) => {
+      await open(page, 'duel');
+      await page.click('#dSolve');
+      await expect(page.locator('#dOpen table')).toBeVisible({ timeout: 60_000 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    });
+  });
 });

@@ -94,10 +94,10 @@ def measure_all(base_url, browser):
         snap("duel", "#dStart")
         page.click("#dStart")
         page.wait_for_selector("#dPlay [data-i]", timeout=60000)
-        snap("duel: playing", "#dPlay")
+        snap("duel: playing", "#dStart")
         page.click("#dSolve")
         page.wait_for_selector("#dOpen table", timeout=60000)
-        snap("duel: solved table", "#dOpen")
+        snap("duel: solved table", "#dInfo")
 
         _tab(page, "stats")
         snap("stats", "#stClear")

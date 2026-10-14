@@ -1857,17 +1857,17 @@ function renderDuel() {
 
   let html = `<div>Ваш кубик: ${renderDie(my + 1, '', my === 0)} ` +
     `<span class="muted">· вы ${D.role === 0 ? 'открываете' : 'отвечаете'}</span></div>` +
-    `<div style="margin:8px 0">${D.log.join('') || '<span class="muted">Ставок ещё нет</span>'}</div>`;
+    `<div class="duel-log">${D.log.join('') || '<span class="muted">Ставок ещё нет</span>'}</div>`;
 
   if (D.over) {
     html += `<p>${D.result}</p>`;
   } else {
-    html += '<div class="row">' + D.node.acts.map((a, i) =>
+    html += '<div class="duel-moves">' + D.node.acts.map((a, i) =>
       `<button data-i="${i}" class="${a === 'D' ? 'bad' : ''}">${a === 'D' ? 'Не верю!' : a.q + ' × ' + a.f
       }</button>`).join('') + '</div>';
   }
 
-  html += `<div class="muted" style="margin-top:6px">${D.fb || ''}</div>` +
+  html += `<div class="muted duel-fb">${D.fb || ''}</div>` +
     `<p class="muted">Сессия: партий ${duelStats.games}, побед ${duelStats.wins}; ` +
     `редких отклонений от оптимума: ${duelStats.dev} из ${duelStats.moves}.</p>`;
 

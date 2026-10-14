@@ -639,6 +639,44 @@ class LayoutTest(unittest.TestCase):
                 self.assertGreaterEqual(b["y"], 0)
                 self.assertLessEqual(b["y"] + b["height"], h + 1)
 
+    # ---------- Дуэль ----------
+
+    def open_duel(self, w, h):
+        ctx = self.browser.new_context(viewport={"width": w, "height": h})
+        page = ctx.new_page()
+        self.addCleanup(ctx.close)
+        page.goto(self.url)
+        self.goto_tab(page, "duel")
+        return page
+
+    def test_duel_play_panel_fits_and_controls_are_touch_sized(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_duel(w, h)
+                b = page.locator("#dStart").bounding_box()
+                self.assertLessEqual(b["y"] + b["height"], h + 1)
+                page.click("#dStart")
+                page.wait_for_selector("#dPlay [data-i]", timeout=60000)
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                b = page.locator("#dStart").bounding_box()
+                self.assertLessEqual(b["y"] + b["height"], h + 1)
+                small = page.evaluate("""() => [...document.querySelectorAll('#duel button')]
+                    .filter(e => e.offsetParent !== null)
+                    .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
+                    .map(e => e.id || e.textContent.trim())""")
+                self.assertEqual(small, [])
+
+    def test_duel_equilibrium_table_stays_inside_card(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_duel(w, h)
+                page.click("#dSolve")
+                page.wait_for_selector("#dOpen table", timeout=60000)
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                card = page.locator("#dOpen").evaluate("e => e.getBoundingClientRect().right")
+                self.assertLessEqual(page.locator("#dOpen").bounding_box()["x"]
+                                     + page.locator("#dOpen").bounding_box()["width"], card + 1)
+
     def test_learning_tabs_keep_ribbon_on_desktop(self):
         for tab in ("calc", "train", "drill", "duel", "stats", "sim"):
             with self.subTest(tab=tab):

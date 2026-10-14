@@ -174,14 +174,16 @@
   }
 
   #tDock,
-  #dDock {
+  #dDock,
+  #duelDock {
     max-height: calc(100vh - 2 * var(--space-3));
     overflow-y: auto;
   }
 
   #cDock,
   #tDock,
-  #dDock {
+  #dDock,
+  #duelDock {
     position: sticky;
     top: var(--space-3);
   }
@@ -224,7 +226,8 @@
 
 @media (max-width: 719px) {
   #tDock,
-  #dDock {
+  #dDock,
+  #duelDock {
     max-height: 60vh;
     max-height: 60dvh;
     overflow-y: auto;
@@ -262,4 +265,49 @@
     grid-row: 2;
     align-self: end;
   }
+}
+
+/* ===== Дуэль: панель игры ===== */
+#duelDock {
+  gap: var(--space-3);
+}
+
+.duel-start {
+  min-height: var(--tap);
+  font-weight: 700;
+}
+
+.duel-moves {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+  margin: var(--space-2) 0;
+}
+
+.duel-moves button {
+  min-height: var(--tap);
+  padding: 4px 8px;
+}
+
+.duel-log {
+  margin: var(--space-2) 0;
+}
+
+.duel-fb {
+  margin-top: 6px;
+}
+
+/* Таблица равновесия: столбцов много, прокручивается внутри карточки */
+.duel-open table {
+  table-layout: auto;
+  min-width: 0;
+}
+
+.duel-open th,
+.duel-open td {
+  white-space: nowrap;
+}
+
+#dSolve {
+  min-height: var(--tap);
 }
