@@ -14,6 +14,14 @@ from playwright.sync_api import sync_playwright
 from tests.layout_audit import ROOT, _Quiet, measure_all
 
 
+# Вкладки, для которых пороги уже обязательны. Остальные добавляются по мере переделки вёрстки.
+STRICT_TABS = ("calc", "train", "drill")
+
+
+def strict(rows):
+    return [r for r in rows if r["state"].split(":")[0].split(" ")[0] in STRICT_TABS]
+
+
 class LearningLayoutTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -34,23 +42,23 @@ class LearningLayoutTest(unittest.TestCase):
         return f"{r['size']} · {r['state']}"
 
     def test_all_states_were_measured(self):
-        self.assertEqual(len(self.rows), 5 * 6)
+        self.assertEqual(len(self.rows), 5 * 12)
 
     def test_no_horizontal_scroll(self):
-        bad = [self.label(r) for r in self.rows if r["hscroll"]]
+        bad = [self.label(r) for r in strict(self.rows) if r["hscroll"]]
         self.assertEqual(bad, [])
 
     def test_no_controls_smaller_than_44px(self):
-        bad = [f"{self.label(r)}: {r['small']}" for r in self.rows if r["small"]]
+        bad = [f"{self.label(r)}: {r['small']}" for r in strict(self.rows) if r["small"]]
         self.assertEqual(bad, [])
 
     def test_no_inputs_with_font_below_16px(self):
-        bad = [f"{self.label(r)}: {r['font']}" for r in self.rows if r["font"]]
+        bad = [f"{self.label(r)}: {r['font']}" for r in strict(self.rows) if r["font"]]
         self.assertEqual(bad, [])
 
     def test_result_is_inside_the_screen(self):
         # «hint open»: разбор прокручивается внутри панели, нижний край блока там не показатель
-        bad = [f"{self.label(r)}: {r['result']:+d}" for r in self.rows
+        bad = [f"{self.label(r)}: {r['result']:+d}" for r in strict(self.rows)
                if r["result"] is not None and r["result"] > 0 and "hint open" not in r["state"]]
         self.assertEqual(bad, [])
 

@@ -89,6 +89,25 @@ def measure_all(base_url, browser):
         snap("drill A: after check", "#dAfb")
         page.click("#dAfb .calc-hint summary")
         snap("drill A: hint open", "#dAfb")
+
+        _tab(page, "duel")
+        snap("duel", "#dStart")
+        page.click("#dStart")
+        page.wait_for_selector("#dPlay [data-i]", timeout=60000)
+        snap("duel: playing", "#dPlay")
+        page.click("#dSolve")
+        page.wait_for_selector("#dOpen table", timeout=60000)
+        snap("duel: solved table", "#dOpen")
+
+        _tab(page, "stats")
+        snap("stats", "#stClear")
+
+        _tab(page, "sim")
+        snap("sim", "#sGo")
+        page.fill("#sR", "2000")
+        page.click("#sGo")
+        page.wait_for_selector("#sOut table")
+        snap("sim: after run", "#sOut")
         ctx.close()
     return rows
 

@@ -116,10 +116,10 @@ function setupTabs() {
 
   // Компактное меню разделов: в партии на телефоне шапка прячется, лента открывается кнопкой ☰ в HUD.
   const header = $('.app-header');
-  // Кнопка ☰ есть в шапке каждого «компактного» раздела (партия, калькулятор, тренажёр, упражнения)
+  // Кнопка ☰ есть в шапке каждого раздела: на телефоне лента разделов прячется за ней
   const toggles = $$('.hud-menu');
   const toggleOf = (tab) => document.querySelector(`#${tab} .hud-menu`);
-  const COMPACT_TABS = ['game', 'calc', 'train', 'drill'];
+  const COMPACT_TABS = ['game', 'calc', 'train', 'drill', 'duel', 'stats', 'sim'];
   const scrim = $('#navScrim');
   const isOpen = () => !!header?.classList.contains('nav-open');
   const setMenu = (open, { focus = false } = {}) => {

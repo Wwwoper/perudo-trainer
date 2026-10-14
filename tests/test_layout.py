@@ -464,20 +464,9 @@ class LayoutTest(unittest.TestCase):
                     self.assertLessEqual(page.locator(".app-header").bounding_box()["height"], 56)
                     self.assertFalse(page.locator("#navToggle").is_visible())
 
-    def test_ribbon_stays_on_non_compact_tabs_on_phone(self):
+    def test_every_tab_uses_menu_button_on_phone(self):
         for w, h in [(360, 640), (390, 844), (844, 390)]:
-            with self.subTest(w=w, h=h):
-                page = self.open_game(w, h, 3)
-                self.goto_tab(page, "stats")
-                ys = [round(b["y"]) for b in self.boxes(page, ".app-header nav button")]
-                self.assertEqual(len(ys), 7)
-                self.assertLessEqual(max(ys) - min(ys), 1)
-                self.assertFalse(page.locator(".hud-menu:visible").count())
-                self.assertGreater(page.locator(".app-header").bounding_box()["height"], 30)
-
-    def test_learning_tabs_use_menu_button_on_phone(self):
-        for w, h in [(360, 640), (390, 844), (844, 390)]:
-            for tab in ("calc", "train", "drill"):
+            for tab in ("calc", "train", "drill", "duel", "stats", "sim"):
                 with self.subTest(w=w, h=h, tab=tab):
                     page = self.open_game(w, h, 3)
                     self.goto_tab(page, tab)
@@ -651,7 +640,7 @@ class LayoutTest(unittest.TestCase):
                 self.assertLessEqual(b["y"] + b["height"], h + 1)
 
     def test_learning_tabs_keep_ribbon_on_desktop(self):
-        for tab in ("calc", "train", "drill"):
+        for tab in ("calc", "train", "drill", "duel", "stats", "sim"):
             with self.subTest(tab=tab):
                 page = self.open_game(1366, 768, 3)
                 self.goto_tab(page, tab)
@@ -708,8 +697,8 @@ class LayoutTest(unittest.TestCase):
         page.locator('#mainNav .tab-btn[data-t="stats"]').click()     # другой раздел
         self.assertTrue(page.locator("#stats").is_visible())
         self.assertFalse(page.locator("#game").is_visible())
-        self.assertFalse(page.locator("#navToggle").is_visible())     # лента вернулась
-        self.assertGreater(page.locator(".app-header").bounding_box()["height"], 30)
+        self.assertFalse(page.locator("#navToggle").is_visible())     # у «Статистики» своя кнопка ☰
+        self.assertTrue(page.locator("#stats .hud-menu").is_visible())
         self.assertEqual(page.evaluate("document.body.dataset.tab"), "stats")
         self.goto_tab(page, "game")
         self.assertEqual(page.evaluate("document.body.dataset.tab"), "game")
@@ -748,8 +737,8 @@ class LayoutTest(unittest.TestCase):
         self.assertLess(h1["y"], nav["y"] + nav["height"])             # в одном ряду
 
     def test_nav_scrolls_active_tab_into_view_and_marks_current(self):
-        page = self.open_game(360, 640, 3)
-        self.goto_tab(page, "stats")                                   # лента видна только на «обычных» вкладках
+        page = self.open_game(720, 900, 3)                             # на телефоне лента за ☰, на 720px ещё в шапке
+        self.goto_tab(page, "stats")
         nav = page.locator(".app-header nav").bounding_box()
         for data_t in ["sim", "stats"]:
             page.locator(f'.tab-btn[data-t="{data_t}"]').click()
@@ -767,7 +756,7 @@ class LayoutTest(unittest.TestCase):
         def fades(page):
             return page.evaluate("""() => { const s = document.querySelector('.app-header nav').style;
                 return [s.getPropertyValue('--fade-l'), s.getPropertyValue('--fade-r')]; }""")
-        page = self.open_game(360, 640, 3)
+        page = self.open_game(720, 900, 3)
         self.goto_tab(page, "stats")
         page.wait_for_timeout(700)                                     # дождаться плавной прокрутки к вкладке
         page.evaluate("document.querySelector('.app-header nav').scrollLeft = 0")
