@@ -192,12 +192,37 @@ function setupCalculator() {
     faceSel.value = 5;
   }
 
+  // Выбор грани кнопками; источник правды остаётся в #cF (скрытый select)
+  const facePick = $('#cPick');
+  if (facePick && faceSel) {
+    facePick.innerHTML = '';
+    for (let f = 1; f <= 6; f++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'face-btn';
+      b.innerHTML = renderDie(f, 's');
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', `Цифра ${f}`);
+      b.onclick = () => { faceSel.value = f; calc(); };
+      facePick.append(b);
+    }
+  }
+  const stepQ = (d) => {
+    const q = $('#cQ');
+    if (!q) return;
+    q.value = Math.max(1, (+q.value || 1) + d);
+    calc();
+  };
+  if ($('#cMinus')) $('#cMinus').onclick = () => stepQ(-1);
+  if ($('#cPlus')) $('#cPlus').onclick = () => stepQ(1);
+
   const pad = $('#cPad');
   if (pad) {
     pad.innerHTML = '';
     for (let d = 1; d <= 6; d++) {
       const b = document.createElement('button');
       b.textContent = `+${d}`;
+      b.setAttribute('aria-label', `Добавить кубик ${d}`);
       b.onclick = () => {
         const n = +$('#cN').value || 60;
         if (hand.length < n) { hand.push(d); calc(); }
@@ -225,6 +250,12 @@ function setupCalculator() {
     const q = Math.max(1, +$('#cQ').value || 1);
     const f = Math.max(1, Math.min(6, +$('#cF').value || 5));
     const p = P.probBid(q, f, n, hand, w);
+
+    $$('#cPick .face-btn').forEach((b, i) => {
+      const on = i + 1 === f;
+      b.classList.toggle('sel', on);
+      b.setAttribute('aria-checked', String(on));
+    });
 
     if ($('#cRes')) {
       const verdict = p >= t ? 'ВЕРЮ / можно повышать осторожно' : 'НЕ ВЕРЮ';

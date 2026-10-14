@@ -22,3 +22,162 @@
     line-height: 1.2;
   }
 }
+
+/* ===== Поля: 44px по высоте, шрифт 16px (iOS не увеличивает страницу при фокусе) ===== */
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  align-items: end;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-2) 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.field input[type="number"],
+.field select {
+  width: 100%;
+  max-width: 140px;
+  min-height: var(--tap);
+  font-size: 16px;
+}
+
+.field-row .check,
+.field-row .field:has(#cK),
+.field-row .field:has(#cTr) {
+  grid-column: 1 / -1;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+}
+
+.check input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
+
+.range-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+}
+
+.range-line input[type="range"] {
+  font-size: 16px;
+  flex: 1;
+  min-width: 140px;
+  height: var(--tap);
+}
+
+/* ===== Набор руки: шесть равных кнопок и три равные ===== */
+.pad-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin: var(--space-2) 0;
+}
+
+.btn-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.pad-grid button,
+.btn-row button {
+  min-height: var(--tap);
+  padding: 4px 6px;
+  font-size: 15px;
+}
+
+/* ===== Таблица лучших ставок: фиксированные столбцы, без выхода за карточку ===== */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table-scroll table {
+  table-layout: fixed;
+  min-width: 300px;
+}
+
+.table-scroll th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mut);
+}
+
+.table-scroll th,
+.table-scroll td {
+  padding: 6px 4px;
+}
+
+.table-scroll th:first-child,
+.table-scroll td:first-child {
+  width: 36px;
+}
+
+.table-scroll .bar {
+  min-width: 0;
+}
+
+/* ===== Компоновка «основная область + панель ставки» (Калькулятор) ===== */
+.learn-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.learn-main {
+  min-width: 0;
+}
+
+.learn-main .card:last-child {
+  margin-bottom: 0;
+}
+
+.calc-result {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+#cDock .face-pick,
+#cDock .stepper {
+  margin: 0;
+}
+
+/* Широкий экран и ландшафт: панель ставки — правая колонка, закреплена при прокрутке */
+@media (min-width: 720px), (max-height: 500px) and (orientation: landscape) {
+  .learn-layout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas: "main dock";
+    align-items: start;
+  }
+
+  .learn-main {
+    grid-area: main;
+  }
+
+  #cDock {
+    position: sticky;
+    top: var(--space-3);
+  }
+
+  #cDock .face-pick {
+    grid-template-columns: repeat(6, 1fr);
+    flex-basis: 100%;
+  }
+}

@@ -40,6 +40,35 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#cRes')).toContainText('НЕ ВЕРЮ');
     });
 
+    test('степпер и выбор цифры меняют ставку и результат', async ({ page }) => {
+      await open(page, 'calc');
+      const res = page.locator('#cRes');
+      await expect(page.locator('#cPick .face-btn[aria-checked="true"]')).toHaveAttribute('aria-label', 'Цифра 5');
+      await page.click('#cMinus');
+      await expect(page.locator('#cQ')).toHaveValue('6');
+      await page.click('#cPlus');
+      await page.click('#cPlus');
+      await expect(page.locator('#cQ')).toHaveValue('8');
+      await page.click('#cMinus');
+      await page.click('#cPick .face-btn[aria-label="Цифра 2"]');
+      await expect(page.locator('#cF')).toHaveValue('2');
+      await expect(page.locator('#cPick .face-btn[aria-checked="true"]')).toHaveAttribute('aria-label', 'Цифра 2');
+      await expect(res).toContainText('НЕ ВЕРЮ');
+      await page.fill('#cQ', '1');
+      await page.click('#cMinus');
+      await expect(page.locator('#cQ')).toHaveValue('1');   // ниже единицы не уходит
+    });
+
+    test('ставка и результат видны одновременно, страница не прокручивается вбок', async ({ page }) => {
+      await open(page, 'calc');
+      const vh = page.viewportSize().height;
+      for (const sel of ['#cQ', '#cPick', '#cRes']) {
+        const b = await page.locator(sel).boundingBox();
+        expect(b.y + b.height, `${sel} в пределах экрана`).toBeLessThanOrEqual(vh + 1);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    });
+
     test('рука собирается кнопками «+», «Убрать последний» и «Очистить»', async ({ page }) => {
       await open(page, 'calc');
       const dice = page.locator('#cHand .die');

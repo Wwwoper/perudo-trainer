@@ -61,44 +61,61 @@
           aria-label="Разделы приложения">☰</button>
         <h2 class="learn-hud-title">Калькулятор</h2>
       </header>
-      <div class="card">
-        <div class="row">
-          <label>Всего кубиков <input id="cN" type="number" min="1" max="60" value="15" style="width:80px"></label>
-          <label>Порог <input id="cT" type="number" min="0.05" max="0.95" step="0.05" value="0.5"
-              style="width:80px"></label>
-          <label><input id="cW" type="checkbox" checked> единицы — джокеры</label>
-        </div>
-        <div class="row"><label>Ваши кубики:</label><span id="cHand"></span></div>
-        <div class="row" id="cPad"></div>
-        <div class="row">
-          <button id="cUndo">Убрать последний</button>
-          <button id="cClr">Очистить</button>
-          <button id="cRnd">Случайная рука</button>
-        </div>
-      </div>
+      <div class="learn-layout">
+        <div class="learn-main">
+          <div class="card">
+            <div class="field-row">
+              <label class="field">Всего кубиков <input id="cN" type="number" min="1" max="60" value="15"
+                  inputmode="numeric"></label>
+              <label class="field">Порог <input id="cT" type="number" min="0.05" max="0.95" step="0.05" value="0.5"
+                  inputmode="decimal"></label>
+              <label class="check"><input id="cW" type="checkbox" checked> единицы — джокеры</label>
+            </div>
+            <div class="row"><label>Ваши кубики:</label><span id="cHand"></span></div>
+            <div class="pad-grid" id="cPad"></div>
+            <div class="btn-row">
+              <button id="cUndo">Убрать последний</button>
+              <button id="cClr">Очистить</button>
+              <button id="cRnd">Случайная рука</button>
+            </div>
+          </div>
 
-      <div class="card">
-        <b>Ставка соперника</b>
-        <div class="row">
-          <input id="cQ" type="number" min="1" value="7" style="width:80px"> ×
-          <select id="cF"></select>
-          <span id="cRes" class="big"></span>
-        </div>
-        <div class="row">
-          <label>Кубиков у игроков, ставивших на эту цифру
-            <input id="cK" type="number" min="0" max="60" value="0" style="width:70px">
-          </label>
-          <label>Доверие к ставкам
-            <input id="cTr" type="range" min="0" max="0.6" step="0.05" value="0.25">
-            <span id="cTrV">0.25</span>
-          </label>
-        </div>
-        <div id="cRead"></div>
-      </div>
+          <div class="card">
+            <b>Чтение чужих ставок</b>
+            <div class="field-row">
+              <label class="field">Кубиков у игроков, ставивших на эту цифру
+                <input id="cK" type="number" min="0" max="60" value="0" inputmode="numeric">
+              </label>
+              <label class="field">Доверие к ставкам
+                <span class="range-line">
+                  <input id="cTr" type="range" min="0" max="0.6" step="0.05" value="0.25">
+                  <span id="cTrV">0.25</span>
+                </span>
+              </label>
+            </div>
+            <div id="cRead"></div>
+          </div>
 
-      <div class="card">
-        <b>Ваши лучшие ставки</b>
-        <div id="cTbl"></div>
+          <div class="card">
+            <b>Ваши лучшие ставки</b>
+            <div id="cTbl" class="table-scroll"></div>
+          </div>
+        </div>
+
+        <!-- Ставка соперника и результат: внизу экрана на телефоне, справа на широком -->
+        <div class="action-dock" id="cDock">
+          <b>Ставка соперника</b>
+          <div class="dock-controls">
+            <div class="stepper" role="group" aria-label="Количество кубиков">
+              <button id="cMinus" type="button" aria-label="Меньше">−</button>
+              <input id="cQ" type="number" min="1" value="7" inputmode="numeric" aria-label="Количество кубиков">
+              <button id="cPlus" type="button" aria-label="Больше">+</button>
+            </div>
+            <div id="cPick" class="face-pick" role="radiogroup" aria-label="Цифра"></div>
+            <select id="cF" hidden aria-hidden="true" tabindex="-1"></select>
+          </div>
+          <div id="cRes" class="big calc-result" role="status" aria-live="polite"></div>
+        </div>
       </div>
     </section>
 

@@ -228,7 +228,7 @@ class LayoutTest(unittest.TestCase):
             with self.subTest(w=w, h=h):
                 page = self.open_game(w, h, 3)
                 dock = page.locator("#gDock").bounding_box()
-                for sel in ["#gDudo", "#gRaise", "#gPick", ".stepper"]:
+                for sel in ["#gDudo", "#gRaise", "#gPick", "#game .stepper"]:
                     b = page.locator(sel).bounding_box()
                     self.assertGreaterEqual(b["x"], dock["x"] - 1, sel)
                     self.assertLessEqual(b["x"] + b["width"], dock["x"] + dock["width"] + 1, sel)
@@ -493,6 +493,62 @@ class LayoutTest(unittest.TestCase):
                     page.keyboard.press("Escape")
                     self.assertFalse(page.locator("#mainNav").is_visible())
                     self.assertEqual(page.evaluate("document.activeElement.closest('section').id"), tab)
+
+    # ---------- Калькулятор ----------
+
+    def open_calc(self, w, h):
+        ctx = self.browser.new_context(viewport={"width": w, "height": h})
+        page = ctx.new_page()
+        self.addCleanup(ctx.close)
+        page.goto(self.url)                      # Калькулятор — вкладка по умолчанию
+        page.wait_for_selector("#cPick .face-btn")
+        return page
+
+    def test_calc_has_no_horizontal_scroll_and_table_fits_card(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_calc(w, h)
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                card = page.locator("#cTbl").evaluate("e => e.parentElement.getBoundingClientRect().right")
+                tbl = page.locator("#cTbl table").bounding_box()
+                self.assertLessEqual(tbl["x"] + tbl["width"], card + 1)
+                self.assertFalse(page.locator("#cTbl").evaluate("e => e.scrollWidth > e.clientWidth + 1"))
+
+    def test_calc_bid_and_result_visible_together(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_calc(w, h)
+                for sel in ("#cQ", "#cPick", "#cRes"):
+                    b = page.locator(sel).bounding_box()
+                    self.assertGreaterEqual(b["y"], 0, sel)
+                    self.assertLessEqual(b["y"] + b["height"], h + 1, sel)
+
+    def test_calc_controls_are_touch_sized_and_inputs_16px(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_calc(w, h)
+                small = page.evaluate("""() => [...document.querySelectorAll('#calc button, #calc input, #calc select')]
+                    .filter(e => e.offsetParent !== null && e.type !== 'checkbox')
+                    .filter(e => { const r = e.getBoundingClientRect(); return r.width < 44 || r.height < 44; })
+                    .map(e => e.id || e.className || e.textContent)""")
+                self.assertEqual(small, [])
+                fonts = page.evaluate("""() => [...document.querySelectorAll('#calc input, #calc select')]
+                    .filter(e => e.offsetParent !== null && e.type !== 'checkbox')
+                    .filter(e => parseFloat(getComputedStyle(e).fontSize) < 16).map(e => e.id)""")
+                self.assertEqual(fonts, [])
+
+    def test_calc_dock_is_bottom_sheet_on_phone_and_right_column_on_wide(self):
+        page = self.open_calc(360, 640)
+        dock = page.locator("#cDock").bounding_box()
+        self.assertGreaterEqual(dock["y"] + dock["height"], 639)            # прижата к низу экрана
+        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        dock = page.locator("#cDock").bounding_box()
+        self.assertLessEqual(dock["y"] + dock["height"], 641)
+        for w, h in [(1366, 768), (768, 1024), (844, 390)]:
+            page = self.open_calc(w, h)
+            dock = page.locator("#cDock").bounding_box()
+            main = page.locator(".learn-main").bounding_box()
+            self.assertGreaterEqual(dock["x"], main["x"] + main["width"] - 1, f"{w}x{h}")
 
     def test_learning_tabs_keep_ribbon_on_desktop(self):
         for tab in ("calc", "train", "drill"):
