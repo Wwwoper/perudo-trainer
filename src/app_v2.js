@@ -315,6 +315,36 @@ function setupTrainer() {
     for (let f = 1; f <= 6; f++) faceSel.add(new Option(String(f), f));
   }
 
+  // Выбор цифры кнопками; источник правды остаётся в #tF (скрытый select)
+  const facePick = $('#tPick');
+  const syncPick = () => {
+    const cur = +($('#tF')?.value) || 0;
+    $$('#tPick .face-btn').forEach((b, i) => {
+      b.classList.toggle('sel', i + 1 === cur);
+      b.setAttribute('aria-checked', String(i + 1 === cur));
+    });
+  };
+  if (facePick && faceSel) {
+    facePick.innerHTML = '';
+    for (let f = 1; f <= 6; f++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'face-btn';
+      b.innerHTML = renderDie(f, 's');
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', `Цифра ${f}`);
+      b.onclick = () => { faceSel.value = f; syncPick(); };
+      facePick.append(b);
+    }
+  }
+  const stepQ = (d) => {
+    const q = $('#tQ');
+    if (q) q.value = Math.max(1, (+q.value || 1) + d);
+  };
+  if ($('#tMinus')) $('#tMinus').onclick = () => stepQ(-1);
+  if ($('#tPlus')) $('#tPlus').onclick = () => stepQ(1);
+  const setAnswered = (on) => $('#tLayout')?.classList.toggle('is-answered', on);
+
   function persist() { setTrainingQueue(queue); updateStat(); }
 
   function updateStat() {
@@ -362,6 +392,8 @@ function setupTrainer() {
     if ($('#tBid')) $('#tBid').innerHTML = renderBid(cur.q, cur.f);
     if ($('#tQ')) $('#tQ').value = cur.q;
     if ($('#tF')) $('#tF').value = Math.min(6, cur.f + 1);
+    syncPick();
+    setAnswered(false);
     if ($('#tFb')) $('#tFb').innerHTML = '';
     updateSettingsHint();
     updateStat();
@@ -416,6 +448,8 @@ function setupTrainer() {
       $('#tFb').innerHTML =
         `<div class="big ${good ? 'text-ok' : 'text-bad'}">${good ? '✓ Хорошее решение' : '✗ Сомнительное решение'}</div>${html}`;
     }
+    setAnswered(true);
+    $('#tNext')?.focus();
   }
 
   const dudoBtn = $('#tDudo');
@@ -452,6 +486,7 @@ function setupTrainer() {
   };
 
   if ($('#tNew')) $('#tNew').onclick = newSituation;
+  if ($('#tNext')) $('#tNext').onclick = () => { newSituation(); $('#tDudo')?.focus(); };
 
   if ($('#tMode')) {
     $('#tMode').onchange = () => {

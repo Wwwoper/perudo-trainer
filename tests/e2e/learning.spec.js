@@ -99,8 +99,37 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tFb')).toContainText('решение');
       await expect(page.locator('#tFb')).toContainText('Шанс');
 
-      await page.click('#tNew');
+      await page.click('#tNext');
       await expect(page.locator('#tFb')).toBeEmpty();
+    });
+
+    test('после ответа разбор и «Новая ситуация» видны без прокрутки', async ({ page }) => {
+      await open(page, 'train');
+      await page.click('#tDudo');
+      const vh = page.viewportSize().height;
+      for (const sel of ['#tFb', '#tNext']) {
+        const b = await page.locator(sel).boundingBox();
+        expect(b.y, `${sel} не выше экрана`).toBeGreaterThanOrEqual(0);
+        expect(b.y + b.height, `${sel} в пределах экрана`).toBeLessThanOrEqual(vh + 1);
+      }
+      await expect(page.locator('#tDudo')).toBeHidden();
+      await expect(page.locator('#tNew')).toBeHidden();
+      await page.click('#tNext');
+      await expect(page.locator('#tDudo')).toBeVisible();
+      await expect(page.locator('#tNext')).toBeHidden();
+    });
+
+    test('степпер и выбор цифры меняют ставку «Ставлю»', async ({ page }) => {
+      await open(page, 'train');
+      await expect(page.locator('#tPick .face-btn[aria-checked="true"]')).toHaveCount(1);
+      await page.click('#tPick .face-btn[aria-label="Цифра 4"]');
+      await expect(page.locator('#tF')).toHaveValue('4');
+      const q = Number(await page.inputValue('#tQ'));
+      await page.click('#tPlus');
+      await expect(page.locator('#tQ')).toHaveValue(String(q + 1));
+      await page.click('#tMinus');
+      await page.click('#tMinus');
+      await expect(page.locator('#tQ')).toHaveValue(String(Math.max(1, q - 1)));
     });
 
     test('ставка «Ставлю» принимается и оценивается', async ({ page }) => {
@@ -111,7 +140,7 @@ test.describe('Учебные вкладки', () => {
         return Number(n?.textContent);
       });
       await page.fill('#tQ', String(total));
-      await page.selectOption('#tF', '6');
+      await page.click('#tPick .face-btn[aria-label="Цифра 6"]');
       await page.click('#tRaise');
       await expect(page.locator('#tFb')).toContainText('Ваша ставка');
     });

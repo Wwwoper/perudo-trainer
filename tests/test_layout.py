@@ -239,7 +239,7 @@ class LayoutTest(unittest.TestCase):
         page.evaluate("""() => { document.querySelector('#gCalzaOpt').checked = true;
             window.__perudo_v2.startNewGame(); }""")
         page.wait_for_selector("#gCalza", state="visible")
-        row = page.locator(".dock-buttons").bounding_box()
+        row = page.locator("#game .dock-buttons").bounding_box()
         for sel in ["#gDudo", "#gCalza", "#gRaise"]:
             b = page.locator(sel).bounding_box()
             self.assertLessEqual(b["x"] + b["width"], row["x"] + row["width"] + 1, sel)
@@ -547,8 +547,56 @@ class LayoutTest(unittest.TestCase):
         for w, h in [(1366, 768), (768, 1024), (844, 390)]:
             page = self.open_calc(w, h)
             dock = page.locator("#cDock").bounding_box()
-            main = page.locator(".learn-main").bounding_box()
+            main = page.locator("#calc .learn-main").bounding_box()
             self.assertGreaterEqual(dock["x"], main["x"] + main["width"] - 1, f"{w}x{h}")
+
+    # ---------- Тренажёр ----------
+
+    def open_trainer(self, w, h):
+        ctx = self.browser.new_context(viewport={"width": w, "height": h})
+        page = ctx.new_page()
+        self.addCleanup(ctx.close)
+        page.goto(self.url)
+        self.goto_tab(page, "train")
+        page.wait_for_selector("#tHand .die")
+        return page
+
+    def test_trainer_has_no_hscroll_and_touch_sized_controls(self):
+        for w, h in VIEWPORTS:
+            for answered in (False, True):
+                with self.subTest(w=w, h=h, answered=answered):
+                    page = self.open_trainer(w, h)
+                    if answered:
+                        page.click("#tDudo")
+                    self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                    small = page.evaluate("""() => [...document.querySelectorAll('#train button, #train input, #train select, #train summary')]
+                        .filter(e => e.offsetParent !== null && e.type !== 'checkbox')
+                        .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
+                        .map(e => e.id || e.className || e.textContent.trim())""")
+                    self.assertEqual(small, [])
+                    fonts = page.evaluate("""() => [...document.querySelectorAll('#train input, #train select')]
+                        .filter(e => e.offsetParent !== null && e.type !== 'checkbox')
+                        .filter(e => parseFloat(getComputedStyle(e).fontSize) < 16).map(e => e.id)""")
+                    self.assertEqual(fonts, [])
+
+    def test_trainer_situation_and_answer_buttons_visible_together(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_trainer(w, h)
+                for sel in ("#tHand", "#tBid", "#tDudo", "#tRaise", "#tPick"):
+                    b = page.locator(sel).bounding_box()
+                    self.assertGreaterEqual(b["y"], 0, sel)
+                    self.assertLessEqual(b["y"] + b["height"], h + 1, sel)
+
+    def test_trainer_verdict_and_next_visible_after_answer(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_trainer(w, h)
+                page.click("#tDudo")
+                for sel in ("#tFb .big", "#tNext"):
+                    b = page.locator(sel).bounding_box()
+                    self.assertGreaterEqual(b["y"], 0, sel)
+                    self.assertLessEqual(b["y"] + b["height"], h + 1, sel)
 
     def test_learning_tabs_keep_ribbon_on_desktop(self):
         for tab in ("calc", "train", "drill"):

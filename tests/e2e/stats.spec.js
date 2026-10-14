@@ -54,7 +54,7 @@ test.describe('Статистика: разделы не затирают дру
     await answerTrainer(page);
     await answerDrill(page);
     await openTab(page, 'train');
-    await page.click('#tNew');
+    await page.click('#tNext');
     await page.click('#tDudo');
     await answerDrill(page);   // «Проверить» повторно: новый вопрос не нужен, ответ считается
 

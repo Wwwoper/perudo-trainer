@@ -127,61 +127,73 @@
         <h2 class="learn-hud-title">Тренажёр</h2>
       </header>
 
-      <!-- Компактная верхняя панель: новая ситуация + свёрнутые настройки -->
-      <div class="card trainer-top">
-        <div class="trainer-top-row">
-          <button id="tNew" class="trainer-new">🔄 Новая ситуация</button>
-          <details class="trainer-settings-more">
-            <summary>
-              ⚙️ <span id="tSettingsHint">Классика · порог 0.5</span>
-            </summary>
-            <div class="trainer-settings-body">
-              <div class="row">
-                <label>Режим <select id="tMode"></select></label>
-                <label>Порог <input id="tT" type="number" min="0.05" max="0.95" step="0.05" value="0.5"
-                    style="width:80px"></label>
-              </div>
-              <div class="row">
-                <button id="tReset">Сбросить статистику</button>
-              </div>
-              <small id="tDesc"></small>
+      <div class="learn-layout trainer-layout" id="tLayout">
+        <div class="learn-main">
+          <!-- Компактная верхняя панель: новая ситуация + свёрнутые настройки -->
+          <div class="card trainer-top">
+            <div class="trainer-top-row">
+              <button id="tNew" class="trainer-new">🔄 Новая ситуация</button>
+              <details class="trainer-settings-more">
+                <summary>
+                  ⚙️ <span id="tSettingsHint">Классика · порог 0.5</span>
+                </summary>
+                <div class="trainer-settings-body">
+                  <div class="field-row">
+                    <label class="field">Режим <select id="tMode"></select></label>
+                    <label class="field">Порог <input id="tT" type="number" min="0.05" max="0.95" step="0.05"
+                        value="0.5" inputmode="decimal"></label>
+                  </div>
+                  <div class="row">
+                    <button id="tReset">Сбросить статистику</button>
+                  </div>
+                  <small id="tDesc"></small>
+                </div>
+              </details>
             </div>
+          </div>
+
+          <!-- Условие задачи: рука, ставка соперника -->
+          <div class="card trainer-board">
+            <div id="tInfo" class="trainer-chips"></div>
+
+            <div class="trainer-hand-label">Ваши кубики</div>
+            <div id="tHand" class="trainer-hand"></div>
+
+            <div class="trainer-bid-row">
+              <span class="muted">Соперник:</span>
+              <span id="tBid"></span>
+            </div>
+          </div>
+
+          <!-- Статистика — свёрнута -->
+          <details class="card trainer-stats-card">
+            <summary>📊 Статистика</summary>
+            <div id="tStat" class="muted"></div>
+            <small>Ошибочные ситуации попадают в очередь и возвращаются, пока вы не решите их верно два раза подряд.</small>
           </details>
         </div>
-      </div>
 
-      <!-- Основной блок: должен влезать на мобильном в один экран -->
-      <div class="card trainer-board">
-        <div id="tInfo" class="trainer-chips"></div>
-
-        <div class="trainer-hand-label">Ваши кубики</div>
-        <div id="tHand" class="trainer-hand"></div>
-
-        <div class="trainer-bid-row">
-          <span class="muted">Соперник:</span>
-          <span id="tBid"></span>
-        </div>
-
-        <div class="trainer-actions">
-          <button class="bad" id="tDudo">Не верю!</button>
-          <div class="trainer-raise">
-            <span class="muted">или</span>
-            <input id="tQ" type="number" min="1" style="width:60px">
-            <span class="muted">×</span>
-            <select id="tF"></select>
-            <button id="tRaise">Ставлю</button>
+        <!-- Ответ: внизу экрана на телефоне, справа на широком. После ответа здесь же разбор -->
+        <div class="action-dock" id="tDock">
+          <div id="tFb" class="trainer-feedback" role="status" aria-live="polite"></div>
+          <div class="trainer-controls">
+            <div class="dock-controls">
+              <div class="stepper" role="group" aria-label="Количество кубиков">
+                <button id="tMinus" type="button" aria-label="Меньше">−</button>
+                <input id="tQ" type="number" min="1" inputmode="numeric" aria-label="Количество кубиков">
+                <button id="tPlus" type="button" aria-label="Больше">+</button>
+              </div>
+              <div id="tPick" class="face-pick" role="radiogroup" aria-label="Цифра"></div>
+              <select id="tF" hidden aria-hidden="true" tabindex="-1"></select>
+            </div>
+            <div class="dock-buttons">
+              <button class="bad" id="tDudo"><span class="btn-main">Не верю!</span></button>
+              <button id="tRaise" class="btn-primary"><span class="btn-main">Ставлю</span></button>
+            </div>
           </div>
+          <button id="tNext" class="btn-primary trainer-next" type="button">🔄 Новая ситуация</button>
         </div>
-
-        <div id="tFb" class="trainer-feedback"></div>
       </div>
-
-      <!-- Статистика — свёрнута -->
-      <details class="card trainer-stats-card">
-        <summary>📊 Статистика</summary>
-        <div id="tStat" class="muted"></div>
-        <small>Ошибочные ситуации попадают в очередь и возвращаются, пока вы не решите их верно два раза подряд.</small>
-      </details>
     </section>
 
     <!-- ================= УПРАЖНЕНИЯ ================= -->
