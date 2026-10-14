@@ -48,8 +48,8 @@
         <button class="tab-btn" data-t="drill">Упражнения</button>
         <button class="tab-btn" data-t="game">Партия</button>
         <button class="tab-btn" data-t="duel">Дуэль (CFR)</button>
-        <button class="tab-btn" data-t="stats">Статистика</button>
         <button class="tab-btn" data-t="sim">Симуляция</button>
+        <button class="tab-btn" data-t="stats">Статистика</button>
       </nav>
     </header>
     <div id="navScrim" class="nav-scrim" hidden></div>
@@ -502,28 +502,6 @@
         </div>
       </div>
     </section>
-    <section id="stats" class="hide">
-      <header class="learn-hud">
-        <button type="button" class="icon-btn hud-menu" aria-expanded="false" aria-controls="mainNav"
-          aria-label="Разделы приложения">☰</button>
-        <h2 class="learn-hud-title">Статистика</h2>
-      </header>
-      <div class="row">
-        <button id="stExport">Экспорт JSON</button>
-        <button id="stClear" class="bad">Сбросить всё</button>
-      </div>
-      <div class="card">
-        <b>Сводка</b>
-        <p class="muted">
-          Тренажёр: <span id="stGood">0</span> / <span id="stTotal">0</span>.
-          В очереди повторов: <span id="stQueue">0</span>.
-        </p>
-        <div id="stByMode"></div>
-        <div id="stGames"></div>
-      </div>
-      <div id="stOut"></div>
-    </section>
-
     <!-- ================= СИМУЛЯЦИЯ ================= -->
     <section id="sim" class="hide">
       <header class="learn-hud">
@@ -543,6 +521,31 @@
         <div id="sOut" style="margin-top:10px"></div>
       </div>
     </section>
+    <!-- ================= СТАТИСТИКА ================= -->
+    <section id="stats" class="hide">
+      <header class="learn-hud">
+        <button type="button" class="icon-btn hud-menu" aria-expanded="false" aria-controls="mainNav"
+          aria-label="Разделы приложения">☰</button>
+        <h2 class="learn-hud-title">Статистика</h2>
+      </header>
+      <div class="stats-main">
+        <div class="stats-actions">
+          <button id="stExport">Экспорт JSON</button>
+          <button id="stClear" class="bad">Сбросить всё</button>
+        </div>
+        <div class="card">
+          <b>Сводка</b>
+          <p class="muted">
+            Тренажёр: <span id="stGood">0</span> / <span id="stTotal">0</span>.
+            В очереди повторов: <span id="stQueue">0</span>.
+          </p>
+          <div id="stByMode" class="table-scroll stats-table"></div>
+          <div id="stGames" class="table-scroll stats-table"></div>
+        </div>
+        <div id="stOut"></div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ===== Скрипты ===== -->

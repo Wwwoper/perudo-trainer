@@ -237,4 +237,30 @@ test.describe('Учебные вкладки', () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
   });
+
+  test.describe('Статистика', () => {
+    const seedGames = (page) => page.evaluate(() => {
+      const now = Date.now();
+      localStorage.setItem('perudo.games', JSON.stringify(Array.from({ length: 15 }, (_, i) =>
+        ({ ts: now - i * 3600000, players: 4, rounds: 12 + i, won: i % 2 === 0, decisions: 30 + i }))));
+    });
+
+    test('«Статистика» — последняя вкладка в ленте разделов', async ({ page }) => {
+      const names = await page.locator('#mainNav .tab-btn').evaluateAll((b) => b.map((x) => x.dataset.t));
+      expect(names.at(-1)).toBe('stats');
+      expect(names).toEqual(['calc', 'train', 'drill', 'game', 'duel', 'sim', 'stats']);
+    });
+
+    test('таблица партий помещается в карточку, кнопки доступны', async ({ page }) => {
+      await seedGames(page);
+      await open(page, 'stats');
+      await expect(page.locator('#stGames table')).toBeVisible();
+      expect(await page.locator('#stGames').evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      for (const sel of ['#stExport', '#stClear']) {
+        const b = await page.locator(sel).boundingBox();
+        expect(b.height).toBeGreaterThanOrEqual(44);
+      }
+    });
+  });
 });

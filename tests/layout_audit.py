@@ -31,6 +31,10 @@ VIEWPORTS = [(360, 640, True), (390, 844, True), (844, 390, True), (768, 1024, F
 # Одинаковые «случайные» кубики при каждом запуске, чтобы цифры можно было сравнивать.
 SEED = "let s = 7; Math.random = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };"
 
+GAMES_SEED = """(() => { const now = Date.now();
+  localStorage.setItem('perudo.games', JSON.stringify(Array.from({ length: 15 }, (_, i) =>
+    ({ ts: now - i * 3600000, players: 4, rounds: 12 + i, won: i % 2 === 0, decisions: 30 + i })))); })()"""
+
 MEASURE = """(resultSel) => {
   const vw = innerWidth, vh = innerHeight;
   const sec = [...document.querySelectorAll('main > section')].find((s) => !s.classList.contains('hide'));
@@ -99,6 +103,7 @@ def measure_all(base_url, browser):
         page.wait_for_selector("#dOpen table", timeout=60000)
         snap("duel: solved table", "#dInfo")
 
+        page.evaluate(GAMES_SEED)
         _tab(page, "stats")
         snap("stats", "#stClear")
 

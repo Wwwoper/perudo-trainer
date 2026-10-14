@@ -15,7 +15,7 @@ from tests.layout_audit import ROOT, _Quiet, measure_all
 
 
 # Вкладки, для которых пороги уже обязательны. Остальные добавляются по мере переделки вёрстки.
-STRICT_TABS = ("calc", "train", "drill", "duel")
+STRICT_TABS = ("calc", "train", "drill", "duel", "stats")
 
 
 def strict(rows):

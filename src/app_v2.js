@@ -57,7 +57,7 @@ function bestSafeRaise(bid, n, hand, rules, thr) {
 
 // ================= Константы =================
 
-const TABS = ['calc', 'train', 'drill', 'game', 'duel', 'stats', 'sim'];
+const TABS = ['calc', 'train', 'drill', 'game', 'duel', 'sim', 'stats'];
 
 const MODES = {
   classic: {

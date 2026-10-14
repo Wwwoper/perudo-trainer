@@ -677,6 +677,29 @@ class LayoutTest(unittest.TestCase):
                 self.assertLessEqual(page.locator("#dOpen").bounding_box()["x"]
                                      + page.locator("#dOpen").bounding_box()["width"], card + 1)
 
+    # ---------- Статистика ----------
+
+    GAMES_SEED = """(() => { const now = Date.now();
+        localStorage.setItem('perudo.games', JSON.stringify(Array.from({ length: 15 }, (_, i) =>
+          ({ ts: now - i * 3600000, players: 4, rounds: 12 + i, won: i % 2 === 0, decisions: 30 + i })))); })()"""
+
+    def test_stats_tables_fit_card_and_buttons_are_touch_sized(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                page.evaluate(self.GAMES_SEED)
+                self.goto_tab(page, "stats")
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                self.assertFalse(page.locator("#stGames").evaluate("e => e.scrollWidth > e.clientWidth + 1"))
+                small = page.evaluate("""() => [...document.querySelectorAll('#stats button')]
+                    .filter(e => e.offsetParent !== null)
+                    .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
+                    .map(e => e.id || e.className || e.textContent.trim())""")
+                self.assertEqual(small, [])
+
     def test_learning_tabs_keep_ribbon_on_desktop(self):
         for tab in ("calc", "train", "drill", "duel", "stats", "sim"):
             with self.subTest(tab=tab):
@@ -752,7 +775,7 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "drill")
         for _ in range(3):
             page.keyboard.press("ArrowUp")
-        self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "sim")  # по кругу
+        self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "stats")  # по кругу
 
     def test_widening_window_closes_menu(self):
         page = self.open_game(844, 390, 3)

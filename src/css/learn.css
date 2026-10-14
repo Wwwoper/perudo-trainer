@@ -311,3 +311,54 @@
 #dSolve {
   min-height: var(--tap);
 }
+
+/* ===== Статистика ===== */
+.stats-main {
+  min-width: 0;
+}
+
+.stats-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.stats-actions button {
+  min-height: var(--tap);
+}
+
+/* Таблицы сводки: ширина по содержимому, при нехватке места прокручиваются внутри карточки */
+.stats-table table {
+  table-layout: auto;
+  min-width: 0;
+}
+
+.stats-table th,
+.stats-table td {
+  padding: 6px 4px;
+  white-space: nowrap;
+}
+
+/* Дата переносится на две строки, чтобы таблица помещалась на телефоне целиком */
+.stats-table td:first-child,
+.stats-table th:first-child {
+  white-space: normal;
+}
+
+@media (max-width: 719px) {
+  .stats-table {
+    font-size: 13px;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 6px 2px;
+  }
+}
+
+@media (min-width: 720px) {
+  .stats-actions {
+    grid-template-columns: repeat(2, max-content);
+  }
+}
