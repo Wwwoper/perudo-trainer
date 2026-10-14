@@ -700,6 +700,33 @@ class LayoutTest(unittest.TestCase):
                     .map(e => e.id || e.className || e.textContent.trim())""")
                 self.assertEqual(small, [])
 
+    # ---------- Симуляция ----------
+
+    def test_sim_fields_buttons_and_table_fit(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "sim")
+                page.fill("#sR", "2000")
+                page.click("#sGo")
+                page.wait_for_selector("#sOut table")
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                self.assertFalse(page.locator("#sOut").evaluate("e => e.scrollWidth > e.clientWidth + 1"))
+                b = page.locator("#sGo").bounding_box()
+                self.assertLessEqual(b["y"] + b["height"], h + 1)
+                small = page.evaluate("""() => [...document.querySelectorAll('#sim button, #sim input, #sim select')]
+                    .filter(e => e.offsetParent !== null && e.type !== 'checkbox')
+                    .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
+                    .map(e => e.id || e.textContent.trim())""")
+                self.assertEqual(small, [])
+                fonts = page.evaluate("""() => [...document.querySelectorAll('#sim input')]
+                    .filter(e => e.offsetParent !== null && e.type !== 'checkbox')
+                    .filter(e => parseFloat(getComputedStyle(e).fontSize) < 16).map(e => e.id)""")
+                self.assertEqual(fonts, [])
+
     def test_learning_tabs_keep_ribbon_on_desktop(self):
         for tab in ("calc", "train", "drill", "duel", "stats", "sim"):
             with self.subTest(tab=tab):

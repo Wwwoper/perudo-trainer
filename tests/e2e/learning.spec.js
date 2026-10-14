@@ -263,4 +263,20 @@ test.describe('Учебные вкладки', () => {
       }
     });
   });
+
+  test.describe('Симуляция', () => {
+    test('запуск Монте-Карло показывает таблицу рядом с формулой, кнопка всегда на экране', async ({ page }) => {
+      await open(page, 'sim');
+      const vh = page.viewportSize().height;
+      let b = await page.locator('#sGo').boundingBox();
+      expect(b.y + b.height).toBeLessThanOrEqual(vh + 1);
+      await page.fill('#sR', '2000');
+      await page.click('#sGo');
+      await expect(page.locator('#sOut table')).toBeVisible();
+      await expect(page.locator('#sOut th').nth(2)).toHaveText('Формула');
+      b = await page.locator('#sGo').boundingBox();
+      expect(b.y + b.height).toBeLessThanOrEqual(vh + 1);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    });
+  });
 });

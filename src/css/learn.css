@@ -183,7 +183,8 @@
   #cDock,
   #tDock,
   #dDock,
-  #duelDock {
+  #duelDock,
+  #simDock {
     position: sticky;
     top: var(--space-3);
   }
@@ -361,4 +362,28 @@
   .stats-actions {
     grid-template-columns: repeat(2, max-content);
   }
+}
+
+/* ===== Симуляция ===== */
+.sim-go {
+  min-height: var(--tap-lg);
+  font-weight: 700;
+}
+
+.sim-out {
+  margin-top: var(--space-3);
+  overflow-x: auto;
+}
+
+.sim-out:empty {
+  display: none;
+}
+
+.sim-out table {
+  table-layout: auto;
+}
+
+.sim-out th,
+.sim-out td {
+  padding: 6px 4px;
 }

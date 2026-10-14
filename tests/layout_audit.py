@@ -112,7 +112,7 @@ def measure_all(base_url, browser):
         page.fill("#sR", "2000")
         page.click("#sGo")
         page.wait_for_selector("#sOut table")
-        snap("sim: after run", "#sOut")
+        snap("sim: after run", "#sOut p")
         ctx.close()
     return rows
 
