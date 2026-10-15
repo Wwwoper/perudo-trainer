@@ -370,7 +370,7 @@ LICENSE              лицензия MIT
 .nojekyll            отключает Jekyll на GitHub Pages
 README.md            это описание (GitHub показывает его на главной странице)
 src/
-├── app_v2.js        точка входа: интерфейс вкладок и партии (постепенно переезжает в ui/)
+├── app_v2.js        точка входа: запуск вкладок и ядро партии (ход игры, стол, ход бота)
 ├── ui/              части интерфейса: common.js (помощники), modes.js (режимы тренажёра), tabs.js (разделы и ☰), calculator.js, trainer.js, drill.js, duel.js, sim.js, stats.js (вкладки), side_panel.js (панель партии), bot_styles.js и bot_mind.js (настройки ботов), reveal_dialog.js и result_dialog.js (окна партии)
 ├── core.js          вероятности, симуляция, решатель CFR (классический скрипт, глобальный Perudo)
 ├── rules.js         правила ставок: legal(), minLegal()          ← чистая логика
