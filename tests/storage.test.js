@@ -10,7 +10,7 @@ global.localStorage = {
   removeItem: key => { delete mockStorage[key]; },
 };
 
-import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion } from '../src/storage.js';
+import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments } from '../src/storage.js';
 
 describe('get/set', () => {
   it('сохраняет и загружает', () => {
@@ -101,5 +101,39 @@ describe('updateStats', () => {
     assert.strictEqual(s.drill.B.n, 1);
     assert.deepStrictEqual(s.drill.A, { n: 0, good: 0 });
     assert.deepStrictEqual(s.byMode.classic, { n: 1, good: 1 });
+  });
+});
+
+describe('getMoments / setMoments', () => {
+  const moment = (id, extra = {}) => ({
+    id, ts: 1, round: 2, kind: 'dudo', n: 12, h: [1, 3, 5], myDice: 3,
+    bid: { q: 6, f: 4 }, played: null, wild: true, p: 0.7, code: 'bad', lostDie: true, tags: ['dudo'], ...extra,
+  });
+
+  it('пустое хранилище даёт пустой список', () => {
+    delete mockStorage['perudo.reviews'];
+    assert.deepStrictEqual(getMoments(), []);
+  });
+
+  it('записанное читается обратно', () => {
+    setMoments([moment('a'), moment('b')]);
+    assert.deepStrictEqual(getMoments().map((m) => m.id), ['a', 'b']);
+  });
+
+  it('мусор и старый формат (объект) читаются как пустой список, падений нет', () => {
+    mockStorage['perudo.reviews'] = JSON.stringify({ old: true });
+    assert.deepStrictEqual(getMoments(), []);
+    mockStorage['perudo.reviews'] = '{не json';
+    assert.deepStrictEqual(getMoments(), []);
+    mockStorage['perudo.reviews'] = JSON.stringify([1, 'x', null, moment('ok')]);
+    assert.deepStrictEqual(getMoments().map((m) => m.id), ['ok']);
+  });
+
+  it('при записи лишнее отбрасывается и лимит соблюдается', () => {
+    const many = Array.from({ length: 60 }, (_, i) => moment(`m${i}`));
+    setMoments(many);
+    const saved = JSON.parse(mockStorage['perudo.reviews']);
+    assert.strictEqual(saved.length, 50);
+    assert.strictEqual(saved[49].id, 'm59');
   });
 });

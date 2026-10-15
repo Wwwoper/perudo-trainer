@@ -125,6 +125,16 @@ describe('parseBackup: отказы', () => {
     assert.match(bad(wrap({ 'perudo.duelStats': { games: 'a' } })), /дуэли/);
     assert.match(bad(wrap({ 'perudo.settings': [] })), /настройки/);
     assert.match(bad(wrap({ 'perudo.botMemory': 5 })), /память ботов/);
+    assert.match(bad(wrap({ 'perudo.reviews': 5 })), /разбор партий/);
+    assert.match(bad(wrap({ 'perudo.reviews': { a: 1 } })), /разбор партий/);
+    assert.match(bad(wrap({ 'perudo.reviews': [1] })), /записи не того вида/);
+  });
+
+  it('разбор партий: список и пустой объект из первых копий принимаются', () => {
+    const wrap = (data) => JSON.stringify({ format: BACKUP_FORMAT, version: 2, data });
+    assert.strictEqual(parseBackup(wrap({ 'perudo.reviews': [] })).ok, true);
+    assert.strictEqual(parseBackup(wrap({ 'perudo.reviews': [{ id: 'a' }] })).ok, true);
+    assert.strictEqual(parseBackup(wrap({ 'perudo.reviews': {} })).ok, true);
   });
 
   it('слишком большой файл', () => {

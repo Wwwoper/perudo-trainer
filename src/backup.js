@@ -32,7 +32,12 @@ const SCHEMA = {
     if (!Array.isArray(v)) return 'история партий должна быть списком';
     return v.every(isObject) ? null : 'в истории партий есть записи не того вида';
   },
-  'perudo.reviews': (v) => (isObject(v) || Array.isArray(v) ? null : 'разборы должны быть списком или объектом'),
+  // Ключевые моменты партий. Пустой объект принимается: так выглядел пустой раздел в первых копиях.
+  'perudo.reviews': (v) => {
+    if (isObject(v)) return Object.keys(v).length === 0 ? null : 'разбор партий должен быть списком';
+    if (!Array.isArray(v)) return 'разбор партий должен быть списком';
+    return v.every(isObject) ? null : 'в разборе партий есть записи не того вида';
+  },
   'perudo.trainingQueue': (v) => {
     if (!Array.isArray(v)) return 'очередь повторов должна быть списком';
     const ok = v.every((x) => isObject(x) && typeof x.mode === 'string' && isNum(x.n) && isNum(x.f)

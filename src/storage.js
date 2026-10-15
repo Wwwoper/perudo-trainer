@@ -1,5 +1,7 @@
 // storage.js — работа с localStorage с версионированием
 
+import { normalizeMoments } from './moments.js';
+
 const SCHEMA_VERSION = 1;
 
 const KEYS = {
@@ -104,6 +106,15 @@ export function setTrainingQueue(queue) {
 export function getGames(limit = 200) {
   const games = get(KEYS.GAMES, []);
   return games.slice(-limit);
+}
+
+/** Ключевые моменты партий (ключ perudo.reviews). Мусор в хранилище отбрасывается. */
+export function getMoments() {
+  return normalizeMoments(get(KEYS.REVIEWS, []));
+}
+
+export function setMoments(moments) {
+  set(KEYS.REVIEWS, normalizeMoments(moments));
 }
 
 export function getSchemaVersion() {
