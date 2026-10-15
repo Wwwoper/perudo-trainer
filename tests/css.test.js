@@ -10,7 +10,7 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 
 const html = read('index.html');
 const cssFiles = [...readdirSync(join(ROOT, 'src/css')).filter((f) => f.endsWith('.css')).map((f) => `src/css/${f}`), 'src/table.css'];
-const jsFiles = readdirSync(join(ROOT, 'src')).filter((f) => f.endsWith('.js')).map((f) => `src/${f}`);
+const jsFiles = ['src', 'src/ui'].flatMap((d) => readdirSync(join(ROOT, d)).filter((f) => f.endsWith('.js')).map((f) => `${d}/${f}`));
 const sources = [html, ...jsFiles.map(read)].join('\n');
 
 // Классы, которые JS собирает динамически: c0…c5 (цвета игроков, `c${i}`).
