@@ -1,0 +1,221 @@
+// src/ui/trainer.js — Тренажёр: разбор ситуаций и очередь повторов.
+
+import { getStats, updateStats, getTrainingQueue, setTrainingQueue } from '../storage.js';
+import { renderDie, renderHand, renderBid } from '../table.js';
+import { P, $, $$, pct, flash } from './common.js';
+import { MODES, modeLabel, bestSafeRaise } from './modes.js';
+
+export function setupTrainer() {
+  if (!P) return;
+
+  // Статистику не держим в переменной: её пишут и другие разделы (см. updateStats).
+  let queue = getTrainingQueue();
+  let cur = null;
+  let answered = false;
+
+  const modeSel = $('#tMode');
+  if (modeSel) {
+    modeSel.innerHTML = '';
+    for (const key in MODES) modeSel.add(new Option(MODES[key].name, key));
+  }
+  const faceSel = $('#tF');
+  if (faceSel) {
+    faceSel.innerHTML = '';
+    for (let f = 1; f <= 6; f++) faceSel.add(new Option(String(f), f));
+  }
+
+  // Выбор цифры кнопками; источник правды остаётся в #tF (скрытый select)
+  const facePick = $('#tPick');
+  const syncPick = () => {
+    const cur = +($('#tF')?.value) || 0;
+    $$('#tPick .face-btn').forEach((b, i) => {
+      b.classList.toggle('sel', i + 1 === cur);
+      b.setAttribute('aria-checked', String(i + 1 === cur));
+    });
+  };
+  if (facePick && faceSel) {
+    facePick.innerHTML = '';
+    for (let f = 1; f <= 6; f++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'face-btn';
+      b.innerHTML = renderDie(f, 's');
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-label', `Цифра ${f}`);
+      b.onclick = () => { faceSel.value = f; syncPick(); };
+      facePick.append(b);
+    }
+  }
+  const stepQ = (d) => {
+    const q = $('#tQ');
+    if (q) q.value = Math.max(1, (+q.value || 1) + d);
+  };
+  if ($('#tMinus')) $('#tMinus').onclick = () => stepQ(-1);
+  if ($('#tPlus')) $('#tPlus').onclick = () => stepQ(1);
+  const setAnswered = (on) => $('#tLayout')?.classList.toggle('is-answered', on);
+
+  function persist() { setTrainingQueue(queue); updateStat(); }
+
+  function updateStat() {
+    const el = $('#tStat');
+    if (!el) return;
+    const mk = $('#tMode').value;
+    const S = getStats();
+    const b = (S.byMode || {})[mk] || { n: 0, good: 0 };
+    el.innerHTML = `Всего: ${S.n}, верных решений: ${S.good} (${S.n ? pct(S.good / S.n) : '—'}). ` +
+      `В выбранном режиме: ${b.n ? `${b.good}/${b.n} (${pct(b.good / b.n)})` : '—'}. ` +
+      `В очереди повторов: ${queue.length}.`;
+  }
+
+  function newSituation() {
+    const mk = $('#tMode').value;
+    const m = MODES[mk];
+    const pool = queue.filter((x) => x.mode === mk);
+
+    if (pool.length && Math.random() < 0.4) {
+      const item = pool[Math.floor(Math.random() * pool.length)];
+      cur = { m, n: item.n, h: item.h.slice(), f: item.f, q: item.q, item };
+    } else {
+      const n = P.ri(m.n[0], m.n[1]);
+      const k = Math.min(m.k(n), n - 1) || 1;
+      const h = P.roll(k);
+      const f = P.ri(1, 6);
+      let q = Math.round(n * P.pFace(f, m.wild) + (Math.random() < m.bluff ? P.ri(1, 3) : P.ri(-2, 1)));
+      q = Math.max(1, Math.min(n, q));
+      cur = { m, n, h, f, q, item: null };
+    }
+
+    answered = false;
+    if ($('#tDesc')) $('#tDesc').textContent = m.d;
+    if ($('#tInfo')) {
+      $('#tInfo').innerHTML =
+        (cur.item ? `<span class="trainer-chip trainer-repeat">🔁 повтор</span>` : '') +
+        `<span class="trainer-chip">🎲 всего <b>${cur.n}</b></span>` +
+        `<span class="trainer-chip">👤 у вас <b>${cur.h.length}</b></span>` +
+        `<span class="trainer-chip">❓ чужих <b>${cur.n - cur.h.length}</b></span>` +
+        `<span class="trainer-chip ${m.wild ? 'trainer-wild' : ''}">` +
+        (m.wild ? '✨ единицы — джокеры' : '⚪ единицы обычные') +
+        `</span>`;
+    }
+    if ($('#tHand')) $('#tHand').innerHTML = renderHand(cur.h, m.wild);
+    if ($('#tBid')) $('#tBid').innerHTML = renderBid(cur.q, cur.f);
+    if ($('#tQ')) $('#tQ').value = cur.q;
+    if ($('#tF')) $('#tF').value = Math.min(6, cur.f + 1);
+    syncPick();
+    setAnswered(false);
+    if ($('#tFb')) $('#tFb').innerHTML = '';
+    updateSettingsHint();
+    updateStat();
+  }
+  function updateSettingsHint() {
+    const el = $('#tSettingsHint');
+    if (!el) return;
+    const thr = (+$('#tT').value || 0.5).toFixed(2);
+    el.textContent = `${modeLabel($('#tMode').value)} · порог ${thr}`;
+  }
+
+  function bestRaiseThreshold() {
+    if (!cur) return null;
+    return bestSafeRaise(
+      { q: cur.q, f: cur.f }, cur.n, cur.h,
+      { wild: cur.m.wild }, +$('#tT').value
+    );
+  }
+
+  function hint() {
+    const b = bestRaiseThreshold();
+    return b
+      ? `<p class="muted">Самая сильная безопасная ставка: ${renderBid(b.q, b.f)} (${pct(b.p)}).</p>`
+      : '<p class="muted">Безопасных повышений выше порога нет — «Не верю» часто лучший выбор.</p>';
+  }
+
+  function answer(good, html) {
+    if (answered || !cur) return;
+    answered = true;
+
+    const mk = $('#tMode').value;
+    updateStats((S) => {
+      S.n++;
+      S.byMode[mk] = S.byMode[mk] || { n: 0, good: 0 };
+      S.byMode[mk].n++;
+      if (good) { S.good++; S.byMode[mk].good++; }
+    });
+
+    if (cur.item) {
+      if (good) {
+        cur.item.streak = (cur.item.streak || 0) + 1;
+        if (cur.item.streak >= 2) queue = queue.filter((x) => x !== cur.item);
+      } else {
+        cur.item.streak = 0;
+      }
+    } else if (!good) {
+      queue.push({ mode: mk, n: cur.n, h: cur.h.slice(), f: cur.f, q: cur.q, streak: 0 });
+    }
+
+    persist();
+    if ($('#tFb')) {
+      $('#tFb').innerHTML =
+        `<div class="big ${good ? 'text-ok' : 'text-bad'}">${good ? '✓ Хорошее решение' : '✗ Сомнительное решение'}</div>${html}`;
+    }
+    setAnswered(true);
+    $('#tNext')?.focus();
+  }
+
+  const dudoBtn = $('#tDudo');
+  if (dudoBtn) dudoBtn.onclick = () => {
+    if (answered || !cur) return;
+    const { m, n, h, f, q } = cur;
+    const t = +$('#tT').value;
+    const p = P.probBid(q, f, n, h, m.wild);
+    const msg = p < t ? 'Ставка слишком смелая — «Не верю» оправдано.'
+      : 'Ставка вероятна — лучше было верить и повышать.';
+    answer(p < t, `<p>Шанс, что ставка ${renderBid(q, f)} верна: <b>${pct(p)}</b> (порог ${pct(t)}). ${msg}</p>${hint()}`);
+  };
+
+  const raiseBtn = $('#tRaise');
+  if (raiseBtn) raiseBtn.onclick = () => {
+    if (answered || !cur) return;
+    const { m, n, h, f, q } = cur;
+    const t = +$('#tT').value;
+    const Q = +$('#tQ').value;
+    const F = +$('#tF').value;
+
+    if (!(Q > q || (Q === q && F > f))) {
+      flash($('#tFb'), 'Ставка должна быть выше: больше количество или та же цифра и больше значение.');
+      return;
+    }
+    if (Q > n) { flash($('#tFb'), 'Ставка больше общего числа кубиков.'); return; }
+
+    const p = P.probBid(Q, F, n, h, m.wild);
+    const po = P.probBid(q, f, n, h, m.wild);
+    answer(p >= t,
+      `<p>Ваша ставка ${renderBid(Q, F)} верна с шансом <b>${pct(p)}</b> (порог ${pct(t)}). ` +
+      `Ставка соперника была верна с шансом ${pct(po)}.</p>${hint()}`
+    );
+  };
+
+  if ($('#tNew')) $('#tNew').onclick = newSituation;
+  if ($('#tNext')) $('#tNext').onclick = () => { newSituation(); $('#tDudo')?.focus(); };
+
+  if ($('#tMode')) {
+    $('#tMode').onchange = () => {
+      updateSettingsHint();   // ← сначала обновляем подпись
+      newSituation();          // ← потом генерируем новую ситуацию
+    };
+  }
+
+  if ($('#tT')) {
+    $('#tT').addEventListener('input', updateSettingsHint);
+  }
+  if ($('#tReset')) $('#tReset').onclick = () => {
+    updateStats((S) => {
+      S.n = 0; S.good = 0; S.byMode = {};
+      S.drill = { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };
+    });
+    queue = [];
+    persist();
+    newSituation();
+  };
+
+  newSituation();
+}
