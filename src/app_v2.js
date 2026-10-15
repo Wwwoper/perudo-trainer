@@ -8,8 +8,7 @@ import { createAssistConfig, getClassification } from './assist.js';
 import { updateStats, migrateIfNeeded, get, set } from './storage.js';
 import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml } from './table.js';
-import { buildGameResult, resultHeadline, pluralDice } from './result.js';
-import { buildReveal, dieMatches } from './reveal.js';
+import { buildGameResult, resultHeadline } from './result.js';
 import { P, $, $$, pct, flash } from './ui/common.js';
 import { setupTabs } from './ui/tabs.js';
 import { setupCalculator } from './ui/calculator.js';
@@ -18,6 +17,8 @@ import { setupDrill } from './ui/drill.js';
 import { setupDuel, solveNow, startDuel, moveDuel, getDuelTree, getDuelState } from './ui/duel.js';
 import { setupSim } from './ui/sim.js';
 import { sideApi, setupSidePanel } from './ui/side_panel.js';
+import { revealIsOpen, presentReveal, setupReveal, hideRevealUi } from './ui/reveal_dialog.js';
+import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/result_dialog.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
 import { renderStats, setupStats } from './ui/stats.js';
@@ -62,8 +63,12 @@ function setupGame() {
 
   setupBotStyles();
   setupBotMind();
-  setupResultDialog();
-  setupReveal();
+  setupResultDialog(() => game);
+  setupReveal(() => {
+    continueFlow();
+    // Партия закончилась этим вскрытием: окно итога — после него, а не поверх.
+    if (game && game.state === 'finished') scheduleResultDialog(() => game, 300);
+  });
   startNewGame();
 }
 
@@ -518,7 +523,7 @@ function onPlayerDudo() {
 
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
-  presentReveal(res.events);
+  presentReveal(game, res.events);
   continueFlow();
 }
 
@@ -546,89 +551,11 @@ function onPlayerCalza() {
   addGameLog('dudo', `<b class="warn">CALZA</b> (${renderBid(q, f)})`);
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
-  presentReveal(res.events);
+  presentReveal(game, res.events);
   continueFlow();
 }
 
 // ----- Вскрытие кубиков после «Не верю» / Calza -----
-
-let revealTimer = null;
-const REVEAL_MS = { slow: 9000, normal: 6000, fast: 3500 };   // «Пошагово» — только по кнопке
-
-const revealIsOpen = () => !!$('#gReveal')?.open;
-
-function revealTone(m) {
-  const me = m.rows.find((r) => r.isHuman);
-  if (!me) return '';
-  if (m.kind === 'dudo') {
-    if (me.isLoser) return 'is-bad';
-    return me.isBidder || me.isChallenger ? 'is-good' : '';
-  }
-  if (!me.isChallenger) return '';
-  return m.verdict === 'calza_exact' ? 'is-good' : 'is-bad';
-}
-
-function presentReveal(events) {
-  const dlg = $('#gReveal');
-  if (!game || !dlg || dlg.open || typeof dlg.showModal !== 'function') return false;
-  if ($('#gRevealOpt')?.checked === false) return false;
-  if ($('#game')?.classList.contains('hide')) return false;
-  const m = buildReveal(events, game.players);
-  if (!m) return false;
-
-  $('#gRevealTitle').textContent = m.headline;
-  $('#gRevealBid').innerHTML =
-    `Ставка · ${escapeHtml(m.bid.playerName)}: ${renderBid(m.bid.q, m.bid.f)}` +
-    (m.wild ? '' : ' · палифико, единицы не джокеры');
-  $('#gRevealRows').innerHTML = m.rows.map((r) => {
-    const role = [r.isBidder ? 'ставил' : '', r.isChallenger ? 'проверял' : ''].filter(Boolean).join(', ');
-    const dice = r.hand.map((d) => {
-      const html = renderDie(d, 'xs', m.wild && d === 1);
-      return dieMatches(d, m.bid.f, m.wild) ? html.replace('class="die', 'class="die hit') : html;
-    }).join('');
-    return `<li class="reveal-row ${r.isLoser ? 'is-loser' : ''}">` +
-      `<span class="reveal-name">${escapeHtml(r.name)}${role ? `<small>${role}</small>` : ''}</span>` +
-      `<span class="reveal-hand" aria-label="Кубики: ${r.hand.join(', ')}">${dice}</span>` +
-      `<span class="reveal-hit ${r.matches ? '' : 'zero'}" aria-label="Совпало: ${r.matches}">${r.matches ? '+' + r.matches : '0'}</span></li>`;
-  }).join('');
-  const verdict = $('#gRevealVerdict');
-  verdict.textContent = m.verdictText;
-  verdict.className = `reveal-verdict ${revealTone(m)}`;
-  $('#gRevealOutcome').textContent = m.outcomeText;
-
-  const speed = $('#gSpeed')?.value || 'normal';
-  const ms = REVEAL_MS[speed];
-  const bar = $('#gRevealBar');
-  const timerBox = bar?.parentElement;
-  if (bar) {
-    bar.classList.remove('run');
-    void bar.offsetWidth;                         // перезапуск анимации
-    if (ms) { bar.style.setProperty('--reveal-ms', `${ms}ms`); bar.classList.add('run'); }
-    if (timerBox) timerBox.style.visibility = ms ? 'visible' : 'hidden';
-  }
-
-  clearTimeout(revealTimer);
-  revealTimer = ms ? setTimeout(() => { if (dlg.open) dlg.close(); }, ms) : null;
-  dlg.showModal();
-  dlg.scrollTop = 0;                    // автофокус на кнопке не должен прятать заголовок
-  return true;
-}
-
-function setupReveal() {
-  const dlg = $('#gReveal');
-  if (!dlg) return;
-  $('#gRevealNext')?.addEventListener('click', () => dlg.close());
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
-  // В окне одна кнопка: Tab не должен выпускать фокус в интерфейс браузера.
-  dlg.addEventListener('keydown', (e) => { if (e.key === 'Tab') { e.preventDefault(); $('#gRevealNext')?.focus(); } });
-  dlg.addEventListener('close', () => {
-    clearTimeout(revealTimer);
-    revealTimer = null;
-    continueFlow();
-    // Партия закончилась этим вскрытием: окно итога — после него, а не поверх.
-    if (game && game.state === 'finished') scheduleResultDialog(300);
-  });
-}
 
 // Дальше ходят боты — но не пока на экране вскрытие.
 function continueFlow() {
@@ -723,7 +650,7 @@ function runBotTurn() {
 
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
-  if (action.type !== 'raise') presentReveal(res.events);
+  if (action.type !== 'raise') presentReveal(game, res.events);
   continueFlow();
 }
 
@@ -732,79 +659,7 @@ function runBotTurn() {
 // Итог партии подводится один раз: renderGame() вызывается много раз, в том числе
 // уже после финала, и без этой защиты история и статистика дублировались бы.
 let finalizedGameId = null;
-let resultTimer = null;
-let resultOpener = null;
 const RESULT_DIALOG_DELAY_MS = 700;
-
-function hideRevealUi() {
-  clearTimeout(revealTimer);
-  revealTimer = null;
-  const dlg = $('#gReveal');
-  if (dlg?.open) dlg.close();
-}
-
-function hideResultUi() {
-  clearTimeout(resultTimer);
-  resultTimer = null;
-  const dlg = $('#gResultDialog');
-  if (dlg?.open) dlg.close();
-  const banner = $('#gSummary');
-  if (banner) banner.innerHTML = '';
-  const card = $('#gResultCard');
-  if (card) { card.innerHTML = ''; card.hidden = true; }
-}
-
-function fillResultDialog(result) {
-  const h = resultHeadline(result);
-  $('#gResultIcon').textContent = h.icon;
-  $('#gResultTitle').textContent = h.title;
-  $('#gResultLead').textContent = h.lead;
-  $('#gResultStand').innerHTML = result.standings.map((r) =>
-    `<li class="${r.id === result.winnerId ? 'is-winner' : ''}">` +
-    `<span>${r.id === result.winnerId ? '👑 ' : ''}${escapeHtml(r.name)}</span>` +
-    `<span>${r.alive ? pluralDice(r.dice) : 'выбыл'}</span></li>`).join('');
-}
-
-function showResultDialog() {
-  const dlg = $('#gResultDialog');
-  const result = buildGameResult(game);
-  if (!dlg || !result || dlg.open || typeof dlg.showModal !== 'function') return false;
-  if ($('#game')?.classList.contains('hide')) return false;   // вкладка «Партия» не на экране
-  fillResultDialog(result);
-  resultOpener = document.activeElement;
-  dlg.showModal();
-  return true;
-}
-
-function setupResultDialog() {
-  const dlg = $('#gResultDialog');
-  if (!dlg) return;
-  $('#gResultView')?.addEventListener('click', () => dlg.close());
-  // После закрытия фокус возвращается туда, откуда окно открыли; если там уже ничего нет —
-  // на «Сыграть ещё» в баннере (нативный диалог в Chromium оставляет фокус на скрытой кнопке).
-  dlg.addEventListener('close', () => {
-    const usable = (el) => el && el.isConnected && !el.disabled && !el.closest('dialog') && el.offsetParent !== null;
-    const target = usable(resultOpener) ? resultOpener : $('#gSummary [data-action="new-game"]');
-    resultOpener = null;
-    target?.focus?.();
-  });
-  // Клик по подложке: у диалога нет собственных отступов, поэтому target === dialog — это именно подложка.
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
-  // Tab ходит по кругу внутри окна (нативный диалог иначе выпускает фокус в интерфейс браузера).
-  dlg.addEventListener('keydown', (e) => {
-    if (e.key !== 'Tab') return;
-    const items = [...dlg.querySelectorAll('button:not([disabled])')];
-    if (!items.length) return;
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  });
-  // Баннер: «Итоги» заново открывает окно.
-  document.addEventListener('click', (e) => {
-    if (e.target.closest('[data-result-details]')) showResultDialog();
-  });
-}
 
 function finalizeGame() {
   if (!game || finalizedGameId === game.id) return;
@@ -871,18 +726,7 @@ function finalizeGame() {
   }
 
   // 3) Окно — чуть позже, чтобы успеть увидеть итог последней проверки
-  scheduleResultDialog(RESULT_DIALOG_DELAY_MS);
-}
-
-function scheduleResultDialog(delay) {
-  if (!game) return;
-  const gameId = game.id;
-  clearTimeout(resultTimer);
-  resultTimer = setTimeout(() => {
-    if (!game || game.id !== gameId || game.state !== 'finished') return;
-    if (revealIsOpen()) return;          // его закрытие само вызовет scheduleResultDialog
-    showResultDialog();
-  }, delay);
+  scheduleResultDialog(() => game, RESULT_DIALOG_DELAY_MS);
 }
 
 // ================= Точка входа =================
