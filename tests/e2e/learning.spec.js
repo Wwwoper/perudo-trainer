@@ -1,6 +1,7 @@
 // tests/e2e/learning.spec.js
 // Дымовые сценарии учебных вкладок: Калькулятор, Тренажёр, Упражнения.
 // Страхуют переделку вёрстки: после неё вкладки должны делать то же самое.
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { openTab } from './helpers.js';
 
@@ -277,6 +278,92 @@ test.describe('Учебные вкладки', () => {
       b = await page.locator('#sGo').boundingBox();
       expect(b.y + b.height).toBeLessThanOrEqual(vh + 1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    });
+  });
+
+  test.describe('Резервная копия', () => {
+    const KEYS = {
+      stats: 'perudo.userProfile', games: 'perudo.games', settings: 'perudo.settings',
+      memory: 'perudo.botMemory', duel: 'perudo.duelStats',
+    };
+    const seed = (page) => page.evaluate((K) => {
+      localStorage.setItem(K.stats, JSON.stringify({ n: 5, good: 4, byMode: { classic: { n: 5, good: 4 } }, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
+      localStorage.setItem(K.games, JSON.stringify([{ ts: 1700000000000, players: 4, rounds: 8, won: true, decisions: 20 }]));
+      localStorage.setItem(K.settings, JSON.stringify({ assistMode: 'game', botSpeed: 'fast' }));
+      localStorage.setItem(K.duel, JSON.stringify({ games: 2, wins: 1, moves: 4, dev: 0 }));
+    }, KEYS);
+    const dump = (page) => page.evaluate((K) => Object.fromEntries(
+      Object.entries(K).map(([n, k]) => [n, JSON.parse(localStorage.getItem(k) || 'null')])), KEYS);
+
+    test('экспорт содержит настройки и все данные в формате perudo-backup', async ({ page }) => {
+      await seed(page);
+      await page.reload();
+      await open(page, 'stats');
+      const [download] = await Promise.all([page.waitForEvent('download'), page.click('#stExport')]);
+      expect(download.suggestedFilename()).toMatch(/^perudo-backup-\d{4}-\d{2}-\d{2}\.json$/);
+      const text = readFileSync(await download.path(), 'utf8');
+      const b = JSON.parse(text);
+      expect(b.format).toBe('perudo-backup');
+      expect(b.version).toBe(2);
+      expect(b.data[KEYS.settings]).toEqual({ assistMode: 'game', botSpeed: 'fast' });
+      expect(b.data[KEYS.stats].n).toBe(5);
+      expect(b.data[KEYS.duel].games).toBe(2);
+    });
+
+    test('импорт возвращает данные после «Сбросить всё»', async ({ page }) => {
+      await seed(page);
+      await page.reload();
+      await open(page, 'stats');
+      const [download] = await Promise.all([page.waitForEvent('download'), page.click('#stExport')]);
+      const file = await download.path();
+      const before = await dump(page);
+
+      page.once('dialog', (d) => d.accept());
+      await page.click('#stClear');
+      expect((await dump(page)).stats.n).toBe(0);
+
+      page.once('dialog', (d) => d.accept());
+      await page.setInputFiles('#stImportFile', file);
+      await page.waitForFunction(() => document.querySelector('#stBackupMsg')?.textContent.includes('восстановлены'));
+      const after = await dump(page);
+      expect(after.stats).toEqual(before.stats);
+      expect(after.games).toEqual(before.games);
+      expect(after.settings).toEqual(before.settings);
+      expect(after.duel).toEqual(before.duel);
+      await expect(page.locator('#stats')).toBeVisible();
+    });
+
+    test('отмена в окне подтверждения ничего не меняет', async ({ page }) => {
+      await seed(page);
+      await page.reload();
+      await open(page, 'stats');
+      const [download] = await Promise.all([page.waitForEvent('download'), page.click('#stExport')]);
+      const file = await download.path();
+      await page.evaluate((k) => localStorage.setItem(k, JSON.stringify({ n: 99, good: 1, byMode: {}, drill: {} })), KEYS.stats);
+      page.once('dialog', (d) => d.dismiss());
+      await page.setInputFiles('#stImportFile', file);
+      await expect(page.locator('#stBackupMsg')).toHaveText('Импорт отменён.');
+      expect((await dump(page)).stats.n).toBe(99);
+    });
+
+    test('чужой файл отклоняется с понятным сообщением, данные целы', async ({ page }) => {
+      await seed(page);
+      await page.reload();
+      await open(page, 'stats');
+      await page.setInputFiles('#stImportFile', { name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') });
+      await expect(page.locator('#stBackupMsg')).toContainText('не копия данных Перудо');
+      await page.setInputFiles('#stImportFile', { name: 'y.json', mimeType: 'application/json', buffer: Buffer.from('не json') });
+      await expect(page.locator('#stBackupMsg')).toContainText('не JSON');
+      expect((await dump(page)).stats.n).toBe(5);
+    });
+
+    test('старая копия (версия 1) читается', async ({ page }) => {
+      await open(page, 'stats');
+      const old = { schemaVersion: 1, exportedAt: 1700000000000, stats: { n: 7, good: 6, byMode: {}, drill: {} }, queue: [], games: [], duel: { games: 1, wins: 1, moves: 2, dev: 0 } };
+      page.once('dialog', (d) => d.accept());
+      await page.setInputFiles('#stImportFile', { name: 'old.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(old)) });
+      await page.waitForFunction(() => document.querySelector('#stBackupMsg')?.textContent.includes('восстановлены'));
+      expect((await dump(page)).stats.n).toBe(7);
     });
   });
 });

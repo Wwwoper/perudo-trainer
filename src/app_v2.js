@@ -17,6 +17,7 @@ import {
 import {
   createMemory, normalizeMemory, observeEvent, opponentModel, describeMemory,
 } from './memory.js';
+import { buildBackup, serializeBackup, parseBackup, applyBackup } from './backup.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml } from './table.js';
 import { buildGameResult, resultHeadline, pluralDice } from './result.js';
 import { buildReveal, dieMatches } from './reveal.js';
@@ -1961,23 +1962,67 @@ function renderStats() {
 }
 
 function setupStats() {
+  const msg = (text, cls = 'muted') => {
+    const el = $('#stBackupMsg');
+    if (!el) return;
+    el.className = cls;
+    el.textContent = text;
+  };
+
+  // Сообщение об импорте, после которого страница была перезагружена
+  try {
+    const note = sessionStorage.getItem('perudo.importNotice');
+    if (note) {
+      sessionStorage.removeItem('perudo.importNotice');
+      msg(note, 'text-ok');
+      $('.tab-btn[data-t="stats"]')?.click();
+    }
+  } catch (e) { }
+
   const exp = $('#stExport');
   if (exp) exp.onclick = () => {
-    const data = {
-      schemaVersion: 1,
-      exportedAt: Date.now(),
-      stats: getStats(),
-      queue: getTrainingQueue(),
-      games: getGames(),
-      duel: duelStats,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const text = serializeBackup(buildBackup((k) => get(k)));
+    const blob = new Blob([text], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `perudo-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
+    msg(`Копия сохранена в файл ${a.download}.`);
   };
+
+  const imp = $('#stImport');
+  const file = $('#stImportFile');
+  if (imp && file) {
+    imp.onclick = () => file.click();
+    file.onchange = async () => {
+      const f = file.files && file.files[0];
+      file.value = '';                 // чтобы тот же файл можно было выбрать снова
+      if (!f) return;
+      let text;
+      try {
+        text = await f.text();
+      } catch (e) {
+        msg('Не удалось прочитать файл.', 'text-bad');
+        return;
+      }
+      const r = parseBackup(text);
+      if (!r.ok) {
+        msg(r.error, 'text-bad');
+        return;
+      }
+      const when = r.exportedAt ? ` от ${new Date(r.exportedAt).toLocaleString('ru')}` : '';
+      if (!confirm(`Заменить данные приложения копией${when}? Текущие статистика, настройки и память ботов будут потеряны.`)) {
+        msg('Импорт отменён.');
+        return;
+      }
+      applyBackup(r.data, (k, v) => set(k, v), (k) => {
+        try { localStorage.removeItem(k); } catch (e) { }
+      });
+      try { sessionStorage.setItem('perudo.importNotice', 'Данные восстановлены из копии.'); } catch (e) { }
+      location.reload();
+    };
+  }
 
   const clr = $('#stClear');
   if (clr) clr.onclick = () => {

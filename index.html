@@ -541,8 +541,11 @@
       <div class="stats-main">
         <div class="stats-actions">
           <button id="stExport">Экспорт JSON</button>
+          <button id="stImport">Импорт JSON</button>
           <button id="stClear" class="bad">Сбросить всё</button>
+          <input id="stImportFile" type="file" accept="application/json,.json" hidden aria-label="Файл копии данных">
         </div>
+        <div id="stBackupMsg" class="muted" role="status" aria-live="polite"></div>
         <div class="card">
           <b>Сводка</b>
           <p class="muted">

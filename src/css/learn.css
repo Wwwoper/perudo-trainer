@@ -329,6 +329,19 @@
   min-height: var(--tap);
 }
 
+/* «Сбросить всё» — отдельной строкой, чтобы случайно не нажать вместо импорта */
+.stats-actions #stClear {
+  grid-column: 1 / -1;
+}
+
+#stBackupMsg {
+  margin-bottom: var(--space-3);
+}
+
+#stBackupMsg:empty {
+  display: none;
+}
+
 /* Таблицы сводки: ширина по содержимому, при нехватке места прокручиваются внутри карточки */
 .stats-table table {
   table-layout: auto;
@@ -360,7 +373,11 @@
 
 @media (min-width: 720px) {
   .stats-actions {
-    grid-template-columns: repeat(2, max-content);
+    grid-template-columns: repeat(3, max-content);
+  }
+
+  .stats-actions #stClear {
+    grid-column: auto;
   }
 }
 
