@@ -107,8 +107,6 @@ class LayoutTest(unittest.TestCase):
     def test_seats_do_not_overlap_each_other_or_center(self):
         for w, h in VIEWPORTS:
             for bots in range(1, 6):
-                if (w, h) == LANDSCAPE_PHONE and bots >= 4:
-                    continue   # известное замечание: см. LANDSCAPE_PHONE
                 with self.subTest(w=w, h=h, bots=bots):
                     page = self.open_game(w, h, bots)
                     seats = self.boxes(page, ".seat")
