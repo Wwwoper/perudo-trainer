@@ -1,6 +1,6 @@
 // src/ui/modes.js — режимы тренажёра и подбор безопасной ставки.
 
-import { legal } from '../rules.js';
+import { bestSafeRaise as bestSafe } from '../compare.js';
 import { P } from './common.js';
 
 export const MODES = {
@@ -36,19 +36,7 @@ export function modeLabel(key) {
   return m ? m.name.split('(')[0].trim() : String(key);
 }
 
-/* Локальный bestSafeRaise — раньше жил в core.js.
-   Теперь используем rules.legal + P.probBid, чтобы не дублировать
-   логику в двух местах. */
+/** Самая сильная безопасная ставка: логика в compare.js, вероятности — из core.js. */
 export function bestSafeRaise(bid, n, hand, rules, thr) {
-  thr = thr == null ? 0.5 : thr;
-  const wild = !rules || rules.wild !== false;
-  let best = null;
-  for (let q = 1; q <= n; q++) for (let f = 1; f <= 6; f++) {
-    if (!legal(q, f, bid, rules)) continue;
-    const p = P.probBid(q, f, n, hand, wild);
-    if (p >= thr && (!best || q > best.q || (q === best.q && p > best.p))) {
-      best = { q, f, p };
-    }
-  }
-  return best;
+  return bestSafe(bid, n, hand, rules, thr, P.probBid);
 }
