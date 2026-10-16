@@ -76,3 +76,16 @@ export function compareOptions({ bid = null, total, hand, wild = true, threshold
   }
   return { bidP, options };
 }
+
+/**
+ * Отмечает вариант, который выбрал игрок: { type: 'dudo' } или { type: 'raise', q, f }.
+ * Если выбранной ставки среди вариантов нет, не отмечается ничего.
+ */
+export function markChosen(options, choice) {
+  return options.map((o) => ({
+    ...o,
+    chosen: !!choice && (choice.type === 'dudo'
+      ? o.type === 'dudo'
+      : o.type !== 'dudo' && o.q === choice.q && o.f === choice.f),
+  }));
+}

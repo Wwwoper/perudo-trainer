@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { compareOptions, bestSafeRaise } from '../src/compare.js';
+import { compareOptions, bestSafeRaise, markChosen } from '../src/compare.js';
 import { legal } from '../src/rules.js';
 
 // Настоящие вероятности из core.js (классический скрипт — выполняем в изолированном контексте).
@@ -151,5 +151,26 @@ describe('compareOptions: с настоящими вероятностями', (
     for (const o of options.filter((x) => x.type !== 'dudo')) {
       assert.ok(legal(o.q, o.f, bid, { wild: true }));
     }
+  });
+});
+
+describe('markChosen', () => {
+  const { options } = compareOptions({ bid: { q: 3, f: 3 }, total: 12, hand: [], probBid: fake });
+  const chosen = (c) => markChosen(options, c).filter((o) => o.chosen).map((o) => o.type);
+
+  it('«не верю» отмечает вариант проверки', () => {
+    assert.deepEqual(chosen({ type: 'dudo' }), ['dudo']);
+  });
+  it('повышение совпадает с минимальным или с самой сильной безопасной ставкой', () => {
+    assert.deepEqual(chosen({ type: 'raise', q: 2, f: 1 }), ['minRaise']);
+    assert.deepEqual(chosen({ type: 'raise', q: 5, f: options[2].f }), ['safeRaise']);
+  });
+  it('ставка вне вариантов и отсутствие выбора ничего не отмечают', () => {
+    assert.deepEqual(chosen({ type: 'raise', q: 9, f: 6 }), []);
+    assert.deepEqual(chosen(null), []);
+  });
+  it('исходные варианты не меняются', () => {
+    markChosen(options, { type: 'dudo' });
+    assert.ok(options.every((o) => !('chosen' in o)));
   });
 });

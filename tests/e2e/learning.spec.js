@@ -120,6 +120,44 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tNext')).toBeHidden();
     });
 
+    test('после «Не верю!» показаны варианты хода, выбранный отмечен', async ({ page }) => {
+      await open(page, 'train');
+      await page.click('#tDudo');
+      const rows = page.locator('#tFb .trainer-option');
+      const count = await rows.count();
+      expect(count).toBeGreaterThanOrEqual(1);
+      expect(count).toBeLessThanOrEqual(3);
+      await expect(rows.first()).toContainText('Не верю');
+      await expect(rows.first()).toHaveClass(/is-chosen/);
+      await expect(rows.first()).toContainText('ваш выбор');
+      await expect(rows.first()).toContainText('проверка сработает:');
+      await expect(page.locator('#tFb .trainer-option.is-chosen')).toHaveCount(1);
+      await expect(page.locator('#tFb')).toContainText('Варианты по шансу');
+    });
+
+    test('после «Ставлю» варианты тоже показаны, проверка не отмечена', async ({ page }) => {
+      await open(page, 'train');
+      const total = await page.evaluate(() => Number([...document.querySelectorAll('#tInfo .trainer-chip b')][0]?.textContent));
+      await page.fill('#tQ', String(total));
+      await page.click('#tPick .face-btn[aria-label="Цифра 6"]');
+      await page.click('#tRaise');
+      const rows = page.locator('#tFb .trainer-option');
+      expect(await rows.count()).toBeGreaterThanOrEqual(1);
+      await expect(rows.first()).toContainText('Не верю');
+      await expect(rows.first()).not.toHaveClass(/is-chosen/);
+    });
+
+    test('варианты помещаются: разбор и «Новая ситуация» остаются в пределах экрана', async ({ page }) => {
+      await open(page, 'train');
+      await page.click('#tDudo');
+      const vh = page.viewportSize().height;
+      const b = await page.locator('#tFb').boundingBox();
+      expect(b.y).toBeGreaterThanOrEqual(0);
+      expect(b.y + b.height).toBeLessThanOrEqual(vh + 1);
+      const hs = await page.locator('#tFb').evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+      expect(hs, 'в разборе нет горизонтальной прокрутки').toBe(true);
+    });
+
     test('степпер и выбор цифры меняют ставку «Ставлю»', async ({ page }) => {
       await open(page, 'train');
       await expect(page.locator('#tPick .face-btn[aria-checked="true"]')).toHaveCount(1);

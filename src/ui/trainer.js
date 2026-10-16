@@ -3,7 +3,8 @@
 import { getStats, updateStats, getTrainingQueue, setTrainingQueue } from '../storage.js';
 import { renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct, flash } from './common.js';
-import { MODES, modeLabel, bestSafeRaise } from './modes.js';
+import { MODES, modeLabel } from './modes.js';
+import { compareOptions, markChosen } from '../compare.js';
 
 export function setupTrainer() {
   if (!P) return;
@@ -114,19 +115,29 @@ export function setupTrainer() {
     el.textContent = `${modeLabel($('#tMode').value)} · порог ${thr}`;
   }
 
-  function bestRaiseThreshold() {
-    if (!cur) return null;
-    return bestSafeRaise(
-      { q: cur.q, f: cur.f }, cur.n, cur.h,
-      { wild: cur.m.wild }, +$('#tT').value
-    );
-  }
-
-  function hint() {
-    const b = bestRaiseThreshold();
-    return b
-      ? `<p class="muted">Самая сильная безопасная ставка: ${renderBid(b.q, b.f)} (${pct(b.p)}).</p>`
-      : '<p class="muted">Безопасных повышений выше порога нет — «Не верю» часто лучший выбор.</p>';
+  /** Варианты хода по шансу ставки; choice — что выбрал игрок: { type: 'dudo' } или { type: 'raise', q, f }. */
+  function hint(choice) {
+    if (!cur) return '';
+    const thr = +$('#tT').value;
+    const { options } = compareOptions({
+      bid: { q: cur.q, f: cur.f }, total: cur.n, hand: cur.h, wild: cur.m.wild,
+      threshold: thr, probBid: (...args) => P.probBid(...args),
+    });
+    const rows = markChosen(options, choice).map((o) => {
+      const bid = o.type === 'dudo' ? '' : ` ${renderBid(o.q, o.f, 'xs')}`;
+      const name = o.type === 'dudo' ? 'Не верю'
+        : o.type === 'safeRaise' ? 'Самая сильная безопасная'
+          : `Минимальное повышение${o.isBestSafe ? ' (она же самая сильная безопасная)' : ''}`;
+      const what = o.type === 'dudo' ? 'проверка сработает:' : 'ставка верна:';
+      return `<li class="trainer-option${o.chosen ? ' is-chosen' : ''}">` +
+        `<span class="trainer-option-name">${o.meetsThreshold ? '✓ ' : ''}${name}${bid}</span> ` +
+        `<span class="trainer-option-chance">${what} <b>${pct(o.success)}</b></span>` +
+        `${o.chosen ? ' <span class="trainer-option-mark">← ваш выбор</span>' : ''}</li>`;
+    }).join('');
+    const anySafe = options.some((o) => o.type !== 'dudo' && o.meetsThreshold);
+    return `<p class="muted">Варианты по шансу · ✓ = порог ${pct(thr)}</p>` +
+      `<ul class="trainer-options">${rows}</ul>` +
+      (anySafe ? '' : '<p class="muted">Безопасных повышений выше порога нет — «Не верю» часто лучший выбор.</p>');
   }
 
   function answer(good, html) {
@@ -169,7 +180,7 @@ export function setupTrainer() {
     const p = P.probBid(q, f, n, h, m.wild);
     const msg = p < t ? 'Ставка слишком смелая — «Не верю» оправдано.'
       : 'Ставка вероятна — лучше было верить и повышать.';
-    answer(p < t, `<p>Шанс, что ставка ${renderBid(q, f)} верна: <b>${pct(p)}</b> (порог ${pct(t)}). ${msg}</p>${hint()}`);
+    answer(p < t, `<p>Шанс, что ставка ${renderBid(q, f)} верна: <b>${pct(p)}</b> (порог ${pct(t)}). ${msg}</p>${hint({ type: 'dudo' })}`);
   };
 
   const raiseBtn = $('#tRaise');
@@ -190,7 +201,7 @@ export function setupTrainer() {
     const po = P.probBid(q, f, n, h, m.wild);
     answer(p >= t,
       `<p>Ваша ставка ${renderBid(Q, F)} верна с шансом <b>${pct(p)}</b> (порог ${pct(t)}). ` +
-      `Ставка соперника была верна с шансом ${pct(po)}.</p>${hint()}`
+      `Ставка соперника была верна с шансом ${pct(po)}.</p>${hint({ type: 'raise', q: Q, f: F })}`
     );
   };
 

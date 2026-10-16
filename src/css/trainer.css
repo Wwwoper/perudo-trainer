@@ -134,7 +134,7 @@
   font-size: 14px;
   line-height: 1.45;
   overflow-y: auto;
-  max-height: 45vh;
+  max-height: 52vh;
 }
 
 .trainer-feedback .big {
@@ -191,4 +191,30 @@
   .trainer-top {
     padding: 8px 10px;
   }
+}
+
+/* Варианты хода после ответа */
+.trainer-options {
+  list-style: none;
+  margin: 4px 0;
+  padding: 0;
+}
+.trainer-option {
+  padding: 4px 0 4px 10px;
+  line-height: 1.7;
+  border-left: 3px solid transparent;
+}
+.trainer-option.is-chosen {
+  border-left-color: var(--acc);
+  background: rgb(255 255 255 / 4%);
+}
+.trainer-option-name {
+  display: inline-block;
+  margin-right: 6px;
+}
+.trainer-option-chance {
+  color: var(--mut);
+}
+.trainer-option-mark {
+  color: var(--acc);
 }
