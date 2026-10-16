@@ -307,4 +307,87 @@ test.describe('Покерный стол в партии', () => {
     await waitBotBid(page);
     await expect(page.locator('#gCalza')).toBeEnabled();
   });
+  const readJson = (page, key) => page.evaluate((k) => {
+    try { return JSON.parse(localStorage.getItem(k)); } catch { return null; }
+  }, key);
+
+  /** Ваш ход в начале партии, у обоих по одному кубику: ложная ставка 2×6 заведомо проигрывает. */
+  async function loseWithBluff(page) {
+    await startGame(page, { bots: 1, dice: 1 });
+    await waitMyTurn(page);
+    expect(await page.evaluate(() => window.__perudo_v2.game.bid), 'человек ходит первым, ставки нет').toBeNull();
+    await page.evaluate(() => {
+      const g = window.__perudo_v2.game;
+      g.players[0].hand = [2];
+      g.players[1].hand = [2];
+    });
+    await setQuantity(page, 2);
+    await page.locator('#gPick button').nth(5).click();        // грань 6
+    await page.locator('#gRaise').click();
+    await expect(page.locator('#gHistory')).toContainText(/НЕ ВЕРЮ/i, { timeout: 10_000 });
+  }
+
+  test('решения записываются: счётчики по меткам и ключевой момент после проигрыша', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await loseWithBluff(page);
+    await expect.poll(async () => (await readJson(page, 'perudo.reviews'))?.length ?? 0, { timeout: 10_000 }).toBe(1);
+
+    const [m] = await readJson(page, 'perudo.reviews');
+    expect(m).toMatchObject({ kind: 'raise', code: 'bad', lostDie: true, n: 2, myDice: 1, bid: null, played: { q: 2, f: 6 }, wild: true });
+    expect(m.tags).toEqual(expect.arrayContaining(['raise', 'endgame', 'lastDie']));
+
+    const profile = await readJson(page, 'perudo.userProfile');
+    expect(profile.byTag.raise).toEqual({ n: 1, good: 0 });
+    expect(profile.byTag.endgame).toEqual({ n: 1, good: 0 });
+  });
+
+  test('«Сбросить всё» стирает записанные решения и счётчики по меткам', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await loseWithBluff(page);
+    await expect.poll(async () => (await readJson(page, 'perudo.reviews'))?.length ?? 0, { timeout: 10_000 }).toBe(1);
+
+    await page.evaluate(() => { document.querySelector('#gResultDialog')?.close?.(); });
+    page.once('dialog', (d) => d.accept());
+    await goTab(page, 'stats');
+    await page.locator('#stClear').click();
+    await expect.poll(async () => (await readJson(page, 'perudo.reviews'))?.length ?? 0).toBe(0);
+    expect((await readJson(page, 'perudo.userProfile')).byTag).toEqual({});
+  });
+
+  test('верные решения не попадают в ключевые моменты, но считаются в счётчиках', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await startGame(page, { bots: 1, dice: 1 });
+    await waitMyTurn(page);
+    await page.evaluate(() => {
+      const g = window.__perudo_v2.game;
+      g.players[0].hand = [6];
+      g.players[1].hand = [6];
+    });
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(5).click();        // 1×6 при двух шестёрках на столе — надёжно
+    await page.locator('#gRaise').click();
+    await expect.poll(async () => (await readJson(page, 'perudo.userProfile'))?.byTag?.raise?.n ?? 0).toBe(1);
+    const profile = await readJson(page, 'perudo.userProfile');
+    expect(profile.byTag.raise.good).toBe(1);
+    expect(await readJson(page, 'perudo.reviews')).toBeNull();    // партия ещё идёт, ключевых моментов нет
+  });
+  test('«Не верю» записывается как проверка с меткой «единицы» и считается верным решением', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await startGame(page, { bots: 1, dice: 1 });
+    await waitMyTurn(page);
+    // Чужая ставка 2×1 при руках без единиц: проверка заведомо верна.
+    await page.evaluate(() => {
+      const g = window.__perudo_v2.game;
+      g.players[0].hand = [2];
+      g.players[1].hand = [3];
+      g.bid = { playerId: g.players[1].id, q: 2, f: 1 };
+      window.__perudo_v2.renderGame();
+    });
+    await page.locator('#gDudo').click();
+    await expect.poll(async () => (await readJson(page, 'perudo.userProfile'))?.byTag?.dudo?.n ?? 0).toBe(1);
+    const tags = (await readJson(page, 'perudo.userProfile')).byTag;
+    expect(tags.dudo).toEqual({ n: 1, good: 1 });
+    expect(tags.ones).toEqual({ n: 1, good: 1 });
+    expect(tags.endgame).toEqual({ n: 1, good: 1 });
+  });
 });

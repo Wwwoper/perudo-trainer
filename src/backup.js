@@ -24,6 +24,11 @@ const SCHEMA = {
     if ('n' in v && !isNum(v.n)) return 'статистика: поле n должно быть числом';
     if ('good' in v && !isNum(v.good)) return 'статистика: поле good должно быть числом';
     if ('byMode' in v && !isObject(v.byMode)) return 'статистика: byMode должен быть объектом';
+    if ('byTag' in v) {
+      if (!isObject(v.byTag)) return 'статистика: byTag должен быть объектом';
+      const ok = Object.values(v.byTag).every((b) => isObject(b) && isNum(b.n) && isNum(b.good));
+      if (!ok) return 'статистика: в byTag есть записи не того вида';
+    }
     if ('drill' in v && !isObject(v.drill)) return 'статистика: drill должен быть объектом';
     return null;
   },

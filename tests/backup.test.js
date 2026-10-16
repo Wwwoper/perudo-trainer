@@ -119,6 +119,8 @@ describe('parseBackup: отказы', () => {
     const wrap = (data) => JSON.stringify({ format: BACKUP_FORMAT, version: 2, data });
     assert.match(bad(wrap({ 'perudo.userProfile': [] })), /статистика/);
     assert.match(bad(wrap({ 'perudo.userProfile': { n: 'много' } })), /поле n/);
+    assert.match(bad(wrap({ 'perudo.userProfile': { byTag: [] } })), /byTag/);
+    assert.match(bad(wrap({ 'perudo.userProfile': { byTag: { dudo: { n: 'a', good: 1 } } } })), /byTag/);
     assert.match(bad(wrap({ 'perudo.games': {} })), /история партий/);
     assert.match(bad(wrap({ 'perudo.games': [1] })), /записи не того вида/);
     assert.match(bad(wrap({ 'perudo.trainingQueue': [{ mode: 'x' }] })), /очереди повторов/);
@@ -128,6 +130,12 @@ describe('parseBackup: отказы', () => {
     assert.match(bad(wrap({ 'perudo.reviews': 5 })), /разбор партий/);
     assert.match(bad(wrap({ 'perudo.reviews': { a: 1 } })), /разбор партий/);
     assert.match(bad(wrap({ 'perudo.reviews': [1] })), /записи не того вида/);
+  });
+
+  it('статистика с byTag принимается', () => {
+    const wrap = (data) => JSON.stringify({ format: BACKUP_FORMAT, version: 2, data });
+    assert.strictEqual(parseBackup(wrap({ 'perudo.userProfile': { n: 1, good: 1, byTag: { dudo: { n: 2, good: 1 } } } })).ok, true);
+    assert.strictEqual(parseBackup(wrap({ 'perudo.userProfile': { n: 1, good: 1, byTag: {} } })).ok, true);
   });
 
   it('разбор партий: список и пустой объект из первых копий принимаются', () => {

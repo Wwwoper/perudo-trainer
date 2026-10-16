@@ -19,6 +19,7 @@ import { setupSim } from './ui/sim.js';
 import { sideApi, setupSidePanel } from './ui/side_panel.js';
 import { revealIsOpen, presentReveal, setupReveal, hideRevealUi } from './ui/reveal_dialog.js';
 import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/result_dialog.js';
+import { recordDecision, markRoundOutcome, startDecisionLog, saveKeyMoments } from './ui/decisions.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
 import { renderStats, setupStats } from './ui/stats.js';
@@ -123,6 +124,7 @@ function startNewGame() {
   lastLoggedRound = 0;
 
   startGame(game);
+  startDecisionLog(game.id);
 
   addGameLog('info', `Партия началась: ${botCount + 1} игроков, по ${startDice} кубиков.` +
     (calzaEnabled ? ' Calza включён.' : '') +
@@ -464,6 +466,17 @@ function updatePrev() {
 
 // ----- Ходы игрока -----
 
+/** Состояние стола перед ходом игрока — для записи решения (после хода движок уже его меняет). */
+function decisionContext(total, me) {
+  return {
+    round: game.round,
+    total,
+    hand: me.hand.slice(),
+    bid: game.bid ? { q: game.bid.q, f: game.bid.f } : null,
+    palifico: !!game.palifico,
+  };
+}
+
 function onPlayerRaise() {
   if (!game || game.state !== 'active' || game.currentPlayer !== 0) return;
   const total = totalDice();
@@ -477,7 +490,8 @@ function onPlayerRaise() {
   }
 
   const p = P.probBid(q, f, total, me.hand, !game.palifico);
-  addReview('raise', p, `вы поставили ${renderBid(q, f)} — шанс ${pct(p)}.`);
+  const entry = addReview('raise', p, `вы поставили ${renderBid(q, f)} — шанс ${pct(p)}.`);
+  const before = decisionContext(total, me);
 
   const res = applyAction(game, 'human', { type: 'raise', quantity: q, face: f });
   if (!res.success) {
@@ -485,6 +499,7 @@ function onPlayerRaise() {
     flash($('#gPrev'), `Ставка отклонена: ${res.error}`);
     return;
   }
+  recordDecision({ ...before, kind: 'raise', played: { q, f }, p, code: entry.v.code });
 
   addGameLog('', `<span class="player-name c0">Вы</span> ${renderBid(q, f)}`);
   if (game.state === 'round_resolving') game.state = 'active';
@@ -503,9 +518,12 @@ function onPlayerDudo() {
   const p = P.probBid(q, f, total, me.hand, !game.palifico);
   const entry = addReview('dudo', p,
     `вы не поверили ${renderBid(q, f)} — шанс, что ставка верна: ${pct(p)}.`);
+  const before = decisionContext(total, me);
 
   const res = applyAction(game, 'human', { type: 'dudo' });
   if (!res.success) { reviewEntries.pop(); return; }
+  recordDecision({ ...before, kind: 'dudo', p, code: entry.v.code });
+  markRoundOutcome(res.events, before.round);
 
   observeReveal(res.events, game);
   const revealed = res.events.find((e) => e.type === 'DICE_REVEALED');
@@ -538,9 +556,12 @@ function onPlayerCalza() {
   const pe = P.exactProb(q, f, total, me.hand, !game.palifico);
   const entry = addReview('calza', pe,
     `вы сказали Calza на ${renderBid(q, f)} — шанс точного совпадения ${pct(pe)}.`);
+  const before = decisionContext(total, me);
 
   const res = applyAction(game, 'human', { type: 'calza' });
   if (!res.success) { reviewEntries.pop(); return; }
+  recordDecision({ ...before, kind: 'calza', p: pe, code: entry.v.code });
+  markRoundOutcome(res.events, before.round);
 
   const revealed = res.events.find((e) => e.type === 'DICE_REVEALED');
   if (revealed) {
@@ -586,6 +607,7 @@ function runBotTurn() {
   const idx = game.currentPlayer;
   const bot = game.players[idx];
   const total = totalDice();
+  const roundBefore = game.round;
 
   const opps = game.players
     .map((p, i) => ({ k: p.dice, faces: [], isSelf: i === idx }))
@@ -616,7 +638,7 @@ function runBotTurn() {
   else if (decision.type === 'calza') action = { type: 'calza' };
   else action = { type: 'dudo' };
 
-  const res = applyAction(game, bot.id, action);
+  let res = applyAction(game, bot.id, action);
 
   if (!res.success) {
     let fallback;
@@ -629,7 +651,9 @@ function runBotTurn() {
     const res2 = applyAction(game, bot.id, fallback);
     if (!res2.success) { console.error('Bot fallback also failed:', res2.error); return; }
     action = fallback;
+    res = res2;     // дальше нужны события сработавшего хода, а не отклонённого
   }
+  if (action.type !== 'raise') markRoundOutcome(res.events, roundBefore);
 
   let desc;
   if (action.type === 'raise') desc = renderBid(action.quantity, action.face);
@@ -664,6 +688,7 @@ const RESULT_DIALOG_DELAY_MS = 700;
 function finalizeGame() {
   if (!game || finalizedGameId === game.id) return;
   finalizedGameId = game.id;
+  saveKeyMoments();
 
   const me = game.players[0];
   const aliveCnt = game.players.filter((p) => p.alive).length;

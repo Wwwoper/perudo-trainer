@@ -121,10 +121,10 @@ export function setupStats({ onReset } = {}) {
     if (!confirm('Сбросить всю статистику, очередь и историю партий?')) return;
     try {
       ['perudo.settings', 'perudo.userProfile', 'perudo.games',
-        'perudo.trainingQueue', 'perudo.duelStats', 'perudo.botMemory'].forEach((k) => localStorage.removeItem(k));
+        'perudo.trainingQueue', 'perudo.duelStats', 'perudo.botMemory', 'perudo.reviews'].forEach((k) => localStorage.removeItem(k));
     } catch (e) { }
     onReset?.();
-    setStats({ n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } });
+    setStats({ n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, byTag: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } });
     setTrainingQueue([]);
     set('perudo.games', []);
     set('perudo.duelStats', { games: 0, wins: 0, moves: 0, dev: 0 });
