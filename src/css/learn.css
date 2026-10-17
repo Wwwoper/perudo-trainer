@@ -404,3 +404,42 @@
 .sim-out td {
   padding: 6px 4px;
 }
+
+/* Статистика: «Над чем поработать» */
+.weak-card {
+  margin-bottom: var(--space-3);
+}
+
+.weak-list {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weak-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+
+.weak-name {
+  flex: 1 1 140px;
+  font-weight: 700;
+}
+
+.weak-share {
+  color: var(--warn);
+}
+
+.weak-train {
+  min-height: var(--tap);
+  font-size: 16px;
+}
+
+.weak-empty,
+.weak-pending {
+  margin: var(--space-2) 0 0;
+}

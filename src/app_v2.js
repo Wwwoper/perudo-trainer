@@ -53,6 +53,12 @@ function replayInTrainer(item) {
   trainerApi?.focus(item);
 }
 
+/** «Тренировать» в статистике: открыть тренажёр в нужном режиме. */
+function trainInMode(mode) {
+  $('.tab-btn[data-t="train"]')?.click();
+  trainerApi?.setMode(mode);
+}
+
 function setupGame() {
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-action="new-game"]')) startNewGame();
@@ -783,6 +789,7 @@ function bootstrap() {
   setupDuel();
   setupStats({
     onReset: clearBotMemoryState,
+    onTrain: trainInMode,
   });
   setupSim();
   renderStats();

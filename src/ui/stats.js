@@ -6,6 +6,7 @@ import { escapeHtml } from '../table.js';
 import { P, $, pct } from './common.js';
 import { modeLabel } from './modes.js';
 import { resetDuelStats } from './duel.js';
+import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
 
 export function renderStats() {
   if (!P) return;
@@ -17,6 +18,8 @@ export function renderStats() {
   if ($('#stTotal')) $('#stTotal').textContent = stats.n || 0;
   if ($('#stGood')) $('#stGood').textContent = stats.good || 0;
   if ($('#stQueue')) $('#stQueue').textContent = queue.length;
+
+  renderWeakSpots(stats.byTag);
 
   const byModeEl = $('#stByMode');
   if (byModeEl) {
@@ -53,7 +56,8 @@ export function renderStats() {
 }
 
 /** onReset() — вызывается при «Сбросить всё», чтобы партия забыла память ботов. */
-export function setupStats({ onReset } = {}) {
+export function setupStats({ onReset, onTrain } = {}) {
+  setupWeakSpots(onTrain);
   const msg = (text, cls = 'muted') => {
     const el = $('#stBackupMsg');
     if (!el) return;

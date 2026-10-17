@@ -52,6 +52,14 @@ MEASURE = """(resultSel) => {
 }"""
 
 
+WEAK_SEED = """() => {
+  const p = JSON.parse(localStorage.getItem('perudo.userProfile') || '{}');
+  p.byTag = { endgame: { n: 12, good: 3 }, palifico: { n: 9, good: 4 }, dudo: { n: 30, good: 18 },
+              lastDie: { n: 3, good: 1 } };
+  localStorage.setItem('perudo.userProfile', JSON.stringify(p));
+}"""
+
+
 class _Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -106,6 +114,12 @@ def measure_all(base_url, browser):
         page.evaluate(GAMES_SEED)
         _tab(page, "stats")
         snap("stats", "#stClear")
+        # «Над чем поработать» с данными: три слабые темы (две с кнопкой) и тема с малой выборкой
+        page.evaluate(WEAK_SEED)
+        _tab(page, "sim")
+        _tab(page, "stats")
+        page.wait_for_selector("#stWeak .weak-item")
+        snap("stats: weak spots", "#stClear")
 
         _tab(page, "sim")
         snap("sim", "#sGo")

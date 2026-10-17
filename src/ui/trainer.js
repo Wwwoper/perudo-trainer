@@ -227,6 +227,14 @@ export function setupTrainer() {
       queue = getTrainingQueue();
       updateStat();
     },
+    /** Открывает тренажёр в выбранном режиме с новой ситуацией (кнопка «Тренировать» в статистике). */
+    setMode(mode) {
+      if (!MODES[mode]) return false;
+      $('#tMode').value = mode;
+      updateSettingsHint();
+      newSituation();
+      return true;
+    },
     /** Показывает ситуацию из итога партии: добавляет её в очередь повторов (без дублей) и открывает. */
     focus(item) {
       if (!item || !MODES[item.mode]) return false;

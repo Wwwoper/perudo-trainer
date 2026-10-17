@@ -404,4 +404,53 @@ test.describe('Учебные вкладки', () => {
       expect((await dump(page)).stats.n).toBe(7);
     });
   });
+
+  test.describe('Слабые места в «Статистике»', () => {
+    const seedTags = (page, byTag) => page.evaluate((bt) => {
+      localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 0, good: 0, byMode: {}, byTag: bt,
+        drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
+    }, byTag);
+
+    test('пустой профиль: подсказка, кнопок нет', async ({ page }) => {
+      await open(page, 'stats');
+      await expect(page.locator('#stWeak')).toContainText('Над чем поработать');
+      await expect(page.locator('#stWeak')).toContainText('после нескольких партий');
+      await expect(page.locator('#stWeak .weak-train')).toHaveCount(0);
+    });
+
+    test('слабые темы с числом решений; кнопка только у тем с режимом; мало данных помечено', async ({ page }) => {
+      await seedTags(page, {
+        endgame: { n: 10, good: 3 }, dudo: { n: 12, good: 6 }, lastDie: { n: 4, good: 0 },
+      });
+      await page.reload();
+      await open(page, 'stats');
+      const items = page.locator('#stWeak .weak-item');
+      await expect(items).toHaveCount(2);
+      await expect(items.nth(0)).toContainText('Эндшпиль');
+      await expect(items.nth(0)).toContainText('10 реш.');
+      await expect(items.nth(0).locator('.weak-train')).toBeVisible();
+      await expect(items.nth(1)).toContainText('Проверки ставок');
+      await expect(items.nth(1).locator('.weak-train')).toHaveCount(0);
+      await expect(page.locator('#stWeak .weak-pending')).toContainText('игра на последнем кубике (4)');
+    });
+
+    test('«Тренировать» открывает тренажёр в нужном режиме', async ({ page }) => {
+      await seedTags(page, { palifico: { n: 9, good: 2 } });
+      await page.reload();
+      await open(page, 'stats');
+      await page.locator('#stWeak .weak-train').click();
+      await expect(page.locator('#tMode')).toHaveValue('nowild');
+      await expect(page.locator('#tDudo')).toBeVisible();
+    });
+
+    test('«Сбросить всё» очищает блок', async ({ page }) => {
+      await seedTags(page, { endgame: { n: 10, good: 3 } });
+      await page.reload();
+      await open(page, 'stats');
+      await expect(page.locator('#stWeak .weak-item')).toHaveCount(1);
+      page.once('dialog', (d) => d.accept());
+      await page.locator('#stClear').click();
+      await expect(page.locator('#stWeak .weak-item')).toHaveCount(0);
+    });
+  });
 });
