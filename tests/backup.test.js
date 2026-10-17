@@ -179,3 +179,39 @@ describe('applyBackup', () => {
     assert.strictEqual(out.removed.length, BACKUP_KEYS.length - 2);
   });
 });
+
+describe('Игрок в копии', () => {
+  const player = { name: 'Анна', avatar: { type: 'emoji', value: '🦊' } };
+
+  it('входит в копию и восстанавливается', () => {
+    assert.ok(BACKUP_KEYS.includes('perudo.player'));
+    const b = buildBackup(reader({ ...sample(), 'perudo.player': player }), 1);
+    assert.deepStrictEqual(b.data['perudo.player'], player);
+    const r = parseBackup(serializeBackup(b));
+    assert.ok(r.ok);
+    assert.deepStrictEqual(r.data['perudo.player'], player);
+  });
+
+  it('версия копии прежняя: старые копии без игрока читаются', () => {
+    assert.strictEqual(BACKUP_VERSION, 2);
+    const r = parseBackup(serializeBackup(buildBackup(reader(sample()), 1)));
+    assert.ok(r.ok);
+    assert.ok(!('perudo.player' in r.data));
+  });
+
+  it('импорт копии без игрока удаляет текущего (данные заменяются целиком)', () => {
+    const r = parseBackup(serializeBackup(buildBackup(reader(sample()), 1)));
+    const removed = [];
+    applyBackup(r.data, () => {}, (k) => removed.push(k));
+    assert.ok(removed.includes('perudo.player'));
+  });
+
+  it('не объект и слишком большая запись отклоняются', () => {
+    const wrap = (v) => JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: { 'perudo.player': v } });
+    assert.match(parseBackup(wrap('Анна')).error, /профиль игрока/);
+    assert.match(parseBackup(wrap([1])).error, /профиль игрока/);
+    const big = parseBackup(wrap({ name: 'x'.repeat(30000) }));
+    assert.strictEqual(big.ok, false);
+    assert.match(big.error, /слишком большой/);
+  });
+});

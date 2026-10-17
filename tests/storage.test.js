@@ -10,7 +10,7 @@ global.localStorage = {
   removeItem: key => { delete mockStorage[key]; },
 };
 
-import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments } from '../src/storage.js';
+import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer } from '../src/storage.js';
 
 describe('get/set', () => {
   it('сохраняет и загружает', () => {
@@ -135,5 +135,29 @@ describe('getMoments / setMoments', () => {
     const saved = JSON.parse(mockStorage['perudo.reviews']);
     assert.strictEqual(saved.length, 50);
     assert.strictEqual(saved[49].id, 'm59');
+  });
+});
+
+describe('Игрок (имя и аватар)', () => {
+  it('нет записи — игрок по умолчанию', () => {
+    delete mockStorage['perudo.player'];
+    assert.deepStrictEqual(getPlayer(), { name: '', avatar: null });
+  });
+
+  it('записанное читается обратно', () => {
+    setPlayer({ name: 'Анна', avatar: { type: 'emoji', value: '🦊' } });
+    assert.deepStrictEqual(getPlayer(), { name: 'Анна', avatar: { type: 'emoji', value: '🦊' } });
+  });
+
+  it('при записи лишнее отбрасывается', () => {
+    setPlayer({ name: 'Анна', avatar: { type: 'emoji', value: '💩' }, extra: 1 });
+    assert.deepStrictEqual(JSON.parse(mockStorage['perudo.player']), { name: 'Анна', avatar: null });
+  });
+
+  it('мусор в хранилище читается как игрок по умолчанию, падений нет', () => {
+    for (const bad of ['{не json', '5', '"x"', '[1]', 'null']) {
+      mockStorage['perudo.player'] = bad;
+      assert.deepStrictEqual(getPlayer(), { name: '', avatar: null }, bad);
+    }
   });
 });

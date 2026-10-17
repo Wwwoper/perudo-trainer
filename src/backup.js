@@ -13,6 +13,9 @@ export const BACKUP_VERSION = 2;
 /** Максимальный размер файла, который мы готовы разбирать (символов). */
 export const MAX_BACKUP_CHARS = 5 * 1024 * 1024;
 
+/** Предел размера записи игрока в копии (имя и снимок аватара). */
+const MAX_PLAYER_CHARS = 20000;
+
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 
@@ -31,6 +34,11 @@ const SCHEMA = {
     }
     if ('drill' in v && !isObject(v.drill)) return 'статистика: drill должен быть объектом';
     return null;
+  },
+  // Имя и аватар. Содержимое проверяет sanitizePlayer при чтении; здесь только вид и размер.
+  'perudo.player': (v) => {
+    if (!isObject(v)) return 'профиль игрока должен быть объектом';
+    return JSON.stringify(v).length <= MAX_PLAYER_CHARS ? null : 'профиль игрока слишком большой';
   },
   'perudo.botMemory': (v) => (isObject(v) ? null : 'память ботов должна быть объектом'),
   'perudo.games': (v) => {

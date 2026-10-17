@@ -1,6 +1,7 @@
 // storage.js — работа с localStorage с версионированием
 
 import { normalizeMoments } from './moments.js';
+import { sanitizePlayer } from './player.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -12,6 +13,7 @@ const KEYS = {
   BOT_MEMORY: 'perudo.botMemory',
   GAMES: 'perudo.games',
   REVIEWS: 'perudo.reviews',
+  PLAYER: 'perudo.player',
   TRAINING_QUEUE: 'perudo.trainingQueue',
   TUTORIAL_PROGRESS: 'perudo.tutorialProgress',
   DUEL_STATS: 'perudo.duelStats',
@@ -45,6 +47,15 @@ export function getSettings() {
 
 export function setSettings(settings) {
   set(KEYS.SETTINGS, { ...getSettings(), ...settings });
+}
+
+// Профиль игрока: имя и аватар. Проверку и значения по умолчанию даёт sanitizePlayer.
+export function getPlayer() {
+  return sanitizePlayer(get(KEYS.PLAYER, null));
+}
+
+export function setPlayer(player) {
+  set(KEYS.PLAYER, sanitizePlayer(player));
 }
 
 // Что боты помнят об игроке (см. memory.js). Проверку формата делает normalizeMemory.
