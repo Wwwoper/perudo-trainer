@@ -5,9 +5,11 @@ import { renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct, flash } from './common.js';
 import { MODES, modeLabel } from './modes.js';
 import { compareOptions, markChosen } from '../compare.js';
+import { isSameSituation } from '../moments.js';
+import { optionsHtml } from './options_view.js';
 
 export function setupTrainer() {
-  if (!P) return;
+  if (!P) return null;
 
   // Статистику не держим в переменной: её пишут и другие разделы (см. updateStats).
   let queue = getTrainingQueue();
@@ -68,12 +70,15 @@ export function setupTrainer() {
       `В очереди повторов: ${queue.length}.`;
   }
 
-  function newSituation() {
+  /** forced — ситуация из очереди, которую нужно показать именно сейчас (иначе выбирается случайная). */
+  function newSituation(forced) {
     const mk = $('#tMode').value;
     const m = MODES[mk];
     const pool = queue.filter((x) => x.mode === mk);
 
-    if (pool.length && Math.random() < 0.4) {
+    if (forced) {
+      cur = { m, n: forced.n, h: forced.h.slice(), f: forced.f, q: forced.q, item: forced };
+    } else if (pool.length && Math.random() < 0.4) {
       const item = pool[Math.floor(Math.random() * pool.length)];
       cur = { m, n: item.n, h: item.h.slice(), f: item.f, q: item.q, item };
     } else {
@@ -123,21 +128,7 @@ export function setupTrainer() {
       bid: { q: cur.q, f: cur.f }, total: cur.n, hand: cur.h, wild: cur.m.wild,
       threshold: thr, probBid: (...args) => P.probBid(...args),
     });
-    const rows = markChosen(options, choice).map((o) => {
-      const bid = o.type === 'dudo' ? '' : ` ${renderBid(o.q, o.f, 'xs')}`;
-      const name = o.type === 'dudo' ? 'Не верю'
-        : o.type === 'safeRaise' ? 'Самая сильная безопасная'
-          : `Минимальное повышение${o.isBestSafe ? ' (она же самая сильная безопасная)' : ''}`;
-      const what = o.type === 'dudo' ? 'проверка сработает:' : 'ставка верна:';
-      return `<li class="trainer-option${o.chosen ? ' is-chosen' : ''}">` +
-        `<span class="trainer-option-name">${o.meetsThreshold ? '✓ ' : ''}${name}${bid}</span> ` +
-        `<span class="trainer-option-chance">${what} <b>${pct(o.success)}</b></span>` +
-        `${o.chosen ? ' <span class="trainer-option-mark">← ваш выбор</span>' : ''}</li>`;
-    }).join('');
-    const anySafe = options.some((o) => o.type !== 'dudo' && o.meetsThreshold);
-    return `<p class="muted">Варианты по шансу · ✓ = порог ${pct(thr)}</p>` +
-      `<ul class="trainer-options">${rows}</ul>` +
-      (anySafe ? '' : '<p class="muted">Безопасных повышений выше порога нет — «Не верю» часто лучший выбор.</p>');
+    return optionsHtml(markChosen(options, choice), thr);
   }
 
   function answer(good, html) {
@@ -205,7 +196,7 @@ export function setupTrainer() {
     );
   };
 
-  if ($('#tNew')) $('#tNew').onclick = newSituation;
+  if ($('#tNew')) $('#tNew').onclick = () => newSituation();
   if ($('#tNext')) $('#tNext').onclick = () => { newSituation(); $('#tDudo')?.focus(); };
 
   if ($('#tMode')) {
@@ -229,4 +220,27 @@ export function setupTrainer() {
   };
 
   newSituation();
+
+  return {
+    /** Очередь могли дополнить из другого раздела (например, из итога партии): читаем её заново. */
+    reloadQueue() {
+      queue = getTrainingQueue();
+      updateStat();
+    },
+    /** Показывает ситуацию из итога партии: добавляет её в очередь повторов (без дублей) и открывает. */
+    focus(item) {
+      if (!item || !MODES[item.mode]) return false;
+      queue = getTrainingQueue();
+      let entry = queue.find((x) => isSameSituation(x, item));
+      if (!entry) {
+        entry = { ...item, h: item.h.slice(), streak: 0 };
+        queue.push(entry);
+        persist();
+      }
+      $('#tMode').value = item.mode;
+      updateSettingsHint();
+      newSituation(entry);
+      return true;
+    },
+  };
 }

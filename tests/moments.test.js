@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   decisionTags, buildMoment, sanitizeMoment, normalizeMoments, appendMoments,
-  momentMode, isReplayable, toQueueItem, scoreMoment, pickKeyMoments,
+  momentMode, isReplayable, toQueueItem, scoreMoment, pickKeyMoments, weakestTag, isSameSituation, TAG_LABELS, MOMENT_TAGS,
   MAX_MOMENTS, KEY_MOMENTS_PER_GAME,
 } from '../src/moments.js';
 
@@ -267,5 +267,60 @@ describe('pickKeyMoments', () => {
     const copy = JSON.stringify(list);
     pickKeyMoments(list);
     assert.equal(JSON.stringify(list), copy);
+  });
+});
+
+describe('weakestTag', () => {
+  const d = (code, tags) => mk('x', { code, tags });
+
+  it('нет решений или нет ошибок — null', () => {
+    assert.equal(weakestTag([]), null);
+    assert.equal(weakestTag(null), null);
+    assert.equal(weakestTag([d('good', ['dudo', 'endgame'])]), null);
+  });
+  it('особые ситуации важнее типа решения', () => {
+    const r = weakestTag([
+      d('bad', ['dudo']), d('bad', ['dudo']), d('bad', ['dudo']),      // «проверки» — три ошибки
+      d('bad', ['raise', 'endgame']),                                   // эндшпиль — одна
+    ]);
+    assert.equal(r.tag, 'endgame');
+    assert.deepEqual([r.errors, r.total], [1, 1]);
+    assert.equal(r.label, TAG_LABELS.endgame);
+  });
+  it('нет ошибок в особых ситуациях — берётся тип решения', () => {
+    const r = weakestTag([d('bad', ['dudo']), d('good', ['raise', 'endgame'])]);
+    assert.equal(r.tag, 'dudo');
+  });
+  it('«спорно» тоже считается ошибкой', () => {
+    assert.equal(weakestTag([d('meh', ['raise', 'ones'])]).tag, 'ones');
+  });
+  it('по числу ошибок, при равенстве — по доле', () => {
+    const r = weakestTag([
+      d('bad', ['dudo', 'endgame']), d('good', ['dudo', 'endgame']),    // эндшпиль: 1 из 2
+      d('bad', ['raise', 'lastDie']),                                    // последний кубик: 1 из 1
+    ]);
+    assert.equal(r.tag, 'lastDie');
+  });
+  it('мусор в списке пропускается, неизвестные метки игнорируются', () => {
+    const r = weakestTag([null, 5, { code: 'bad' }, { code: 'bad', tags: 'x' }, d('bad', ['чужая', 'palifico'])]);
+    assert.equal(r.tag, 'palifico');
+  });
+  it('у каждой метки есть название', () => {
+    for (const t of MOMENT_TAGS) assert.ok(TAG_LABELS[t], t);
+  });
+});
+
+describe('isSameSituation', () => {
+  const a = { mode: 'classic', n: 14, h: [1, 3, 5], f: 5, q: 7 };
+  it('одинаковые ситуации', () => assert.equal(isSameSituation(a, { ...a, h: [1, 3, 5], streak: 1 }), true));
+  it('отличается любое поле', () => {
+    for (const diff of [{ mode: 'big' }, { n: 15 }, { q: 8 }, { f: 4 }, { h: [1, 3, 6] }, { h: [1, 3] }]) {
+      assert.equal(isSameSituation(a, { ...a, ...diff }), false, JSON.stringify(diff));
+    }
+  });
+  it('null и неполные записи', () => {
+    assert.equal(isSameSituation(a, null), false);
+    assert.equal(isSameSituation(null, a), false);
+    assert.equal(isSameSituation(a, { mode: 'classic' }), false);
   });
 });

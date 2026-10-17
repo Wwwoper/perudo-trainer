@@ -19,7 +19,8 @@ import { setupSim } from './ui/sim.js';
 import { sideApi, setupSidePanel } from './ui/side_panel.js';
 import { revealIsOpen, presentReveal, setupReveal, hideRevealUi } from './ui/reveal_dialog.js';
 import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/result_dialog.js';
-import { recordDecision, markRoundOutcome, startDecisionLog, saveKeyMoments } from './ui/decisions.js';
+import { recordDecision, markRoundOutcome, startDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
+import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
 import { renderStats, setupStats } from './ui/stats.js';
@@ -29,6 +30,8 @@ import { renderStats, setupStats } from './ui/stats.js';
 migrateIfNeeded();
 
 let assistConfig = createAssistConfig('training');
+let trainerApi = null;          // ситуации из итога партии открываются в тренажёре через него
+let lastKeyMoments = [];        // ключевые моменты последней законченной партии (для кнопок в итоге)
 
 // ================= Партия (движок + стол) =================
 
@@ -40,6 +43,15 @@ let botTimer = null;
 let lastBidKey = '';
 
 let lastLoggedRound = 0;
+
+/** «Разобрать в тренажёре»: закрыть шторку и окно итогов, открыть вкладку и показать ситуацию. */
+function replayInTrainer(item) {
+  sideApi.close();
+  const dlg = $('#gResultDialog');
+  if (dlg?.open) dlg.close();
+  $('.tab-btn[data-t="train"]')?.click();
+  trainerApi?.focus(item);
+}
 
 function setupGame() {
   document.addEventListener('click', (e) => {
@@ -65,6 +77,7 @@ function setupGame() {
   setupBotStyles();
   setupBotMind();
   setupResultDialog(() => game);
+  setupKeyMoments(replayInTrainer, () => lastKeyMoments);
   setupReveal(() => {
     continueFlow();
     // Партия закончилась этим вскрытием: окно итога — после него, а не поверх.
@@ -125,6 +138,7 @@ function startNewGame() {
 
   startGame(game);
   startDecisionLog(game.id);
+  lastKeyMoments = [];
 
   addGameLog('info', `Партия началась: ${botCount + 1} игроков, по ${startDice} кубиков.` +
     (calzaEnabled ? ' Calza включён.' : '') +
@@ -688,7 +702,7 @@ const RESULT_DIALOG_DELAY_MS = 700;
 function finalizeGame() {
   if (!game || finalizedGameId === game.id) return;
   finalizedGameId = game.id;
-  saveKeyMoments();
+  lastKeyMoments = saveKeyMoments();
 
   const me = game.players[0];
   const aliveCnt = game.players.filter((p) => p.alive).length;
@@ -745,7 +759,7 @@ function finalizeGame() {
       <table>
         <tr><th></th><th>✓ верно</th><th>~ спорно</th><th>✗ ошибка</th></tr>
         <tr><td>Решения</td><td>${good}</td><td>${meh}</td><td>${bad}</td></tr>
-      </table>`;
+      </table>` + keyMomentsHtml(currentDecisions(), lastKeyMoments);
     card.hidden = false;
     sideApi.select('tabReview');
   }
@@ -757,9 +771,12 @@ function finalizeGame() {
 // ================= Точка входа =================
 
 function bootstrap() {
-  setupTabs((tab) => { if (tab === 'stats') renderStats(); });
+  setupTabs((tab) => {
+    if (tab === 'stats') renderStats();
+    if (tab === 'train') trainerApi?.reloadQueue();
+  });
   setupCalculator();
-  setupTrainer();
+  trainerApi = setupTrainer();
   setupDrill();
   setupSidePanel(() => assistConfig.showFutureBidOdds);
   setupGame();

@@ -390,4 +390,54 @@ test.describe('Покерный стол в партии', () => {
     expect(tags.ones).toEqual({ n: 1, good: 1 });
     expect(tags.endgame).toEqual({ n: 1, good: 1 });
   });
+
+  /** Ставка бота 1×6 при вашей шестёрке: «Не верю» — ошибка, ситуацию можно разобрать. */
+  async function loseByWrongDudo(page) {
+    await startGame(page, { bots: 1, dice: 1 });
+    await waitMyTurn(page);
+    await page.evaluate(() => {
+      const g = window.__perudo_v2.game;
+      g.players[0].hand = [6];
+      g.players[1].hand = [2];
+      g.bid = { playerId: g.players[1].id, q: 1, f: 6 };
+      window.__perudo_v2.renderGame();
+    });
+    await page.locator('#gDudo').click();
+    await expect(page.locator('#gResultCard .key-moment')).toHaveCount(1, { timeout: 10_000 });
+  }
+
+  test('итог партии: ключевой момент и «Разобрать в тренажёре» открывает ситуацию без дублей', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await loseByWrongDudo(page);
+    await page.evaluate(() => { document.querySelector('#gResultDialog')?.close?.(); });
+    await openTab(page, 'tabLog');                       // на телефоне открывает шторку с итогом
+    const card = page.locator('#gResultCard');
+    await expect(card).toContainText('Ключевые моменты');
+    await expect(card.locator('.key-moment').first()).toBeHidden();       // свёрнуто, карточка компактна
+    await card.locator('.key-moments > summary').click();
+    await expect(card).toContainText(/Чаще всего ошибки в теме/);
+    await expect(card.locator('.key-moment .trainer-option').first()).toBeVisible();
+
+    const replay = card.locator('.key-moment-replay');
+    await expect(replay).toHaveCount(1);
+    await replay.scrollIntoViewIfNeeded();
+    await replay.click();
+    await expect(page.locator('#tMode')).toHaveValue('endgame');
+    await expect(page.locator('.trainer-repeat')).toBeVisible();
+    const queue = () => readJson(page, 'perudo.trainingQueue');
+    const first = await queue();
+    expect(first).toHaveLength(1);
+
+    // Повторное нажатие не создаёт дубль.
+    await page.evaluate(() => document.querySelector('.key-moment-replay')?.click());
+    const second = await queue();
+    expect(second).toHaveLength(1);
+  });
+
+  test('первый ход в раунде (без чужой ставки) в тренажёр не переносится', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await loseWithBluff(page);
+    await expect(page.locator('#gResultCard .key-moment')).toHaveCount(1, { timeout: 10_000 });
+    await expect(page.locator('#gResultCard .key-moment-replay')).toHaveCount(0);
+  });
 });

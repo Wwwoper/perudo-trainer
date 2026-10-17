@@ -176,3 +176,49 @@ export function pickKeyMoments(list, limit = KEY_MOMENTS_PER_GAME) {
     .slice(0, Math.max(0, limit))
     .map((x) => x.m);
 }
+
+/** Названия меток для интерфейса. */
+export const TAG_LABELS = {
+  dudo: 'проверки ставок',
+  raise: 'повышения ставки',
+  calza: 'Calza',
+  endgame: 'эндшпиль',
+  lastDie: 'игра на последнем кубике',
+  palifico: 'Палифико',
+  ones: 'ставки на единицы',
+  bigTable: 'большой стол',
+};
+
+const KIND_TAGS = ['dudo', 'raise', 'calza'];
+
+/**
+ * Где в партии больше всего ошибок («спорно» и «ошибка» считаются ошибками).
+ * Сначала ищутся особые ситуации (эндшпиль, последний кубик, Палифико, единицы, большой стол):
+ * они говорят больше, чем «ошибки в проверках вообще». Если в них ошибок нет — берутся типы решений.
+ * @returns {{tag: string, label: string, errors: number, total: number} | null}
+ */
+export function weakestTag(list) {
+  const stats = new Map();
+  for (const m of Array.isArray(list) ? list : []) {
+    if (!m || !Array.isArray(m.tags) || !MOMENT_CODES.includes(m.code)) continue;
+    for (const tag of m.tags) {
+      if (!MOMENT_TAGS.includes(tag)) continue;
+      const s = stats.get(tag) || { tag, errors: 0, total: 0 };
+      s.total += 1;
+      if (m.code !== 'good') s.errors += 1;
+      stats.set(tag, s);
+    }
+  }
+  const rank = (group) => MOMENT_TAGS
+    .filter((t) => group(t) && stats.has(t) && stats.get(t).errors > 0)
+    .map((t) => stats.get(t))
+    .sort((a, b) => b.errors - a.errors || b.errors / b.total - a.errors / a.total)[0];
+  const best = rank((t) => !KIND_TAGS.includes(t)) || rank((t) => KIND_TAGS.includes(t));
+  return best ? { ...best, label: TAG_LABELS[best.tag] } : null;
+}
+
+/** Две ситуации тренажёра одинаковы (режим, число кубиков, ставка и ваши кубики). */
+export function isSameSituation(a, b) {
+  return !!a && !!b && a.mode === b.mode && a.n === b.n && a.q === b.q && a.f === b.f
+    && Array.isArray(a.h) && Array.isArray(b.h) && a.h.length === b.h.length && a.h.every((d, i) => d === b.h[i]);
+}

@@ -1019,3 +1019,43 @@
     min-height: calc(100dvh - 16px);
   }
 }
+
+/* Итог партии: ключевые моменты */
+.key-moments {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+.key-moments > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 700;
+  cursor: pointer;
+}
+.key-moments-summary {
+  margin: 4px 0;
+  color: var(--warn);
+}
+.key-moment {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--mut);
+  border-radius: var(--radius-s);
+  background: rgb(255 255 255 / 3%);
+}
+.key-moment.bad {
+  border-left-color: var(--bad);
+}
+.key-moment.meh {
+  border-left-color: var(--warn);
+}
+.key-moment p {
+  margin: 4px 0;
+}
+.key-moment-replay {
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: var(--space-2);
+  font-size: 16px;
+}
