@@ -7,6 +7,7 @@ import { MODES, modeLabel } from './modes.js';
 import { compareOptions, markChosen } from '../compare.js';
 import { isSameSituation } from '../moments.js';
 import { optionsHtml } from './options_view.js';
+import { pickRepeat, situationKey } from '../repeat_pick.js';
 
 export function setupTrainer() {
   if (!P) return null;
@@ -15,6 +16,8 @@ export function setupTrainer() {
   let queue = getTrainingQueue();
   let cur = null;
   let answered = false;
+  let shownCount = 0;              // сколько ситуаций показано на этой странице
+  const seenAt = new Map();        // ключ ситуации → номер её последнего показа (для паузы между повторами)
 
   const modeSel = $('#tMode');
   if (modeSel) {
@@ -76,11 +79,12 @@ export function setupTrainer() {
     const m = MODES[mk];
     const pool = queue.filter((x) => x.mode === mk);
 
+    shownCount++;
+    const repeat = forced ? null : pickRepeat(pool, seenAt, shownCount);
     if (forced) {
       cur = { m, n: forced.n, h: forced.h.slice(), f: forced.f, q: forced.q, item: forced };
-    } else if (pool.length && Math.random() < 0.4) {
-      const item = pool[Math.floor(Math.random() * pool.length)];
-      cur = { m, n: item.n, h: item.h.slice(), f: item.f, q: item.q, item };
+    } else if (repeat) {
+      cur = { m, n: repeat.n, h: repeat.h.slice(), f: repeat.f, q: repeat.q, item: repeat };
     } else {
       const n = P.ri(m.n[0], m.n[1]);
       const k = Math.min(m.k(n), n - 1) || 1;
@@ -91,6 +95,7 @@ export function setupTrainer() {
       cur = { m, n, h, f, q, item: null };
     }
 
+    if (cur.item) seenAt.set(situationKey(cur.item), shownCount);
     answered = false;
     if ($('#tDesc')) $('#tDesc').textContent = m.d;
     if ($('#tInfo')) {
@@ -151,7 +156,9 @@ export function setupTrainer() {
         cur.item.streak = 0;
       }
     } else if (!good) {
-      queue.push({ mode: mk, n: cur.n, h: cur.h.slice(), f: cur.f, q: cur.q, streak: 0 });
+      const entry = { mode: mk, n: cur.n, h: cur.h.slice(), f: cur.f, q: cur.q, streak: 0 };
+      queue.push(entry);
+      seenAt.set(situationKey(entry), shownCount);   // только что показана: повтор не раньше чем через паузу
     }
 
     persist();

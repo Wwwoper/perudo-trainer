@@ -453,4 +453,42 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#stWeak .weak-item')).toHaveCount(0);
     });
   });
+
+  test.describe('Пауза между повторами в «Тренажёре»', () => {
+    const repeatVisible = (page) => page.locator('#tInfo .trainer-repeat').isVisible();
+    // Случайные числа выключены: повтор берётся всякий раз, когда он разрешён.
+    const noRandom = (page) => page.addInitScript(() => { Math.random = () => 0; });
+
+    test('ошибка в новой ситуации возвращается не раньше чем через три другие', async ({ page }) => {
+      await noRandom(page);
+      await page.reload();
+      await open(page, 'train');
+      expect(await repeatVisible(page)).toBe(false);
+      await page.evaluate(() => { document.querySelector('#tT').value = '0'; });   // порог 0: «Не верю» всегда считается ошибкой
+      await page.locator('#tDudo').click();
+      await expect(page.locator('#tFb')).toContainText('Сомнительное решение');
+      for (let i = 1; i <= 3; i++) {
+        // после ответа есть только «Новая ситуация» в разборе; дальше доступна обычная кнопка
+        await page.locator(i === 1 ? '#tNext' : '#tNew').click();
+        expect(await repeatVisible(page), `ситуация ${i} после ошибки`).toBe(false);
+      }
+      await page.locator('#tNew').click();
+      expect(await repeatVisible(page)).toBe(true);
+    });
+
+    test('после показа повтора следующий — не раньше чем через три новые', async ({ page }) => {
+      await page.evaluate(() => localStorage.setItem('perudo.trainingQueue', JSON.stringify([
+        { mode: 'classic', n: 14, h: [2, 3, 4, 5, 6], f: 5, q: 7, streak: 0 }])));
+      await noRandom(page);
+      await page.reload();
+      await open(page, 'train');
+      expect(await repeatVisible(page), 'первая ситуация — повтор').toBe(true);
+      for (let i = 1; i <= 3; i++) {
+        await page.locator('#tNew').click();
+        expect(await repeatVisible(page), `новая ${i}`).toBe(false);
+      }
+      await page.locator('#tNew').click();
+      expect(await repeatVisible(page)).toBe(true);
+    });
+  });
 });
