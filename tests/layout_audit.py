@@ -57,6 +57,7 @@ WEAK_SEED = """() => {
   p.byTag = { endgame: { n: 12, good: 3 }, palifico: { n: 9, good: 4 }, dudo: { n: 30, good: 18 },
               lastDie: { n: 3, good: 1 } };
   localStorage.setItem('perudo.userProfile', JSON.stringify(p));
+  localStorage.setItem('perudo.player', JSON.stringify({ name: 'Максимилиан Игоревич', avatar: { type: 'emoji', value: '🦊' } }));
 }"""
 
 
@@ -114,7 +115,7 @@ def measure_all(base_url, browser):
         page.evaluate(GAMES_SEED)
         _tab(page, "stats")
         snap("stats", "#stClear")
-        # «Над чем поработать» с данными: три слабые темы (две с кнопкой) и тема с малой выборкой
+        # «Над чем поработать» с данными и заполненный блок «Игрок»: три слабые темы (две с кнопкой) и тема с малой выборкой
         page.evaluate(WEAK_SEED)
         _tab(page, "sim")
         _tab(page, "stats")

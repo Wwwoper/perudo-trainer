@@ -440,4 +440,51 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gResultCard .key-moment')).toHaveCount(1, { timeout: 10_000 });
     await expect(page.locator('#gResultCard .key-moment-replay')).toHaveCount(0);
   });
+
+  const setPlayer = (page, player) => page.evaluate((v) => localStorage.setItem('perudo.player', JSON.stringify(v)), player);
+
+  test('имя и аватар из профиля показываются у вашего места; без профиля — «Вы»', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await startGame(page, { bots: 2 });
+    await expect(page.locator('.seat.human .seat-name')).toHaveText('Вы');
+    await expect(page.locator('.seat.human .seat-avatar svg')).toHaveCount(1);
+
+    await setPlayer(page, { name: 'Анна', avatar: { type: 'emoji', value: '🦊' } });
+    await startGame(page, { bots: 2 });
+    await expect(page.locator('.seat.human .seat-name')).toHaveText('Анна');
+    await expect(page.locator('.seat.human .seat-emoji')).toHaveText('🦊');
+    await expect(page.locator('.seat:not(.human) .seat-emoji')).toHaveCount(0);     // у ботов свои аватары
+  });
+
+  test('имя, заданное посреди партии, сразу появляется за столом', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await startGame(page, { bots: 1 });
+    await goTab(page, 'stats');
+    await page.locator('#plName').fill('Борис');
+    await page.locator('#plEmojis [data-emoji="🐼"]').click();
+    await goTab(page, 'game');
+    await expect(page.locator('.seat.human .seat-name')).toHaveText('Борис');
+    await expect(page.locator('.seat.human .seat-emoji')).toHaveText('🐼');
+  });
+
+  test('разметка в имени не выполняется: ни за столом, ни в журнале', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await setPlayer(page, { name: '<svg/onload=__xss=1>' });
+    await startGame(page, { bots: 1, dice: 1 });
+    await expect(page.locator('.seat.human .seat-name')).toHaveText('<svg/onload=__xss=1>');
+    await waitMyTurn(page);
+    await page.evaluate(() => {
+      const g = window.__perudo_v2.game;
+      g.players[0].hand = [2];
+      g.players[1].hand = [2];
+      g.currentPlayer = 0;
+      window.__perudo_v2.renderGame();
+    });
+    await setQuantity(page, 2);
+    await page.locator('#gPick button').nth(5).click();
+    await page.locator('#gRaise').click();
+    await expect(page.locator('#gHistory')).toContainText(/НЕ ВЕРЮ/i, { timeout: 10_000 });
+    expect(await page.evaluate(() => window.__xss)).toBeUndefined();
+    expect(await page.locator('.seat-name svg, #gHistory svg').count()).toBe(0);
+  });
 });

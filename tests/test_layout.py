@@ -140,6 +140,56 @@ class LayoutTest(unittest.TestCase):
                 })""")
                 self.assertEqual(bad, [])
 
+    def open_game_as(self, w, h, bots, player):
+        """Партия, в которой игрок уже задал имя и аватар (профиль лежит в localStorage до загрузки страницы)."""
+        import json
+        ctx = self.browser.new_context(viewport={"width": w, "height": h})
+        self.addCleanup(ctx.close)
+        ctx.add_init_script("localStorage.setItem('perudo.player', %s);" % json.dumps(json.dumps(player)))
+        page = ctx.new_page()
+        page.goto(self.url)
+        self.goto_tab(page, "game")
+        page.evaluate(
+            "n => { document.querySelector('#gBots').value = n;"
+            " document.querySelector('#gRevealOpt').checked = false; window.__perudo_v2.startNewGame(); }", str(bots))
+        page.wait_for_selector(".seat")
+        return page
+
+    def tiny_jpeg(self):
+        import base64, io
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new("RGB", (96, 96), (200, 80, 40)).save(buf, "JPEG", quality=50)
+        return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+
+    def test_long_player_name_and_avatar_keep_seats_in_place(self):
+        """Самое широкое имя (20 букв) и оба вида аватара: места в столе, не пересекаются, ничего не обрезано."""
+        players = {
+            "emoji": {"name": "Ш" * 20, "avatar": {"type": "emoji", "value": "🦊"}},
+            "photo": {"name": "Ш" * 20, "avatar": {"type": "photo", "value": self.tiny_jpeg()}},
+        }
+        for kind, player in players.items():
+            for w, h in VIEWPORTS:
+                with self.subTest(kind=kind, w=w, h=h):
+                    page = self.open_game_as(w, h, 5, player)
+                    self.assertEqual(page.locator(".seat.human .seat-name").inner_text().strip(), "Ш" * 20)
+                    stage = page.locator("#gameTable").bounding_box()
+                    for s in self.boxes(page, ".seat"):
+                        self.assertGreaterEqual(s["x"], stage["x"] - 1)
+                        self.assertLessEqual(s["x"] + s["width"], stage["x"] + stage["width"] + 1)
+                        self.assertGreaterEqual(s["y"], stage["y"] - 1)
+                        self.assertLessEqual(s["y"] + s["height"], stage["y"] + stage["height"] + 1)
+                    bad = page.evaluate("""() => [...document.querySelectorAll('.seat')].flatMap(s => {
+                        const r = s.getBoundingClientRect();
+                        return [...s.querySelectorAll('.seat-avatar, .seat-name, .seat-meta')]
+                          .filter(c => { const b = c.getBoundingClientRect();
+                            return b.left < r.left - 1 || b.right > r.right + 1 ||
+                                   b.top < r.top - 1 || b.bottom > r.bottom + 1; })
+                          .map(c => c.className);
+                    })""")
+                    self.assertEqual(bad, [])
+                    self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
+
     def test_no_horizontal_scroll(self):
         for w, h in VIEWPORTS:
             with self.subTest(w=w, h=h):

@@ -511,4 +511,73 @@ test.describe('Учебные вкладки', () => {
       expect(await repeatVisible(page)).toBe(true);
     });
   });
+
+  test.describe('Профиль игрока в «Статистике»', () => {
+    const readPlayer = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('perudo.player') || 'null'));
+
+    test('по умолчанию имя не задано, аватар стандартный, «Убрать аватар» недоступна', async ({ page }) => {
+      await open(page, 'stats');
+      await expect(page.locator('#plName')).toHaveValue('');
+      await expect(page.locator('#plName')).toHaveAttribute('placeholder', 'Вы');
+      await expect(page.locator('#plEmojis [aria-checked="true"]')).toHaveCount(0);
+      await expect(page.locator('#plAvatar svg')).toHaveCount(1);
+      await expect(page.locator('#plClear')).toBeDisabled();
+      expect(await readPlayer(page)).toBeNull();
+    });
+
+    test('имя сохраняется при вводе и после перезагрузки; лишнее обрезается', async ({ page }) => {
+      await open(page, 'stats');
+      await page.locator('#plName').fill('  Анна   Иванова  ');
+      expect((await readPlayer(page)).name).toBe('Анна Иванова');
+      await page.locator('#plName').fill('я'.repeat(40));
+      expect((await readPlayer(page)).name).toBe('я'.repeat(20));       // maxlength поля
+      await page.locator('#plName').fill('Анна');
+      await page.reload();
+      await open(page, 'stats');
+      await expect(page.locator('#plName')).toHaveValue('Анна');
+    });
+
+    test('эмодзи-аватар выбирается, подсвечивается и убирается', async ({ page }) => {
+      await open(page, 'stats');
+      await page.locator('#plEmojis [data-emoji="🦊"]').click();
+      await expect(page.locator('#plEmojis [data-emoji="🦊"]')).toHaveAttribute('aria-checked', 'true');
+      await expect(page.locator('#plAvatar .seat-emoji')).toHaveText('🦊');
+      expect((await readPlayer(page)).avatar).toEqual({ type: 'emoji', value: '🦊' });
+      await page.locator('#plEmojis [data-emoji="🐼"]').click();
+      await expect(page.locator('#plEmojis [aria-checked="true"]')).toHaveCount(1);
+      await page.locator('#plClear').click();
+      expect((await readPlayer(page)).avatar).toBeNull();
+      await expect(page.locator('#plAvatar svg')).toHaveCount(1);
+      await expect(page.locator('#plClear')).toBeDisabled();
+    });
+
+    test('фото сжимается до небольшого JPEG и показывается; не-картинка отклоняется', async ({ page }) => {
+      await open(page, 'stats');
+      await page.setInputFiles('#plFile', 'apple-touch-icon.png');
+      await expect(page.locator('#plMsg')).toContainText('Фото сохранено');
+      const a = (await readPlayer(page)).avatar;
+      expect(a.type).toBe('photo');
+      expect(a.value).toMatch(/^data:image\/jpeg;base64,/);
+      expect(a.value.length).toBeLessThanOrEqual(12000);
+      await expect(page.locator('#plAvatar img.seat-photo')).toBeVisible();
+
+      await page.setInputFiles('#plFile', { name: 'x.txt', mimeType: 'text/plain', buffer: Buffer.from('привет') });
+      await expect(page.locator('#plMsg')).toContainText('Это не картинка');
+      expect((await readPlayer(page)).avatar).toEqual(a);               // прежний аватар цел
+      await page.setInputFiles('#plFile', { name: 'bad.png', mimeType: 'image/png', buffer: Buffer.from('не картинка') });
+      await expect(page.locator('#plMsg')).toContainText('Не удалось прочитать');
+      expect((await readPlayer(page)).avatar).toEqual(a);
+    });
+
+    test('«Сбросить всё» очищает профиль и поля', async ({ page }) => {
+      await open(page, 'stats');
+      await page.locator('#plName').fill('Анна');
+      await page.locator('#plEmojis [data-emoji="🦊"]').click();
+      page.once('dialog', (d) => { expect(d.message()).toContain('профиль игрока'); d.accept(); });
+      await page.locator('#stClear').click();
+      await expect(page.locator('#plName')).toHaveValue('');
+      await expect(page.locator('#plEmojis [aria-checked="true"]')).toHaveCount(0);
+      expect(await readPlayer(page)).toBeNull();
+    });
+  });
 });

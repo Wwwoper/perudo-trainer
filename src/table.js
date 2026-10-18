@@ -12,6 +12,7 @@
 // помещалось в сцену (см. table.css, .seat).
 
 import { BOT_STYLES } from './bots.js';
+import { sanitizeAvatar } from './player.js';
 
 const SEAT_LAYOUTS = {
   2: {
@@ -43,9 +44,24 @@ export function seatLayouts(count) {
   return L.d.map((d, i) => ({ d, m: L.m[i] }));
 }
 
-/** Подпись места. Человек всегда «Вы» — имя из движка уже может быть «Вы». */
+/**
+ * Подпись места. Человек — «Вы» или имя, которое он задал в профиле (поле label);
+ * имя из движка для человека не используется.
+ */
 export function seatLabel(player) {
-  return player.isHuman ? 'Вы' : String(player.name ?? '');
+  if (player.isHuman) return typeof player.label === 'string' && player.label.trim() ? player.label : 'Вы';
+  return String(player.name ?? '');
+}
+
+/**
+ * Разметка аватара игрока из профиля: эмодзи или снимок; '' — аватара нет (будет стандартный).
+ * Значение проверяется заново, поэтому подделанный аватар из файла копии сюда не попадёт.
+ */
+export function renderPlayerAvatar(avatar) {
+  const a = sanitizeAvatar(avatar);
+  if (!a) return '';
+  if (a.type === 'emoji') return `<span class="seat-emoji" aria-hidden="true">${a.value}</span>`;
+  return `<img class="seat-photo" src="${a.value}" alt="" width="96" height="96">`;
 }
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };

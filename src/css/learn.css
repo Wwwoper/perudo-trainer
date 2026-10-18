@@ -443,3 +443,97 @@
 .weak-pending {
   margin: var(--space-2) 0 0;
 }
+
+/* Статистика: «Игрок» */
+.player-card {
+  margin-bottom: var(--space-3);
+}
+
+.player-head {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.player-avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border: 3px solid #f7e0bd;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.player-avatar svg,
+.player-avatar .seat-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.player-avatar .seat-emoji {
+  font-size: 36px;
+}
+
+.player-name-field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: var(--mut);
+}
+
+.player-name-field input {
+  min-height: var(--tap);
+  font-size: 16px;
+}
+
+.player-emojis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);      /* 16 эмодзи: 4×4 на телефоне, 8×2 на широком экране */
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+@media (min-width: 560px) {
+  .player-emojis {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+.player-emoji {
+  min-height: var(--tap);
+  padding: 0;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.player-emoji.is-selected {
+  border-color: var(--acc);
+  background: #32406a;
+}
+
+.player-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.player-actions button {
+  min-height: var(--tap);
+}
+
+#plMsg {
+  margin-top: var(--space-2);
+}
+
+#plMsg:empty {
+  display: none;
+}

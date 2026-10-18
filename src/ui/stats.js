@@ -7,6 +7,7 @@ import { P, $, pct } from './common.js';
 import { modeLabel } from './modes.js';
 import { resetDuelStats } from './duel.js';
 import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
+import { renderPlayerCard, setupPlayerCard } from './player_card.js';
 
 export function renderStats() {
   if (!P) return;
@@ -20,6 +21,7 @@ export function renderStats() {
   if ($('#stQueue')) $('#stQueue').textContent = queue.length;
 
   renderWeakSpots(stats.byTag);
+  renderPlayerCard();
 
   const byModeEl = $('#stByMode');
   if (byModeEl) {
@@ -56,8 +58,9 @@ export function renderStats() {
 }
 
 /** onReset() — вызывается при «Сбросить всё», чтобы партия забыла память ботов. */
-export function setupStats({ onReset, onTrain } = {}) {
+export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
   setupWeakSpots(onTrain);
+  setupPlayerCard({ onChange: onPlayerChange });
   const msg = (text, cls = 'muted') => {
     const el = $('#stBackupMsg');
     if (!el) return;
@@ -122,7 +125,7 @@ export function setupStats({ onReset, onTrain } = {}) {
 
   const clr = $('#stClear');
   if (clr) clr.onclick = () => {
-    if (!confirm('Сбросить всю статистику, очередь и историю партий?')) return;
+    if (!confirm('Сбросить статистику, очередь повторов, историю партий и профиль игрока (имя и аватар)?')) return;
     try {
       ['perudo.settings', 'perudo.userProfile', 'perudo.games',
         'perudo.trainingQueue', 'perudo.duelStats', 'perudo.botMemory', 'perudo.reviews', 'perudo.player'].forEach((k) => localStorage.removeItem(k));

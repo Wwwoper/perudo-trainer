@@ -5,9 +5,9 @@ import { createGame, startGame, applyAction, canCalza as engineCanCalza }
   from './engine.js';
 import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
-import { updateStats, migrateIfNeeded, get, set } from './storage.js';
+import { updateStats, migrateIfNeeded, get, set, getPlayer } from './storage.js';
 import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
-import { renderTable, renderDie, renderHand, renderBid, escapeHtml } from './table.js';
+import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
 import { buildGameResult, resultHeadline } from './result.js';
 import { P, $, $$, pct, flash } from './ui/common.js';
 import { setupTabs } from './ui/tabs.js';
@@ -24,6 +24,7 @@ import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
 import { renderStats, setupStats } from './ui/stats.js';
+import { playerDisplayName } from './player.js';
 
 // ================= Инициализация =================
 
@@ -135,6 +136,7 @@ function startNewGame() {
     bot.avatar = characters[i].avatar;
   }
 
+  applyPlayerToGame();
   gameLogEntries = [];
   reviewEntries = [];
   lastBidKey = '';
@@ -198,6 +200,15 @@ function renderReview() {
   sideApi.keepAtEnd('panReview');
 }
 
+/** Имя и аватар из профиля — человеку за столом. Вызывается при старте партии и при смене профиля. */
+function applyPlayerToGame() {
+  const me = game?.players?.[0];
+  if (!me) return;
+  const profile = getPlayer();
+  me.name = playerDisplayName(profile);
+  me.avatar = renderPlayerAvatar(profile.avatar) || undefined;   // нет аватара — стандартный
+}
+
 // ----- Рендер -----
 
 function gameViewForRender() {
@@ -210,6 +221,7 @@ function gameViewForRender() {
     players: game.players.map((p, i) => ({
       id: p.id,
       name: p.name,
+      label: i === 0 ? p.name : undefined,     // имя человека из профиля (подпись места)
       dice: p.dice,
       alive: p.alive,
       isHuman: i === 0,
@@ -320,7 +332,7 @@ function renderGame() {
     lastLoggedRound = game.round;
     if (game.round > 1) {
       const totalNow = totalDice();
-      const starterName = game.players[game.currentPlayer]?.name || '';
+      const starterName = escapeHtml(game.players[game.currentPlayer]?.name || '');
       addGameLog('round',
         `— Раунд ${game.round} · кубиков на столе: ${totalNow} · начинает: ${starterName}` +
         (game.palifico ? ' · ПАЛИФИКО' : '') + ' —');
@@ -790,6 +802,7 @@ function bootstrap() {
   setupStats({
     onReset: clearBotMemoryState,
     onTrain: trainInMode,
+    onPlayerChange: () => { applyPlayerToGame(); renderGame(); },
   });
   setupSim();
   renderStats();

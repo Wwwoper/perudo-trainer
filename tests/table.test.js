@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  seatLayouts, seatLabel, renderBid, renderSeat, renderTable, generateDefaultAvatar,
+  seatLayouts, seatLabel, renderPlayerAvatar, renderBid, renderSeat, renderTable, generateDefaultAvatar,
 } from '../src/table.js';
 import { generateAvatar } from '../src/bots.js';
 
@@ -46,6 +46,11 @@ test('подпись человека всегда «Вы», без дублир
   assert.equal(seatLabel(player({ isHuman: true, name: 'Антон' })), 'Вы');
   assert.equal(seatLabel(player({ name: 'Михаил' })), 'Михаил');
   assert.equal(seatLabel(player({ name: undefined })), '');
+  // имя из профиля игрока — поле label; пустое или чужого вида — «Вы»
+  assert.equal(seatLabel(player({ isHuman: true, label: 'Анна' })), 'Анна');
+  assert.equal(seatLabel(player({ isHuman: true, label: '   ' })), 'Вы');
+  assert.equal(seatLabel(player({ isHuman: true, label: 5 })), 'Вы');
+  assert.equal(seatLabel(player({ label: 'Анна', name: 'Михаил' })), 'Михаил');
 });
 
 test('в месте игрока нет строки «(вы)»', () => {
@@ -142,4 +147,14 @@ test('завершённая партия без победителя: никт�
 test('renderSeat: isWinner по умолчанию false', () => {
   const html = _renderSeat({ id: 'a', name: 'A', alive: true, dice: 1 }, { d: [50, 50], m: [50, 50] }, false);
   assert.ok(!html.includes('winner'));
+});
+
+test('renderPlayerAvatar: эмодзи, снимок, подделка и отсутствие', () => {
+  assert.match(renderPlayerAvatar({ type: 'emoji', value: '🦊' }), /<span class="seat-emoji" aria-hidden="true">🦊<\/span>/);
+  const photo = 'data:image/jpeg;base64,AAAA';
+  assert.match(renderPlayerAvatar({ type: 'photo', value: photo }), /<img class="seat-photo" src="data:image\/jpeg;base64,AAAA"/);
+  for (const bad of [null, undefined, '🦊', { type: 'emoji', value: '<img src=x onerror=1>' },
+    { type: 'photo', value: 'javascript:alert(1)' }, { type: 'photo', value: 'data:image/jpeg;base64,AA"onerror="x' }]) {
+    assert.equal(renderPlayerAvatar(bad), '', JSON.stringify(bad));
+  }
 });
