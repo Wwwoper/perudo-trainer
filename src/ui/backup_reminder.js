@@ -7,9 +7,9 @@ import { $ } from './common.js';
 const gamesPlayed = () => getStats().totalGames || 0;
 
 /** HTML напоминания или пустая строка, если показывать рано (или уже не нужно). */
-export function backupReminderHtml() {
+export function backupReminderHtml(cloudConnected = false) {
   const games = gamesPlayed();
-  if (!shouldRemind({ games, nextAt: getDeviceState().nextAt })) return '';
+  if (!shouldRemind({ games, nextAt: getDeviceState().nextAt, cloudConnected })) return '';
   return '<div class="backup-reminder">' +
     `<p>Вы сыграли партий: ${games}. Сохраните копию данных в файл: браузер может удалить данные сайта.</p>` +
     '<div class="backup-reminder-actions">' +

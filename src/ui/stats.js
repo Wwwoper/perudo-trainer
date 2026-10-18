@@ -8,6 +8,7 @@ import { modeLabel } from './modes.js';
 import { resetDuelStats } from './duel.js';
 import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
 import { renderPlayerCard, setupPlayerCard } from './player_card.js';
+import { renderCloudCard } from './cloud_card.js';
 import { markBackupExported } from './backup_reminder.js';
 import { readPersisted, describePersistence } from '../persistence.js';
 import { REMIND_FIRST } from '../backup_reminder.js';
@@ -45,6 +46,7 @@ export function renderStats() {
 
   renderWeakSpots(stats.byTag);
   renderPlayerCard();
+  renderCloudCard();
   renderPersistence();
 
   const byModeEl = $('#stByMode');

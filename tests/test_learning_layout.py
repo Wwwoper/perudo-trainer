@@ -42,7 +42,7 @@ class LearningLayoutTest(unittest.TestCase):
         return f"{r['size']} · {r['state']}"
 
     def test_all_states_were_measured(self):
-        self.assertEqual(len(self.rows), 5 * 13)
+        self.assertEqual(len(self.rows), 5 * 15)
 
     def test_no_horizontal_scroll(self):
         bad = [self.label(r) for r in strict(self.rows) if r["hscroll"]]

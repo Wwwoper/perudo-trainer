@@ -25,6 +25,7 @@ import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_style
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
 import { renderStats, setupStats, downloadBackup } from './ui/stats.js';
 import { backupReminderHtml, setupBackupReminder } from './ui/backup_reminder.js';
+import { setupCloudCard, cloudConnected } from './ui/cloud_card.js';
 import { shouldAskPersistence } from './backup_reminder.js';
 import { requestPersistence } from './persistence.js';
 import { playerDisplayName } from './player.js';
@@ -34,6 +35,7 @@ import { playerDisplayName } from './player.js';
 migrateIfNeeded();
 
 let assistConfig = createAssistConfig('training');
+let cloudApi = null;
 let trainerApi = null;          // ситуации из итога партии открываются в тренажёре через него
 let lastKeyMoments = [];        // ключевые моменты последней законченной партии (для кнопок в итоге)
 
@@ -758,6 +760,7 @@ function finalizeGame() {
     if (won) stats.totalWins = (stats.totalWins || 0) + 1;
   });
   askPersistenceIfNeeded();
+  cloudApi?.afterGame();
 
   const result = buildGameResult(game);
   const h = resultHeadline(result);
@@ -791,7 +794,7 @@ function finalizeGame() {
       <table>
         <tr><th></th><th>✓ верно</th><th>~ спорно</th><th>✗ ошибка</th></tr>
         <tr><td>Решения</td><td>${good}</td><td>${meh}</td><td>${bad}</td></tr>
-      </table>` + keyMomentsHtml(currentDecisions(), lastKeyMoments) + backupReminderHtml();
+      </table>` + keyMomentsHtml(currentDecisions(), lastKeyMoments) + backupReminderHtml(cloudConnected());
     card.hidden = false;
     sideApi.select('tabReview');
   }
@@ -818,6 +821,7 @@ function bootstrap() {
     onTrain: trainInMode,
     onPlayerChange: () => { applyPlayerToGame(); renderGame(); },
   });
+  cloudApi = setupCloudCard();
   setupSim();
   renderStats();
 }

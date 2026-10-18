@@ -37,7 +37,9 @@ GAMES_SEED = """(() => { const now = Date.now();
 
 MEASURE = """(resultSel) => {
   const vw = innerWidth, vh = innerHeight;
-  const sec = [...document.querySelectorAll('main > section')].find((s) => !s.classList.contains('hide'));
+  // Открытое модальное окно измеряется само, иначе — видимый раздел
+  const sec = document.querySelector('dialog[open]')
+    || [...document.querySelectorAll('main > section')].find((s) => !s.classList.contains('hide'));
   const visible = (e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
     return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && e.offsetParent !== null; };
   const controls = [...sec.querySelectorAll('button, input, select, summary, [role=tab]')].filter(visible);
@@ -59,6 +61,33 @@ WEAK_SEED = """() => {
   localStorage.setItem('perudo.userProfile', JSON.stringify(p));
   localStorage.setItem('perudo.player', JSON.stringify({ name: 'Максимилиан Игоревич', avatar: { type: 'emoji', value: '🦊' } }));
 }"""
+
+
+# Вход в облако выполнен, на устройстве есть партии, а в облаке другая копия: окно выбора и блок «Игрок» с выбором.
+CLOUD_SEED = """() => {
+  localStorage.setItem('perudo.cloud', JSON.stringify({ token: 'y0_layout_token_0123456789', expiresAt: Date.now() + 86400000, syncedExportedAt: 1 }));
+  sessionStorage.setItem('perudo.importNotice', 'Откройте «Статистику».');   // страница откроется на этой вкладке
+}"""
+CLOUD_FILE = json.dumps({"format": "perudo-backup", "version": 2, "exportedAt": 1700000000000,
+                         "data": {"perudo.player": {"name": "Облако", "avatar": None}}})
+CORS = {"access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*"}
+
+
+def _stub_cloud(ctx):
+    """Яндекс Диск без сети: ссылки на скачивание и сам файл."""
+    def api(route):
+        if route.request.method == "OPTIONS":
+            return route.fulfill(status=204, headers=CORS)
+        return route.fulfill(status=200, headers=CORS, content_type="application/json",
+                             body=json.dumps({"href": "https://downloader.stub.test/file"}))
+
+    def file(route):
+        if route.request.method == "OPTIONS":
+            return route.fulfill(status=204, headers=CORS)
+        return route.fulfill(status=200, headers=CORS, content_type="application/json", body=CLOUD_FILE)
+
+    ctx.route("https://cloud-api.yandex.net/**", api)
+    ctx.route("https://downloader.stub.test/**", file)
 
 
 class _Quiet(http.server.SimpleHTTPRequestHandler):
@@ -121,6 +150,16 @@ def measure_all(base_url, browser):
         _tab(page, "stats")
         page.wait_for_selector("#stWeak .weak-item")
         snap("stats: weak spots", "#stClear")
+
+        # Облако: окно выбора версии поверх «Статистики», затем тот же выбор в блоке «Игрок»
+        _stub_cloud(ctx)
+        page.evaluate(CLOUD_SEED)
+        page.reload()
+        page.wait_for_selector("#clDialog[open]")
+        snap("stats: cloud dialog", "#clDialog [data-cl='later']")
+        page.click("#clDialog [data-cl='later']")
+        page.wait_for_selector("#clPending")
+        snap("stats: cloud pending", "#stClear")
 
         _tab(page, "sim")
         snap("sim", "#sGo")
