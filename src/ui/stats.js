@@ -1,6 +1,6 @@
 // src/ui/stats.js — вкладка «Статистика»: сводка, экспорт/импорт JSON, сброс.
 
-import { getStats, setStats, getTrainingQueue, setTrainingQueue, getGames, get, set } from '../storage.js';
+import { getStats, setStats, getTrainingQueue, setTrainingQueue, getGames, get, set, getDeviceState, setDeviceState } from '../storage.js';
 import { buildBackup, serializeBackup, parseBackup, applyBackup } from '../backup.js';
 import { escapeHtml } from '../table.js';
 import { P, $, pct } from './common.js';
@@ -8,6 +8,29 @@ import { modeLabel } from './modes.js';
 import { resetDuelStats } from './duel.js';
 import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
 import { renderPlayerCard, setupPlayerCard } from './player_card.js';
+import { markBackupExported } from './backup_reminder.js';
+import { readPersisted, describePersistence } from '../persistence.js';
+import { REMIND_FIRST } from '../backup_reminder.js';
+
+/** Строка про защиту данных от автоочистки браузера (если браузер умеет об этом сказать). */
+export async function renderPersistence() {
+  const el = $('#stPersist');
+  if (!el) return;
+  el.textContent = describePersistence(await readPersisted(globalThis.navigator?.storage)) || '';
+}
+
+/** Скачивает полную копию данных в файл и откладывает напоминание. Возвращает имя файла. */
+export function downloadBackup() {
+  const text = serializeBackup(buildBackup((k) => get(k)));
+  const blob = new Blob([text], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `perudo-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  markBackupExported();
+  return a.download;
+}
 
 export function renderStats() {
   if (!P) return;
@@ -22,6 +45,7 @@ export function renderStats() {
 
   renderWeakSpots(stats.byTag);
   renderPlayerCard();
+  renderPersistence();
 
   const byModeEl = $('#stByMode');
   if (byModeEl) {
@@ -79,16 +103,7 @@ export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
   } catch (e) { }
 
   const exp = $('#stExport');
-  if (exp) exp.onclick = () => {
-    const text = serializeBackup(buildBackup((k) => get(k)));
-    const blob = new Blob([text], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `perudo-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    msg(`Копия сохранена в файл ${a.download}.`);
-  };
+  if (exp) exp.onclick = () => msg(`Копия сохранена в файл ${downloadBackup()}.`);
 
   const imp = $('#stImport');
   const file = $('#stImportFile');
@@ -131,6 +146,7 @@ export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
         'perudo.trainingQueue', 'perudo.duelStats', 'perudo.botMemory', 'perudo.reviews', 'perudo.player'].forEach((k) => localStorage.removeItem(k));
     } catch (e) { }
     onReset?.();
+    setDeviceState({ ...getDeviceState(), nextAt: REMIND_FIRST });   // счёт партий начался заново
     setStats({ n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, byTag: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } });
     setTrainingQueue([]);
     set('perudo.games', []);

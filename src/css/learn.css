@@ -537,3 +537,11 @@
 #plMsg:empty {
   display: none;
 }
+
+#stPersist {
+  margin-bottom: var(--space-3);
+}
+
+#stPersist:empty {
+  display: none;
+}

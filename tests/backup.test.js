@@ -215,3 +215,14 @@ describe('Игрок в копии', () => {
     assert.match(big.error, /слишком большой/);
   });
 });
+
+describe('Состояние устройства не входит в копию', () => {
+  it('ключ perudo.device не в списке и при импорте игнорируется', () => {
+    assert.ok(!BACKUP_KEYS.includes('perudo.device'));
+    const text = JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: { 'perudo.settings': { a: 1 }, 'perudo.device': { nextAt: 1 } } });
+    const r = parseBackup(text);
+    assert.ok(r.ok);
+    assert.deepStrictEqual(r.skipped, ['perudo.device']);
+    assert.ok(!('perudo.device' in r.data));
+  });
+});

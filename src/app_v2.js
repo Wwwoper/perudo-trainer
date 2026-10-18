@@ -5,7 +5,7 @@ import { createGame, startGame, applyAction, canCalza as engineCanCalza }
   from './engine.js';
 import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
-import { updateStats, migrateIfNeeded, get, set, getPlayer } from './storage.js';
+import { updateStats, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState } from './storage.js';
 import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
 import { buildGameResult, resultHeadline } from './result.js';
@@ -23,7 +23,10 @@ import { recordDecision, markRoundOutcome, startDecisionLog, saveKeyMoments, cur
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
-import { renderStats, setupStats } from './ui/stats.js';
+import { renderStats, setupStats, downloadBackup } from './ui/stats.js';
+import { backupReminderHtml, setupBackupReminder } from './ui/backup_reminder.js';
+import { shouldAskPersistence } from './backup_reminder.js';
+import { requestPersistence } from './persistence.js';
 import { playerDisplayName } from './player.js';
 
 // ================= Инициализация =================
@@ -44,6 +47,15 @@ let botTimer = null;
 let lastBidKey = '';
 
 let lastLoggedRound = 0;
+
+/** Просьба к браузеру не удалять данные сайта: после первой и после пятой партии (см. shouldAskPersistence). */
+function askPersistenceIfNeeded() {
+  const dev = getDeviceState();
+  const games = getStats().totalGames || 0;
+  if (!shouldAskPersistence({ games, tries: dev.persistTries })) return;
+  setDeviceState({ ...dev, persistTries: dev.persistTries + 1 });
+  requestPersistence(globalThis.navigator?.storage).then(() => renderStats());
+}
 
 /** «Разобрать в тренажёре»: закрыть шторку и окно итогов, открыть вкладку и показать ситуацию. */
 function replayInTrainer(item) {
@@ -85,6 +97,7 @@ function setupGame() {
   setupBotMind();
   setupResultDialog(() => game);
   setupKeyMoments(replayInTrainer, () => lastKeyMoments);
+  setupBackupReminder(downloadBackup);
   setupReveal(() => {
     continueFlow();
     // Партия закончилась этим вскрытием: окно итога — после него, а не поверх.
@@ -744,6 +757,7 @@ function finalizeGame() {
     stats.totalGames = (stats.totalGames || 0) + 1;
     if (won) stats.totalWins = (stats.totalWins || 0) + 1;
   });
+  askPersistenceIfNeeded();
 
   const result = buildGameResult(game);
   const h = resultHeadline(result);
@@ -777,7 +791,7 @@ function finalizeGame() {
       <table>
         <tr><th></th><th>✓ верно</th><th>~ спорно</th><th>✗ ошибка</th></tr>
         <tr><td>Решения</td><td>${good}</td><td>${meh}</td><td>${bad}</td></tr>
-      </table>` + keyMomentsHtml(currentDecisions(), lastKeyMoments);
+      </table>` + keyMomentsHtml(currentDecisions(), lastKeyMoments) + backupReminderHtml();
     card.hidden = false;
     sideApi.select('tabReview');
   }

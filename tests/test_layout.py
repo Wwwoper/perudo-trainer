@@ -1089,6 +1089,33 @@ class LayoutTest(unittest.TestCase):
                              "карточка итогов должна быть выше содержимого вкладок")
         self.assertEqual(page.locator("#tabReview").get_attribute("aria-selected"), "true")
 
+    def test_desktop_card_with_backup_reminder_still_fits(self):
+        """Пятая партия: к итогу добавляется напоминание про копию, карточка по-прежнему помещается и выше вкладок."""
+        ctx = self.browser.new_context(viewport={"width": 1366, "height": 768})
+        self.addCleanup(ctx.close)
+        ctx.add_init_script(
+            "localStorage.setItem('perudo.userProfile', JSON.stringify({n:0,good:0,totalGames:4,totalWins:0,byMode:{},"
+            "drill:{A:{n:0,good:0},B:{n:0,good:0}}}));")
+        page = ctx.new_page()
+        page.goto(self.url)
+        self.goto_tab(page, "game")
+        page.evaluate("() => { document.querySelector('#gBots').value = 1;"
+                      " document.querySelector('#gDice').value = 1;"
+                      " document.querySelector('#gRevealOpt').checked = false; window.__perudo_v2.startNewGame(); }")
+        page.wait_for_selector(".seat")
+        self.finish(page)
+        page.keyboard.press("Escape")
+        reminder = page.locator("#gResultCard .backup-reminder")
+        self.assertTrue(reminder.is_visible())
+        for sel in ("[data-backup-save]", "[data-backup-later]"):
+            box = page.locator(f"#gResultCard {sel}").bounding_box()
+            self.assertGreaterEqual(box["height"], 44, sel)
+        cbox = page.locator("#gResultCard").bounding_box()
+        self.assertGreaterEqual(cbox["y"], 0)
+        self.assertLessEqual(cbox["y"] + cbox["height"], 768)
+        panel = page.locator("#panReview").bounding_box()
+        self.assertLessEqual(cbox["y"] + cbox["height"], panel["y"] + 1)
+
     def test_phone_card_is_in_the_sheet(self):
         page = self.open_game(390, 844, 1)
         self.finish(page)

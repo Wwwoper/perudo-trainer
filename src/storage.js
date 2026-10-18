@@ -2,6 +2,7 @@
 
 import { normalizeMoments } from './moments.js';
 import { sanitizePlayer } from './player.js';
+import { sanitizeDeviceState } from './backup_reminder.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -14,6 +15,7 @@ const KEYS = {
   GAMES: 'perudo.games',
   REVIEWS: 'perudo.reviews',
   PLAYER: 'perudo.player',
+  DEVICE: 'perudo.device',
   TRAINING_QUEUE: 'perudo.trainingQueue',
   TUTORIAL_PROGRESS: 'perudo.tutorialProgress',
   DUEL_STATS: 'perudo.duelStats',
@@ -56,6 +58,16 @@ export function getPlayer() {
 
 export function setPlayer(player) {
   set(KEYS.PLAYER, sanitizePlayer(player));
+}
+
+// Состояние этого устройства: когда напомнить про копию, сколько раз просили постоянное хранилище.
+// В резервную копию не входит (BACKUP_KEYS его не содержит).
+export function getDeviceState() {
+  return sanitizeDeviceState(get(KEYS.DEVICE, null));
+}
+
+export function setDeviceState(state) {
+  set(KEYS.DEVICE, sanitizeDeviceState(state));
 }
 
 // Что боты помнят об игроке (см. memory.js). Проверку формата делает normalizeMemory.

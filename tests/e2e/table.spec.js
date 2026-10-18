@@ -487,4 +487,113 @@ test.describe('Покерный стол в партии', () => {
     expect(await page.evaluate(() => window.__xss)).toBeUndefined();
     expect(await page.locator('.seat-name svg, #gHistory svg').count()).toBe(0);
   });
+
+  test.describe('Напоминание о копии и постоянное хранилище', () => {
+    const seedGames = (page, totalGames, device) => page.evaluate(([n, dev]) => {
+      localStorage.clear();
+      localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 0, good: 0, totalGames: n, totalWins: 0, byMode: {},
+        drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
+      if (dev) localStorage.setItem('perudo.device', JSON.stringify(dev));
+    }, [totalGames, device]);
+    const openResult = async (page) => {
+      await page.evaluate(() => document.querySelector('#gResultDialog')?.close?.());
+      await openTab(page, 'tabLog');                       // на телефоне открывает шторку с итогом
+    };
+    const device = (page) => readJson(page, 'perudo.device');
+
+    test('до пятой партии напоминания нет', async ({ page }) => {
+      await seedGames(page, 3);
+      await loseByWrongDudo(page);                         // четвёртая партия
+      await openResult(page);
+      await expect(page.locator('#gResultCard .backup-reminder')).toHaveCount(0);
+    });
+
+    test('после пятой партии: «Сохранить копию» скачивает файл и откладывает напоминание на 30 партий', async ({ page }) => {
+      await seedGames(page, 4);
+      await loseByWrongDudo(page);
+      await openResult(page);
+      const box = page.locator('#gResultCard .backup-reminder');
+      await expect(box).toContainText('Вы сыграли партий: 5');
+      const [download] = await Promise.all([page.waitForEvent('download'), box.locator('[data-backup-save]').click()]);
+      expect(download.suggestedFilename()).toMatch(/^perudo-backup-\d{4}-\d{2}-\d{2}\.json$/);
+      await expect(box).toContainText('Копия сохранена');
+      expect((await device(page)).nextAt).toBe(35);
+    });
+
+    test('«Позже» убирает напоминание и откладывает на 20 партий', async ({ page }) => {
+      await seedGames(page, 4);
+      await loseByWrongDudo(page);
+      await openResult(page);
+      await page.locator('#gResultCard [data-backup-later]').click();
+      await expect(page.locator('#gResultCard .backup-reminder')).toHaveCount(0);
+      expect((await device(page)).nextAt).toBe(25);
+    });
+
+    test('экспорт из «Статистики» тоже откладывает напоминание', async ({ page }) => {
+      await seedGames(page, 6, { nextAt: 5, persistTries: 2 });
+      await page.reload();
+      await goTab(page, 'stats');
+      await Promise.all([page.waitForEvent('download'), page.locator('#stExport').click()]);
+      expect((await device(page)).nextAt).toBe(36);
+    });
+
+    test('«Сбросить всё» начинает счёт заново', async ({ page }) => {
+      await seedGames(page, 9, { nextAt: 39, persistTries: 2 });
+      await page.reload();
+      await goTab(page, 'stats');
+      page.once('dialog', (d) => d.accept());
+      await page.locator('#stClear').click();
+      expect(await device(page)).toEqual({ nextAt: 5, persistTries: 2 });
+    });
+
+    const stubStorage = (page, persisted) => page.addInitScript((p) => {
+      window.__persistCalls = 0;
+      const s = navigator.storage;
+      s.persisted = async () => p.value;
+      s.persist = async () => { window.__persistCalls++; p.value = true; return true; };
+    }, { value: persisted });
+
+    test('после первой партии просим постоянное хранилище; после второй уже нет', async ({ page }) => {
+      await stubStorage(page, false);
+      await seedGames(page, 0);
+      await page.reload();
+      await goTab(page, 'game');
+      await loseByWrongDudo(page);
+      await expect.poll(() => page.evaluate(() => window.__persistCalls)).toBe(1);
+      expect((await device(page)).persistTries).toBe(1);
+      await page.evaluate(() => document.querySelector('#gResultDialog')?.close?.());
+      await loseByWrongDudo(page);                         // вторая партия
+      expect(await page.evaluate(() => window.__persistCalls)).toBe(1);
+    });
+
+    test('второй запрос — после пятой партии, третьего нет', async ({ page }) => {
+      await stubStorage(page, false);
+      await seedGames(page, 4, { nextAt: 99, persistTries: 1 });
+      await page.reload();
+      await goTab(page, 'game');
+      await loseByWrongDudo(page);
+      await expect.poll(() => page.evaluate(() => window.__persistCalls)).toBe(1);
+      expect((await device(page)).persistTries).toBe(2);
+    });
+
+    test('исчерпанные попытки: браузер больше не спрашиваем', async ({ page }) => {
+      await stubStorage(page, false);
+      await seedGames(page, 9, { nextAt: 99, persistTries: 2 });
+      await page.reload();
+      await goTab(page, 'game');
+      await loseByWrongDudo(page);
+      expect(await page.evaluate(() => window.__persistCalls)).toBe(0);
+    });
+
+    test('«Статистика» показывает, защищено ли хранилище', async ({ page }) => {
+      await stubStorage(page, true);
+      await page.reload();
+      await goTab(page, 'stats');
+      await expect(page.locator('#stPersist')).toContainText('защищено');
+      await stubStorage(page, false);
+      await page.reload();
+      await goTab(page, 'stats');
+      await expect(page.locator('#stPersist')).toContainText('Экспорт JSON');
+    });
+  });
 });

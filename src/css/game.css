@@ -1059,3 +1059,22 @@
   margin-top: var(--space-2);
   font-size: 16px;
 }
+
+/* Итог партии: напоминание про резервную копию */
+.backup-reminder {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+.backup-reminder p {
+  margin: 0 0 var(--space-2);
+}
+.backup-reminder-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+.backup-reminder-actions button {
+  min-height: var(--tap);
+  font-size: 16px;
+}

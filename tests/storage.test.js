@@ -10,7 +10,7 @@ global.localStorage = {
   removeItem: key => { delete mockStorage[key]; },
 };
 
-import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer } from '../src/storage.js';
+import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer, getDeviceState, setDeviceState } from '../src/storage.js';
 
 describe('get/set', () => {
   it('сохраняет и загружает', () => {
@@ -158,6 +158,24 @@ describe('Игрок (имя и аватар)', () => {
     for (const bad of ['{не json', '5', '"x"', '[1]', 'null']) {
       mockStorage['perudo.player'] = bad;
       assert.deepStrictEqual(getPlayer(), { name: '', avatar: null }, bad);
+    }
+  });
+});
+
+describe('Состояние устройства', () => {
+  it('нет записи — значения по умолчанию', () => {
+    delete mockStorage['perudo.device'];
+    assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0 });
+  });
+  it('записанное читается, лишнее отбрасывается', () => {
+    setDeviceState({ nextAt: 25, persistTries: 1, extra: true });
+    assert.deepStrictEqual(JSON.parse(mockStorage['perudo.device']), { nextAt: 25, persistTries: 1 });
+    assert.deepStrictEqual(getDeviceState(), { nextAt: 25, persistTries: 1 });
+  });
+  it('мусор в хранилище не ломает чтение', () => {
+    for (const bad of ['{не json', '7', '"x"', '[1]']) {
+      mockStorage['perudo.device'] = bad;
+      assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0 }, bad);
     }
   });
 });
