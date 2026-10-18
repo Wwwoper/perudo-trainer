@@ -219,10 +219,19 @@ describe('Игрок в копии', () => {
 describe('Состояние устройства не входит в копию', () => {
   it('ключ perudo.device не в списке и при импорте игнорируется', () => {
     assert.ok(!BACKUP_KEYS.includes('perudo.device'));
+    assert.ok(!BACKUP_KEYS.includes('perudo.cloud'), 'токен облака не должен попадать в файл копии');
     const text = JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: { 'perudo.settings': { a: 1 }, 'perudo.device': { nextAt: 1 } } });
     const r = parseBackup(text);
     assert.ok(r.ok);
     assert.deepStrictEqual(r.skipped, ['perudo.device']);
     assert.ok(!('perudo.device' in r.data));
+  });
+
+  it('чужой файл не может подсунуть токен облака', () => {
+    const text = JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: { 'perudo.settings': { a: 1 }, 'perudo.cloud': { token: 'y0__evil-token-123' } } });
+    const r = parseBackup(text);
+    assert.ok(r.ok);
+    assert.deepStrictEqual(r.skipped, ['perudo.cloud']);
+    assert.ok(!('perudo.cloud' in r.data));
   });
 });

@@ -3,6 +3,7 @@
 import { normalizeMoments } from './moments.js';
 import { sanitizePlayer } from './player.js';
 import { sanitizeDeviceState } from './backup_reminder.js';
+import { sanitizeCloudState } from './cloud_policy.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -16,6 +17,7 @@ const KEYS = {
   REVIEWS: 'perudo.reviews',
   PLAYER: 'perudo.player',
   DEVICE: 'perudo.device',
+  CLOUD: 'perudo.cloud',
   TRAINING_QUEUE: 'perudo.trainingQueue',
   TUTORIAL_PROGRESS: 'perudo.tutorialProgress',
   DUEL_STATS: 'perudo.duelStats',
@@ -68,6 +70,16 @@ export function getDeviceState() {
 
 export function setDeviceState(state) {
   set(KEYS.DEVICE, sanitizeDeviceState(state));
+}
+
+// Вход в облако (токен Яндекса и версия копии, с которой синхронизировались). Только для этого устройства:
+// в резервную копию JSON не входит, чтобы токен не оказался в файле.
+export function getCloudState() {
+  return sanitizeCloudState(get(KEYS.CLOUD, null));
+}
+
+export function setCloudState(state) {
+  set(KEYS.CLOUD, sanitizeCloudState(state));
 }
 
 // Что боты помнят об игроке (см. memory.js). Проверку формата делает normalizeMemory.
