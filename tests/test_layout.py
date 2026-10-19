@@ -24,6 +24,24 @@ VIEWPORTS = [(360, 640), (390, 844), (844, 390), (768, 1024), (1366, 768), (1920
 # в этой работе не планировалось (см. рабочий план, шаг 0.1).
 LANDSCAPE_PHONE = (844, 390)
 
+# Окно «Как вы будете играть?» открывается только новичку. Для замеров вёрстки стола и панелей
+# каждый контекст «уже выбрал» режим гостя, как постоянный игрок.
+GUEST = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\"}');"
+
+
+class _GuestBrowser:
+    def __init__(self, browser):
+        self._b = browser
+
+    def new_context(self, **kw):
+        ctx = self._b.new_context(**kw)
+        ctx.add_init_script(GUEST)
+        return ctx
+
+    def __getattr__(self, name):
+        return getattr(self._b, name)
+
+
 class _Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -51,11 +69,12 @@ class LayoutTest(unittest.TestCase):
         cls.url = f"http://127.0.0.1:{cls.httpd.server_address[1]}/index.html"
         threading.Thread(target=cls.httpd.serve_forever, daemon=True).start()
         cls.pw = sync_playwright().start()
-        cls.browser = cls.pw.chromium.launch()
+        cls.raw_browser = cls.pw.chromium.launch()
+        cls.browser = _GuestBrowser(cls.raw_browser)
 
     @classmethod
     def tearDownClass(cls):
-        cls.browser.close()
+        cls.raw_browser.close()
         cls.pw.stop()
         cls.httpd.shutdown()
 

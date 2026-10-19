@@ -165,17 +165,17 @@ describe('Игрок (имя и аватар)', () => {
 describe('Состояние устройства', () => {
   it('нет записи — значения по умолчанию', () => {
     delete mockStorage['perudo.device'];
-    assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0 });
+    assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0, account: null });
   });
   it('записанное читается, лишнее отбрасывается', () => {
     setDeviceState({ nextAt: 25, persistTries: 1, extra: true });
-    assert.deepStrictEqual(JSON.parse(mockStorage['perudo.device']), { nextAt: 25, persistTries: 1 });
-    assert.deepStrictEqual(getDeviceState(), { nextAt: 25, persistTries: 1 });
+    assert.deepStrictEqual(JSON.parse(mockStorage['perudo.device']), { nextAt: 25, persistTries: 1, account: null });
+    assert.deepStrictEqual(getDeviceState(), { nextAt: 25, persistTries: 1, account: null });
   });
   it('мусор в хранилище не ломает чтение', () => {
     for (const bad of ['{не json', '7', '"x"', '[1]']) {
       mockStorage['perudo.device'] = bad;
-      assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0 }, bad);
+      assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0, account: null }, bad);
     }
   });
 });
@@ -184,18 +184,18 @@ describe('Состояние облака', () => {
   const TOKEN = 'y0__abcDEF123-_.xyz';
   it('нет записи — не вошли', () => {
     delete mockStorage['perudo.cloud'];
-    assert.deepStrictEqual(getCloudState(), { token: '', expiresAt: 0, syncedExportedAt: null });
+    assert.deepStrictEqual(getCloudState(), { token: '', expiresAt: 0, syncedExportedAt: null, syncedHash: '' });
   });
   it('записанное читается, мусорный токен отбрасывается', () => {
     setCloudState({ token: TOKEN, expiresAt: 99, syncedExportedAt: 5, x: 1 });
-    assert.deepStrictEqual(getCloudState(), { token: TOKEN, expiresAt: 99, syncedExportedAt: 5 });
+    assert.deepStrictEqual(getCloudState(), { token: TOKEN, expiresAt: 99, syncedExportedAt: 5, syncedHash: '' });
     setCloudState({ token: '<b>', expiresAt: 99, syncedExportedAt: 5 });
-    assert.deepStrictEqual(getCloudState(), { token: '', expiresAt: 0, syncedExportedAt: 5 });
+    assert.deepStrictEqual(getCloudState(), { token: '', expiresAt: 0, syncedExportedAt: 5, syncedHash: '' });
   });
   it('мусор в хранилище не ломает чтение', () => {
     for (const bad of ['{не json', '7', '"x"', '[1]']) {
       mockStorage['perudo.cloud'] = bad;
-      assert.deepStrictEqual(getCloudState(), { token: '', expiresAt: 0, syncedExportedAt: null }, bad);
+      assert.deepStrictEqual(getCloudState(), { token: '', expiresAt: 0, syncedExportedAt: null, syncedHash: '' }, bad);
     }
   });
 });

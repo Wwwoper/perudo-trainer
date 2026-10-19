@@ -2,7 +2,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  MIN_SAVE_INTERVAL_MS, defaultCloudState, sanitizeCloudState, hasValidToken, isLocalDataEmpty, planSync, canSaveNow,
+  MIN_SAVE_INTERVAL_MS, hashText, summarizeBackupData, defaultCloudState, sanitizeCloudState, hasValidToken, isLocalDataEmpty, planSync, canSaveNow,
 } from '../src/cloud_policy.js';
 
 const TOKEN = 'y0__abcDEF123-_.xyz';
@@ -12,17 +12,18 @@ describe('sanitizeCloudState', () => {
     for (const v of [undefined, null, 5, 'x', [], true]) assert.deepEqual(sanitizeCloudState(v), defaultCloudState());
   });
   it('корректное состояние сохраняется', () => {
-    const s = { token: TOKEN, expiresAt: 1000, syncedExportedAt: 500 };
+    const s = { token: TOKEN, expiresAt: 1000, syncedExportedAt: 500, syncedHash: 'a1b2c3' };
     assert.deepEqual(sanitizeCloudState(s), s);
   });
   it('токен неверного вида отбрасывается вместе со сроком', () => {
     for (const token of ['', 'коротко', 'a b c d e f g h i j', '<script>alert(1)</script>', 'x'.repeat(400), 5, null]) {
-      assert.deepEqual(sanitizeCloudState({ token, expiresAt: 1000, syncedExportedAt: 7 }), { token: '', expiresAt: 0, syncedExportedAt: 7 }, String(token));
+      assert.deepEqual(sanitizeCloudState({ token, expiresAt: 1000, syncedExportedAt: 7 }), { token: '', expiresAt: 0, syncedExportedAt: 7, syncedHash: '' }, String(token));
     }
   });
   it('неверные времена заменяются', () => {
     const s = sanitizeCloudState({ token: TOKEN, expiresAt: 'завтра', syncedExportedAt: -1 });
-    assert.deepEqual(s, { token: TOKEN, expiresAt: 0, syncedExportedAt: null });
+    assert.deepEqual(s, { token: TOKEN, expiresAt: 0, syncedExportedAt: null, syncedHash: '' });
+    for (const syncedHash of ['ZZ', '<b>', 5, 'a'.repeat(40)]) assert.equal(sanitizeCloudState({ syncedHash }).syncedHash, '');
   });
   it('лишние поля отбрасываются, повторная обработка ничего не меняет', () => {
     const once = sanitizeCloudState({ token: TOKEN, expiresAt: 9, syncedExportedAt: 3, admin: true });
@@ -78,11 +79,22 @@ describe('planSync', () => {
   it('первый вход на устройстве с данными, копия уже есть — спросить', () => {
     assert.deepEqual(planSync({ localEmpty: false, cloudExportedAt: T, syncedExportedAt: null }), { restore: 'ask', upload: false });
   });
+  it('устройство не менялось, в облаке новее — молча взять облако', () => {
+    assert.deepEqual(planSync({ localEmpty: false, cloudExportedAt: T + 5, syncedExportedAt: T, localChanged: false }), { restore: 'auto', upload: false });
+  });
+  it('устройство менялось и облако новее — спросить', () => {
+    assert.deepEqual(planSync({ localEmpty: false, cloudExportedAt: T + 5, syncedExportedAt: T, localChanged: true }), { restore: 'ask', upload: false });
+  });
+  it('синхронизации не было (syncedExportedAt пуст) — «не менялось» не считается, спрашиваем', () => {
+    assert.deepEqual(planSync({ localEmpty: false, cloudExportedAt: T, syncedExportedAt: null, localChanged: false }), { restore: 'ask', upload: false });
+  });
   it('никогда не пишет в облако при вопросе или предложении', () => {
     for (const localEmpty of [true, false]) for (const cloud of [null, 1, 2]) for (const synced of [null, 1, 2]) {
-      const r = planSync({ localEmpty, cloudExportedAt: cloud, syncedExportedAt: synced });
+      for (const localChanged of [true, false]) {
+      const r = planSync({ localEmpty, cloudExportedAt: cloud, syncedExportedAt: synced, localChanged });
       if (r.restore !== 'none') assert.equal(r.upload, false, JSON.stringify({ localEmpty, cloud, synced }));
       if (localEmpty) assert.equal(r.upload, false);
+      }
     }
   });
 });
@@ -94,4 +106,38 @@ describe('canSaveNow', () => {
     assert.equal(canSaveNow({ now: 1000 + MIN_SAVE_INTERVAL_MS, lastSaveAt: 1000 }), true);
   });
   it('неверное время — нельзя', () => assert.equal(canSaveNow({ now: NaN, lastSaveAt: null }), false));
+});
+
+describe('hashText', () => {
+  it('одинаковый текст — одинаковый отпечаток, любое изменение его меняет', () => {
+    assert.equal(hashText('abc'), hashText('abc'));
+    assert.notEqual(hashText('abc'), hashText('abd'));
+    assert.notEqual(hashText(''), hashText(' '));
+  });
+  it('результат подходит для хранения (hex до 32 знаков)', () => {
+    for (const t of ['', 'x', 'Привет', JSON.stringify({ a: [1, 2, 3] }), 'я'.repeat(100000)]) {
+      assert.match(hashText(t), /^[0-9a-f]{1,32}$/);
+      assert.equal(sanitizeCloudState({ syncedHash: hashText(t) }).syncedHash, hashText(t));
+    }
+  });
+});
+
+describe('summarizeBackupData', () => {
+  it('имя, число партий, последняя партия, число ответов', () => {
+    const s = summarizeBackupData({
+      'perudo.player': { name: ' Руслан ' },
+      'perudo.userProfile': { totalGames: 3, n: 14 },
+      'perudo.games': [{ ts: 100 }, { ts: 300 }, { ts: 200 }],
+    });
+    assert.deepEqual(s, { name: 'Руслан', games: 3, lastGameAt: 300, answers: 14 });
+  });
+  it('пустые данные и мусор не ломают сводку', () => {
+    const empty = { name: '', games: 0, lastGameAt: null, answers: 0 };
+    for (const v of [undefined, null, 5, 'x', [], {}, { 'perudo.userProfile': 'x', 'perudo.games': 'y', 'perudo.player': 7 }]) {
+      assert.deepEqual(summarizeBackupData(v), empty, JSON.stringify(v));
+    }
+  });
+  it('число партий — большее из счётчика и длины истории', () => {
+    assert.equal(summarizeBackupData({ 'perudo.userProfile': { totalGames: 1 }, 'perudo.games': [{ ts: 1 }, { ts: 2 }] }).games, 2);
+  });
 });

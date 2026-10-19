@@ -63,6 +63,9 @@ WEAK_SEED = """() => {
 }"""
 
 
+# Постоянный игрок уже выбрал режим: окно «Как вы будете играть?» не открывается.
+GUEST_SEED = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\"}');"
+
 # Вход в облако выполнен, на устройстве есть партии, а в облаке другая копия: окно выбора и блок «Игрок» с выбором.
 CLOUD_SEED = """() => {
   localStorage.setItem('perudo.cloud', JSON.stringify({ token: 'y0_layout_token_0123456789', expiresAt: Date.now() + 86400000, syncedExportedAt: 1 }));
@@ -107,6 +110,14 @@ def measure_all(base_url, browser):
     for w, h, touch in VIEWPORTS:
         ctx = browser.new_context(viewport={"width": w, "height": h}, has_touch=touch, is_mobile=touch)
         ctx.add_init_script(SEED)
+        # Новичок: окно выбора «гость / Яндекс» поверх страницы
+        fresh = ctx.new_page()
+        fresh.goto(base_url)
+        fresh.wait_for_selector("#clWelcome[open]")
+        m = fresh.evaluate(MEASURE, "#clGuest")
+        rows.append({"size": f"{w}x{h}", "state": "stats: welcome dialog", **m})
+        fresh.close()
+        ctx.add_init_script(GUEST_SEED)
         page = ctx.new_page()
         page.goto(base_url)
         page.wait_for_selector("#cRes")

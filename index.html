@@ -473,6 +473,24 @@
       </dialog>
     </section>
 
+    <!-- Выбор при первом запуске: гость или вход через Яндекс (открывается скриптом, пока выбор не сделан) -->
+    <dialog id="clWelcome" class="cloud-dialog cloud-welcome" aria-labelledby="clWelcomeTitle">
+      <div class="cloud-dialog-body">
+        <h2 id="clWelcomeTitle">Как вы будете играть?</h2>
+        <p class="muted">Выбор можно изменить позже: «Статистика», блок «Игрок».</p>
+        <div class="cloud-choice">
+          <div>
+            <button type="button" id="clWelcomeLogin" class="btn-primary" autofocus>Войти через Яндекс</button>
+            <p class="muted">Копия данных лежит на вашем Яндекс Диске: не потеряется и переносится на другие устройства.</p>
+          </div>
+          <div>
+            <button type="button" id="clGuest">Играть как гость</button>
+            <p class="muted">Данные хранятся только в этом браузере. Если очистить браузер или сменить устройство, они пропадут.</p>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
     <!-- Выбор версии данных при входе в облако -->
     <dialog id="clDialog" class="cloud-dialog" aria-labelledby="clDialogTitle">
       <div class="cloud-dialog-body">
@@ -570,6 +588,7 @@
       </div>
     </section>
 
+    <div id="clToast" class="cloud-toast" role="status" aria-live="polite" hidden></div>
   </main>
 
   <!-- ===== Скрипты ===== -->

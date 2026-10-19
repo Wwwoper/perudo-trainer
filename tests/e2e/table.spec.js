@@ -1,7 +1,8 @@
 // tests/e2e/table.spec.js
 // Запуск: npm run test:e2e  (Playwright Test, а не `node --test`).
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { openTab as goTab } from './helpers.js';
+import * as yandex from './yandex_stub.js';
 
 /** Открывает вкладку панели (на телефоне — через кнопку в HUD / шторку). */
 async function openTab(page, tabId) {
@@ -493,7 +494,7 @@ test.describe('Покерный стол в партии', () => {
       localStorage.clear();
       localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 0, good: 0, totalGames: n, totalWins: 0, byMode: {},
         drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
-      if (dev) localStorage.setItem('perudo.device', JSON.stringify(dev));
+      if (dev) localStorage.setItem('perudo.device', JSON.stringify({ account: 'guest', ...dev }));   // выбор «гость» сделан: окно выбора не мешает
     }, [totalGames, device]);
     const openResult = async (page) => {
       await page.evaluate(() => document.querySelector('#gResultDialog')?.close?.());
@@ -543,7 +544,7 @@ test.describe('Покерный стол в партии', () => {
       await goTab(page, 'stats');
       page.once('dialog', (d) => d.accept());
       await page.locator('#stClear').click();
-      expect(await device(page)).toEqual({ nextAt: 5, persistTries: 2 });
+      expect(await device(page)).toEqual({ nextAt: 5, persistTries: 2, account: 'guest' });
     });
 
     const stubStorage = (page, persisted) => page.addInitScript((p) => {
@@ -598,59 +599,7 @@ test.describe('Покерный стол в партии', () => {
   });
 
   test.describe('Копия в облаке (Яндекс Диск подменён заглушкой)', () => {
-    const TOKEN = 'y0_test_token_0123456789';
-    const OLD = 1_700_000_000_000;
-    const cloudFile = (data, at = OLD) => JSON.stringify({ format: 'perudo-backup', version: 2, exportedAt: at, data });
-    const progress = (n) => ({ n: 0, good: 0, totalGames: n, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } });
-
-    /** Подменяет Яндекс: вход, API Диска и хосты загрузки/скачивания. mode: 'ok' | 401 | 'offline'. */
-    async function stubYandex(page, { text = null, mode = 'ok' } = {}) {
-      const cloud = { text, puts: 0, logins: 0 };
-      const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
-      await page.route('https://oauth.yandex.ru/**', (route) => {
-        cloud.logins++;
-        const u = new URL(route.request().url());
-        const back = `${u.searchParams.get('redirect_uri')}#access_token=${TOKEN}&token_type=bearer&expires_in=31536000&state=${u.searchParams.get('state')}`;
-        route.fulfill({ status: 302, headers: { location: back } });
-      });
-      await page.route('https://cloud-api.yandex.net/**', (route) => {
-        const req = route.request();
-        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
-        if (mode === 'offline') return route.abort('failed');
-        if (mode === 401) return route.fulfill({ status: 401, headers: cors, contentType: 'application/json', body: '{}' });
-        const u = new URL(req.url());
-        if (u.pathname.endsWith('/resources/download') && cloud.text === null) {
-          return route.fulfill({ status: 404, headers: cors, contentType: 'application/json', body: '{}' });
-        }
-        const host = u.pathname.endsWith('/resources/upload') ? 'uploader' : 'downloader';
-        return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ href: `https://${host}.stub.test/file` }) });
-      });
-      await page.route('https://uploader.stub.test/**', (route) => {
-        const req = route.request();
-        if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
-        cloud.text = req.postData();
-        cloud.puts++;
-        return route.fulfill({ status: 201, headers: cors, body: '' });
-      });
-      await page.route('https://downloader.stub.test/**', (route) => {
-        if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
-        return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: cloud.text });
-      });
-      return cloud;
-    }
-
-    /** Кладёт в хранилище данные партий, вход (если нужен) и перезагружает страницу. */
-    async function seed(page, { games = 0, signedIn = true, synced = null, extra = {} } = {}) {
-      await page.evaluate(([g, tok, sy, ex, t]) => {
-        localStorage.clear();
-        if (g) localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 0, good: 0, totalGames: g, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
-        for (const [k, v] of Object.entries(ex)) localStorage.setItem(k, JSON.stringify(v));
-        localStorage.setItem('perudo.device', JSON.stringify({ nextAt: 5, persistTries: 2 }));
-        if (tok) localStorage.setItem('perudo.cloud', JSON.stringify({ token: t, expiresAt: Date.now() + 86_400_000, syncedExportedAt: sy }));
-      }, [games, signedIn, synced, extra, TOKEN]);
-      await page.reload();
-      await page.waitForFunction(() => Boolean(window.__perudo_v2));
-    }
+    const { TOKEN, OLD, cloudFile, progress, stubYandex, seed } = yandex;
     const cloudState = (page) => readJson(page, 'perudo.cloud');
 
     test('вход через Яндекс: токен сохраняется, адрес очищается, токена нет в файле копии', async ({ page }) => {
@@ -677,7 +626,7 @@ test.describe('Покерный стол в партии', () => {
       await page.reload();                                 // смена одного хэша страницу не перезагружает
       await page.waitForFunction(() => Boolean(window.__perudo_v2));
       await goTab(page, 'stats');
-      await expect(page.locator('#clMsg')).toContainText('Не удалось проверить ответ Яндекса');
+      await expect(page.locator('#clToast')).toContainText('Не удалось проверить ответ Яндекса');
       expect(await cloudState(page)).toBeNull();
       expect(page.url()).not.toContain('access_token');
     });
@@ -688,7 +637,7 @@ test.describe('Покерный стол в партии', () => {
       await page.reload();
       await page.waitForFunction(() => Boolean(window.__perudo_v2));
       await goTab(page, 'stats');
-      await expect(page.locator('#clMsg')).toContainText('Вход через Яндекс отменён');
+      await expect(page.locator('#clToast')).toContainText('Вход через Яндекс отменён');
       await expect(page.locator('#clLogin')).toBeVisible();
     });
 
@@ -727,7 +676,7 @@ test.describe('Покерный стол в партии', () => {
       await page.locator('#clDialog [data-cl="later"]').click();
       await expect(page.locator('#clDialog')).not.toBeVisible();
       await goTab(page, 'stats');
-      await expect(page.locator('#clPending')).toContainText('найдена копия');
+      await expect(page.locator('#clPending')).toContainText('есть копия данных');
       await expect(page.locator('#clSave')).toBeDisabled();
       expect(cloud.puts).toBe(0);
     });
@@ -766,7 +715,7 @@ test.describe('Покерный стол в партии', () => {
       page.removeAllListeners('requestfailed');
       await seed(page, { games: 3, synced: OLD });
       await goTab(page, 'stats');
-      await expect(page.locator('#clMsg')).toContainText('Нет связи');
+      await expect(page.locator('#clToast')).toContainText('Нет связи');
       await goTab(page, 'game');
       await loseByWrongDudo(page);
       expect((await readJson(page, 'perudo.userProfile')).totalGames).toBe(4);
@@ -785,6 +734,81 @@ test.describe('Покерный стол в партии', () => {
       await expect(page.locator('#clLogin')).toBeVisible();
       expect((await cloudState(page)).token).toBe('');
       expect(cloud.text).not.toBeNull();
+    });
+
+    test('ошибка «чужая версия в облаке»: «Сохранить сейчас» не затирает копию с другого устройства', async ({ page }) => {
+      // Так пропали данные при первой проверке: телефон записал копию, ноутбук заменил её кнопкой
+      const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(1), 'perudo.player': { name: 'Руслан', avatar: null } }, OLD + 5000) });
+      await seed(page, { games: 3, synced: OLD });
+      await page.locator('#clDialog [data-cl="later"]').click();
+      await goTab(page, 'stats');
+      await expect(page.locator('#clSave')).toBeDisabled();
+      expect(cloud.puts).toBe(0);
+      expect(JSON.parse(cloud.text).data['perudo.player'].name).toBe('Руслан');
+    });
+
+    test('копия в облаке изменилась после входа: «Сохранить сейчас» показывает выбор, а не пишет', async ({ page }) => {
+      const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(3) }) });
+      await seed(page, { games: 3, synced: OLD });                      // при запуске версии совпали
+      await goTab(page, 'stats');
+      cloud.text = cloudFile({ 'perudo.userProfile': progress(9), 'perudo.player': { name: 'Другое устройство', avatar: null } }, OLD + 9000);
+      await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('perudo.userProfile')); p.totalGames = 4; localStorage.setItem('perudo.userProfile', JSON.stringify(p)); });
+      await page.locator('#clSave').click();
+      await expect(page.locator('#clDialog')).toBeVisible();
+      expect(cloud.puts).toBe(0);
+      await expect(page.locator('#clDialog')).toContainText('Другое устройство');
+    });
+
+    test('окно выбора показывает сводку обеих версий и умеет скачать файл этого устройства', async ({ page }) => {
+      await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(9), 'perudo.player': { name: 'Облако', avatar: null } }) });
+      await seed(page, { games: 3, extra: { 'perudo.player': { name: 'Телефон', avatar: null } } });
+      const dlg = page.locator('#clDialog');
+      await expect(dlg).toBeVisible();
+      await expect(dlg).toContainText('Это устройство');
+      await expect(dlg).toContainText('Телефон');
+      await expect(dlg).toContainText('партий: 3');
+      await expect(dlg).toContainText('Облако');
+      await expect(dlg).toContainText('партий: 9');
+      const [download] = await Promise.all([page.waitForEvent('download'), dlg.locator('[data-cl="download"]').click()]);
+      expect(download.suggestedFilename()).toMatch(/^perudo-backup-\d{4}-\d{2}-\d{2}\.json$/);
+      await expect(dlg).toBeVisible();                                    // окно остаётся: выбор ещё не сделан
+    });
+
+    test('устройство не менялось, на другом записана новая копия: данные подтягиваются без вопросов', async ({ page }) => {
+      const cloud = await stubYandex(page);
+      await seed(page, { games: 3, synced: null });
+      await expect.poll(() => cloud.puts).toBe(1);                        // вход, облако пусто: копия записана
+      expect((await cloudState(page)).syncedHash).toMatch(/^[0-9a-f]+$/);
+      // «другое устройство» записало новую копию
+      cloud.text = cloudFile({ 'perudo.userProfile': progress(8), 'perudo.player': { name: 'С ноутбука', avatar: null } }, Date.now() + 60_000);
+      await page.reload();
+      await page.waitForFunction(() => Boolean(window.__perudo_v2));
+      await expect(page.locator('#clDialog')).not.toBeVisible();
+      await expect(page.locator('#clToast')).toContainText('Данные обновлены из облака');
+      await goTab(page, 'stats');
+      await expect(page.locator('#plName')).toHaveValue('С ноутбука');
+      expect((await readJson(page, 'perudo.userProfile')).totalGames).toBe(8);
+      expect(cloud.puts).toBe(1);
+    });
+
+    test('устройство менялось после синхронизации, а в облаке новее: спрашиваем, а не подтягиваем', async ({ page }) => {
+      const cloud = await stubYandex(page);
+      await seed(page, { games: 3, synced: null });
+      await expect.poll(() => cloud.puts).toBe(1);
+      cloud.text = cloudFile({ 'perudo.userProfile': progress(8) }, Date.now() + 60_000);
+      await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('perudo.userProfile')); p.totalGames = 4; localStorage.setItem('perudo.userProfile', JSON.stringify(p)); });
+      await page.reload();
+      await page.waitForFunction(() => Boolean(window.__perudo_v2));
+      await expect(page.locator('#clDialogTitle')).toHaveText('Какие данные оставить?');
+      expect((await readJson(page, 'perudo.userProfile')).totalGames).toBe(4);
+    });
+
+    test('вход завершён: заметное уведомление на вкладке «Статистика»', async ({ page }) => {
+      await stubYandex(page);
+      await seed(page, { signedIn: false });
+      await goTab(page, 'stats');
+      await page.locator('#clLogin').click();
+      await expect(page.locator('#clToast')).toContainText('Вход выполнен');
     });
   });
 });

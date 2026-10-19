@@ -1,7 +1,7 @@
 // tests/e2e/stats.spec.js
 // Статистика тренажёра и упражнений хранится в одном объекте (perudo.userProfile).
 // Ответ в одном разделе не должен стирать счётчики другого.
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { openTab as goTab } from './helpers.js';
 
 const profile = (page) =>

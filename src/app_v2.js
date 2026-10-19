@@ -821,7 +821,7 @@ function bootstrap() {
     onTrain: trainInMode,
     onPlayerChange: () => { applyPlayerToGame(); renderGame(); },
   });
-  cloudApi = setupCloudCard();
+  cloudApi = setupCloudCard({ downloadBackup });
   setupSim();
   renderStats();
 }

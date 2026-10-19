@@ -605,3 +605,73 @@
 .cloud-dialog .cloud-actions {
   grid-template-columns: 1fr;
 }
+
+/* Выбор при первом запуске: гость или Яндекс (окно на базе .cloud-dialog) */
+.cloud-welcome {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.cloud-welcome p {
+  margin: var(--space-2) 0 0;
+}
+
+.cloud-choice {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+@media (min-width: 640px) {
+  .cloud-choice {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.cloud-choice button {
+  width: 100%;
+  min-height: var(--tap-lg);
+  margin: 0;
+}
+
+/* Сравнение версий данных в окне выбора */
+.cloud-compare {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-4);
+}
+
+.cloud-compare li {
+  margin: var(--space-1) 0;
+  overflow-wrap: anywhere;
+}
+
+/* Уведомление поверх любой вкладки */
+.cloud-toast {
+  position: fixed;
+  top: var(--space-2);
+  right: var(--space-2);
+  left: var(--space-2);
+  z-index: 60;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--space-3);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: var(--radius-m);
+  background: var(--card);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+}
+
+.cloud-toast[hidden] {
+  display: none;
+}
+
+/* Низкий экран (телефон в ландшафте): окно шире, кнопки в два столбца, чтобы всё помещалось без прокрутки */
+@media (max-height: 520px) {
+  .cloud-dialog {
+    width: min(600px, calc(100vw - 32px));
+  }
+
+  .cloud-dialog .cloud-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}

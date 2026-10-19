@@ -2,7 +2,7 @@
 // Дымовые сценарии учебных вкладок: Калькулятор, Тренажёр, Упражнения.
 // Страхуют переделку вёрстки: после неё вкладки должны делать то же самое.
 import { readFileSync } from 'node:fs';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 import { openTab } from './helpers.js';
 
 async function open(page, tab) {

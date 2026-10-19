@@ -7,7 +7,8 @@ const T0 = 1_800_000_000_000;
 const TOKEN = 'abcdefghij0123456789';
 
 function setup({ cloudText = null, cloudError = null, saveError = null, local = false, state = {}, applyOk = true } = {}) {
-  let st = { token: TOKEN, expiresAt: T0 + 3_600_000, syncedExportedAt: null, ...state };
+  let st = { token: TOKEN, expiresAt: T0 + 3_600_000, syncedExportedAt: null, syncedHash: '', ...state };
+  const localData = { value: 'данные-1' };
   let clock = T0;
   const calls = { load: 0, save: [], apply: [] };
   const cloud = { text: cloudText };
@@ -30,15 +31,15 @@ function setup({ cloudText = null, cloudError = null, saveError = null, local = 
     },
     getState: () => ({ ...st }),
     setState: (s) => { st = { ...s }; },
-    snapshot: () => ({ text: JSON.stringify({ exportedAt: clock }), exportedAt: clock }),
+    snapshot: () => ({ text: JSON.stringify({ exportedAt: clock }), exportedAt: clock, hash: `h:${localData.value}`, summary: { games: 3 } }),
     parseText: (t) => {
-      try { const j = JSON.parse(t); return { ok: true, exportedAt: j.exportedAt ?? null }; } catch { return { ok: false }; }
+      try { const j = JSON.parse(t); return { ok: true, exportedAt: j.exportedAt ?? null, summary: { games: 9 } }; } catch { return { ok: false }; }
     },
     applyText: (t) => { calls.apply.push(t); return { ok: applyOk }; },
     isLocalEmpty: () => !local,
     now: () => clock,
   });
-  return { sync, calls, cloud, state: () => st, tick: (ms) => { clock += ms; } };
+  return { sync, calls, cloud, localData, state: () => st, tick: (ms) => { clock += ms; } };
 }
 const backup = (at) => JSON.stringify({ exportedAt: at });
 
@@ -54,7 +55,7 @@ test('без входа ничего не происходит', async () => {
 test('устройство пустое, в облаке копия: предлагаем восстановить и ничего не пишем', async () => {
   const s = setup({ cloudText: backup(T0 - 1000), local: false });
   assert.equal((await s.sync.check()).kind, 'offer');
-  assert.deepEqual(s.sync.status().pending, { mode: 'offer', cloudAt: T0 - 1000 });
+  assert.deepEqual(s.sync.status().pending, { mode: 'offer', cloudAt: T0 - 1000, cloud: { games: 9 }, local: { games: 3 } });
   assert.equal((await s.sync.afterGame()).code, 'pending');
   assert.equal((await s.sync.saveNow({ manual: true })).code, 'pending');
   assert.equal(s.calls.save.length, 0);
@@ -66,6 +67,7 @@ test('restore: данные применяются, версия запомин�
   assert.deepEqual(s.sync.restore(), { ok: true });
   assert.equal(s.calls.apply.length, 1);
   assert.equal(s.state().syncedExportedAt, T0 - 1000);
+  assert.equal(s.state().syncedHash, 'h:данные-1');          // отпечаток данных после замены
   assert.equal(s.sync.status().pending, null);
 });
 
@@ -198,7 +200,7 @@ test('параллельные записи: вторая отклоняется
 test('logout удаляет токен и привязку к версии, данные устройства не затрагиваются', async () => {
   const s = setup({ cloudText: backup(T0 - 5000), local: true, state: { syncedExportedAt: T0 - 5000 } });
   s.sync.logout();
-  assert.deepEqual(s.state(), { token: '', expiresAt: 0, syncedExportedAt: null });
+  assert.deepEqual(s.state(), { token: '', expiresAt: 0, syncedExportedAt: null, syncedHash: '' });
   assert.equal(s.sync.status().connected, false);
   assert.equal(s.sync.status().expired, false);
 });
@@ -208,4 +210,78 @@ test('errorText: для каждого кода есть текст, для не
     assert.ok(errorText(c).length > 5, c);
   }
   assert.match(errorText('???'), /Яндекс Диск/);
+});
+
+test('кнопка «Сохранить сейчас» не затирает версию, записанную с другого устройства', async () => {
+  // Именно так пропали данные: телефон записал копию, ноутбук нажал «Сохранить сейчас» и заменил её
+  const s = setup({ cloudText: backup(T0 - 500), local: true, state: { syncedExportedAt: T0 - 9000, syncedHash: 'h:данные-1' } });
+  s.localData.value = 'данные-2';                              // на этом устройстве тоже играли
+  const r = await s.sync.saveNow({ manual: true });
+  assert.equal(r.code, 'pending');
+  assert.equal(s.calls.save.length, 0);
+  assert.equal(s.sync.status().pending.mode, 'ask');
+});
+
+test('автозапись после партии тоже сверяется с облаком перед записью', async () => {
+  const s = setup({ cloudText: backup(T0 - 500), local: true, state: { syncedExportedAt: T0 - 9000, syncedHash: 'h:данные-1' } });
+  s.localData.value = 'данные-2';
+  assert.equal((await s.sync.afterGame()).code, 'pending');
+  assert.equal(s.calls.save.length, 0);
+});
+
+test('версия облака та же, что видело устройство: запись идёт, облако читается один раз', async () => {
+  const s = setup({ cloudText: backup(T0 - 500), local: true, state: { syncedExportedAt: T0 - 500, syncedHash: 'h:данные-1' } });
+  s.localData.value = 'данные-2';
+  assert.equal((await s.sync.afterGame()).ok, true);
+  assert.equal(s.calls.load, 1);
+  assert.equal(s.calls.save.length, 1);
+  assert.equal(s.state().syncedHash, 'h:данные-2');
+});
+
+test('устройство не менялось, в облаке новее: данные подтягиваются без вопросов (kind auto)', async () => {
+  const s = setup({ cloudText: backup(T0 - 500), local: true, state: { syncedExportedAt: T0 - 9000, syncedHash: 'h:данные-1' } });
+  assert.equal((await s.sync.check()).kind, 'auto');
+  assert.equal(s.calls.apply.length, 1);
+  assert.equal(s.calls.save.length, 0);
+  assert.equal(s.state().syncedExportedAt, T0 - 500);
+  assert.equal(s.sync.status().pending, null);
+});
+
+test('устройство менялось и в облаке новее: спрашиваем, ничего не применяем и не пишем', async () => {
+  const s = setup({ cloudText: backup(T0 - 500), local: true, state: { syncedExportedAt: T0 - 9000, syncedHash: 'h:данные-1' } });
+  s.localData.value = 'данные-2';
+  assert.equal((await s.sync.check()).kind, 'ask');
+  assert.equal(s.calls.apply.length, 0);
+  assert.equal(s.calls.save.length, 0);
+});
+
+test('«Сохранить сейчас» без изменений на устройстве при более новом облаке: данные обновляются (restored)', async () => {
+  const s = setup({ cloudText: backup(T0 - 500), local: true, state: { syncedExportedAt: T0 - 9000, syncedHash: 'h:данные-1' } });
+  assert.equal((await s.sync.saveNow({ manual: true })).code, 'restored');
+  assert.equal(s.calls.save.length, 0);
+});
+
+test('сбой применения при подтяжке: данные не тронуты, ошибка показана, запись не идёт', async () => {
+  const s = setup({ cloudText: backup(T0 - 500), local: true, applyOk: false, state: { syncedExportedAt: T0 - 9000, syncedHash: 'h:данные-1' } });
+  const r = await s.sync.check();
+  assert.deepEqual([r.kind, r.code], ['error', 'apply']);
+  assert.equal(s.calls.save.length, 0);
+  assert.equal(s.state().syncedExportedAt, T0 - 9000);
+});
+
+test('без отпечатка (прошлая версия приложения) считаем, что устройство менялось: спрашиваем', async () => {
+  const s = setup({ cloudText: backup(T0 - 500), local: true, state: { syncedExportedAt: T0 - 9000, syncedHash: '' } });
+  assert.equal((await s.sync.check()).kind, 'ask');
+});
+
+test('в облаке нет файла, а запись сверяется: облако читается и не мешает первой записи', async () => {
+  const s = setup({ cloudText: null, local: true, state: { syncedExportedAt: T0 - 9000, syncedHash: 'h:x' } });
+  assert.equal((await s.sync.saveNow({ manual: true })).ok, true);
+  assert.equal(s.calls.save.length, 1);
+});
+
+test('сеть пропала при сверке: запись не выполняется (лучше не записать, чем затереть)', async () => {
+  const s = setup({ cloudError: new CloudError('network'), local: true, state: { syncedExportedAt: T0, syncedHash: 'h:данные-1' } });
+  assert.equal((await s.sync.saveNow({ manual: true })).code, 'network');
+  assert.equal(s.calls.save.length, 0);
 });
