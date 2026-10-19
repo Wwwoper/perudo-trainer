@@ -1,7 +1,7 @@
 // tests/e2e/welcome.spec.js
 // Окно «Как вы будете играть?» при первом запуске и режим «гость / Яндекс». Яндекс подменён заглушкой.
 import { test, expect } from './fixtures.js';
-import { openTab as goTab } from './helpers.js';
+import { openTab as goTab, openStatsTab } from './helpers.js';
 import { stubYandex, seed, cloudFile, progress, OLD } from './yandex_stub.js';
 
 const readJson = (page, key) => page.evaluate((k) => {
@@ -29,6 +29,7 @@ test.describe('Выбор «гость или Яндекс» при первом
     await page.waitForFunction(() => Boolean(window.__perudo_v2));
     await expect(page.locator('#clWelcome')).toBeHidden();
     await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
     await expect(page.locator('#clStatus')).toContainText('как гость');
     await expect(page.locator('#clLogin')).toBeVisible();
   });
@@ -38,6 +39,7 @@ test.describe('Выбор «гость или Яндекс» при первом
     await seed(page, { games: 2, signedIn: false, account: null });
     await page.locator('#clWelcomeLogin').click();
     await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
     await expect(page.locator('#clSave')).toBeVisible();
     expect(cloud.logins).toBe(1);
     expect((await readJson(page, 'perudo.device')).account).toBe('yandex');
@@ -68,6 +70,7 @@ test.describe('Выбор «гость или Яндекс» при первом
     await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(3) }) });
     await seed(page, { games: 3, synced: OLD });
     await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
     page.once('dialog', (d) => d.accept());
     await page.locator('#clLogout').click();
     expect((await readJson(page, 'perudo.device')).account).toBe('guest');

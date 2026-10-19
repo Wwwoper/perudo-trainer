@@ -2,6 +2,7 @@
 // статус, запись, восстановление. Вся логика сценариев в cloud_sync.js; здесь только страница,
 // вход через Яндекс и привязка к хранилищу.
 
+import { showStatsTab } from './stats_tabs.js';
 import { get, set, getStats, getGames, getTrainingQueue, getCloudState, setCloudState, getDeviceState, setDeviceState } from '../storage.js';
 import { buildBackup, serializeBackup, parseBackup, applyBackup } from '../backup.js';
 import { createClient, buildAuthUrl, parseAuthHash, redirectUriFor, createState, CloudError } from '../cloud_yandex.js';
@@ -382,6 +383,7 @@ export function setupCloudCard({ downloadBackup } = {}) {
 
   if (back?.ok) {
     $('.tab-btn[data-t="stats"]')?.click();
+    showStatsTab('data');
     toast('Вход выполнен. Проверяю копию на Диске…');
   }
   renderWelcome();

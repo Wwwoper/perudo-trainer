@@ -1,4 +1,4 @@
-// src/ui/stats.js — вкладка «Статистика»: сводка, экспорт/импорт JSON, сброс.
+// src/ui/stats.js — вкладка «Статистика»: результаты, профиль игрока, данные (облако, экспорт/импорт JSON, сброс).
 
 import { getStats, setStats, getTrainingQueue, setTrainingQueue, getGames, get, set, getDeviceState, setDeviceState } from '../storage.js';
 import { buildBackup, serializeBackup, parseBackup, applyBackup } from '../backup.js';
@@ -9,6 +9,7 @@ import { resetDuelStats } from './duel.js';
 import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
 import { renderPlayerCard, setupPlayerCard } from './player_card.js';
 import { renderCloudCard } from './cloud_card.js';
+import { setupStatsTabs, showStatsTab } from './stats_tabs.js';
 import { markBackupExported } from './backup_reminder.js';
 import { readPersisted, describePersistence } from '../persistence.js';
 import { REMIND_FIRST } from '../backup_reminder.js';
@@ -85,6 +86,7 @@ export function renderStats() {
 
 /** onReset() — вызывается при «Сбросить всё», чтобы партия забыла память ботов. */
 export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
+  setupStatsTabs();
   setupWeakSpots(onTrain);
   setupPlayerCard({ onChange: onPlayerChange });
   const msg = (text, cls = 'muted') => {
@@ -101,6 +103,7 @@ export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
       sessionStorage.removeItem('perudo.importNotice');
       msg(note, 'text-ok');
       $('.tab-btn[data-t="stats"]')?.click();
+      showStatsTab('data');                // сообщение об импорте лежит во вкладке «Данные»
     }
   } catch (e) { }
 

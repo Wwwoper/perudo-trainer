@@ -1,7 +1,7 @@
 // tests/e2e/cloud_retry.spec.js
 // Сбой при проверке облака (нет связи) и повторная проверка. Яндекс подменён заглушкой.
 import { test, expect } from './fixtures.js';
-import { openTab as goTab } from './helpers.js';
+import { openTab as goTab, openStatsTab } from './helpers.js';
 import { stubYandex, seed, cloudFile, progress } from './yandex_stub.js';
 
 test.describe('Облако: сбой проверки и повтор', () => {
@@ -14,6 +14,7 @@ test.describe('Облако: сбой проверки и повтор', () => {
     await seed(page, { games: 0 });
     await expect(page.locator('#clToast')).toContainText('Нет связи');
     await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
     await expect(page.locator('#clStatus')).toContainText('Не удалось проверить копию');
     await expect(page.locator('#clStatus')).not.toContainText('ещё не записана');
     await expect(page.locator('.cloud-detail')).toContainText('cloud-api.yandex.net');
@@ -37,6 +38,7 @@ test.describe('Облако: сбой проверки и повтор', () => {
     const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(1) }), mode: 'offline' });
     await seed(page, { games: 3, synced: 1 });
     await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
     await page.locator('#clSave').click();
     await expect(page.locator('#clMsg')).toContainText('Нет связи');
     expect(cloud.puts).toBe(0);
@@ -47,6 +49,7 @@ test.describe('Облако: сбой проверки и повтор', () => {
     await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(3) }) });
     await seed(page, { games: 3, synced: 1_700_000_000_000 });
     await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
     await expect(page.locator('#clStatus')).toContainText('Копия в облаке:');
     await expect(page.locator('#clCheck')).toHaveCount(0);
   });
@@ -74,6 +77,7 @@ test.describe('Облако: сбой проверки и повтор', () => {
     cloud.downloadFails = 99;
     await seed(page, { games: 0 });
     await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
     const detail = page.locator('.cloud-detail');
     await expect(detail).toContainText('fetch без referrer');
     await expect(detail).toContainText('fetch:');

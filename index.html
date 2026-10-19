@@ -565,24 +565,39 @@
         <h2 class="learn-hud-title">Статистика</h2>
       </header>
       <div class="stats-main">
-        <div class="stats-actions">
-          <button id="stExport">Экспорт JSON</button>
-          <button id="stImport">Импорт JSON</button>
-          <button id="stClear" class="bad">Сбросить всё</button>
-          <input id="stImportFile" type="file" accept="application/json,.json" hidden aria-label="Файл копии данных">
+        <div id="stTabs" class="stats-tabs" role="tablist" aria-label="Разделы статистики">
+          <button type="button" id="stTabResults" class="stats-tab" role="tab" data-st="results"
+            aria-selected="true" aria-controls="stPanelResults">Результаты</button>
+          <button type="button" id="stTabPlayer" class="stats-tab" role="tab" data-st="player"
+            aria-selected="false" aria-controls="stPanelPlayer" tabindex="-1">Игрок</button>
+          <button type="button" id="stTabData" class="stats-tab" role="tab" data-st="data"
+            aria-selected="false" aria-controls="stPanelData" tabindex="-1">Данные</button>
         </div>
-        <div id="stBackupMsg" class="muted" role="status" aria-live="polite"></div>
-        <div id="stPersist" class="muted"></div>
-        <div id="stPlayer" class="card player-card"></div>
-        <div id="stWeak" class="card weak-card"></div>
-        <div class="card">
-          <b>Сводка</b>
-          <p class="muted">
-            Тренажёр: <span id="stGood">0</span> / <span id="stTotal">0</span>.
-            В очереди повторов: <span id="stQueue">0</span>.
-          </p>
-          <div id="stByMode" class="table-scroll stats-table"></div>
-          <div id="stGames" class="table-scroll stats-table"></div>
+        <div id="stPanelResults" role="tabpanel" data-st-panel="results" aria-labelledby="stTabResults">
+          <div id="stWeak" class="card weak-card"></div>
+          <div class="card">
+            <b>Сводка</b>
+            <p class="muted">
+              Тренажёр: <span id="stGood">0</span> / <span id="stTotal">0</span>.
+              В очереди повторов: <span id="stQueue">0</span>.
+            </p>
+            <div id="stByMode" class="table-scroll stats-table"></div>
+            <div id="stGames" class="table-scroll stats-table"></div>
+          </div>
+        </div>
+        <div id="stPanelPlayer" role="tabpanel" data-st-panel="player" aria-labelledby="stTabPlayer" hidden>
+          <div id="stPlayer" class="card player-card"></div>
+        </div>
+        <div id="stPanelData" role="tabpanel" data-st-panel="data" aria-labelledby="stTabData" hidden>
+          <div id="plCloud" class="card player-cloud"></div>
+          <div id="stPersist" class="muted"></div>
+          <div class="stats-actions">
+            <button id="stExport">Экспорт JSON</button>
+            <button id="stImport">Импорт JSON</button>
+            <button id="stClear" class="bad">Сбросить всё</button>
+            <input id="stImportFile" type="file" accept="application/json,.json" hidden aria-label="Файл копии данных">
+          </div>
+          <div id="stBackupMsg" class="muted" role="status" aria-live="polite"></div>
         </div>
         <div id="stOut"></div>
       </div>

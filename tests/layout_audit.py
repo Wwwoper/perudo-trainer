@@ -155,13 +155,20 @@ def measure_all(base_url, browser):
 
         page.evaluate(GAMES_SEED)
         _tab(page, "stats")
-        snap("stats", "#stClear")
+        # Страница «Статистики» длинная и прокручивается: на экране без прокрутки должны быть переключатель вкладок и начало содержимого
+        snap("stats: results", "#stTabs")
+        page.click("#stTabPlayer")
+        snap("stats: player", "#stTabs")
+        page.click("#stTabData")
+        snap("stats: data", "#stTabs")
+        page.click("#stTabResults")
         # «Над чем поработать» с данными и заполненный блок «Игрок»: три слабые темы (две с кнопкой) и тема с малой выборкой
         page.evaluate(WEAK_SEED)
         _tab(page, "sim")
         _tab(page, "stats")
+        page.click("#stTabResults")
         page.wait_for_selector("#stWeak .weak-item")
-        snap("stats: weak spots", "#stClear")
+        snap("stats: weak spots", "#stTabs")
 
         # Облако: окно выбора версии поверх «Статистики», затем тот же выбор в блоке «Игрок»
         _stub_cloud(ctx)
@@ -171,7 +178,7 @@ def measure_all(base_url, browser):
         snap("stats: cloud dialog", "#clDialog [data-cl='later']")
         page.click("#clDialog [data-cl='later']")
         page.wait_for_selector("#clPending")
-        snap("stats: cloud pending", "#stClear")
+        snap("stats: cloud pending", "#stTabs")
 
         # Сбой скачивания копии: блок с подробностями и отчёт диагностики
         ctx.route("https://downloader.stub.test/**", lambda r: r.abort())
@@ -180,10 +187,10 @@ def measure_all(base_url, browser):
         page.evaluate("sessionStorage.setItem('perudo.importNotice', 'x')")
         page.reload()
         page.wait_for_selector(".cloud-detail")
-        snap("stats: cloud error", "#stClear")
+        snap("stats: cloud error", "#stTabs")
         page.click("#clDiag")
         page.wait_for_function("document.querySelector('#clDiagOut') && document.querySelector('#clDiagOut').textContent.includes('Достижимость')")
-        snap("stats: cloud diagnostics", "#stClear")
+        snap("stats: cloud diagnostics", "#stTabs")
 
         _tab(page, "sim")
         snap("sim", "#sGo")

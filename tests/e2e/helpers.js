@@ -7,3 +7,8 @@ export async function openTab(page, name) {
   }
   await btn.click();
 }
+
+/** Подвкладка «Статистики»: 'results' | 'player' | 'data' (раздел «Статистика» уже открыт). */
+export async function openStatsTab(page, name) {
+  await page.locator(`#stTabs [data-st="${name}"]`).click();
+}

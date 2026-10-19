@@ -761,11 +761,16 @@ class LayoutTest(unittest.TestCase):
                 self.goto_tab(page, "stats")
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
                 self.assertFalse(page.locator("#stGames").evaluate("e => e.scrollWidth > e.clientWidth + 1"))
-                small = page.evaluate("""() => [...document.querySelectorAll('#stats button')]
-                    .filter(e => e.offsetParent !== null)
-                    .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
-                    .map(e => e.id || e.className || e.textContent.trim())""")
-                self.assertEqual(small, [])
+                for sub in ("results", "player", "data"):    # у каждой подвкладки свои кнопки
+                    page.click(f'#stTabs [data-st="{sub}"]')
+                    self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w, sub)
+                    small = page.evaluate("""() => [...document.querySelectorAll('#stats button')]
+                        .filter(e => e.offsetParent !== null)
+                        .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
+                        .map(e => e.id || e.className || e.textContent.trim())""")
+                    self.assertEqual(small, [], sub)
+                page.click('#stTabs [data-st="results"]')
+                self.assertTrue(page.locator("#stGames").is_visible())
 
     # ---------- Симуляция ----------
 

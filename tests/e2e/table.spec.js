@@ -1,7 +1,7 @@
 // tests/e2e/table.spec.js
 // Запуск: npm run test:e2e  (Playwright Test, а не `node --test`).
 import { test, expect } from './fixtures.js';
-import { openTab as goTab } from './helpers.js';
+import { openTab as goTab, openStatsTab } from './helpers.js';
 import * as yandex from './yandex_stub.js';
 
 /** Открывает вкладку панели (на телефоне — через кнопку в HUD / шторку). */
@@ -350,6 +350,7 @@ test.describe('Покерный стол в партии', () => {
     await page.evaluate(() => { document.querySelector('#gResultDialog')?.close?.(); });
     page.once('dialog', (d) => d.accept());
     await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
     await page.locator('#stClear').click();
     await expect.poll(async () => (await readJson(page, 'perudo.reviews'))?.length ?? 0).toBe(0);
     expect((await readJson(page, 'perudo.userProfile')).byTag).toEqual({});
@@ -461,6 +462,7 @@ test.describe('Покерный стол в партии', () => {
     await page.evaluate(() => localStorage.clear());
     await startGame(page, { bots: 1 });
     await goTab(page, 'stats');
+    await openStatsTab(page, 'player');
     await page.locator('#plName').fill('Борис');
     await page.locator('#plEmojis [data-emoji="🐼"]').click();
     await goTab(page, 'game');
@@ -534,6 +536,7 @@ test.describe('Покерный стол в партии', () => {
       await seedGames(page, 6, { nextAt: 5, persistTries: 2 });
       await page.reload();
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await Promise.all([page.waitForEvent('download'), page.locator('#stExport').click()]);
       expect((await device(page)).nextAt).toBe(36);
     });
@@ -542,6 +545,7 @@ test.describe('Покерный стол в партии', () => {
       await seedGames(page, 9, { nextAt: 39, persistTries: 2 });
       await page.reload();
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       page.once('dialog', (d) => d.accept());
       await page.locator('#stClear').click();
       expect(await device(page)).toEqual({ nextAt: 5, persistTries: 2, account: 'guest' });
@@ -590,10 +594,12 @@ test.describe('Покерный стол в партии', () => {
       await stubStorage(page, true);
       await page.reload();
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#stPersist')).toContainText('защищено');
       await stubStorage(page, false);
       await page.reload();
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#stPersist')).toContainText('Экспорт JSON');
     });
   });
@@ -606,6 +612,7 @@ test.describe('Покерный стол в партии', () => {
       const cloud = await stubYandex(page);
       await seed(page, { games: 2, signedIn: false });
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await page.locator('#clLogin').click();
       await expect(page.locator('#clSave')).toBeVisible();
       expect(cloud.logins).toBe(1);
@@ -626,6 +633,7 @@ test.describe('Покерный стол в партии', () => {
       await page.reload();                                 // смена одного хэша страницу не перезагружает
       await page.waitForFunction(() => Boolean(window.__perudo_v2));
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#clToast')).toContainText('Не удалось проверить ответ Яндекса');
       expect(await cloudState(page)).toBeNull();
       expect(page.url()).not.toContain('access_token');
@@ -637,6 +645,7 @@ test.describe('Покерный стол в партии', () => {
       await page.reload();
       await page.waitForFunction(() => Boolean(window.__perudo_v2));
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#clToast')).toContainText('Вход через Яндекс отменён');
       await expect(page.locator('#clLogin')).toBeVisible();
     });
@@ -663,6 +672,7 @@ test.describe('Покерный стол в партии', () => {
       await page.locator('#clDialog [data-cl="restore"]').click();
       await page.waitForFunction(() => Boolean(window.__perudo_v2));
       await goTab(page, 'stats');
+      await openStatsTab(page, 'player');
       await expect(page.locator('#plName')).toHaveValue('Облако');
       expect((await readJson(page, 'perudo.userProfile')).totalGames).toBe(7);
       expect((await cloudState(page)).token).toBe(TOKEN);                  // вход пережил восстановление
@@ -676,6 +686,7 @@ test.describe('Покерный стол в партии', () => {
       await page.locator('#clDialog [data-cl="later"]').click();
       await expect(page.locator('#clDialog')).not.toBeVisible();
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#clPending')).toContainText('есть копия данных');
       await expect(page.locator('#clSave')).toBeDisabled();
       expect(cloud.puts).toBe(0);
@@ -704,6 +715,7 @@ test.describe('Покерный стол в партии', () => {
       await stubYandex(page, { mode: 401 });
       await seed(page, { games: 3, synced: OLD });
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#clStatus')).toContainText('устарел');
       await expect(page.locator('#clLogin')).toHaveText('Войти снова');
       expect((await readJson(page, 'perudo.userProfile')).totalGames).toBe(3);
@@ -715,6 +727,7 @@ test.describe('Покерный стол в партии', () => {
       page.removeAllListeners('requestfailed');
       await seed(page, { games: 3, synced: OLD });
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#clToast')).toContainText('Нет связи');
       await goTab(page, 'game');
       await loseByWrongDudo(page);
@@ -726,6 +739,7 @@ test.describe('Покерный стол в партии', () => {
       const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(3) }) });
       await seed(page, { games: 3, synced: OLD });
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await page.locator('#clSave').click();
       await expect(page.locator('#clMsg')).toContainText('Копия записана');
       expect(cloud.puts).toBe(1);
@@ -742,6 +756,7 @@ test.describe('Покерный стол в партии', () => {
       await seed(page, { games: 3, synced: OLD });
       await page.locator('#clDialog [data-cl="later"]').click();
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#clSave')).toBeDisabled();
       expect(cloud.puts).toBe(0);
       expect(JSON.parse(cloud.text).data['perudo.player'].name).toBe('Руслан');
@@ -751,6 +766,7 @@ test.describe('Покерный стол в партии', () => {
       const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(3) }) });
       await seed(page, { games: 3, synced: OLD });                      // при запуске версии совпали
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       cloud.text = cloudFile({ 'perudo.userProfile': progress(9), 'perudo.player': { name: 'Другое устройство', avatar: null } }, OLD + 9000);
       await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('perudo.userProfile')); p.totalGames = 4; localStorage.setItem('perudo.userProfile', JSON.stringify(p)); });
       await page.locator('#clSave').click();
@@ -786,6 +802,7 @@ test.describe('Покерный стол в партии', () => {
       await expect(page.locator('#clDialog')).not.toBeVisible();
       await expect(page.locator('#clToast')).toContainText('Данные обновлены из облака');
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await expect(page.locator('#plName')).toHaveValue('С ноутбука');
       expect((await readJson(page, 'perudo.userProfile')).totalGames).toBe(8);
       expect(cloud.puts).toBe(1);
@@ -807,6 +824,7 @@ test.describe('Покерный стол в партии', () => {
       await stubYandex(page);
       await seed(page, { signedIn: false });
       await goTab(page, 'stats');
+      await openStatsTab(page, 'data');
       await page.locator('#clLogin').click();
       await expect(page.locator('#clToast')).toContainText('Вход выполнен');
     });

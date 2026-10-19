@@ -107,8 +107,7 @@ export function setupPlayerCard({ onChange } = {}) {
     '<button type="button" id="plClear">Убрать аватар</button>' +
     '<input id="plFile" type="file" accept="image/*" hidden aria-label="Файл с фото">' +
     '</div>' +
-    '<div id="plMsg" class="muted" role="status" aria-live="polite"></div>' +
-    '<div id="plCloud" class="player-cloud"></div>';
+    '<div id="plMsg" class="muted" role="status" aria-live="polite"></div>';
 
   const input = $('#plName');
   // Имя сохраняется при вводе; само поле переписываем только когда ввод закончен (иначе прыгает курсор).

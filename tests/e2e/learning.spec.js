@@ -3,7 +3,7 @@
 // Страхуют переделку вёрстки: после неё вкладки должны делать то же самое.
 import { readFileSync } from 'node:fs';
 import { test, expect } from './fixtures.js';
-import { openTab } from './helpers.js';
+import { openTab, openStatsTab } from './helpers.js';
 
 async function open(page, tab) {
   await openTab(page, tab);
@@ -296,6 +296,7 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#stGames table')).toBeVisible();
       expect(await page.locator('#stGames').evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      await openStatsTab(page, 'data');
       for (const sel of ['#stExport', '#stClear']) {
         const b = await page.locator(sel).boundingBox();
         expect(b.height).toBeGreaterThanOrEqual(44);
@@ -337,6 +338,7 @@ test.describe('Учебные вкладки', () => {
       await seed(page);
       await page.reload();
       await open(page, 'stats');
+      await openStatsTab(page, 'data');
       const [download] = await Promise.all([page.waitForEvent('download'), page.click('#stExport')]);
       expect(download.suggestedFilename()).toMatch(/^perudo-backup-\d{4}-\d{2}-\d{2}\.json$/);
       const text = readFileSync(await download.path(), 'utf8');
@@ -352,6 +354,7 @@ test.describe('Учебные вкладки', () => {
       await seed(page);
       await page.reload();
       await open(page, 'stats');
+      await openStatsTab(page, 'data');
       const [download] = await Promise.all([page.waitForEvent('download'), page.click('#stExport')]);
       const file = await download.path();
       const before = await dump(page);
@@ -375,6 +378,7 @@ test.describe('Учебные вкладки', () => {
       await seed(page);
       await page.reload();
       await open(page, 'stats');
+      await openStatsTab(page, 'data');
       const [download] = await Promise.all([page.waitForEvent('download'), page.click('#stExport')]);
       const file = await download.path();
       await page.evaluate((k) => localStorage.setItem(k, JSON.stringify({ n: 99, good: 1, byMode: {}, drill: {} })), KEYS.stats);
@@ -388,6 +392,7 @@ test.describe('Учебные вкладки', () => {
       await seed(page);
       await page.reload();
       await open(page, 'stats');
+      await openStatsTab(page, 'data');
       await page.setInputFiles('#stImportFile', { name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') });
       await expect(page.locator('#stBackupMsg')).toContainText('не копия данных Перудо');
       await page.setInputFiles('#stImportFile', { name: 'y.json', mimeType: 'application/json', buffer: Buffer.from('не json') });
@@ -401,6 +406,7 @@ test.describe('Учебные вкладки', () => {
       await page.evaluate((v) => localStorage.setItem('perudo.player', JSON.stringify(v)), player);
       await page.reload();
       await open(page, 'stats');
+      await openStatsTab(page, 'data');
       const [download] = await Promise.all([page.waitForEvent('download'), page.click('#stExport')]);
       const file = await download.path();
       expect(JSON.parse(readFileSync(file, 'utf8')).data['perudo.player']).toEqual(player);
@@ -417,6 +423,7 @@ test.describe('Учебные вкладки', () => {
 
     test('старая копия (версия 1) читается', async ({ page }) => {
       await open(page, 'stats');
+      await openStatsTab(page, 'data');
       const old = { schemaVersion: 1, exportedAt: 1700000000000, stats: { n: 7, good: 6, byMode: {}, drill: {} }, queue: [], games: [], duel: { games: 1, wins: 1, moves: 2, dev: 0 } };
       page.once('dialog', (d) => d.accept());
       await page.setInputFiles('#stImportFile', { name: 'old.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(old)) });
@@ -468,8 +475,10 @@ test.describe('Учебные вкладки', () => {
       await page.reload();
       await open(page, 'stats');
       await expect(page.locator('#stWeak .weak-item')).toHaveCount(1);
+      await openStatsTab(page, 'data');
       page.once('dialog', (d) => d.accept());
       await page.locator('#stClear').click();
+      await openStatsTab(page, 'results');
       await expect(page.locator('#stWeak .weak-item')).toHaveCount(0);
     });
   });
@@ -517,6 +526,7 @@ test.describe('Учебные вкладки', () => {
 
     test('по умолчанию имя не задано, аватар стандартный, «Убрать аватар» недоступна', async ({ page }) => {
       await open(page, 'stats');
+      await openStatsTab(page, 'player');
       await expect(page.locator('#plName')).toHaveValue('');
       await expect(page.locator('#plName')).toHaveAttribute('placeholder', 'Вы');
       await expect(page.locator('#plEmojis [aria-checked="true"]')).toHaveCount(0);
@@ -527,6 +537,7 @@ test.describe('Учебные вкладки', () => {
 
     test('имя сохраняется при вводе и после перезагрузки; лишнее обрезается', async ({ page }) => {
       await open(page, 'stats');
+      await openStatsTab(page, 'player');
       await page.locator('#plName').fill('  Анна   Иванова  ');
       expect((await readPlayer(page)).name).toBe('Анна Иванова');
       await page.locator('#plName').fill('я'.repeat(40));
@@ -534,11 +545,13 @@ test.describe('Учебные вкладки', () => {
       await page.locator('#plName').fill('Анна');
       await page.reload();
       await open(page, 'stats');
+      await openStatsTab(page, 'player');
       await expect(page.locator('#plName')).toHaveValue('Анна');
     });
 
     test('эмодзи-аватар выбирается, подсвечивается и убирается', async ({ page }) => {
       await open(page, 'stats');
+      await openStatsTab(page, 'player');
       await page.locator('#plEmojis [data-emoji="🦊"]').click();
       await expect(page.locator('#plEmojis [data-emoji="🦊"]')).toHaveAttribute('aria-checked', 'true');
       await expect(page.locator('#plAvatar .seat-emoji')).toHaveText('🦊');
@@ -553,6 +566,7 @@ test.describe('Учебные вкладки', () => {
 
     test('фото сжимается до небольшого JPEG и показывается; не-картинка отклоняется', async ({ page }) => {
       await open(page, 'stats');
+      await openStatsTab(page, 'player');
       await page.setInputFiles('#plFile', 'apple-touch-icon.png');
       await expect(page.locator('#plMsg')).toContainText('Фото сохранено');
       const a = (await readPlayer(page)).avatar;
@@ -571,10 +585,13 @@ test.describe('Учебные вкладки', () => {
 
     test('«Сбросить всё» очищает профиль и поля', async ({ page }) => {
       await open(page, 'stats');
+      await openStatsTab(page, 'player');
       await page.locator('#plName').fill('Анна');
       await page.locator('#plEmojis [data-emoji="🦊"]').click();
+      await openStatsTab(page, 'data');
       page.once('dialog', (d) => { expect(d.message()).toContain('профиль игрока'); d.accept(); });
       await page.locator('#stClear').click();
+      await openStatsTab(page, 'player');
       await expect(page.locator('#plName')).toHaveValue('');
       await expect(page.locator('#plEmojis [aria-checked="true"]')).toHaveCount(0);
       expect(await readPlayer(page)).toBeNull();

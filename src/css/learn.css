@@ -318,6 +318,38 @@
   min-width: 0;
 }
 
+/* Подвкладки: результаты — главное, профиль и данные — в стороне */
+.stats-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: var(--space-3);
+  background: #1a1f28;
+  border-radius: var(--radius-s);
+}
+
+.stats-tab {
+  flex: 1;
+  min-height: var(--tap);
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mut);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stats-tab[aria-selected="true"] {
+  background: var(--acc);
+  color: #111;
+}
+
+.stats-tab:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
 .stats-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -546,13 +578,7 @@
   display: none;
 }
 
-/* Копия на Яндекс Диске (внутри «Игрок») */
-.player-cloud {
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1px solid rgb(255 255 255 / 10%);
-}
-
+/* Копия на Яндекс Диске (вкладка «Данные») */
 .player-cloud p {
   margin: var(--space-2) 0;
 }
