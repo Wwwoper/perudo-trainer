@@ -18,6 +18,7 @@ import functools
 import http.server
 import json
 import os
+import re
 import sys
 import threading
 
@@ -171,6 +172,18 @@ def measure_all(base_url, browser):
         page.click("#clDialog [data-cl='later']")
         page.wait_for_selector("#clPending")
         snap("stats: cloud pending", "#stClear")
+
+        # Сбой скачивания копии: блок с подробностями и отчёт диагностики
+        ctx.route("https://downloader.stub.test/**", lambda r: r.abort())
+        ctx.route(re.compile(r"^https://(yandex\.ru|www\.gstatic\.com|uploader\.disk\.yandex\.net|downloader\.disk\.yandex\.ru)/"),
+                  lambda r: r.fulfill(status=204, headers=CORS))
+        page.evaluate("sessionStorage.setItem('perudo.importNotice', 'x')")
+        page.reload()
+        page.wait_for_selector(".cloud-detail")
+        snap("stats: cloud error", "#stClear")
+        page.click("#clDiag")
+        page.wait_for_function("document.querySelector('#clDiagOut') && document.querySelector('#clDiagOut').textContent.includes('Достижимость')")
+        snap("stats: cloud diagnostics", "#stClear")
 
         _tab(page, "sim")
         snap("sim", "#sGo")

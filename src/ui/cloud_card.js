@@ -4,7 +4,8 @@
 
 import { get, set, getStats, getGames, getTrainingQueue, getCloudState, setCloudState, getDeviceState, setDeviceState } from '../storage.js';
 import { buildBackup, serializeBackup, parseBackup, applyBackup } from '../backup.js';
-import { createClient, buildAuthUrl, parseAuthHash, redirectUriFor, createState } from '../cloud_yandex.js';
+import { createClient, buildAuthUrl, parseAuthHash, redirectUriFor, createState, CloudError } from '../cloud_yandex.js';
+import { runDiagnostics } from '../cloud_diag.js';
 import { isLocalDataEmpty, hasValidToken, hashText, summarizeBackupData } from '../cloud_policy.js';
 import { createCloudSync, errorText } from '../cloud_sync.js';
 import { escapeHtml } from '../table.js';
@@ -19,6 +20,7 @@ let downloadFile = null;
 let message = { text: '', cls: 'muted' };
 let toastTimer = null;
 let checking = false;                       // проверка облака уже идёт
+let diagText = '';                          // последний отчёт о связи с Диском (показывается в блоке «Игрок»)
 let lastCheckAt = 0;
 const RECHECK_MS = 10_000;                  // автоповтор проверки не чаще, чем раз в 10 секунд
 
@@ -56,6 +58,40 @@ export function cloudConnected() {
 
 const setAccount = (account) => setDeviceState({ ...getDeviceState(), account });
 
+/** Запасной способ скачать файл: XMLHttpRequest (иногда проходит там, где fetch не проходит). */
+function xhrGet(url, ms) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open('GET', url);
+    x.timeout = ms;
+    x.onload = () => {
+      if (x.status >= 200 && x.status < 300) resolve(x.responseText);
+      else if (x.status === 404) reject(new CloudError('not_found', 'HTTP 404 (xhr)'));
+      else reject(new Error(`HTTP ${x.status}`));
+    };
+    x.onerror = () => reject(new Error('status 0'));
+    x.ontimeout = () => reject(new Error('timeout'));
+    x.send();
+  });
+}
+
+/** Проба для отчёта: статус и хост, с которого пришёл ответ. */
+function xhrProbe(url, ms) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open('GET', url);
+    x.timeout = ms;
+    x.onload = () => {
+      let host = '';
+      try { host = new URL(x.responseURL).host; } catch (e) { }
+      resolve({ status: x.status, host });
+    };
+    x.onerror = () => reject(new Error('status 0'));
+    x.ontimeout = () => reject(new Error('timeout'));
+    x.send();
+  });
+}
+
 function realSync() {
   const snapshot = () => {
     const b = buildBackup((k) => get(k));
@@ -67,7 +103,7 @@ function realSync() {
     };
   };
   return createCloudSync({
-    makeClient: (token) => createClient({ fetch: window.fetch.bind(window), token }),
+    makeClient: (token) => createClient({ fetch: window.fetch.bind(window), token, xhrGet }),
     getState: getCloudState,
     setState: setCloudState,
     snapshot,
@@ -177,7 +213,12 @@ export function renderCloudCard() {
     h += '<div class="cloud-actions">' +
       `<button type="button" id="clSave"${st.pending ? ' disabled' : ''}>Сохранить сейчас</button>` +
       (!st.checked && !st.pending ? '<button type="button" id="clCheck">Проверить снова</button>' : '') +
+      (st.error ? '<button type="button" id="clDiag">Диагностика связи</button>' : '') +
       '<button type="button" id="clLogout">Выйти</button></div>';
+    if (diagText) {
+      h += `<pre id="clDiagOut" class="cloud-diag">${escapeHtml(diagText)}</pre>` +
+        '<div class="cloud-actions"><button type="button" id="clDiagCopy">Скопировать отчёт</button></div>';
+    }
   } else if (st.expired) {
     h += '<p id="clStatus">Вход через Яндекс устарел. Данные на этом устройстве целы.</p>' +
       '<div class="cloud-actions"><button type="button" id="clLogin" class="btn-primary">Войти снова</button>' +
@@ -252,6 +293,34 @@ function retryIfNeeded({ force = false } = {}) {
   runCheck();
 }
 
+/** Диагностика связи: собирает отчёт по шагам и способам, чтобы по нему можно было понять причину сбоя. */
+async function runDiag() {
+  diagText = 'Собираю отчёт…';
+  renderCloudCard();
+  try {
+    const lines = await runDiagnostics({
+      fetch: window.fetch.bind(window),
+      token: getCloudState().token,
+      xhrProbe,
+      env: { userAgent: navigator.userAgent, online: navigator.onLine, origin: location.origin, now: new Date().toISOString() },
+    });
+    diagText = lines.join('\n');
+  } catch (e) {
+    diagText = `Отчёт не собрался: ${e?.message || e}`;
+  }
+  renderCloudCard();
+}
+
+async function copyDiag() {
+  try {
+    await navigator.clipboard.writeText(diagText);
+    say('Отчёт скопирован. Вставьте его в сообщение.', 'text-ok');
+  } catch (e) {
+    say('Не удалось скопировать: выделите текст отчёта и скопируйте вручную.', 'text-bad');
+  }
+  renderCloudCard();
+}
+
 async function onAction(act) {
   if (act === 'later') {
     closeDialog();
@@ -302,7 +371,9 @@ export function setupCloudCard({ downloadBackup } = {}) {
   document.addEventListener('click', async (e) => {
     const act = e.target.closest('[data-cl]')?.dataset.cl;
     if (act) { onAction(act); return; }
-    if (e.target.closest('#clCheck')) { say(''); runCheck(); }
+    if (e.target.closest('#clDiagCopy')) copyDiag();
+    else if (e.target.closest('#clDiag')) runDiag();
+    else if (e.target.closest('#clCheck')) { say(''); runCheck(); }
     else if (e.target.closest('#clLogin, #clWelcomeLogin')) startLogin();
     else if (e.target.closest('#clGuest')) {
       setAccount('guest');

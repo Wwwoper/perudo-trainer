@@ -80,9 +80,10 @@ function hostOf(url) {
 }
 
 /**
- * @param {{fetch: typeof fetch, token: string, timeoutMs?: number}} deps
+ * @param {{fetch: typeof fetch, token: string, timeoutMs?: number, xhrGet?: (url: string, timeoutMs: number) => Promise<string>}} deps
+ *   xhrGet — запасной способ скачать файл через XMLHttpRequest (если fetch на втором шаге не сработал)
  */
-export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOUT_MS }) {
+export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOUT_MS, xhrGet = null }) {
   if (typeof doFetch !== 'function') throw new TypeError('createClient: нужен fetch');
 
   /** Один запрос: сбой сети и тайм-аут превращаются в CloudError, статус не из 2xx — тоже. */
@@ -115,6 +116,44 @@ export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOU
     return body.href;
   }
 
+  /**
+   * Второй шаг скачивания: тело файла по ссылке. Если запрос не дошёл до сервера (сбой сети, блокировка CORS —
+   * браузер в обоих случаях говорит одно и то же), пробуем запасные способы: fetch без referrer и XMLHttpRequest.
+   * Ошибки по статусу ответа (404, 5xx) повторять бессмысленно и пробрасываются сразу.
+   * Если не помогло ничего, в подробностях ошибки перечислены все попытки и проба «хост достижим без CORS».
+   */
+  async function fetchFile(href) {
+    const attempts = [];
+    const tries = [
+      ['fetch', () => call(href, {}, { auth: false })],
+      ['fetch без referrer', () => call(href, { referrerPolicy: 'no-referrer', cache: 'no-store', credentials: 'omit', mode: 'cors' }, { auth: false })],
+    ];
+    for (const [name, run] of tries) {
+      try {
+        return await (await run()).text();
+      } catch (e) {
+        if (e instanceof CloudError && e.code !== 'network' && e.code !== 'timeout') throw e;
+        attempts.push(`${name}: ${e?.message || 'ошибка'}`);
+      }
+    }
+    if (typeof xhrGet === 'function') {
+      try {
+        return String(await xhrGet(href, timeoutMs));
+      } catch (e) {
+        if (e instanceof CloudError && e.code !== 'network' && e.code !== 'timeout') throw e;
+        attempts.push(`xhr: ${e?.message || 'ошибка'}`);
+      }
+    }
+    let reach;
+    try {
+      await doFetch(href, { mode: 'no-cors', cache: 'no-store' });
+      reach = 'хост достижим без CORS (значит, браузер отклоняет ответ)';
+    } catch (e) {
+      reach = `хост недостижим даже без CORS (${e?.message || 'ошибка'})`;
+    }
+    throw new CloudError('network', `${attempts.join(' | ')} | ${reach}`);
+  }
+
   return {
     /** Записывает копию (текст JSON); существующая заменяется. */
     async saveBackup(text) {
@@ -127,8 +166,7 @@ export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOU
     /** Читает копию; если файла нет — CloudError с кодом not_found. */
     async loadBackup() {
       const href = await link('download');
-      const res = await call(href, {}, { auth: false });
-      const text = await res.text();
+      const text = await fetchFile(href);
       if (text.length > MAX_BACKUP_CHARS) throw new CloudError('too_large');
       return text;
     },

@@ -50,4 +50,32 @@ test.describe('Облако: сбой проверки и повтор', () => {
     await expect(page.locator('#clStatus')).toContainText('Копия в облаке:');
     await expect(page.locator('#clCheck')).toHaveCount(0);
   });
+
+  test('первая попытка скачать файл оборвалась: запасной способ получает копию, ошибки нет', async ({ page }) => {
+    const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(7) }) });
+    cloud.downloadFails = 1;                                 // оборвать только первый запрос файла
+    await seed(page, { games: 0 });
+    await expect(page.locator('#clDialogTitle')).toHaveText('Найдена копия данных');
+    await expect(page.locator('#clToast')).toBeHidden();
+    expect(cloud.downloadFails).toBe(0);
+  });
+
+  test('файл не скачивается ничем: в подробностях все попытки, «Диагностика связи» собирает отчёт без токена', async ({ page }) => {
+    const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(7) }) });
+    cloud.downloadFails = 99;
+    await seed(page, { games: 0 });
+    await goTab(page, 'stats');
+    const detail = page.locator('.cloud-detail');
+    await expect(detail).toContainText('fetch без referrer');
+    await expect(detail).toContainText('xhr');
+    await page.locator('#clDiag').click();
+    const report = page.locator('#clDiagOut');
+    await expect(report).toContainText('3. файл: fetch (cors): ОШИБКА');
+    await expect(report).toContainText('7. файл: XMLHttpRequest: ОШИБКА');
+    await expect(report).toContainText('Достижимость хостов');
+    const text = await report.innerText();
+    expect(text).not.toContain('y0_test_token');
+    expect(text).not.toContain('stub.test/file');            // подписанная ссылка в отчёт не попадает
+    await expect(page.locator('#clDiagCopy')).toBeVisible();
+  });
 });

@@ -7,7 +7,7 @@ export const progress = (n) => ({ n: 0, good: 0, totalGames: n, totalWins: 0, by
 
 /** Подменяет Яндекс: вход, API Диска и хосты загрузки/скачивания. mode: 'ok' | 401 | 'offline'. */
 export async function stubYandex(page, { text = null, mode = 'ok' } = {}) {
-  const cloud = { text, puts: 0, logins: 0, mode };       // mode можно менять по ходу теста: 'ok' | 401 | 'offline'
+  const cloud = { text, puts: 0, logins: 0, mode, downloadFails: 0 };   // downloadFails: сколько запросов файла оборвать подряд       // mode можно менять по ходу теста: 'ok' | 401 | 'offline'
   const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
   await page.route('https://oauth.yandex.ru/**', (route) => {
     cloud.logins++;
@@ -36,8 +36,11 @@ export async function stubYandex(page, { text = null, mode = 'ok' } = {}) {
   });
   await page.route('https://downloader.stub.test/**', (route) => {
     if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (cloud.downloadFails > 0) { cloud.downloadFails--; return route.abort('failed'); }
     return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: cloud.text });
   });
+  // хосты проб диагностики: в настоящий интернет тесты не ходят
+  await page.route(/^https:\/\/(yandex\.ru|www\.gstatic\.com|uploader\.disk\.yandex\.net|downloader\.disk\.yandex\.ru)\//, (route) => route.fulfill({ status: 204, headers: cors }));
   return cloud;
 }
 

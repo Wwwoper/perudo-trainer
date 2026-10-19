@@ -680,3 +680,17 @@
   font-size: 13px;
   overflow-wrap: anywhere;
 }
+
+.cloud-diag {
+  max-height: 260px;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2);
+  overflow: auto;
+  border-radius: var(--radius-s);
+  background: rgb(0 0 0 / 25%);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
