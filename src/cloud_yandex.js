@@ -80,10 +80,9 @@ function hostOf(url) {
 }
 
 /**
- * @param {{fetch: typeof fetch, token: string, timeoutMs?: number, xhrGet?: (url: string, timeoutMs: number) => Promise<string>}} deps
- *   xhrGet — запасной способ скачать файл через XMLHttpRequest (если fetch на втором шаге не сработал)
+ * @param {{fetch: typeof fetch, token: string, timeoutMs?: number}} deps
  */
-export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOUT_MS, xhrGet = null }) {
+export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOUT_MS }) {
   if (typeof doFetch !== 'function') throw new TypeError('createClient: нужен fetch');
 
   /** Один запрос: сбой сети и тайм-аут превращаются в CloudError, статус не из 2xx — тоже. */
@@ -117,16 +116,20 @@ export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOU
   }
 
   /**
-   * Второй шаг скачивания: тело файла по ссылке. Если запрос не дошёл до сервера (сбой сети, блокировка CORS —
-   * браузер в обоих случаях говорит одно и то же), пробуем запасные способы: fetch без referrer и XMLHttpRequest.
-   * Ошибки по статусу ответа (404, 5xx) повторять бессмысленно и пробрасываются сразу.
-   * Если не помогло ничего, в подробностях ошибки перечислены все попытки и проба «хост достижим без CORS».
+   * Второй шаг скачивания: тело файла по ссылке.
+   *
+   * Запрос идёт БЕЗ заголовка Referer: сервер скачивания (downloader.disk.yandex.ru) на запрос с Referer
+   * страницы другого сайта отвечает 403 без CORS-заголовков, и браузер сообщает только «Failed to fetch»
+   * или «Load failed». Без Referer тот же запрос возвращает файл. Проверено в консоли с wwwoper.github.io.
+   * Если и так не вышло (сбой сети, тайм-аут), пробуем обычный запрос; ошибки по статусу ответа
+   * (404, 5xx) повторять бессмысленно, они пробрасываются сразу.
+   * Если не помогло ничего, в подробностях ошибки все попытки и проба «хост достижим без CORS».
    */
   async function fetchFile(href) {
     const attempts = [];
     const tries = [
-      ['fetch', () => call(href, {}, { auth: false })],
       ['fetch без referrer', () => call(href, { referrerPolicy: 'no-referrer', cache: 'no-store', credentials: 'omit', mode: 'cors' }, { auth: false })],
+      ['fetch', () => call(href, {}, { auth: false })],
     ];
     for (const [name, run] of tries) {
       try {
@@ -134,14 +137,6 @@ export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOU
       } catch (e) {
         if (e instanceof CloudError && e.code !== 'network' && e.code !== 'timeout') throw e;
         attempts.push(`${name}: ${e?.message || 'ошибка'}`);
-      }
-    }
-    if (typeof xhrGet === 'function') {
-      try {
-        return String(await xhrGet(href, timeoutMs));
-      } catch (e) {
-        if (e instanceof CloudError && e.code !== 'network' && e.code !== 'timeout') throw e;
-        attempts.push(`xhr: ${e?.message || 'ошибка'}`);
       }
     }
     let reach;

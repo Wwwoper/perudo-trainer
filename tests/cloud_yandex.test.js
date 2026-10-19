@@ -124,30 +124,30 @@ describe('loadBackup', () => {
   });
 });
 
-describe('loadBackup: запасные способы скачивания', () => {
+describe('loadBackup: запрос файла без Referer', () => {
   const link = ok({ href: 'https://downloader.disk.yandex.ru/d' });
   const boom = () => new TypeError('Load failed');
 
-  it('первый fetch не дошёл — второй (без referrer) получает файл', async () => {
-    const f = fakeFetch(link, boom(), ok('{"a":1}'));
+  it('файл запрашивается сразу без Referer и без Authorization (Яндекс отвечает 403 на запрос с Referer чужого сайта)', async () => {
+    const f = fakeFetch(link, ok('{"a":1}'));
     assert.equal(await createClient({ fetch: f, token: 'T' }).loadBackup(), '{"a":1}');
+    assert.equal(f.calls.length, 2);
+    const init = f.calls[1].init;
+    assert.equal(init.referrerPolicy, 'no-referrer');
+    assert.equal(init.credentials, 'omit');
+    assert.ok(!init.headers?.Authorization);
+  });
+  it('запрос без Referer не дошёл — вторая попытка обычным запросом', async () => {
+    const f = fakeFetch(link, boom(), ok('{"b":2}'));
+    assert.equal(await createClient({ fetch: f, token: 'T' }).loadBackup(), '{"b":2}');
     assert.equal(f.calls.length, 3);
-    assert.equal(f.calls[2].init.referrerPolicy, 'no-referrer');
-    assert.ok(!f.calls[2].init.headers?.Authorization);
+    assert.equal(f.calls[2].init.referrerPolicy, undefined);
   });
-  it('оба fetch не дошли — файл читается через XMLHttpRequest', async () => {
-    const f = fakeFetch(link, boom(), boom());
-    const calls = [];
-    const xhrGet = async (url, ms) => { calls.push([url, ms]); return '{"b":2}'; };
-    assert.equal(await createClient({ fetch: f, token: 'T', xhrGet, timeoutMs: 777 }).loadBackup(), '{"b":2}');
-    assert.deepEqual(calls, [['https://downloader.disk.yandex.ru/d', 777]]);
-  });
-  it('не помогло ничего: в подробностях все попытки и проба без CORS', async () => {
+  it('не помогло ничего: в подробностях обе попытки и проба без CORS', async () => {
     const f = fakeFetch(link, boom(), boom(), boom());
-    const xhrGet = async () => { throw new Error('xhr status 0'); };
-    await assert.rejects(createClient({ fetch: f, token: 'T', xhrGet }).loadBackup(), (e) => {
+    await assert.rejects(createClient({ fetch: f, token: 'T' }).loadBackup(), (e) => {
       assert.equal(e.code, 'network');
-      for (const part of ['fetch:', 'fetch без referrer:', 'xhr: xhr status 0', 'недостижим даже без CORS']) assert.ok(e.message.includes(part), part);
+      for (const part of ['fetch без referrer:', ' | fetch:', 'недостижим даже без CORS']) assert.ok(e.message.includes(part), part);
       return true;
     });
     assert.equal(f.calls[3].init.mode, 'no-cors');
@@ -156,18 +156,14 @@ describe('loadBackup: запасные способы скачивания', () 
     const f = fakeFetch(link, boom(), boom(), { type: 'opaque' });
     await assert.rejects(createClient({ fetch: f, token: 'T' }).loadBackup(), (e) => e.message.includes('достижим без CORS'));
   });
-  it('ответ с ошибкой по статусу не повторяется другими способами', async () => {
+  it('ответ с ошибкой по статусу не повторяется', async () => {
     const f = fakeFetch(link, fail(404));
-    await assert.rejects(createClient({ fetch: f, token: 'T', xhrGet: async () => 'x' }).loadBackup(), (e) => e.code === 'not_found');
+    await assert.rejects(createClient({ fetch: f, token: 'T' }).loadBackup(), (e) => e.code === 'not_found');
     assert.equal(f.calls.length, 2);
   });
-  it('тайм-аут первого запроса тоже повод для запасного способа', async () => {
+  it('тайм-аут первой попытки — повод для второй', async () => {
     const f = fakeFetch(link, Object.assign(new Error('aborted'), { name: 'AbortError' }), ok('{"c":3}'));
     assert.equal(await createClient({ fetch: f, token: 'T' }).loadBackup(), '{"c":3}');
-  });
-  it('xhrGet не передан — ограничиваемся двумя fetch и пробой', async () => {
-    const f = fakeFetch(link, boom(), boom(), boom());
-    await assert.rejects(createClient({ fetch: f, token: 'T' }).loadBackup(), (e) => !e.message.includes('xhr:'));
   });
 });
 

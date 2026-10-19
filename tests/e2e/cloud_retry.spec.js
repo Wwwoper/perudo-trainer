@@ -60,6 +60,15 @@ test.describe('Облако: сбой проверки и повтор', () => {
     expect(cloud.downloadFails).toBe(0);
   });
 
+  test('как настоящий Яндекс: запрос файла с Referer получил бы 403, приложение шлёт без него и ни разу не получает отказ', async ({ page }) => {
+    const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(7) }) });
+    cloud.strictReferer = true;
+    await seed(page, { games: 0 });
+    await expect(page.locator('#clDialogTitle')).toHaveText('Найдена копия данных');
+    await expect(page.locator('#clToast')).toBeHidden();
+    expect(cloud.withReferer).toBe(0);
+  });
+
   test('файл не скачивается ничем: в подробностях все попытки, «Диагностика связи» собирает отчёт без токена', async ({ page }) => {
     const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(7) }) });
     cloud.downloadFails = 99;
@@ -67,7 +76,7 @@ test.describe('Облако: сбой проверки и повтор', () => {
     await goTab(page, 'stats');
     const detail = page.locator('.cloud-detail');
     await expect(detail).toContainText('fetch без referrer');
-    await expect(detail).toContainText('xhr');
+    await expect(detail).toContainText('fetch:');
     await page.locator('#clDiag').click();
     const report = page.locator('#clDiagOut');
     await expect(report).toContainText('3. файл: fetch (cors): ОШИБКА');

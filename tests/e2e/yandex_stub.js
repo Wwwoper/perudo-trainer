@@ -7,7 +7,9 @@ export const progress = (n) => ({ n: 0, good: 0, totalGames: n, totalWins: 0, by
 
 /** Подменяет Яндекс: вход, API Диска и хосты загрузки/скачивания. mode: 'ok' | 401 | 'offline'. */
 export async function stubYandex(page, { text = null, mode = 'ok' } = {}) {
-  const cloud = { text, puts: 0, logins: 0, mode, downloadFails: 0 };   // downloadFails: сколько запросов файла оборвать подряд       // mode можно менять по ходу теста: 'ok' | 401 | 'offline'
+  const cloud = { text, puts: 0, logins: 0, mode, downloadFails: 0, strictReferer: false, withReferer: 0 };
+  // downloadFails: сколько запросов файла оборвать подряд; mode можно менять по ходу теста: 'ok' | 401 | 'offline';
+  // strictReferer: как настоящий Яндекс, на запрос файла с Referer отвечать 403 без CORS-заголовков (withReferer считает такие запросы)
   const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
   await page.route('https://oauth.yandex.ru/**', (route) => {
     cloud.logins++;
@@ -37,6 +39,7 @@ export async function stubYandex(page, { text = null, mode = 'ok' } = {}) {
   await page.route('https://downloader.stub.test/**', (route) => {
     if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
     if (cloud.downloadFails > 0) { cloud.downloadFails--; return route.abort('failed'); }
+    if (cloud.strictReferer && route.request().headers().referer) { cloud.withReferer++; return route.fulfill({ status: 403, body: '' }); }
     return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: cloud.text });
   });
   // хосты проб диагностики: в настоящий интернет тесты не ходят

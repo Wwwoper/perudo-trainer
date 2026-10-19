@@ -58,23 +58,6 @@ export function cloudConnected() {
 
 const setAccount = (account) => setDeviceState({ ...getDeviceState(), account });
 
-/** Запасной способ скачать файл: XMLHttpRequest (иногда проходит там, где fetch не проходит). */
-function xhrGet(url, ms) {
-  return new Promise((resolve, reject) => {
-    const x = new XMLHttpRequest();
-    x.open('GET', url);
-    x.timeout = ms;
-    x.onload = () => {
-      if (x.status >= 200 && x.status < 300) resolve(x.responseText);
-      else if (x.status === 404) reject(new CloudError('not_found', 'HTTP 404 (xhr)'));
-      else reject(new Error(`HTTP ${x.status}`));
-    };
-    x.onerror = () => reject(new Error('status 0'));
-    x.ontimeout = () => reject(new Error('timeout'));
-    x.send();
-  });
-}
-
 /** Проба для отчёта: статус и хост, с которого пришёл ответ. */
 function xhrProbe(url, ms) {
   return new Promise((resolve, reject) => {
@@ -103,7 +86,7 @@ function realSync() {
     };
   };
   return createCloudSync({
-    makeClient: (token) => createClient({ fetch: window.fetch.bind(window), token, xhrGet }),
+    makeClient: (token) => createClient({ fetch: window.fetch.bind(window), token }),
     getState: getCloudState,
     setState: setCloudState,
     snapshot,
