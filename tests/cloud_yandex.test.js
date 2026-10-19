@@ -143,6 +143,19 @@ describe('коды ошибок', () => {
     assert.equal(await codeFor(new TypeError('Failed to fetch')), 'network');
     assert.equal(await codeFor(Object.assign(new Error('aborted'), { name: 'AbortError' })), 'timeout');
   });
+  it('в подробностях ошибки есть хост и сообщение браузера: видно, на каком шаге сбой', async () => {
+    const f = fakeFetch(ok({ href: 'https://downloader.disk.yandex.ru/d' }), new TypeError('Load failed'));
+    await assert.rejects(createClient({ fetch: f, token: 'T' }).loadBackup(), (e) => {
+      assert.equal(e.code, 'network');
+      assert.match(e.message, /downloader\.disk\.yandex\.ru: Load failed/);
+      return true;
+    });
+    const g = fakeFetch(new TypeError('Failed to fetch'));
+    await assert.rejects(createClient({ fetch: g, token: 'T' }).loadBackup(), (e) => /cloud-api\.yandex\.net: Failed to fetch/.test(e.message));
+  });
+  it('в подробностях ответа с ошибкой есть статус и хост', async () => {
+    await assert.rejects(createClient({ fetch: fakeFetch(fail(401)), token: 'T' }).loadBackup(), (e) => /HTTP 401 cloud-api\.yandex\.net/.test(e.message));
+  });
   it('ответ не JSON — bad_response', async () => {
     const res = { ok: true, status: 200, json: async () => { throw new SyntaxError('x'); } };
     assert.equal(await codeFor(res), 'bad_response');

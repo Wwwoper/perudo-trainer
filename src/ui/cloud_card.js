@@ -18,6 +18,9 @@ let sync = null;
 let downloadFile = null;
 let message = { text: '', cls: 'muted' };
 let toastTimer = null;
+let checking = false;                       // проверка облака уже идёт
+let lastCheckAt = 0;
+const RECHECK_MS = 10_000;                  // автоповтор проверки не чаще, чем раз в 10 секунд
 
 const fmt = (ms) => new Date(ms).toLocaleString('ru', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -163,10 +166,17 @@ export function renderCloudCard() {
   const st = sync.status();
   let h = '<b>Копия на Яндекс Диске</b>';
   if (st.connected) {
-    h += `<p id="clStatus">${st.syncedAt ? `Копия в облаке: ${escapeHtml(fmt(st.syncedAt))}.` : 'Копия в облаке ещё не записана.'}</p>`;
+    if (!st.checked && !st.pending) {
+      // Облако ещё не прочитано: не делаем вид, что копии нет
+      h += `<p id="clStatus">${st.error ? 'Не удалось проверить копию на Диске.' : 'Проверяю копию на Диске…'}</p>`;
+      if (st.error && st.errorDetail) h += `<p class="muted cloud-detail">Подробности: ${escapeHtml(st.errorDetail)}</p>`;
+    } else {
+      h += `<p id="clStatus">${st.syncedAt ? `Копия в облаке: ${escapeHtml(fmt(st.syncedAt))}.` : 'Копия в облаке ещё не записана.'}</p>`;
+    }
     if (st.pending) h += `<div id="clPending">${pendingHtml(st.pending)}</div>`;
     h += '<div class="cloud-actions">' +
       `<button type="button" id="clSave"${st.pending ? ' disabled' : ''}>Сохранить сейчас</button>` +
+      (!st.checked && !st.pending ? '<button type="button" id="clCheck">Проверить снова</button>' : '') +
       '<button type="button" id="clLogout">Выйти</button></div>';
   } else if (st.expired) {
     h += '<p id="clStatus">Вход через Яндекс устарел. Данные на этом устройстве целы.</p>' +
@@ -215,6 +225,31 @@ function afterCheck(r, { justLoggedIn = false } = {}) {
   if (r.kind === 'error') toast(errorText(r.code), 'text-bad');
   else if (justLoggedIn) toast(sync.status().syncedAt ? 'Вход выполнен. Копия на Диске синхронизирована.' : 'Вход выполнен. Копия появится на Диске после первой партии.');
   renderCloudCard();
+}
+
+/** Прочитать облако и сверить с устройством; повторные вызовы во время проверки игнорируются. */
+async function runCheck({ justLoggedIn = false } = {}) {
+  if (checking || !sync.status().connected) return;
+  checking = true;
+  lastCheckAt = Date.now();
+  renderCloudCard();
+  try {
+    afterCheck(await sync.check(), { justLoggedIn });
+  } finally {
+    checking = false;
+    renderCloudCard();
+  }
+}
+
+/**
+ * Связь вернулась или игрок вернулся на вкладку: если облако не удалось проверить, пробуем снова.
+ * @param {{force?: boolean}} opts force — не ждать паузу между попытками (событие «связь появилась» редкое и значимое)
+ */
+function retryIfNeeded({ force = false } = {}) {
+  const st = sync?.status();
+  if (!st || !st.connected || st.checked || st.pending || checking) return;
+  if (!force && Date.now() - lastCheckAt < RECHECK_MS) return;
+  runCheck();
 }
 
 async function onAction(act) {
@@ -267,7 +302,8 @@ export function setupCloudCard({ downloadBackup } = {}) {
   document.addEventListener('click', async (e) => {
     const act = e.target.closest('[data-cl]')?.dataset.cl;
     if (act) { onAction(act); return; }
-    if (e.target.closest('#clLogin, #clWelcomeLogin')) startLogin();
+    if (e.target.closest('#clCheck')) { say(''); runCheck(); }
+    else if (e.target.closest('#clLogin, #clWelcomeLogin')) startLogin();
     else if (e.target.closest('#clGuest')) {
       setAccount('guest');
       renderWelcome();
@@ -296,7 +332,9 @@ export function setupCloudCard({ downloadBackup } = {}) {
   }
   renderWelcome();
   renderCloudCard();
-  if (sync.status().connected) sync.check().then((r) => afterCheck(r, { justLoggedIn: !!back?.ok }));
+  window.addEventListener('online', () => retryIfNeeded({ force: true }));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') retryIfNeeded(); });
+  if (sync.status().connected) runCheck({ justLoggedIn: !!back?.ok });
 
   return {
     /** Партия закончилась: сверяемся с облаком и обновляем копию. Ошибка видна в блоке «Игрок» и уведомлением. */

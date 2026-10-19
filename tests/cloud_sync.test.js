@@ -285,3 +285,40 @@ test('сеть пропала при сверке: запись не выпол�
   assert.equal((await s.sync.saveNow({ manual: true })).code, 'network');
   assert.equal(s.calls.save.length, 0);
 });
+
+test('статус «проверено»: нет до проверки, есть после успеха, пропадает при сбое, возвращается после повтора', async () => {
+  const s = setup({ cloudError: new CloudError('network', 'cloud-api.yandex.net: Load failed'), local: true, state: { syncedExportedAt: T0 - 500, syncedHash: 'h:данные-1' } });
+  assert.equal(s.sync.status().checked, false);
+  const r = await s.sync.check();
+  assert.deepEqual([r.kind, r.code], ['error', 'network']);
+  const st = s.sync.status();
+  assert.equal(st.checked, false);
+  assert.equal(st.error, 'network');
+  assert.match(st.errorDetail, /cloud-api\.yandex\.net: Load failed/);
+  assert.equal(st.connected, true);                       // сеть не разлогинивает
+});
+
+test('повторная проверка после сбоя сети проходит и очищает ошибку', async () => {
+  const bad = setup({ cloudError: new CloudError('network'), local: false });
+  await bad.sync.check();
+  assert.equal(bad.sync.status().error, 'network');
+  const good = setup({ cloudText: backup(T0 - 500), local: false });
+  assert.equal((await good.sync.check()).kind, 'offer');
+  const st = good.sync.status();
+  assert.deepEqual([st.checked, st.error, st.errorDetail], [true, null, '']);
+});
+
+test('успешная запись считается проверкой, подробности ошибки очищаются', async () => {
+  const s = setup({ cloudText: null, local: true });
+  assert.equal((await s.sync.saveNow({ manual: true })).ok, true);
+  const st = s.sync.status();
+  assert.deepEqual([st.checked, st.error, st.errorDetail], [true, null, '']);
+});
+
+test('logout сбрасывает «проверено» и подробности', async () => {
+  const s = setup({ cloudError: new CloudError('network', 'x'), local: true });
+  await s.sync.check();
+  s.sync.logout();
+  const st = s.sync.status();
+  assert.deepEqual([st.checked, st.error, st.errorDetail], [false, null, '']);
+});

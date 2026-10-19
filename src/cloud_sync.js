@@ -59,6 +59,8 @@ export function createCloudSync(deps) {
   let pending = null;       // { mode: 'offer'|'ask', cloudAt, text, cloud, local } — ждём выбора игрока
   let lastSaveAt = null;
   let lastError = null;     // код последней ошибки (для показа), null — всё в порядке
+  let lastDetail = '';      // технические подробности последней ошибки (хост и сообщение браузера)
+  let checked = false;      // облако прочитано и сверено с устройством (без этого запись не идёт)
   let busy = false;
 
   const connected = () => hasValidToken(getState(), now());
@@ -66,6 +68,8 @@ export function createCloudSync(deps) {
   function fail(e) {
     const code = e instanceof CloudError ? e.code : 'network';
     lastError = code;
+    lastDetail = e instanceof CloudError ? String(e.message || '') : String(e?.message || '');
+    checked = false;
     if (AUTH_CODES.has(code)) setState({ ...getState(), expiresAt: 0 });   // токен остаётся, вход «устарел»
     return { ok: false, code };
   }
@@ -80,6 +84,8 @@ export function createCloudSync(deps) {
       syncedAt: s.syncedExportedAt,
       pending: pending ? { mode: pending.mode, cloudAt: pending.cloudAt, cloud: pending.cloud, local: pending.local } : null,
       error: lastError,
+      errorDetail: lastError ? lastDetail : '',
+      checked,
     };
   }
 
@@ -93,14 +99,14 @@ export function createCloudSync(deps) {
     }
     if (text === null) return { ok: true, cloudAt: null, text: null, summary: null };
     const r = parseText(text);
-    if (!r.ok || r.exportedAt == null) { lastError = 'bad_file'; return { ok: false, code: 'bad_file' }; }
+    if (!r.ok || r.exportedAt == null) { lastError = 'bad_file'; lastDetail = ''; checked = false; return { ok: false, code: 'bad_file' }; }
     return { ok: true, cloudAt: r.exportedAt, text, summary: r.summary || null };
   }
 
   /** Заменить данные устройства копией из облака и запомнить версию. */
   function applyCloud(cloud) {
     const r = applyText(cloud.text);
-    if (!r.ok) { lastError = 'apply'; return { ok: false, code: 'apply' }; }
+    if (!r.ok) { lastError = 'apply'; lastDetail = ''; return { ok: false, code: 'apply' }; }
     setState({ ...getState(), syncedExportedAt: cloud.cloudAt, syncedHash: snapshot().hash });
     pending = null;
     lastError = null;
@@ -121,6 +127,8 @@ export function createCloudSync(deps) {
       localChanged: !(st.syncedHash && st.syncedHash === snap.hash),
     });
     lastError = null;
+    lastDetail = '';
+    checked = true;
     if (plan.restore === 'auto') {
       const r = applyCloud(cloud);
       return r.ok ? { kind: 'auto' } : { kind: 'error', code: r.code };
@@ -179,6 +187,8 @@ export function createCloudSync(deps) {
       await makeClient(getState().token).saveBackup(snap.text);
       lastSaveAt = now();
       lastError = null;
+      lastDetail = '';
+      checked = true;                                   // запись прошла только после успешной сверки
       setState({ ...getState(), syncedExportedAt: snap.exportedAt, syncedHash: snap.hash });
       return { ok: true, at: snap.exportedAt };
     } catch (e) {
@@ -213,6 +223,8 @@ export function createCloudSync(deps) {
     setState({ token: '', expiresAt: 0, syncedExportedAt: null, syncedHash: '' });
     pending = null;
     lastError = null;
+    lastDetail = '';
+    checked = false;
     lastSaveAt = null;
   }
 

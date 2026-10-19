@@ -70,8 +70,13 @@ export function parseAuthHash(hash, { expectedState, now = Date.now() } = {}) {
 
 const STATUS_CODES = new Map([[401, 'unauthorized'], [403, 'forbidden'], [404, 'not_found'], [429, 'rate'], [507, 'quota']]);
 
-function errorFor(status) {
-  return new CloudError(STATUS_CODES.get(status) || (status >= 500 ? 'server' : 'bad_response'), `HTTP ${status}`);
+function errorFor(status, host = '') {
+  return new CloudError(STATUS_CODES.get(status) || (status >= 500 ? 'server' : 'bad_response'), `HTTP ${status}${host ? ` ${host}` : ''}`);
+}
+
+/** Имя хоста для подробностей ошибки (по нему видно, на каком шаге двухшаговой загрузки случился сбой). */
+function hostOf(url) {
+  try { return new URL(url).host; } catch (e) { return ''; }
 }
 
 /**
@@ -87,11 +92,12 @@ export function createClient({ fetch: doFetch, token, timeoutMs = REQUEST_TIMEOU
     try {
       const headers = auth ? { ...(init.headers || {}), Authorization: `OAuth ${token}` } : init.headers;
       const res = await doFetch(url, { ...init, headers, signal: ctl.signal });
-      if (!res.ok) throw errorFor(res.status);
+      if (!res.ok) throw errorFor(res.status, hostOf(url));
       return res;
     } catch (e) {
       if (e instanceof CloudError) throw e;
-      throw new CloudError(e?.name === 'AbortError' ? 'timeout' : 'network', e?.message || '');
+      const host = hostOf(url);
+      throw new CloudError(e?.name === 'AbortError' ? 'timeout' : 'network', [host, e?.message].filter(Boolean).join(': '));
     } finally {
       clearTimeout(timer);
     }

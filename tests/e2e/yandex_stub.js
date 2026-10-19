@@ -7,7 +7,7 @@ export const progress = (n) => ({ n: 0, good: 0, totalGames: n, totalWins: 0, by
 
 /** Подменяет Яндекс: вход, API Диска и хосты загрузки/скачивания. mode: 'ok' | 401 | 'offline'. */
 export async function stubYandex(page, { text = null, mode = 'ok' } = {}) {
-  const cloud = { text, puts: 0, logins: 0 };
+  const cloud = { text, puts: 0, logins: 0, mode };       // mode можно менять по ходу теста: 'ok' | 401 | 'offline'
   const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
   await page.route('https://oauth.yandex.ru/**', (route) => {
     cloud.logins++;
@@ -18,8 +18,8 @@ export async function stubYandex(page, { text = null, mode = 'ok' } = {}) {
   await page.route('https://cloud-api.yandex.net/**', (route) => {
     const req = route.request();
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
-    if (mode === 'offline') return route.abort('failed');
-    if (mode === 401) return route.fulfill({ status: 401, headers: cors, contentType: 'application/json', body: '{}' });
+    if (cloud.mode === 'offline') return route.abort('failed');
+    if (cloud.mode === 401) return route.fulfill({ status: 401, headers: cors, contentType: 'application/json', body: '{}' });
     const u = new URL(req.url());
     if (u.pathname.endsWith('/resources/download') && cloud.text === null) {
       return route.fulfill({ status: 404, headers: cors, contentType: 'application/json', body: '{}' });

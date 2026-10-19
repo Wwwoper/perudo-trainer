@@ -675,3 +675,8 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.cloud-detail {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
