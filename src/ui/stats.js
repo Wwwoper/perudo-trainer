@@ -10,6 +10,7 @@ import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
 import { renderPlayerCard, setupPlayerCard } from './player_card.js';
 import { renderCloudCard, cloudConnected } from './cloud_card.js';
 import { setupStatsTabs, showStatsTab } from './stats_tabs.js';
+import { summarize, rateOf, MIN_DECISIONS_FOR_RATE, MIN_GAMES_FOR_RATE } from '../stats_summary.js';
 import { markBackupExported } from './backup_reminder.js';
 import { readPersisted, describePersistence } from '../persistence.js';
 import { REMIND_FIRST } from '../backup_reminder.js';
@@ -34,6 +35,23 @@ export function downloadBackup() {
   return a.download;
 }
 
+/** Три крупных числа наверху «Результатов»; процент показывается только когда данных достаточно. */
+function renderTiles(s) {
+  const el = $('#stTiles');
+  if (!el) return;
+  const tile = (label, value, note) =>
+    `<div class="stat-tile"><span class="stat-value">${escapeHtml(String(value))}</span>` +
+    `<span class="stat-label">${escapeHtml(label)}</span><span class="stat-note">${escapeHtml(note)}</span></div>`;
+  const g = s.games;
+  const gameNote = g.total === 0 ? 'пока нет' : `побед: ${g.wins}${g.enough ? ` · ${pct(g.rate)}` : ` · мало (от ${MIN_GAMES_FOR_RATE})`}`;
+  const t = s.trainer;
+  const trainerNote = t.n === 0 ? 'решений нет'
+    : t.enough ? `${t.good} из ${t.n}` : `мало: ${t.n} из ${MIN_DECISIONS_FOR_RATE}`;
+  el.innerHTML = tile('Партий', g.total, gameNote) +
+    tile('Верно в тренажёре', t.enough ? pct(t.rate) : '—', trainerNote) +
+    tile('Повторов в очереди', s.queue, s.queue ? 'ждут в тренажёре' : 'очередь пуста');
+}
+
 export function renderStats() {
   if (!P) return;
 
@@ -41,9 +59,7 @@ export function renderStats() {
   const history = getGames();          // P2.11: через storage-хелпер
   const queue = getTrainingQueue();
 
-  if ($('#stTotal')) $('#stTotal').textContent = stats.n || 0;
-  if ($('#stGood')) $('#stGood').textContent = stats.good || 0;
-  if ($('#stQueue')) $('#stQueue').textContent = queue.length;
+  renderTiles(summarize({ stats, games: history, queue }));
 
   renderWeakSpots(stats.byTag);
   renderPlayerCard();
@@ -58,11 +74,16 @@ export function renderStats() {
       byModeEl.innerHTML = '<p class="muted">Тренажёр ещё не использовался.</p>';
     } else {
       let h = '<table><tr><th>Режим</th><th>Всего</th><th>Верно</th><th>Процент</th></tr>';
+      let hidden = false;
       for (const k of keys) {
         const d = byMode[k];
-        h += `<tr><td>${escapeHtml(modeLabel(k))}</td><td>${d.n}</td><td>${d.good}</td><td>${d.n ? pct(d.good / d.n) : '—'}</td></tr>`;
+        const r = rateOf(d.good, d.n, MIN_DECISIONS_FOR_RATE);
+        if (!r.enough) hidden = true;
+        h += `<tr><td>${escapeHtml(modeLabel(k))}</td><td>${d.n}</td><td>${d.good}</td><td>${r.enough ? pct(r.rate) : '—'}</td></tr>`;
       }
-      byModeEl.innerHTML = h + '</table>';
+      h += '</table>';
+      if (hidden) h += `<p class="muted stat-foot">Процент считается от ${MIN_DECISIONS_FOR_RATE} решений: до этого данных мало.</p>`;
+      byModeEl.innerHTML = h;
     }
   }
 
@@ -71,9 +92,7 @@ export function renderStats() {
     if (!history.length) {
       gamesEl.innerHTML = '<p class="muted">Сыгранных партий пока нет.</p>';
     } else {
-      const wins = history.filter((g) => g.won).length;
-      let h = `<p>Сыграно: ${history.length}, побед: ${wins} (${pct(wins / history.length)}).</p>`;
-      h += '<table><tr><th>Дата</th><th>Игроков</th><th>Раундов</th><th>Результат</th><th>Решений</th></tr>';
+      let h = '<table><tr><th>Дата</th><th>Игроков</th><th>Раундов</th><th>Результат</th><th>Решений</th></tr>';
       h += history.slice(-15).reverse().map((g) =>
         `<tr><td>${new Date(g.ts).toLocaleString('ru')}</td><td>${g.players}</td><td>${g.rounds}</td>` +
         `<td>${g.won ? 'победа' : 'поражение'}</td><td>${g.decisions}</td></tr>`

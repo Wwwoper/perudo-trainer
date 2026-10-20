@@ -192,3 +192,63 @@ test.describe('«Данные»: единый блок «Сохранность 
     await expect(page.locator('#stPersist')).toContainText('войдите через Яндекс');
   });
 });
+
+test.describe('«Результаты»: итоги и малая выборка', () => {
+  const seedProfile = async (page, over) => {
+    await page.goto('/');
+    await page.evaluate((o) => {
+      localStorage.setItem('perudo.userProfile', JSON.stringify({
+        n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, byTag: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } }, ...o,
+      }));
+    }, over);
+    await page.reload();
+    await goTab(page, 'stats');
+  };
+  const tile = (page, i) => page.locator('#stTiles .stat-tile').nth(i);
+
+  test('новичок: три итога с нулями, ни одного процента', async ({ page }) => {
+    await seedProfile(page, {});
+    await expect(page.locator('#stTiles .stat-tile')).toHaveCount(3);
+    await expect(tile(page, 0).locator('.stat-value')).toHaveText('0');
+    await expect(tile(page, 0).locator('.stat-note')).toHaveText('пока нет');
+    await expect(tile(page, 1).locator('.stat-value')).toHaveText('—');
+    await expect(tile(page, 1).locator('.stat-note')).toHaveText('решений нет');
+    await expect(tile(page, 2).locator('.stat-note')).toHaveText('очередь пуста');
+    await expect(page.locator('#stTiles')).not.toContainText('%');
+  });
+
+  test('малая выборка: вместо «0.0%» и «50.0%» написано, что данных мало', async ({ page }) => {
+    await seedProfile(page, { n: 4, good: 2, totalGames: 1, totalWins: 0, byMode: { classic: { n: 4, good: 2 } } });
+    await expect(tile(page, 0).locator('.stat-value')).toHaveText('1');
+    await expect(tile(page, 0).locator('.stat-note')).toContainText('побед: 0');
+    await expect(tile(page, 0).locator('.stat-note')).toContainText('мало');
+    await expect(tile(page, 1).locator('.stat-value')).toHaveText('—');
+    await expect(tile(page, 1).locator('.stat-note')).toHaveText('мало: 4 из 8');
+    await expect(page.locator('#stTiles')).not.toContainText('%');
+    await expect(page.locator('#stByMode tr').nth(1).locator('td').nth(3)).toHaveText('—');
+    await expect(page.locator('#stByMode .stat-foot')).toContainText('от 8 решений');
+  });
+
+  test('данных достаточно: проценты показаны, сноски про малую выборку нет', async ({ page }) => {
+    await seedProfile(page, { n: 20, good: 15, totalGames: 10, totalWins: 4, byMode: { classic: { n: 20, good: 15 } } });
+    await expect(tile(page, 0).locator('.stat-value')).toHaveText('10');
+    await expect(tile(page, 0).locator('.stat-note')).toContainText('40.0%');
+    await expect(tile(page, 1).locator('.stat-value')).toHaveText('75.0%');
+    await expect(tile(page, 1).locator('.stat-note')).toHaveText('15 из 20');
+    await expect(page.locator('#stByMode tr').nth(1).locator('td').nth(3)).toHaveText('75.0%');
+    await expect(page.locator('#stByMode .stat-foot')).toHaveCount(0);
+  });
+
+  test('итоги помещаются в экран и обновляются после сброса', async ({ page }) => {
+    await seedProfile(page, { n: 20, good: 15, totalGames: 10, totalWins: 4 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    for (let i = 0; i < 3; i++) {
+      expect(await tile(page, i).evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+    }
+    await openStatsTab(page, 'data');
+    page.once('dialog', (d) => d.accept());
+    await page.locator('#stClear').click();
+    await openStatsTab(page, 'results');
+    await expect(tile(page, 0).locator('.stat-value')).toHaveText('0');
+  });
+});

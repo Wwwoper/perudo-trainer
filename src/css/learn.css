@@ -395,6 +395,50 @@
   display: none;
 }
 
+/* Крупные итоги наверху «Результатов» */
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--space-2);
+  border-radius: var(--radius-s);
+  background: #1a1f28;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stat-note {
+  color: var(--mut);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.stats-main .card > b + .stats-table {
+  margin-top: var(--space-2);
+}
+
+.stat-foot {
+  margin: var(--space-2) 0 0;
+  font-size: 13px;
+}
+
 /* Таблицы сводки: ширина по содержимому, при нехватке места прокручиваются внутри карточки */
 .stats-table table {
   table-layout: auto;
