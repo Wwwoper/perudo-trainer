@@ -216,6 +216,7 @@ export function renderCloudCard() {
   }
   h += `<div id="clMsg" class="${message.cls}" role="status" aria-live="polite">${escapeHtml(message.text)}</div>`;
   host.innerHTML = h;
+  document.dispatchEvent(new Event('perudo:cloud-render'));   // «Данные» подстраивают совет про сохранность
 }
 
 function showDialog() {

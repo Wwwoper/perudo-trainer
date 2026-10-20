@@ -361,9 +361,30 @@
   min-height: var(--tap);
 }
 
-/* «Сбросить всё» — отдельной строкой, чтобы случайно не нажать вместо импорта */
-.stats-actions #stClear {
-  grid-column: 1 / -1;
+/* Блок «Сохранность данных»: облако и файл в одной карточке, разделённые чертой */
+.data-title {
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.data-section + .data-section {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+
+.data-section p {
+  margin: var(--space-2) 0;
+}
+
+/* «Сбросить всё» — отдельно и ниже всего, чтобы случайно не нажать вместо импорта */
+.stats-danger {
+  margin-top: var(--space-4);
+}
+
+.stats-danger button {
+  width: 100%;
+  min-height: var(--tap);
 }
 
 #stBackupMsg {
@@ -405,11 +426,11 @@
 
 @media (min-width: 720px) {
   .stats-actions {
-    grid-template-columns: repeat(3, max-content);
+    grid-template-columns: repeat(2, max-content);
   }
 
-  .stats-actions #stClear {
-    grid-column: auto;
+  .stats-danger button {
+    width: auto;
   }
 }
 
@@ -585,10 +606,6 @@
 }
 
 /* Копия на Яндекс Диске (вкладка «Данные») */
-.player-cloud p {
-  margin: var(--space-2) 0;
-}
-
 .cloud-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

@@ -8,7 +8,7 @@ import { modeLabel } from './modes.js';
 import { resetDuelStats } from './duel.js';
 import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
 import { renderPlayerCard, setupPlayerCard } from './player_card.js';
-import { renderCloudCard } from './cloud_card.js';
+import { renderCloudCard, cloudConnected } from './cloud_card.js';
 import { setupStatsTabs, showStatsTab } from './stats_tabs.js';
 import { markBackupExported } from './backup_reminder.js';
 import { readPersisted, describePersistence } from '../persistence.js';
@@ -18,7 +18,7 @@ import { REMIND_FIRST } from '../backup_reminder.js';
 export async function renderPersistence() {
   const el = $('#stPersist');
   if (!el) return;
-  el.textContent = describePersistence(await readPersisted(globalThis.navigator?.storage)) || '';
+  el.textContent = describePersistence(await readPersisted(globalThis.navigator?.storage), { cloud: cloudConnected() }) || '';
 }
 
 /** Скачивает полную копию данных в файл и откладывает напоминание. Возвращает имя файла. */
@@ -87,6 +87,7 @@ export function renderStats() {
 /** onReset() — вызывается при «Сбросить всё», чтобы партия забыла память ботов. */
 export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
   setupStatsTabs();
+  document.addEventListener('perudo:cloud-render', renderPersistence);   // вход и выход меняют совет про сохранность
   setupWeakSpots(onTrain);
   setupPlayerCard({ onChange: onPlayerChange });
   const msg = (text, cls = 'muted') => {

@@ -3,6 +3,7 @@
 // Ответ в одном разделе не должен стирать счётчики другого.
 import { test, expect } from './fixtures.js';
 import { openTab as goTab, openStatsTab } from './helpers.js';
+import { stubYandex, seed, cloudFile, progress, OLD } from './yandex_stub.js';
 
 const profile = (page) =>
   page.evaluate(() => JSON.parse(localStorage.getItem('perudo.userProfile') || 'null'));
@@ -141,5 +142,53 @@ test.describe('«Статистика»: подвкладки', () => {
     await expect(page.locator('#stTabs')).toHaveAttribute('role', 'tablist');
     await expect(page.locator('#stTabs [role="tab"]')).toHaveCount(3);
     await expect(page.locator('#stats [role="tabpanel"]:not([hidden])')).toHaveCount(1);
+  });
+});
+
+test.describe('«Данные»: единый блок «Сохранность данных»', () => {
+  // Браузер сообщает, что хранилище не защищено: совет про сохранность должен быть показан
+  const unprotected = (page) => page.addInitScript(() => {
+    if (navigator.storage) {
+      navigator.storage.persisted = async () => false;
+      navigator.storage.persist = async () => false;
+    }
+  });
+
+  test('облако, файл и совет про браузер — в одной карточке, «Сбросить всё» отдельно и ниже', async ({ page }) => {
+    await unprotected(page);
+    await page.goto('/');
+    await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
+    const card = page.locator('.data-card');
+    await expect(card.locator('.data-title')).toHaveText('Сохранность данных');
+    for (const sel of ['#plCloud', '#stExport', '#stImport', '#stBackupMsg', '#stPersist']) {
+      await expect(card.locator(sel)).toHaveCount(1);
+    }
+    await expect(card.locator('#stClear')).toHaveCount(0);
+    const [c, r] = await Promise.all([card.boundingBox(), page.locator('#stClear').boundingBox()]);
+    expect(r.y).toBeGreaterThanOrEqual(c.y + c.height);
+  });
+
+  test('гость: совет — сохранить файл или войти через Яндекс', async ({ page }) => {
+    await unprotected(page);
+    await page.goto('/');
+    await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
+    await expect(page.locator('#stPersist')).toContainText('Экспорт JSON');
+    await expect(page.locator('#stPersist')).toContainText('войдите через Яндекс');
+  });
+
+  test('после входа в Яндекс совет про файл заменяется советом про облако — сразу, без перезагрузки', async ({ page }) => {
+    await unprotected(page);
+    await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(3) }) });
+    await page.goto('/');
+    await seed(page, { games: 3, synced: OLD });
+    await goTab(page, 'stats');
+    await openStatsTab(page, 'data');
+    await expect(page.locator('#stPersist')).toContainText('Яндекс Диске');
+    await expect(page.locator('#stPersist')).not.toContainText('Экспорт JSON');
+    page.once('dialog', (d) => d.accept());
+    await page.locator('#clLogout').click();
+    await expect(page.locator('#stPersist')).toContainText('войдите через Яндекс');
   });
 });
