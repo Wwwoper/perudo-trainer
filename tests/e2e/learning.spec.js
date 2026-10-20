@@ -3,7 +3,7 @@
 // Страхуют переделку вёрстки: после неё вкладки должны делать то же самое.
 import { readFileSync } from 'node:fs';
 import { test, expect } from './fixtures.js';
-import { openTab, openStatsTab } from './helpers.js';
+import { openTab, openStatsTab, openAvatarPicker } from './helpers.js';
 
 async function open(page, tab) {
   await openTab(page, tab);
@@ -552,6 +552,7 @@ test.describe('Учебные вкладки', () => {
     test('эмодзи-аватар выбирается, подсвечивается и убирается', async ({ page }) => {
       await open(page, 'stats');
       await openStatsTab(page, 'player');
+      await openAvatarPicker(page);
       await page.locator('#plEmojis [data-emoji="🦊"]').click();
       await expect(page.locator('#plEmojis [data-emoji="🦊"]')).toHaveAttribute('aria-checked', 'true');
       await expect(page.locator('#plAvatar .seat-emoji')).toHaveText('🦊');
@@ -562,6 +563,23 @@ test.describe('Учебные вкладки', () => {
       expect((await readPlayer(page)).avatar).toBeNull();
       await expect(page.locator('#plAvatar svg')).toHaveCount(1);
       await expect(page.locator('#plClear')).toBeDisabled();
+    });
+
+    test('выбор аватара свёрнут: видны имя и текущий аватар, сетка раскрывается и сворачивается', async ({ page }) => {
+      await open(page, 'stats');
+      await openStatsTab(page, 'player');
+      const toggle = page.locator('#plToggle');
+      await expect(toggle).toHaveText('Изменить аватар');
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await expect(page.locator('#plPicker')).toBeHidden();
+      await expect(page.locator('#plAvatar')).toBeVisible();
+      await toggle.click();
+      await expect(page.locator('#plPicker')).toBeVisible();
+      await expect(page.locator('#plEmojis .player-emoji')).toHaveCount(16);
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      await expect(toggle).toHaveText('Скрыть выбор аватара');
+      await toggle.click();
+      await expect(page.locator('#plPicker')).toBeHidden();
     });
 
     test('фото сжимается до небольшого JPEG и показывается; не-картинка отклоняется', async ({ page }) => {
@@ -587,6 +605,7 @@ test.describe('Учебные вкладки', () => {
       await open(page, 'stats');
       await openStatsTab(page, 'player');
       await page.locator('#plName').fill('Анна');
+      await openAvatarPicker(page);
       await page.locator('#plEmojis [data-emoji="🦊"]').click();
       await openStatsTab(page, 'data');
       page.once('dialog', (d) => { expect(d.message()).toContain('профиль игрока'); d.accept(); });

@@ -32,6 +32,16 @@ export function renderPlayerCard() {
   if (clear) clear.disabled = !p.avatar;
 }
 
+/** Выбор аватара (16 эмодзи, фото) занят большую часть экрана, а нужен редко: по умолчанию свёрнут. */
+export function setPickerOpen(open) {
+  const picker = $('#plPicker');
+  const btn = $('#plToggle');
+  if (!picker || !btn) return;
+  picker.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+  btn.textContent = open ? 'Скрыть выбор аватара' : 'Изменить аватар';
+}
+
 function save(patch) {
   setPlayer({ ...getPlayer(), ...patch });
   renderPlayerCard();
@@ -98,6 +108,8 @@ export function setupPlayerCard({ onChange } = {}) {
     '<label class="player-name-field" for="plName">Имя' +
     `<input id="plName" type="text" maxlength="${NAME_MAX}" autocomplete="off" placeholder="Вы" enterkeyhint="done">` +
     '</label></div>' +
+    '<button type="button" id="plToggle" class="player-toggle" aria-expanded="false" aria-controls="plPicker">Изменить аватар</button>' +
+    '<div id="plPicker" hidden>' +
     '<div id="plEmojis" class="player-emojis" role="radiogroup" aria-label="Аватар">' +
     AVATAR_EMOJIS.map((e) =>
       `<button type="button" class="player-emoji" role="radio" aria-checked="false" data-emoji="${escapeHtml(e)}" aria-label="Аватар ${escapeHtml(e)}">${escapeHtml(e)}</button>`).join('') +
@@ -106,8 +118,10 @@ export function setupPlayerCard({ onChange } = {}) {
     '<button type="button" id="plPhoto">Выбрать фото</button>' +
     '<button type="button" id="plClear">Убрать аватар</button>' +
     '<input id="plFile" type="file" accept="image/*" hidden aria-label="Файл с фото">' +
-    '</div>' +
+    '</div></div>' +
     '<div id="plMsg" class="muted" role="status" aria-live="polite"></div>';
+
+  $('#plToggle').onclick = () => setPickerOpen($('#plPicker').hidden);
 
   const input = $('#plName');
   // Имя сохраняется при вводе; само поле переписываем только когда ввод закончен (иначе прыгает курсор).

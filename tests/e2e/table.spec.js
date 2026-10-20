@@ -1,7 +1,7 @@
 // tests/e2e/table.spec.js
 // Запуск: npm run test:e2e  (Playwright Test, а не `node --test`).
 import { test, expect } from './fixtures.js';
-import { openTab as goTab, openStatsTab } from './helpers.js';
+import { openTab as goTab, openStatsTab, openAvatarPicker } from './helpers.js';
 import * as yandex from './yandex_stub.js';
 
 /** Открывает вкладку панели (на телефоне — через кнопку в HUD / шторку). */
@@ -464,6 +464,7 @@ test.describe('Покерный стол в партии', () => {
     await goTab(page, 'stats');
     await openStatsTab(page, 'player');
     await page.locator('#plName').fill('Борис');
+    await openAvatarPicker(page);
     await page.locator('#plEmojis [data-emoji="🐼"]').click();
     await goTab(page, 'game');
     await expect(page.locator('.seat.human .seat-name')).toHaveText('Борис');

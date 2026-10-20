@@ -8,6 +8,11 @@ export async function openTab(page, name) {
   await btn.click();
 }
 
+/** Раскрывает выбор аватара во вкладке «Игрок» (по умолчанию он свёрнут). */
+export async function openAvatarPicker(page) {
+  if ((await page.locator('#plToggle').getAttribute('aria-expanded')) !== 'true') await page.locator('#plToggle').click();
+}
+
 /** Подвкладка «Статистики»: 'results' | 'player' | 'data' (раздел «Статистика» уже открыт). */
 export async function openStatsTab(page, name) {
   await page.locator(`#stTabs [data-st="${name}"]`).click();

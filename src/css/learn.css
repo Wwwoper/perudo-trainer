@@ -526,6 +526,12 @@
   font-size: 16px;
 }
 
+.player-toggle {
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: var(--space-3);
+}
+
 .player-emojis {
   display: grid;
   grid-template-columns: repeat(4, 1fr);      /* 16 эмодзи: 4×4 на телефоне, 8×2 на широком экране */
