@@ -24,6 +24,20 @@ export function rateOf(good, n, min) {
 }
 
 /**
+ * Новичок: ни партий, ни решений в тренажёре и упражнениях, ни очереди повторов.
+ * Тогда вместо таблиц с нулями показывается приглашение начать.
+ */
+export function isEmptyStats({ stats, games, queue } = {}) {
+  const drill = stats?.drill || {};
+  const tags = stats?.byTag && typeof stats.byTag === 'object' ? Object.values(stats.byTag) : [];
+  return count(stats?.n) === 0 && !tags.some((t) => count(t?.n) > 0)
+    && count(stats?.totalGames) === 0
+    && count(drill.A?.n) === 0 && count(drill.B?.n) === 0
+    && !(Array.isArray(games) && games.length)
+    && !(Array.isArray(queue) && queue.length);
+}
+
+/**
  * @param {{stats?: object, games?: object[], queue?: unknown[]}} src профиль, история партий, очередь повторов
  * Партии берём из счётчиков профиля (они копятся всё время, история хранит только последние),
  * а если счётчики отстают от истории (старая копия, импорт) — из истории.

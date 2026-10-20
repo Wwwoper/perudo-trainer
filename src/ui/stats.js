@@ -10,7 +10,7 @@ import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
 import { renderPlayerCard, setupPlayerCard } from './player_card.js';
 import { renderCloudCard, cloudConnected } from './cloud_card.js';
 import { setupStatsTabs, showStatsTab } from './stats_tabs.js';
-import { summarize, rateOf, MIN_DECISIONS_FOR_RATE, MIN_GAMES_FOR_RATE } from '../stats_summary.js';
+import { summarize, rateOf, isEmptyStats, MIN_DECISIONS_FOR_RATE, MIN_GAMES_FOR_RATE } from '../stats_summary.js';
 import { markBackupExported } from './backup_reminder.js';
 import { readPersisted, describePersistence } from '../persistence.js';
 import { REMIND_FIRST } from '../backup_reminder.js';
@@ -59,6 +59,9 @@ export function renderStats() {
   const history = getGames();          // P2.11: через storage-хелпер
   const queue = getTrainingQueue();
 
+  const empty = isEmptyStats({ stats, games: history, queue });
+  if ($('#stEmpty')) $('#stEmpty').hidden = !empty;
+  if ($('#stFilled')) $('#stFilled').hidden = empty;
   renderTiles(summarize({ stats, games: history, queue }));
 
   renderWeakSpots(stats.byTag);
@@ -106,6 +109,10 @@ export function renderStats() {
 /** onReset() — вызывается при «Сбросить всё», чтобы партия забыла память ботов. */
 export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
   setupStatsTabs();
+  $('#stEmpty')?.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-go]')?.dataset.go;
+    if (go) $(`.tab-btn[data-t="${go}"]`)?.click();
+  });
   document.addEventListener('perudo:cloud-render', renderPersistence);   // вход и выход меняют совет про сохранность
   setupWeakSpots(onTrain);
   setupPlayerCard({ onChange: onPlayerChange });

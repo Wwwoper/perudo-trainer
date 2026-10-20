@@ -574,12 +574,22 @@
             aria-selected="false" aria-controls="stPanelData" tabindex="-1">Данные</button>
         </div>
         <div id="stPanelResults" role="tabpanel" data-st-panel="results" aria-labelledby="stTabResults">
-          <div id="stTiles" class="stat-tiles"></div>
-          <div id="stWeak" class="card weak-card"></div>
-          <div class="card">
-            <b>Сводка</b>
-            <div id="stByMode" class="table-scroll stats-table"></div>
-            <div id="stGames" class="table-scroll stats-table"></div>
+          <div id="stEmpty" class="card stat-empty" hidden>
+            <b>Пока здесь пусто</b>
+            <p class="muted">Сыграйте партию или решите несколько ситуаций в тренажёре: здесь появятся итоги, слабые темы и список партий.</p>
+            <div class="stat-empty-actions">
+              <button type="button" class="btn-primary" data-go="game">Сыграть партию</button>
+              <button type="button" data-go="train">Открыть тренажёр</button>
+            </div>
+          </div>
+          <div id="stFilled">
+            <div id="stTiles" class="stat-tiles"></div>
+            <div id="stWeak" class="card weak-card"></div>
+            <div class="card">
+              <b>Сводка</b>
+              <div id="stByMode" class="table-scroll stats-table"></div>
+              <div id="stGames" class="table-scroll stats-table"></div>
+            </div>
           </div>
         </div>
         <div id="stPanelPlayer" role="tabpanel" data-st-panel="player" aria-labelledby="stTabPlayer" hidden>

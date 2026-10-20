@@ -1,7 +1,7 @@
 // tests/stats_summary.test.js — итоги «Результатов»: счётчики и защита от процентов по малой выборке.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { summarize, rateOf, MIN_DECISIONS_FOR_RATE, MIN_GAMES_FOR_RATE } from '../src/stats_summary.js';
+import { summarize, rateOf, isEmptyStats, MIN_DECISIONS_FOR_RATE, MIN_GAMES_FOR_RATE } from '../src/stats_summary.js';
 
 describe('rateOf', () => {
   test('доля есть только когда данных достаточно', () => {
@@ -17,6 +17,26 @@ describe('rateOf', () => {
       assert.equal(r.n, 0);
       assert.equal(r.rate, null);
     }
+  });
+});
+
+describe('isEmptyStats: новичок', () => {
+  const fresh = { n: 0, good: 0, totalGames: 0, totalWins: 0, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } };
+  test('пустой профиль и отсутствие данных — пусто', () => {
+    assert.equal(isEmptyStats(), true);
+    assert.equal(isEmptyStats({ stats: fresh, games: [], queue: [] }), true);
+  });
+  test('любое действие делает данные непустыми', () => {
+    assert.equal(isEmptyStats({ stats: { ...fresh, n: 1 } }), false);
+    assert.equal(isEmptyStats({ stats: { ...fresh, totalGames: 1 } }), false);
+    assert.equal(isEmptyStats({ stats: fresh, games: [{ won: false }] }), false);
+    assert.equal(isEmptyStats({ stats: fresh, queue: [{}] }), false);
+    assert.equal(isEmptyStats({ stats: { ...fresh, byTag: { endgame: { n: 3, good: 1 } } } }), false);   // слабые темы — тоже данные
+    assert.equal(isEmptyStats({ stats: { ...fresh, drill: { A: { n: 2, good: 1 }, B: { n: 0, good: 0 } } } }), false);
+    assert.equal(isEmptyStats({ stats: { ...fresh, drill: { A: { n: 0, good: 0 }, B: { n: 3, good: 3 } } } }), false);
+  });
+  test('мусор в профиле не считается данными', () => {
+    assert.equal(isEmptyStats({ stats: { n: 'x', totalGames: -1, drill: null }, games: 'x', queue: null }), true);
   });
 });
 

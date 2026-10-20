@@ -772,6 +772,24 @@ class LayoutTest(unittest.TestCase):
                 page.click('#stTabs [data-st="results"]')
                 self.assertTrue(page.locator("#stGames").is_visible())
 
+    def test_stats_empty_state_fits_and_buttons_are_touch_sized(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "stats")
+                self.assertTrue(page.locator("#stEmpty").is_visible())
+                self.assertFalse(page.locator("#stFilled").is_visible())
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                small = page.evaluate("""() => [...document.querySelectorAll('#stEmpty button')]
+                    .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
+                    .map(e => e.textContent.trim())""")
+                self.assertEqual(small, [])
+                bottom = page.locator("#stEmpty [data-go='game']").bounding_box()
+                self.assertLessEqual(bottom["y"] + bottom["height"], h, "кнопка приглашения ниже экрана")
+
     # ---------- Симуляция ----------
 
     def test_sim_fields_buttons_and_table_fit(self):

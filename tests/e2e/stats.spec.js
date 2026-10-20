@@ -87,7 +87,7 @@ test.describe('«Статистика»: подвкладки', () => {
     expect(await visible(page, 'Player')).toBe(false);
     expect(await visible(page, 'Data')).toBe(false);
     await expect(page.locator('#stClear')).toBeHidden();
-    await expect(page.locator('#stWeak')).toBeVisible();
+    await expect(page.locator('#stEmpty')).toBeVisible();           // у новичка — приглашение, а не таблицы с нулями
   });
 
   test('переключение мышью показывает только свою панель; профиль и данные на месте', async ({ page }) => {
@@ -206,15 +206,34 @@ test.describe('«Результаты»: итоги и малая выборка
   };
   const tile = (page, i) => page.locator('#stTiles .stat-tile').nth(i);
 
-  test('новичок: три итога с нулями, ни одного процента', async ({ page }) => {
+  test('новичок: вместо таблиц с нулями — приглашение, итоги и сводка скрыты', async ({ page }) => {
     await seedProfile(page, {});
-    await expect(page.locator('#stTiles .stat-tile')).toHaveCount(3);
+    await expect(page.locator('#stEmpty')).toBeVisible();
+    await expect(page.locator('#stEmpty')).toContainText('Пока здесь пусто');
+    await expect(page.locator('#stFilled')).toBeHidden();
+    await expect(page.locator('#stTiles')).toBeHidden();
+  });
+
+  test('приглашение ведёт в партию и в тренажёр', async ({ page }) => {
+    await seedProfile(page, {});
+    await page.locator('#stEmpty [data-go="train"]').click();
+    await expect(page.locator('#train')).toBeVisible();
+    await goTab(page, 'stats');
+    await page.locator('#stEmpty [data-go="game"]').click();
+    await expect(page.locator('#game')).toBeVisible();
+  });
+
+  test('первый же ответ в тренажёре убирает приглашение, итоги с нулями появляются', async ({ page }) => {
+    await seedProfile(page, {});
+    await goTab(page, 'train');
+    await page.click('#tDudo');
+    await goTab(page, 'stats');
+    await expect(page.locator('#stEmpty')).toBeHidden();
+    await expect(page.locator('#stFilled')).toBeVisible();
     await expect(tile(page, 0).locator('.stat-value')).toHaveText('0');
     await expect(tile(page, 0).locator('.stat-note')).toHaveText('пока нет');
     await expect(tile(page, 1).locator('.stat-value')).toHaveText('—');
-    await expect(tile(page, 1).locator('.stat-note')).toHaveText('решений нет');
-    await expect(tile(page, 2).locator('.stat-note')).toHaveText('очередь пуста');
-    await expect(page.locator('#stTiles')).not.toContainText('%');
+    await expect(tile(page, 1).locator('.stat-note')).toHaveText('мало: 1 из 8');   // очередь повторов зависит от случайной ситуации — не проверяем
   });
 
   test('малая выборка: вместо «0.0%» и «50.0%» написано, что данных мало', async ({ page }) => {
@@ -249,6 +268,6 @@ test.describe('«Результаты»: итоги и малая выборка
     page.once('dialog', (d) => d.accept());
     await page.locator('#stClear').click();
     await openStatsTab(page, 'results');
-    await expect(tile(page, 0).locator('.stat-value')).toHaveText('0');
+    await expect(page.locator('#stEmpty')).toBeVisible();      // после сброса снова «пусто»
   });
 });
