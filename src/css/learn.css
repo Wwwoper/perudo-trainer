@@ -444,6 +444,46 @@
   min-height: var(--tap);
 }
 
+.games-title {
+  display: block;
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.game-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+
+.game-when {
+  font-weight: 600;
+}
+
+.game-result {
+  font-weight: 600;
+  text-align: right;
+}
+
+.game-meta {
+  grid-column: 1 / -1;
+  color: var(--mut);
+  font-size: 14px;
+}
+
+.games-more {
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: var(--space-2);
+}
+
 .stat-foot {
   margin: var(--space-2) 0 0;
   font-size: 13px;

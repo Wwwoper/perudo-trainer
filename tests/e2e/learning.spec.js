@@ -293,7 +293,7 @@ test.describe('Учебные вкладки', () => {
     test('таблица партий помещается в карточку, кнопки доступны', async ({ page }) => {
       await seedGames(page);
       await open(page, 'stats');
-      await expect(page.locator('#stGames table')).toBeVisible();
+      await expect(page.locator('#stGames .game-list')).toBeVisible();
       expect(await page.locator('#stGames').evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await openStatsTab(page, 'data');

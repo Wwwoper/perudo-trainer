@@ -271,3 +271,54 @@ test.describe('«Результаты»: итоги и малая выборка
     await expect(page.locator('#stEmpty')).toBeVisible();      // после сброса снова «пусто»
   });
 });
+
+test.describe('«Результаты»: список партий', () => {
+  const seedGames = async (page, n) => {
+    await page.goto('/');
+    await page.evaluate((count) => {
+      const now = Date.now();
+      localStorage.setItem('perudo.games', JSON.stringify(Array.from({ length: count }, (_, i) =>
+        ({ ts: now - (count - i) * 3600000, players: 4, rounds: 12 + i, won: i % 2 === 0, decisions: 30 + i }))));
+      localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 0, good: 0, totalGames: count, totalWins: 0, byMode: {}, byTag: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
+    }, n);
+    await page.reload();
+    await goTab(page, 'stats');
+  };
+  const rows = (page) => page.locator('#stGames .game-row');
+
+  test('по умолчанию 10 свежих партий, у каждой дата, итог и краткие числа; свежая сверху', async ({ page }) => {
+    await seedGames(page, 25);
+    await expect(rows(page)).toHaveCount(10);
+    const first = rows(page).first();
+    await expect(first.locator('.game-when')).toHaveText(/^\d{2}\.\d{2}, \d{2}:\d{2}$/);
+    await expect(first.locator('.game-result')).toHaveText(/победа|поражение/);
+    await expect(first.locator('.game-meta')).toContainText('4 игрока · 36 раундов');      // последняя партия: раундов 12 + 24
+    await expect(page.locator('#stGamesMore')).toHaveText('Показать все (25)');
+  });
+
+  test('«Показать все» раскрывает список, «Показать меньше» сворачивает', async ({ page }) => {
+    await seedGames(page, 25);
+    await page.locator('#stGamesMore').click();
+    await expect(rows(page)).toHaveCount(25);
+    await expect(page.locator('#stGamesMore')).toHaveText('Показать меньше');
+    await page.locator('#stGamesMore').click();
+    await expect(rows(page)).toHaveCount(10);
+  });
+
+  test('партий не больше десяти: кнопки нет; победа и поражение окрашены по-разному', async ({ page }) => {
+    await seedGames(page, 4);
+    await expect(rows(page)).toHaveCount(4);
+    await expect(page.locator('#stGamesMore')).toHaveCount(0);
+    await expect(page.locator('#stGames .game-result.text-ok')).toHaveCount(2);
+    await expect(page.locator('#stGames .game-result.text-bad')).toHaveCount(2);
+  });
+
+  test('список помещается в экран без горизонтальной прокрутки', async ({ page }) => {
+    await seedGames(page, 25);
+    await page.locator('#stGamesMore').click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    expect(await page.locator('#stGames').evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+    const b = await page.locator('#stGamesMore').boundingBox();
+    expect(b.height).toBeGreaterThanOrEqual(44);
+  });
+});

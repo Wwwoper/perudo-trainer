@@ -10,6 +10,7 @@ import { renderWeakSpots, setupWeakSpots } from './weak_spots.js';
 import { renderPlayerCard, setupPlayerCard } from './player_card.js';
 import { renderCloudCard, cloudConnected } from './cloud_card.js';
 import { setupStatsTabs, showStatsTab } from './stats_tabs.js';
+import { visibleGames, formatGameWhen, formatGameMeta, GAMES_SHOWN } from '../games_list.js';
 import { summarize, rateOf, isEmptyStats, MIN_DECISIONS_FOR_RATE, MIN_GAMES_FOR_RATE } from '../stats_summary.js';
 import { markBackupExported } from './backup_reminder.js';
 import { readPersisted, describePersistence } from '../persistence.js';
@@ -52,6 +53,26 @@ function renderTiles(s) {
     tile('Повторов в очереди', s.queue, s.queue ? 'ждут в тренажёре' : 'очередь пуста');
 }
 
+let gamesExpanded = false;          // «Показать все» — до закрытия страницы
+
+/** Список партий: свежие сверху, по умолчанию последние 10, остальные по кнопке. */
+function renderGames(history) {
+  const el = $('#stGames');
+  if (!el) return;
+  if (!history.length) {
+    el.innerHTML = '<p class="muted">Сыгранных партий пока нет.</p>';
+    return;
+  }
+  const { items, hidden } = visibleGames(history, gamesExpanded);
+  let h = '<b class="games-title">Партии</b><ul class="game-list">' + items.map((g) =>
+    `<li class="game-row"><span class="game-when">${escapeHtml(formatGameWhen(g.ts))}</span>` +
+    `<span class="game-result ${g.won ? 'text-ok' : 'text-bad'}">${g.won ? 'победа' : 'поражение'}</span>` +
+    `<span class="game-meta">${escapeHtml(formatGameMeta(g))}</span></li>`).join('') + '</ul>';
+  if (hidden) h += `<button type="button" id="stGamesMore" class="games-more">Показать все (${history.length})</button>`;
+  else if (gamesExpanded && history.length > GAMES_SHOWN) h += '<button type="button" id="stGamesMore" class="games-more">Показать меньше</button>';
+  el.innerHTML = h;
+}
+
 export function renderStats() {
   if (!P) return;
 
@@ -90,25 +111,17 @@ export function renderStats() {
     }
   }
 
-  const gamesEl = $('#stGames');
-  if (gamesEl) {
-    if (!history.length) {
-      gamesEl.innerHTML = '<p class="muted">Сыгранных партий пока нет.</p>';
-    } else {
-      let h = '<table><tr><th>Дата</th><th>Игроков</th><th>Раундов</th><th>Результат</th><th>Решений</th></tr>';
-      h += history.slice(-15).reverse().map((g) =>
-        `<tr><td>${new Date(g.ts).toLocaleString('ru')}</td><td>${g.players}</td><td>${g.rounds}</td>` +
-        `<td>${g.won ? 'победа' : 'поражение'}</td><td>${g.decisions}</td></tr>`
-      ).join('');
-      h += '</table>';
-      gamesEl.innerHTML = h;
-    }
-  }
+  renderGames(history);
 }
 
 /** onReset() — вызывается при «Сбросить всё», чтобы партия забыла память ботов. */
 export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
   setupStatsTabs();
+  $('#stGames')?.addEventListener('click', (e) => {
+    if (!e.target.closest('#stGamesMore')) return;
+    gamesExpanded = !gamesExpanded;
+    renderGames(getGames());
+  });
   $('#stEmpty')?.addEventListener('click', (e) => {
     const go = e.target.closest('[data-go]')?.dataset.go;
     if (go) $(`.tab-btn[data-t="${go}"]`)?.click();
