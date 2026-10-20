@@ -217,6 +217,21 @@ export function weakestTag(list) {
   return best ? { ...best, label: TAG_LABELS[best.tag] } : null;
 }
 
+/** Ситуация уже есть в очереди повторов тренажёра. */
+export function isQueued(queue, item) {
+  return Array.isArray(queue) && queue.some((x) => isSameSituation(x, item));
+}
+
+/**
+ * Добавляет ситуацию в очередь повторов, не создавая дублей. Саму очередь не меняет.
+ * @returns {{queue: object[], added: boolean}}
+ */
+export function addToQueue(queue, item) {
+  const list = Array.isArray(queue) ? queue : [];
+  if (!item || isQueued(list, item)) return { queue: list, added: false };
+  return { queue: [...list, { ...item, h: item.h.slice(), streak: 0 }], added: true };
+}
+
 /** Две ситуации тренажёра одинаковы (режим, число кубиков, ставка и ваши кубики). */
 export function isSameSituation(a, b) {
   return !!a && !!b && a.mode === b.mode && a.n === b.n && a.q === b.q && a.f === b.f

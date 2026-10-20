@@ -408,7 +408,7 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gResultCard .key-moment')).toHaveCount(1, { timeout: 10_000 });
   }
 
-  test('итог партии: ключевой момент и «Разобрать в тренажёре» открывает ситуацию без дублей', async ({ page }) => {
+  test('итог партии: «Добавить в очередь повторов» только записывает ситуацию (без дублей), итог остаётся открытым', async ({ page }) => {
     await page.evaluate(() => localStorage.clear());
     await loseByWrongDudo(page);
     await page.evaluate(() => { document.querySelector('#gResultDialog')?.close?.(); });
@@ -422,18 +422,26 @@ test.describe('Покерный стол в партии', () => {
 
     const replay = card.locator('.key-moment-replay');
     await expect(replay).toHaveCount(1);
+    await expect(replay).toHaveText('Добавить в очередь повторов');
     await replay.scrollIntoViewIfNeeded();
     await replay.click();
-    await expect(page.locator('#tMode')).toHaveValue('endgame');
-    await expect(page.locator('.trainer-repeat')).toBeVisible();
     const queue = () => readJson(page, 'perudo.trainingQueue');
-    const first = await queue();
-    expect(first).toHaveLength(1);
+    expect(await queue()).toHaveLength(1);
+
+    // Тренажёр не открывается: остаёмся в итоге партии, остальные моменты не пропадают.
+    await expect(page.locator('#train')).toBeHidden();
+    await expect(card.locator('.key-moments')).toBeVisible();
+    await expect(replay).toHaveText('В очереди повторов ✓');
+    await expect(replay).toBeDisabled();
 
     // Повторное нажатие не создаёт дубль.
     await page.evaluate(() => document.querySelector('.key-moment-replay')?.click());
-    const second = await queue();
-    expect(second).toHaveLength(1);
+    expect(await queue()).toHaveLength(1);
+
+    // В тренажёре ситуация ждёт в очереди повторов.
+    await page.evaluate(() => { document.querySelector('#gResultDialog')?.close?.(); });
+    await page.evaluate(() => document.querySelector('.tab-btn[data-t="train"]').click());   // шторка итога на телефоне перекрывает меню
+    await expect(page.locator('#tStat')).toContainText('В очереди повторов: 1');
   });
 
   test('первый ход в раунде (без чужой ставки) в тренажёр не переносится', async ({ page }) => {

@@ -36,7 +36,7 @@ migrateIfNeeded();
 
 let assistConfig = createAssistConfig('training');
 let cloudApi = null;
-let trainerApi = null;          // ситуации из итога партии открываются в тренажёре через него
+let trainerApi = null;          // «Тренировать» в статистике и обновление очереди при заходе в тренажёр
 let lastKeyMoments = [];        // ключевые моменты последней законченной партии (для кнопок в итоге)
 
 // ================= Партия (движок + стол) =================
@@ -57,15 +57,6 @@ function askPersistenceIfNeeded() {
   if (!shouldAskPersistence({ games, tries: dev.persistTries })) return;
   setDeviceState({ ...dev, persistTries: dev.persistTries + 1 });
   requestPersistence(globalThis.navigator?.storage).then(() => renderStats());
-}
-
-/** «Разобрать в тренажёре»: закрыть шторку и окно итогов, открыть вкладку и показать ситуацию. */
-function replayInTrainer(item) {
-  sideApi.close();
-  const dlg = $('#gResultDialog');
-  if (dlg?.open) dlg.close();
-  $('.tab-btn[data-t="train"]')?.click();
-  trainerApi?.focus(item);
 }
 
 /** «Тренировать» в статистике: открыть тренажёр в нужном режиме. */
@@ -98,7 +89,7 @@ function setupGame() {
   setupBotStyles();
   setupBotMind();
   setupResultDialog(() => game);
-  setupKeyMoments(replayInTrainer, () => lastKeyMoments);
+  setupKeyMoments(() => lastKeyMoments);
   setupBackupReminder(downloadBackup);
   setupReveal(() => {
     continueFlow();

@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   decisionTags, buildMoment, sanitizeMoment, normalizeMoments, appendMoments,
-  momentMode, isReplayable, toQueueItem, scoreMoment, pickKeyMoments, weakestTag, isSameSituation, TAG_LABELS, MOMENT_TAGS,
+  momentMode, isReplayable, toQueueItem, scoreMoment, pickKeyMoments, weakestTag, isSameSituation, isQueued, addToQueue, TAG_LABELS, MOMENT_TAGS,
   MAX_MOMENTS, KEY_MOMENTS_PER_GAME,
 } from '../src/moments.js';
 
@@ -307,6 +307,43 @@ describe('weakestTag', () => {
   });
   it('у каждой метки есть название', () => {
     for (const t of MOMENT_TAGS) assert.ok(TAG_LABELS[t], t);
+  });
+});
+
+describe('addToQueue / isQueued: очередь повторов без дублей', () => {
+  const a = { mode: 'classic', n: 14, h: [1, 3, 5], f: 5, q: 7, streak: 0 };
+  const b = { ...a, q: 8 };
+  it('новая ситуация добавляется, исходная очередь не меняется', () => {
+    const q0 = [];
+    const r = addToQueue(q0, a);
+    assert.equal(r.added, true);
+    assert.deepEqual(r.queue, [a]);
+    assert.equal(q0.length, 0);
+  });
+  it('та же ситуация второй раз не добавляется, даже если у записи в очереди другой streak', () => {
+    const r = addToQueue([{ ...a, streak: 2 }], { ...a });
+    assert.equal(r.added, false);
+    assert.equal(r.queue.length, 1);
+    assert.equal(r.queue[0].streak, 2);              // запись, накопившая успехи, не сбрасывается
+  });
+  it('несколько разных моментов подряд попадают в очередь все, ни один не теряется', () => {
+    let q = [];
+    for (const it of [a, b, { ...a, f: 2 }]) q = addToQueue(q, it).queue;
+    assert.equal(q.length, 3);
+  });
+  it('кубики копируются, streak у новой записи ноль', () => {
+    const item = { ...a, streak: 5 };
+    const { queue } = addToQueue([], item);
+    queue[0].h.push(6);
+    assert.equal(item.h.length, 3);
+    assert.equal(queue[0].streak, 0);
+  });
+  it('мусор вместо очереди или ситуации не ломает', () => {
+    assert.deepEqual(addToQueue(null, a).queue, [a]);
+    assert.equal(addToQueue([a], null).added, false);
+    assert.equal(isQueued(undefined, a), false);
+    assert.equal(isQueued([a], b), false);
+    assert.equal(isQueued([a], { ...a }), true);
   });
 });
 

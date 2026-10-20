@@ -5,7 +5,6 @@ import { renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct, flash } from './common.js';
 import { MODES, modeLabel } from './modes.js';
 import { compareOptions, markChosen } from '../compare.js';
-import { isSameSituation } from '../moments.js';
 import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 
@@ -229,7 +228,7 @@ export function setupTrainer() {
   newSituation();
 
   return {
-    /** Очередь могли дополнить из другого раздела (например, из итога партии): читаем её заново. */
+    /** Очередь дополняют из итога партии («Добавить в очередь повторов»): при заходе в тренажёр читаем её заново. */
     reloadQueue() {
       queue = getTrainingQueue();
       updateStat();
@@ -240,21 +239,6 @@ export function setupTrainer() {
       $('#tMode').value = mode;
       updateSettingsHint();
       newSituation();
-      return true;
-    },
-    /** Показывает ситуацию из итога партии: добавляет её в очередь повторов (без дублей) и открывает. */
-    focus(item) {
-      if (!item || !MODES[item.mode]) return false;
-      queue = getTrainingQueue();
-      let entry = queue.find((x) => isSameSituation(x, item));
-      if (!entry) {
-        entry = { ...item, h: item.h.slice(), streak: 0 };
-        queue.push(entry);
-        persist();
-      }
-      $('#tMode').value = item.mode;
-      updateSettingsHint();
-      newSituation(entry);
       return true;
     },
   };

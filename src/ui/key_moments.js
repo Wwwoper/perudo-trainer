@@ -1,8 +1,9 @@
-// src/ui/key_moments.js — блок «Ключевые моменты» в итоге партии и кнопка «Разобрать в тренажёре».
+// src/ui/key_moments.js — блок «Ключевые моменты» в итоге партии и кнопка «Добавить в очередь повторов».
 
 import { compareOptions, markChosen } from '../compare.js';
 import { getClassification } from '../assist.js';
-import { isReplayable, toQueueItem, weakestTag } from '../moments.js';
+import { isReplayable, toQueueItem, weakestTag, isQueued, addToQueue } from '../moments.js';
+import { getTrainingQueue, setTrainingQueue } from '../storage.js';
 import { renderBid, escapeHtml } from '../table.js';
 import { P, $, pct } from './common.js';
 import { optionsHtml } from './options_view.js';
@@ -19,7 +20,10 @@ function describe(m) {
   return `Вы сказали Calza на ${renderBid(m.bid.q, m.bid.f)} — шанс точного совпадения ${pct(m.p)}.`;
 }
 
-function momentHtml(m) {
+const QUEUE_LABEL = 'Добавить в очередь повторов';
+const QUEUED_LABEL = 'В очереди повторов ✓';
+
+function momentHtml(m, queue) {
   const v = getClassification(m.p, m.kind);
   const icon = v.code === 'good' ? '✓' : v.code === 'meh' ? '~' : '✗';
   const { options } = compareOptions({
@@ -34,7 +38,8 @@ function momentHtml(m) {
     `<p>${describe(m)}</p>` +
     optionsHtml(markChosen(options, choice), THRESHOLD) +
     (isReplayable(m)
-      ? `<button type="button" class="key-moment-replay" data-replay="${escapeHtml(m.id)}">Разобрать в тренажёре</button>`
+      ? `<button type="button" class="key-moment-replay" data-replay="${escapeHtml(m.id)}"${isQueued(queue, toQueueItem(m)) ? ' disabled' : ''}>` +
+        `${isQueued(queue, toQueueItem(m)) ? QUEUED_LABEL : QUEUE_LABEL}</button>`
       : '') +
     `</div>`;
 }
@@ -50,22 +55,28 @@ export function keyMomentsHtml(decisions, moments) {
     ? `<p class="key-moments-summary">Чаще всего ошибки в теме «${escapeHtml(weak.label)}»: ${weak.errors} из ${weak.total}.</p>`
     : '';
   if (!moments.length) return summary;
+  const queue = getTrainingQueue();
   return summary + `<details class="key-moments"><summary>Ключевые моменты (${moments.length})</summary>` +
     `<p class="muted">Сравнение по шансу ставки, а не оценка выигрыша.</p>` +
-    moments.map(momentHtml).join('') + `</details>`;
+    moments.map((m) => momentHtml(m, queue)).join('') + `</details>`;
 }
 
 /**
- * Кнопки «Разобрать в тренажёре» внутри итога партии.
- * @param {(item: object) => void} onReplay получает ситуацию в формате очереди тренажёра
+ * Кнопки «Добавить в очередь повторов» внутри итога партии. Ситуация только записывается в очередь
+ * (без дублей): итог остаётся открытым, чтобы можно было добавить и другие моменты. Разбираются они
+ * позже в тренажёре, где повторы подмешиваются сами.
  * @param {() => object[]} getMoments ключевые моменты текущего итога
  */
-export function setupKeyMoments(onReplay, getMoments) {
+export function setupKeyMoments(getMoments) {
   $('#gResultCard')?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-replay]');
     if (!btn) return;
     const m = getMoments().find((x) => x.id === btn.dataset.replay);
     const item = m && toQueueItem(m);
-    if (item) onReplay(item);
+    if (!item) return;
+    const { queue, added } = addToQueue(getTrainingQueue(), item);
+    if (added) setTrainingQueue(queue);
+    btn.textContent = QUEUED_LABEL;
+    btn.disabled = true;
   });
 }
