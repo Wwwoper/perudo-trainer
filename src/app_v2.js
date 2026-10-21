@@ -68,6 +68,7 @@ function trainInMode(mode) {
 function setupGame() {
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-action="new-game"]')) startNewGame();
+    if (e.target.closest('[data-prestart-settings]')) sideApi.show('tabSettings');
   });
   if ($('#gDudo')) $('#gDudo').onclick = onPlayerDudo;
   if ($('#gCalza')) $('#gCalza').onclick = onPlayerCalza;
@@ -96,7 +97,43 @@ function setupGame() {
     // Партия закончилась этим вскрытием: окно итога — после него, а не поверх.
     if (game && game.state === 'finished') scheduleResultDialog(() => game, 300);
   });
-  startNewGame();
+  renderPrestart();          // партия начинается кнопкой «Начать партию» после выбора настроек
+}
+
+// ----- Перед стартом: партии ещё нет, показываем заготовку стола и настройки -----
+
+let prestartSheetShown = false;   // шторка настроек на телефоне открывается сама один раз за загрузку страницы
+
+/** Вид «партия не начата»: заготовка вместо стола, действия скрыты, кнопка «Начать партию». */
+function renderPrestart() {
+  if (game) return;
+  $('#game')?.classList.add('is-prestart');
+  $$('.side-start').forEach((b) => { b.textContent = 'Начать партию'; });
+  if ($('#gStatus')) $('#gStatus').textContent = 'Новая партия';
+  if ($('#gMeta')) $('#gMeta').textContent = 'Выберите настройки и начните';
+  if ($('#gFeed')) $('#gFeed').textContent = '';
+  if ($('#gameTable')) {
+    $('#gameTable').innerHTML =
+      '<div class="prestart">' +
+      '<p class="prestart-title">Партия ещё не начата</p>' +
+      '<p class="muted">Выберите число ботов, их уровень и режим помощи, затем начните. ' +
+      'Настройки запоминаются: в следующий раз достаточно одной кнопки.</p>' +
+      '<div class="prestart-actions">' +
+      '<button type="button" class="btn-primary prestart-start" data-action="new-game">Начать партию</button>' +
+      '<button type="button" data-prestart-settings>Настройки</button>' +
+      '</div></div>';
+  }
+}
+
+/** Заход во вкладку «Партия» без начатой партии: настройки на виду. */
+function showPrestart() {
+  if (game) return;
+  renderPrestart();
+  sideApi.select('tabSettings');
+  if (!prestartSheetShown && !window.matchMedia?.('(min-width: 1101px)').matches) {
+    prestartSheetShown = true;
+    sideApi.show('tabSettings');
+  }
 }
 
 function totalDice() {
@@ -119,6 +156,8 @@ function startNewGame() {
   assistConfig = createAssistConfig(assistMode);
   sideApi.close();
   sideApi.pick();
+  $('#game')?.classList.remove('is-prestart');
+  $$('.side-start').forEach((b) => { b.textContent = 'Начать новую партию'; });
 
   const characters = chosenBotStyles(botCount).map((style) => generateCharacter(style));
 
@@ -800,6 +839,7 @@ function bootstrap() {
   setupTabs((tab) => {
     if (tab === 'stats') renderStats();
     if (tab === 'train') trainerApi?.reloadQueue();
+    if (tab === 'game') showPrestart();
   });
   setupCalculator();
   trainerApi = setupTrainer();

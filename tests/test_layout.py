@@ -421,7 +421,7 @@ class LayoutTest(unittest.TestCase):
         for w, h in [(390, 844), (768, 1024), (1024, 700)]:
             with self.subTest(w=w, h=h):
                 page = self.open_game(w, h, 3)
-                self.assertTrue(self.side_hidden(page))
+                self.wait_side_hidden(page)          # до старта шторка настроек открыта, при старте закрывается
                 self.assertFalse(page.locator("#gBackdrop").is_visible())
 
     def test_sheet_opens_from_hud_and_closes_every_way(self):
@@ -743,6 +743,25 @@ class LayoutTest(unittest.TestCase):
                 card = page.locator("#dOpen").evaluate("e => e.getBoundingClientRect().right")
                 self.assertLessEqual(page.locator("#dOpen").bounding_box()["x"]
                                      + page.locator("#dOpen").bounding_box()["width"], card + 1)
+
+    # ---------- До старта партии ----------
+
+    def test_prestart_fits_and_buttons_are_touch_sized(self):
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                self.assertTrue(page.locator(".prestart").is_visible())
+                self.assertEqual(page.locator(".seat").count(), 0)
+                self.assertFalse(page.locator("#gDock").is_visible(), "панели действий до старта быть не должно")
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                small = page.evaluate("""() => [...document.querySelectorAll('.prestart button')]
+                    .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
+                    .map(e => e.textContent.trim())""")
+                self.assertEqual(small, [])
 
     # ---------- Статистика ----------
 
@@ -1177,6 +1196,7 @@ class LayoutTest(unittest.TestCase):
                 page = ctx.new_page()
                 page.goto(self.url)
                 self.goto_tab(page, "game")
+                page.evaluate("window.__perudo_v2.startNewGame()")      # партия начинается кнопкой, не сама
                 page.wait_for_selector(".seat")
                 self.play_out(page)
                 page.wait_for_selector("#gResultDialog[open]", timeout=5000)

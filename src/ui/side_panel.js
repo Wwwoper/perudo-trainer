@@ -5,7 +5,7 @@ import { $, $$ } from './common.js';
 
 // Заполняется в setupSidePanel(): закрыть шторку, выбрать вкладку по режиму помощи,
 // удержать журнал внизу. До инициализации — безопасные заглушки.
-export const sideApi = { close() {}, pick() {}, select() {}, keepAtEnd() {} };
+export const sideApi = { close() {}, pick() {}, select() {}, show() {}, keepAtEnd() {} };
 
 /** showOdds() — есть ли в текущем режиме помощи вкладка «Расчёт» (иначе по умолчанию журнал). */
 export function setupSidePanel(showOdds) {
@@ -93,6 +93,13 @@ export function setupSidePanel(showOdds) {
   sideApi.select = (tabId) => {
     const tab = document.getElementById(tabId);
     if (tab) select(tab);
+  };
+  /** Как кнопка в HUD: на широком экране панель уже на виду — выбираем вкладку, на узком открываем шторку. */
+  sideApi.show = (tabId, from) => {
+    const tab = document.getElementById(tabId);
+    if (!tab) return;
+    if (wide.matches) select(tab);
+    else open(tabId, from);
   };
   sideApi.keepAtEnd = (panelId) => {
     const panel = document.getElementById(panelId);

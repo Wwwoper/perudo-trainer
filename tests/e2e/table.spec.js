@@ -14,7 +14,8 @@ async function openTab(page, tabId) {
 }
 
 async function openSettings(page) {
-  await openTab(page, 'tabSettings');
+  // До старта партии настройки уже открыты сами (на телефоне — шторкой, которая закрывает кнопки HUD).
+  if (!(await page.locator('#panSettings').isVisible())) await openTab(page, 'tabSettings');
   await expect(page.locator('#panSettings')).toBeVisible();
 }
 
@@ -94,6 +95,49 @@ test.describe('Покерный стол в партии', () => {
     }).toPass({ timeout: 10_000 });
     // Поля настроек теперь лежат в скрытой вкладке — их открывает openSettings().
     await expect(page.locator('#gameTable')).toBeVisible();
+  });
+
+  const isNarrow = (page) => page.viewportSize().width < 1101;
+  const closeSheet = async (page) => { if (isNarrow(page)) await page.keyboard.press('Escape'); };
+
+  test('до старта: заготовка вместо стола, настройки открыты, панели действий нет; кнопка запускает партию', async ({ page }) => {
+    await expect(page.locator('#gameTable .prestart')).toBeVisible();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(0);
+    await expect(page.locator('#gStatus')).toHaveText('Новая партия');
+    await expect(page.locator('#gDock')).toBeHidden();
+    expect(await page.evaluate(() => window.__perudo_v2.game)).toBeNull();
+    await expect(page.locator('#panSettings')).toBeVisible();                 // на телефоне — шторкой, на широком — справа
+    const start = page.locator('#panSettings .side-start');
+    await expect(start).toHaveText('Начать партию');
+
+    await start.click();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(4);            // настройки по умолчанию: 3 бота
+    await expect(page.locator('#gameTable .prestart')).toHaveCount(0);
+    await expect(page.locator('#gDock')).toBeVisible();
+    await expect(start).toHaveText('Начать новую партию');
+    expect(await page.evaluate(() => window.__perudo_v2.game !== null)).toBe(true);
+  });
+
+  test('кнопки заготовки: «Начать партию» берёт выбранные настройки, «Настройки» открывает их снова', async ({ page }) => {
+    await openSettings(page);
+    await page.locator('#gBots').fill('2');
+    await closeSheet(page);
+    await page.locator('.prestart [data-prestart-settings]').click();
+    await expect(page.locator('#panSettings')).toBeVisible();
+    await closeSheet(page);
+    await page.locator('.prestart-start').click();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(3);            // 2 бота и вы
+  });
+
+  test('на телефоне шторка настроек открывается сама один раз за загрузку страницы', async ({ page }) => {
+    test.skip(!isNarrow(page), 'на широком экране панель настроек и так на виду');
+    await expect(page.locator('#gSide.is-open')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#gSide.is-open')).toHaveCount(0);
+    await goTab(page, 'stats');
+    await goTab(page, 'game');
+    await expect(page.locator('#gSide.is-open')).toHaveCount(0);              // второй раз не навязываемся
+    await expect(page.locator('.prestart')).toBeVisible();
   });
 
   test('новая партия рисует стол, места игроков и центральную ставку', async ({ page }) => {
