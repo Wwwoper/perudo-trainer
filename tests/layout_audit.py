@@ -143,6 +143,10 @@ def measure_all(base_url, browser):
         snap("drill A: after check", "#dAfb")
         page.click("#dAfb .calc-hint summary")
         snap("drill A: hint open", "#dAfb")
+        # Памятка «Как прикинуть в уме» до ответа: развёрнутый текст не должен ломать вёрстку
+        page.click("#dNew")
+        page.click("#dPanelA .drill-hint summary")
+        snap("drill A: memo (hint open)", "#dACheck")
 
         _tab(page, "duel")
         snap("duel", "#dStart")

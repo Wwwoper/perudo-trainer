@@ -3,6 +3,7 @@
 import { updateStats } from '../storage.js';
 import { renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct } from './common.js';
+import { safeByRule, isHalfway } from '../drill_rule.js';
 
 let drillState = { A: null, B: null };
 
@@ -66,9 +67,12 @@ export function setupDrill() {
     saveDrill('A', ok1 && ok2);
 
     if ($('#dAfb')) {
+      const chance = f === 1 ? '1/6' : '1/3';
       const faceNote = f === 1
-        ? '1/6 (грань 1 — без джокеров)'
-        : `1/3 (грань ${f} + 1-джокер)`;
+        ? 'подходит одна грань из шести — единица'
+        : `подходят две грани из шести: «${f}» и единица`;
+      const byRule = safeByRule(ownCnt, unk, f);
+      const half = isHalfway(ownCnt, unk, f);
 
       $('#dAfb').innerHTML =
         `<p class="${ok1 ? 'text-ok' : 'text-bad'}">Ожидание: ${isNaN(a1) ? '—' : a1} → точное ${exp.toFixed(1)} = ` +
@@ -80,28 +84,26 @@ export function setupDrill() {
         `<summary>Как это посчитано</summary>` +
         `<div class="calc-hint-body">` +
 
-        `<p><b>1. Ожидание (среднее количество кубиков нужной цифры на столе).</b><br>` +
-        `E[X] = «ваши» + неизвестные × p.<br>` +
-        `• «ваши» = ${ownCnt} — кубики в руке, совпадающие с гранью ` +
-        `${f === 1 ? '1 напрямую' : `«${f}» или с 1-джокером`}.<br>` +
-        `• неизвестные = ${n} − ${h.length} = ${unk}.<br>` +
-        `• p = ${pv.toFixed(4)} для грани «${f}»: ${faceNote}.<br>` +
-        `E[X] = ${ownCnt} + ${unk} × ${pv.toFixed(4)} ≈ <b>${exp.toFixed(2)}</b>.</p>` +
+        `<p><b>1. Ожидание</b> — сколько нужных кубиков примерно на столе.<br>` +
+        `• Ваши подходящие кубики: <b>${ownCnt}</b> ` +
+        `(${f === 1 ? 'единицы' : `«${f}» и единицы-джокеры`}).<br>` +
+        `• Чужих кубиков: ${n} − ${h.length} = <b>${unk}</b>.<br>` +
+        `• Шанс одного чужого: <b>${chance}</b> (${faceNote}).<br>` +
+        `Ожидание = ${ownCnt} + ${unk} × ${chance} ≈ <b>${exp.toFixed(1)}</b>.</p>` +
 
         `<p><b>2. Безопасная ставка.</b><br>` +
-        `Нужно наибольшее q, при котором P(X ≥ q) ≥ 0.5. Здесь X ~ Binomial(${unk}, ${pv.toFixed(4)}).<br>` +
-        `Вместо «сколько всего» удобнее считать «сколько должно добавиться из неизвестных»:<br>` +
-        `need = q − «ваши» = q − ${ownCnt}.<br>` +
-        `P(X ≥ need) = Σ<sub>k = need</sub><sup>${unk}</sup> C(${unk}, k) · p<sup>k</sup> · (1 − p)<sup>${unk} − k</sup>.</p>` +
+        `Округляем к ближайшему целому${half ? ' (ровно посередине — вниз)' : ''}: ` +
+        `${exp.toFixed(1)} → <b>${byRule}</b>.<br>` +
+        `Проверка точным расчётом: ставка ${safe} сбывается в ${pct(pSafe)} случаев ` +
+        `(не меньше 50% ✔), а ставка ${safe + 1} — только в ${pct(pSafe1)} (меньше 50% ✘).</p>` +
 
-        `<p>Проверяем два соседних значения:<br>` +
-        `• q = ${safe}: P ≈ <b>${pct(pSafe)}</b> ≥ 50% ✔<br>` +
-        `• q = ${safe + 1}: P ≈ <b>${pct(pSafe1)}</b> &lt; 50% ✘<br>` +
-        `Значит, безопасная ставка — <b>${safe}</b>.</p>` +
+        `<p class="muted">Ожидание — это среднее, а безопасная ставка — «хватит с шансом 50%». ` +
+        `Они отличаются меньше чем на полкубика, поэтому достаточно округлить.</p>` +
 
-        `<p class="muted">Замечание: E[X] и «безопасная ставка» — разные величины. ` +
-        `E[X] — среднее, а 50%-й порог лежит <i>ниже</i> среднего, потому что биномиальное ` +
-        `распределение скошено вправо. Отсюда правило: безопасная ставка обычно на 1–2 меньше E[X].</p>` +
+        `<p class="muted">Для любознательных. Точный шанс считается по биномиальному распределению: ` +
+        `из ${unk} чужих кубиков должно подойти не меньше ${Math.max(0, safe - ownCnt)}. ` +
+        `P = Σ<sub>k = ${Math.max(0, safe - ownCnt)}</sub><sup>${unk}</sup> ` +
+        `C(${unk}, k) · p<sup>k</sup> · (1 − p)<sup>${unk} − k</sup>, где p = ${chance}.</p>` +
 
         `</div>` +
         `</details>`;

@@ -205,6 +205,39 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dAfb .calc-hint-body')).toBeVisible();
     });
 
+    test('«Оценка в уме»: свёрнутая памятка «Как прикинуть в уме» с правилом и примером', async ({ page }) => {
+      await open(page, 'drill');
+      const memo = page.locator('#dPanelA .drill-hint');
+      await expect(memo.locator('summary')).toHaveText('Как прикинуть в уме');
+      await expect(memo.locator('.drill-hint-body')).toBeHidden();             // по умолчанию свёрнута
+      await memo.locator('summary').click();
+      const body = memo.locator('.drill-hint-body');
+      await expect(body).toBeVisible();
+      await expect(body).toContainText('свои + чужие × шанс');
+      await expect(body).toContainText('1/3');
+      await expect(body).toContainText('1/6');
+      await expect(body).toContainText('ближайшего целого');
+      await expect(body).toContainText('ровно посередине');
+      await expect(body).toContainText('6,3 → 6');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    });
+
+    test('«Оценка в уме»: разбор после ответа — шаги с числами задачи и округление по правилу', async ({ page }) => {
+      await open(page, 'drill');
+      await page.fill('#dA1', '5');
+      await page.fill('#dA2', '5');
+      await page.click('#dACheck');
+      await page.locator('#dAfb .calc-hint summary').click();
+      const body = page.locator('#dAfb .calc-hint-body');
+      await expect(body).toContainText('1. Ожидание');
+      await expect(body).toContainText('Ваши подходящие кубики');
+      await expect(body).toContainText('Шанс одного чужого');
+      await expect(body).toContainText('Округляем к ближайшему целому');
+      await expect(body).toContainText('Проверка точным расчётом');
+      await expect(body).not.toContainText('E[X]');                             // обозначений из учебника в разборе нет
+      await expect(body).not.toContainText('на 1–2 меньше');
+    });
+
     test('панель проверки видна на экране, кнопки следуют за выбранным упражнением', async ({ page }) => {
       await open(page, 'drill');
       const vh = page.viewportSize().height;
