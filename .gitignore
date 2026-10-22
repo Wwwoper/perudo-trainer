@@ -7,3 +7,7 @@ playwright-report/
 __pycache__/
 *.pyc
 *.pyd
+# логи эмуляторов (tools/)
+/logs/
+/trainer_logs/
+/drill_logs/
