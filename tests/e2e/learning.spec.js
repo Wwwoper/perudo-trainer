@@ -137,10 +137,7 @@ test.describe('Учебные вкладки', () => {
 
     test('после «Ставлю» варианты тоже показаны, проверка не отмечена', async ({ page }) => {
       await open(page, 'train');
-      const total = await page.evaluate(() => Number([...document.querySelectorAll('#tInfo .trainer-chip b')][0]?.textContent));
-      await page.fill('#tQ', String(total));
-      await page.click('#tPick .face-btn[aria-label="Цифра 6"]');
-      await page.click('#tRaise');
+      await page.click('#tRaise');   // поля по умолчанию всегда содержат допустимую ставку
       const rows = page.locator('#tFb .trainer-option');
       expect(await rows.count()).toBeGreaterThanOrEqual(1);
       await expect(rows.first()).toContainText('Не верю');
@@ -173,15 +170,21 @@ test.describe('Учебные вкладки', () => {
 
     test('ставка «Ставлю» принимается и оценивается', async ({ page }) => {
       await open(page, 'train');
-      // заведомо большая ставка: количество не больше общего числа кубиков, но выше ставки соперника
-      const total = await page.evaluate(() => {
-        const n = [...document.querySelectorAll('#tInfo .trainer-chip b')][0];
-        return Number(n?.textContent);
-      });
-      await page.fill('#tQ', String(total));
-      await page.click('#tPick .face-btn[aria-label="Цифра 6"]');
       await page.click('#tRaise');
       await expect(page.locator('#tFb')).toContainText('Ваша ставка');
+    });
+
+    test('недопустимая ставка отклоняется и не попадает в статистику', async ({ page }) => {
+      await open(page, 'train');
+      const before = await page.locator('#tStat').textContent();
+      // 1×2 после любой чужой ставки недопустимо
+      await page.fill('#tQ', '1');
+      await page.click('#tPick .face-btn[aria-label="Цифра 2"]');
+      await page.click('#tRaise');
+      await expect(page.locator('#tFb')).toContainText(/не меньше|нельзя/);
+      await expect(page.locator('#tFb')).not.toContainText('Хорошее решение');
+      await expect(page.locator('#tLayout')).not.toHaveClass(/is-answered/);
+      expect(await page.locator('#tStat').textContent()).toBe(before);
     });
 
     test('смена режима даёт новую ситуацию и обновляет подпись', async ({ page }) => {

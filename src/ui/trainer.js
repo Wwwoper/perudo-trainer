@@ -7,6 +7,7 @@ import { MODES, modeLabel } from './modes.js';
 import { compareOptions, markChosen } from '../compare.js';
 import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
+import { checkRaise, defaultRaise } from '../trainer_rules.js';
 
 export function setupTrainer() {
   if (!P) return null;
@@ -109,8 +110,10 @@ export function setupTrainer() {
     }
     if ($('#tHand')) $('#tHand').innerHTML = renderHand(cur.h, m.wild);
     if ($('#tBid')) $('#tBid').innerHTML = renderBid(cur.q, cur.f);
-    if ($('#tQ')) $('#tQ').value = cur.q;
-    if ($('#tF')) $('#tF').value = Math.min(6, cur.f + 1);
+    const start = defaultRaise(cur);
+    if ($('#tQ')) $('#tQ').value = start ? start.q : cur.q;
+    if ($('#tF')) $('#tF').value = start ? start.f : cur.f;
+    if ($('#tRaise')) $('#tRaise').disabled = !start;   // повысить нельзя — остаётся «Не верю»
     syncPick();
     setAnswered(false);
     if ($('#tFb')) $('#tFb').innerHTML = '';
@@ -188,11 +191,8 @@ export function setupTrainer() {
     const Q = +$('#tQ').value;
     const F = +$('#tF').value;
 
-    if (!(Q > q || (Q === q && F > f))) {
-      flash($('#tFb'), 'Ставка должна быть выше: больше количество или та же цифра и больше значение.');
-      return;
-    }
-    if (Q > n) { flash($('#tFb'), 'Ставка больше общего числа кубиков.'); return; }
+    const check = checkRaise(Q, F, cur);
+    if (!check.ok) { flash($('#tFb'), check.message); return; }
 
     const p = P.probBid(Q, F, n, h, m.wild);
     const po = P.probBid(q, f, n, h, m.wild);
