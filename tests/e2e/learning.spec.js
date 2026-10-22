@@ -208,6 +208,60 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dAfb .calc-hint-body')).toBeVisible();
     });
 
+    test.describe('учёт попыток', () => {
+      const drillStat = (page, k) => page.evaluate((key) =>
+        (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.drill || {})[key] || { n: 0, good: 0 }, k);
+
+      test('A: пустой или неполный ответ не засчитывается, показано сообщение', async ({ page }) => {
+        await open(page, 'drill');
+        await page.click('#dACheck');
+        await expect(page.locator('#dAfb')).toContainText('Введите оба ответа');
+        await page.fill('#dA1', '5');
+        await page.click('#dACheck');
+        await expect(page.locator('#dAfb')).toContainText('Введите оба ответа');
+        await page.fill('#dA2', '5.5');
+        await page.click('#dACheck');
+        await expect(page.locator('#dAfb')).toContainText('целое');
+        expect((await drillStat(page, 'A')).n).toBe(0);
+        await expect(page.locator('#dACheck')).toBeEnabled();
+      });
+
+      test('A: повторная проверка одной задачи не накручивает счётчик; после «Новое» снова пишется', async ({ page }) => {
+        await open(page, 'drill');
+        await page.fill('#dA1', '5');
+        await page.fill('#dA2', '5');
+        await page.click('#dACheck');
+        await expect(page.locator('#dACheck')).toBeDisabled();
+        await page.locator('#dACheck').dispatchEvent('click');
+        expect((await drillStat(page, 'A')).n).toBe(1);
+        await page.click('#dNew');
+        await expect(page.locator('#dACheck')).toBeEnabled();
+        await page.fill('#dA1', '5');
+        await page.fill('#dA2', '5');
+        await page.click('#dACheck');
+        expect((await drillStat(page, 'A')).n).toBe(2);
+      });
+
+      test('B: пустое и дробное не засчитываются, повторные нажатия дают одну запись', async ({ page }) => {
+        await open(page, 'drill');
+        await page.click('.drill-tab[data-drill="B"]');
+        await page.click('#dBCheck');
+        await expect(page.locator('#dBfb')).toContainText('Введите число');
+        await page.fill('#dB1', '5.7');
+        await page.click('#dBCheck');
+        await expect(page.locator('#dBfb')).toContainText('целое');
+        expect((await drillStat(page, 'B')).n).toBe(0);
+        await page.fill('#dB1', '5');
+        await page.click('#dBCheck');
+        await page.locator('#dBCheck').dispatchEvent('click');
+        await page.locator('#dBCheck').dispatchEvent('click');
+        expect((await drillStat(page, 'B')).n).toBe(1);
+        await expect(page.locator('#dBCheck')).toBeDisabled();
+        await page.click('#dNew');
+        await expect(page.locator('#dBCheck')).toBeEnabled();
+      });
+    });
+
     test('«Оценка в уме»: свёрнутая памятка «Как прикинуть в уме» с правилом и примером', async ({ page }) => {
       await open(page, 'drill');
       const memo = page.locator('#dPanelA .drill-hint');

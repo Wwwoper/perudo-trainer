@@ -2,13 +2,22 @@
 
 import { updateStats } from '../storage.js';
 import { renderDie, renderHand, renderBid } from '../table.js';
-import { P, $, $$, pct } from './common.js';
+import { P, $, $$, pct, flash } from './common.js';
+import { validateAnswerA, validateAnswerB } from '../drill_input.js';
 import { safeByRule, isHalfway } from '../drill_rule.js';
 
 let drillState = { A: null, B: null };
 
 export function setupDrill() {
   if (!P) return;
+
+  // Одна задача — одна запись в статистике: после проверки кнопка недоступна до «Новое».
+  const answered = { A: false, B: false };
+  const setAnswered = (k, on) => {
+    answered[k] = on;
+    const btn = $(`#d${k}Check`);
+    if (btn) btn.disabled = on;
+  };
 
   function saveDrill(k, good) {
     updateStats((S) => {
@@ -30,6 +39,7 @@ export function setupDrill() {
     if ($('#dA1')) $('#dA1').value = '';
     if ($('#dA2')) $('#dA2').value = '';
     if ($('#dAfb')) $('#dAfb').innerHTML = '';
+    setAnswered('A', false);
   }
 
   function newB() {
@@ -44,12 +54,15 @@ export function setupDrill() {
     }
     if ($('#dB1')) $('#dB1').value = '';
     if ($('#dBfb')) $('#dBfb').innerHTML = '';
+    setAnswered('B', false);
   }
 
   const checkA = $('#dACheck');
   if (checkA) checkA.onclick = () => {
     const d = drillState.A;
-    if (!d) return;
+    if (!d || answered.A) return;
+    const input = validateAnswerA($('#dA1').value, $('#dA2').value);
+    if (!input.ok) { flash($('#dAfb'), input.message); return; }
     const { n, h, f } = d;
     const unk = n - h.length;
     const ownCnt = P.own(h, f, true);
@@ -59,12 +72,12 @@ export function setupDrill() {
     const pSafe = safe > 0 ? P.probBid(safe, f, n, h, true) : 0;
     const pSafe1 = safe + 1 > 0 ? P.probBid(safe + 1, f, n, h, true) : 0;
 
-    const a1 = parseFloat(String($('#dA1').value).replace(',', '.'));
-    const a2 = parseFloat($('#dA2').value);
+    const { a1, a2 } = input;
     const ok1 = Math.abs(a1 - exp) <= 0.75;
     const ok2 = Math.abs(a2 - safe) <= 1;
 
     saveDrill('A', ok1 && ok2);
+    setAnswered('A', true);
 
     if ($('#dAfb')) {
       const chance = f === 1 ? '1/6' : '1/3';
@@ -75,9 +88,9 @@ export function setupDrill() {
       const half = isHalfway(ownCnt, unk, f);
 
       $('#dAfb').innerHTML =
-        `<p class="${ok1 ? 'text-ok' : 'text-bad'}">Ожидание: ${isNaN(a1) ? '—' : a1} → точное ${exp.toFixed(1)} = ` +
+        `<p class="${ok1 ? 'text-ok' : 'text-bad'}">Ожидание: ${a1} → точное ${exp.toFixed(1)} = ` +
         `${ownCnt} (ваши, с джокерами) + ${unk} × ${f === 1 ? '1/6' : '1/3'}.</p>` +
-        `<p class="${ok2 ? 'text-ok' : 'text-bad'}">Безопасная ставка (шанс ≥ 50%): ваш ответ ${isNaN(a2) ? '—' : a2}, точно ${safe} ` +
+        `<p class="${ok2 ? 'text-ok' : 'text-bad'}">Безопасная ставка (шанс ≥ 50%): ваш ответ ${a2}, точно ${safe} ` +
         `(${pct(pSafe)}). Допуск ±1 — это тренировка прикидки в уме.</p>` +
 
         `<details class="calc-hint">` +
@@ -136,11 +149,13 @@ export function setupDrill() {
   const checkB = $('#dBCheck');
   if (checkB) checkB.onclick = () => {
     const d = drillState.B;
-    if (!d) return;
+    if (!d || answered.B) return;
+    const input = validateAnswerB($('#dB1').value);
+    if (!input.ok) { flash($('#dBfb'), input.message); return; }
     const exp = d.down ? Math.ceil(d.q / 2) : d.q * 2 + 1;
-    const a = parseInt($('#dB1').value, 10);
-    const ok = a === exp;
+    const ok = input.a === exp;
     saveDrill('B', ok);
+    setAnswered('B', true);
 
     if ($('#dBfb')) {
       $('#dBfb').innerHTML =
