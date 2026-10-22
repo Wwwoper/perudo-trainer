@@ -5,6 +5,7 @@ import { createGame, startGame, applyAction, canCalza as engineCanCalza }
   from './engine.js';
 import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
+import { readInfo } from './table_read.js';
 import { updateStats, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState } from './storage.js';
 import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
@@ -219,9 +220,16 @@ function addGameLog(type, html) {
   if (feed) feed.innerHTML = html;
 }
 
-function addReview(kind, prob, text) {
+/** Шанс ставки q×f с учётом ставок за столом + размер руки и число подходящих кубиков (для воспроизведения разбора). */
+function tableRead(q, f, me) {
+  return readInfo((...a) => P.probBidRead(...a), {
+    q, f, hand: me.hand, players: game.players, bidHistory: game.bidHistory, meId: me.id, wild: !game.palifico,
+  });
+}
+
+function addReview(kind, prob, text, extra) {
   const v = getClassification(prob, kind);
-  const entry = { kind, prob, text, v, round: game ? game.round : 0, outcome: '' };
+  const entry = { kind, prob, text, v, round: game ? game.round : 0, outcome: '', ...extra };
   reviewEntries.push(entry);
   return entry;
 }
@@ -567,7 +575,7 @@ function onPlayerRaise() {
   }
 
   const p = P.probBid(q, f, total, me.hand, !game.palifico);
-  const entry = addReview('raise', p, `вы поставили ${renderBid(q, f)} — шанс ${pct(p)}.`);
+  const entry = addReview('raise', p, `вы поставили ${renderBid(q, f)} — шанс ${pct(p)}.`, tableRead(q, f, me));
   const before = decisionContext(total, me);
 
   const res = applyAction(game, 'human', { type: 'raise', quantity: q, face: f });
@@ -594,7 +602,7 @@ function onPlayerDudo() {
   const q = b.q, f = b.f;
   const p = P.probBid(q, f, total, me.hand, !game.palifico);
   const entry = addReview('dudo', p,
-    `вы не поверили ${renderBid(q, f)} — шанс, что ставка верна: ${pct(p)}.`);
+    `вы не поверили ${renderBid(q, f)} — шанс, что ставка верна: ${pct(p)}.`, tableRead(q, f, me));
   const before = decisionContext(total, me);
 
   const res = applyAction(game, 'human', { type: 'dudo' });
@@ -865,6 +873,7 @@ if (document.readyState === 'loading') {
 
 window.__perudo_v2 = {
   get game() { return game; },
+  get reviews() { return reviewEntries; },
   get duelTree() { return getDuelTree(); },
   get duelState() { return getDuelState(); },
   startNewGame,

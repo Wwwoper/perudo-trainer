@@ -168,6 +168,24 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gHistory')).not.toBeEmpty();
   });
 
+  test('запись «Разбора» хранит размер руки, подходящие кубики и шанс с учётом стола', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 3 });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2, 2]);
+
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(2).click(); // грань 3
+    await page.locator('#gRaise').click();
+
+    const e = await page.evaluate(() => window.__perudo_v2.reviews[0]);
+    expect(e.kind).toBe('raise');
+    expect(e.handSize).toBe(3);
+    expect(Number.isInteger(e.ownMatch)).toBe(true);
+    // первая ставка раунда: ставок за столом ещё нет, обе вероятности совпадают
+    expect(e.probRead).toBeCloseTo(e.prob, 10);
+    expect(e.trust).toBe(0.2);
+  });
+
   test('кнопка «Не верю» завершает раунд и обновляет стол', async ({ page }) => {
     await startGame(page, { bots: 1, dice: 2 });
     await waitMyTurn(page);

@@ -21,9 +21,9 @@ describe('подпись под «Разбором»', () => {
 });
 
 describe('источник числа в «Разборе»', () => {
-  it('app_v2.js считает оценку ставки через probBid и не вызывает probBidRead', () => {
+  it('оценка и классификация хода идут по P.probBid; probBidRead — только дополнительные данные записи', () => {
     const src = readFileSync(new URL('../src/app_v2.js', import.meta.url), 'utf8');
-    assert.match(src, /P\.probBid\(/);
-    assert.doesNotMatch(src, /probBidRead/);
+    assert.match(src, /const p = P\.probBid\(q, f, total, me\.hand, !game\.palifico\);\s*\n\s*const entry = addReview\('raise', p,/);
+    assert.equal((src.match(/probBidRead/g) || []).length, 1, 'probBidRead вызывается только в tableRead');
   });
 });
