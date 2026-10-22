@@ -42,3 +42,13 @@ export function readInfo(probBidRead, { q, f, hand, players, bidHistory, meId, w
     trust,
   };
 }
+
+/**
+ * HTML второго числа для строки «Разбора» (formatPct — pct из ui/common.js). Пусто, если записи старые (нет probRead)
+ * или шанс с учётом стола не отличается от обычного (первая ставка раунда, ставок на эту цифру не было).
+ */
+export function readNote(e, formatPct) {
+  if (!e || !Number.isFinite(e.probRead) || !Number.isFinite(e.prob) || Math.abs(e.probRead - e.prob) < 0.005) return '';
+  const soft = e.v && e.v.softened ? ' Рискованно по вашим кубикам, но соперники подтверждают цифру.' : '';
+  return `<div class="muted">По вашим кубикам ${formatPct(e.prob)}; с учётом ставок за столом ${formatPct(e.probRead)}.${soft}</div>`;
+}

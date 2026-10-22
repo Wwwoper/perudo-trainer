@@ -184,6 +184,13 @@ test.describe('Покерный стол в партии', () => {
     // первая ставка раунда: ставок за столом ещё нет, обе вероятности совпадают
     expect(e.probRead).toBeCloseTo(e.prob, 10);
     expect(e.trust).toBe(0.2);
+
+    // на экране: запись есть, второго числа нет (до вас никто не ставил), подпись описывает оба числа
+    await openTab(page, 'tabLog');   // на телефоне «Разбор» открывается из шторки, где уже видны вкладки
+    await page.locator('#tabReview').click();
+    await expect(page.locator('#gReview .review-row')).toHaveCount(1);
+    await expect(page.locator('#gReview')).not.toContainText('с учётом ставок за столом');
+    await expect(page.locator('#gReviewNote')).toContainText('с учётом ставок за столом');
   });
 
   test('кнопка «Не верю» завершает раунд и обновляет стол', async ({ page }) => {

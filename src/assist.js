@@ -58,7 +58,14 @@ export function getAdviceText(action, probability, threshold = 0.5) {
   return 'Слабая ставка (маловероятна)';
 }
 
-export function getClassification(probability, kind = 'raise') {
+/** Если по вашим кубикам ставка «слабая», но с учётом ставок за столом её шанс не ниже этого — крестик смягчается. */
+export const SOFTEN_FROM = 0.35;
+
+/**
+ * Оценка хода по вероятности по вашим кубикам. probRead — шанс с учётом ставок за столом (необязателен):
+ * только для ставки и только вместо «Слабая ставка» даёт «Рискованная» (softened: true). Пороги 0.35 / 0.5 не меняются.
+ */
+export function getClassification(probability, kind = 'raise', probRead) {
   if (kind === 'dudo') {
     if (probability < 0.5) return { code: 'good', label: 'Верная проверка', score: 1 };
     if (probability < 0.6) return { code: 'meh', label: 'Спорная проверка', score: 0.5 };
@@ -66,5 +73,8 @@ export function getClassification(probability, kind = 'raise') {
   }
   if (probability >= 0.5) return { code: 'good', label: 'Надёжная ставка', score: 1 };
   if (probability >= 0.35) return { code: 'meh', label: 'Рискованная ставка', score: 0.5 };
+  if (kind === 'raise' && Number.isFinite(probRead) && probRead >= SOFTEN_FROM) {
+    return { code: 'meh', label: 'Рискованная ставка', score: 0.5, softened: true };
+  }
   return { code: 'bad', label: 'Слабая ставка', score: 0 };
 }

@@ -1,7 +1,7 @@
 // assist.test.js — тесты для assist.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { createAssistConfig, AssistMode, getAdviceText, getClassification } from '../src/assist.js';
+import { createAssistConfig, AssistMode, getAdviceText, getClassification, SOFTEN_FROM } from '../src/assist.js';
 
 describe('AssistMode — константы', () => {
   it('определены все режимы', () => {
@@ -49,5 +49,33 @@ describe('getClassification', () => {
   it('Raise с высокой вероятностью — good', () => {
     const r = getClassification(0.6, 'raise');
     assert.strictEqual(r.code, 'good');
+  });
+});
+
+describe('getClassification: смягчение по ставкам за столом', () => {
+  it('без probRead пороги прежние: 0.5 / 0.35', () => {
+    assert.strictEqual(getClassification(0.5, 'raise').code, 'good');
+    assert.strictEqual(getClassification(0.35, 'raise').code, 'meh');
+    assert.strictEqual(getClassification(0.096, 'raise').code, 'bad');
+  });
+  it('слабая ставка + шанс с учётом стола не ниже порога → «Рискованная», softened', () => {
+    const r = getClassification(0.096, 'raise', 0.43);
+    assert.strictEqual(r.code, 'meh');
+    assert.strictEqual(r.label, 'Рискованная ставка');
+    assert.strictEqual(r.softened, true);
+    assert.strictEqual(getClassification(0.096, 'raise', SOFTEN_FROM).code, 'meh');
+  });
+  it('шанс с учётом стола ниже порога или не число — остаётся «Слабая»', () => {
+    assert.strictEqual(getClassification(0.096, 'raise', 0.34).code, 'bad');
+    assert.strictEqual(getClassification(0.096, 'raise', NaN).code, 'bad');
+    assert.strictEqual(getClassification(0.096, 'raise', undefined).code, 'bad');
+  });
+  it('good и meh по своим кубикам не меняются и не помечаются softened', () => {
+    assert.strictEqual(getClassification(0.6, 'raise', 0.9).softened, undefined);
+    assert.strictEqual(getClassification(0.4, 'raise', 0.9).softened, undefined);
+  });
+  it('«Не верю» и Calza не смягчаются', () => {
+    assert.strictEqual(getClassification(0.7, 'dudo', 0.1).code, 'bad');
+    assert.strictEqual(getClassification(0.1, 'calza', 0.9).code, 'bad');
   });
 });

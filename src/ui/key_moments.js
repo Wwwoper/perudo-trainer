@@ -24,7 +24,8 @@ const QUEUE_LABEL = 'Добавить в очередь повторов';
 const QUEUED_LABEL = 'В очереди повторов ✓';
 
 function momentHtml(m, queue) {
-  const v = getClassification(m.p, m.kind);
+  // В партии ставку могли смягчить с учётом стола (в записи code = 'meh'): показываем тот же вердикт, что был в «Разборе».
+  const v = getClassification(m.p, m.kind, m.code === 'meh' ? 1 : undefined);
   const icon = v.code === 'good' ? '✓' : v.code === 'meh' ? '~' : '✗';
   const { options } = compareOptions({
     bid: m.bid, total: m.n, hand: m.h, wild: m.wild, threshold: THRESHOLD,

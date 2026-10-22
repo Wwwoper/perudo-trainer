@@ -5,7 +5,7 @@ import { createGame, startGame, applyAction, canCalza as engineCanCalza }
   from './engine.js';
 import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
-import { readInfo } from './table_read.js';
+import { readInfo, readNote } from './table_read.js';
 import { updateStats, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState } from './storage.js';
 import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
@@ -228,7 +228,7 @@ function tableRead(q, f, me) {
 }
 
 function addReview(kind, prob, text, extra) {
-  const v = getClassification(prob, kind);
+  const v = getClassification(prob, kind, extra?.probRead);
   const entry = { kind, prob, text, v, round: game ? game.round : 0, outcome: '', ...extra };
   reviewEntries.push(entry);
   return entry;
@@ -246,6 +246,7 @@ function renderReview() {
       <span class="review-badge">${e.v.code === 'good' ? '✓' : e.v.code === 'meh' ? '~' : '✗'}</span>
       <div>
         <b>Раунд ${e.round}.</b> ${e.text}
+        ${readNote(e, pct)}
         ${e.outcome ? `<div class="muted">${e.outcome}</div>` : ''}
       </div>
     </div>

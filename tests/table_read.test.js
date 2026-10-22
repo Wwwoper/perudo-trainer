@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { TABLE_TRUST, opponentsFromBids, ownMatching, readInfo } from '../src/table_read.js';
+import { TABLE_TRUST, opponentsFromBids, ownMatching, readInfo, readNote } from '../src/table_read.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sandbox = { self: {} };
@@ -73,5 +73,21 @@ describe('readInfo (пример из отчёта: Палифико, 12 куб�
       const r = readInfo(P.probBidRead, { ...args, bidHistory });
       assert.ok(Math.abs(r.probRead - base) < 1e-12);
     }
+  });
+});
+
+describe('readNote', () => {
+  const pct = (x) => (x * 100).toFixed(1) + '%';
+  it('два числа, если они различаются; пометка для смягчённого крестика', () => {
+    const t = readNote({ prob: 0.096, probRead: 0.429, v: { code: 'meh', softened: true } }, pct);
+    assert.match(t, /По вашим кубикам 9\.6%; с учётом ставок за столом 42\.9%/);
+    assert.match(t, /соперники подтверждают цифру/);
+    assert.doesNotMatch(readNote({ prob: 0.1, probRead: 0.2, v: { code: 'bad' } }, pct), /подтверждают/);
+  });
+  it('пусто: числа равны, старая запись без probRead, мусор', () => {
+    assert.equal(readNote({ prob: 0.3, probRead: 0.3, v: {} }, pct), '');
+    assert.equal(readNote({ prob: 0.3, v: { code: 'bad' } }, pct), '');
+    assert.equal(readNote(null, pct), '');
+    assert.equal(readNote({ prob: 0.3, probRead: NaN }, pct), '');
   });
 });
