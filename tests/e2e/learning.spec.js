@@ -242,6 +242,37 @@ test.describe('Учебные вкладки', () => {
         expect((await drillStat(page, 'A')).n).toBe(2);
       });
 
+      // Задача n=8, у вас 2,3,4,5,6 (без единиц), цифра 1: безопасной ставки нет
+      const forceNoSafeTask = (page) => page.evaluate(() => {
+        const seq = [0, 0.99, 0.2, 0.4, 0.5, 0.7, 0.9, 0];
+        const real = Math.random;
+        Math.random = () => { if (seq.length) return seq.shift(); Math.random = real; return real(); };
+      });
+
+      test('A: безопасной ставки нет — понятный текст без «0.0% ✔» и без формулы', async ({ page }) => {
+        await open(page, 'drill');
+        await forceNoSafeTask(page);
+        await page.click('#dNew');
+        await page.fill('#dA1', '0.5');
+        await page.fill('#dA2', '0');
+        await page.click('#dACheck');
+        const fb = page.locator('#dAfb');
+        await expect(fb).toContainText('Безопасной ставки нет');
+        await expect(fb).toContainText('Правильный ответ — 0');
+        await page.locator('#dAfb .calc-hint summary').click();
+        await expect(fb).not.toContainText('✔');
+        await expect(fb).not.toContainText('Для любознательных');
+        await expect(fb).not.toContainText('0.0%');
+      });
+
+      test('A: ответ выше безопасного — пометка о шансе', async ({ page }) => {
+        await open(page, 'drill');
+        await page.fill('#dA1', '5');
+        await page.fill('#dA2', '100');
+        await page.click('#dACheck');
+        await expect(page.locator('#dAfb')).toContainText(/не принята: шанс|Безопасной ставки нет/);
+      });
+
       test('B: пустое и дробное не засчитываются, повторные нажатия дают одну запись', async ({ page }) => {
         await open(page, 'drill');
         await page.click('.drill-tab[data-drill="B"]');

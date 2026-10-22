@@ -3,6 +3,7 @@
 import { updateStats } from '../storage.js';
 import { renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct, flash } from './common.js';
+import { noSafeText, riskNote } from '../drill_note.js';
 import { validateAnswerA, validateAnswerB } from '../drill_input.js';
 import { safeByRule, isHalfway } from '../drill_rule.js';
 
@@ -70,7 +71,8 @@ export function setupDrill() {
     const exp = ownCnt + unk * pv;
     const safe = P.bestBid(f, n, h, true, 0.5);
     const pSafe = safe > 0 ? P.probBid(safe, f, n, h, true) : 0;
-    const pSafe1 = safe + 1 > 0 ? P.probBid(safe + 1, f, n, h, true) : 0;
+    const pSafe1 = P.probBid(safe + 1, f, n, h, true);
+    const noSafe = safe === 0;
 
     const { a1, a2 } = input;
     const ok1 = Math.abs(a1 - exp) <= 0.75;
@@ -86,12 +88,19 @@ export function setupDrill() {
         : `подходят две грани из шести: «${f}» и единица`;
       const byRule = safeByRule(ownCnt, unk, f);
       const half = isHalfway(ownCnt, unk, f);
+      const note = riskNote({
+        answer: a2, safe, accepted: ok2,
+        chanceAnswer: pct(P.probBid(a2, f, n, h, true)), chanceSafe: pct(pSafe),
+      });
 
       $('#dAfb').innerHTML =
         `<p class="${ok1 ? 'text-ok' : 'text-bad'}">Ожидание: ${a1} → точное ${exp.toFixed(1)} = ` +
         `${ownCnt} (ваши, с джокерами) + ${unk} × ${f === 1 ? '1/6' : '1/3'}.</p>` +
-        `<p class="${ok2 ? 'text-ok' : 'text-bad'}">Безопасная ставка (шанс ≥ 50%): ваш ответ ${a2}, точно ${safe} ` +
-        `(${pct(pSafe)}). Допуск ±1 — это тренировка прикидки в уме.</p>` +
+        (noSafe
+          ? `<p class="${ok2 ? 'text-ok' : 'text-bad'}">${noSafeText(pct(pSafe1))} Ваш ответ ${a2}. Допуск ±1 — это тренировка прикидки в уме.</p>`
+          : `<p class="${ok2 ? 'text-ok' : 'text-bad'}">Безопасная ставка (шанс ≥ 50%): ваш ответ ${a2}, точно ${safe} ` +
+            `(${pct(pSafe)}). Допуск ±1 — это тренировка прикидки в уме.</p>`) +
+        (note ? `<p class="muted">${note}</p>` : '') +
 
         `<details class="calc-hint">` +
         `<summary>Как это посчитано</summary>` +
@@ -107,16 +116,20 @@ export function setupDrill() {
         `<p><b>2. Безопасная ставка.</b><br>` +
         `Округляем к ближайшему целому${half ? ' (ровно посередине — вниз)' : ''}: ` +
         `${exp.toFixed(1)} → <b>${byRule}</b>.<br>` +
-        `Проверка точным расчётом: ставка ${safe} сбывается в ${pct(pSafe)} случаев ` +
-        `(не меньше 50% ✔), а ставка ${safe + 1} — только в ${pct(pSafe1)} (меньше 50% ✘).</p>` +
+        (noSafe
+          ? `Проверка точным расчётом: даже ставка 1 сбывается только в ${pct(pSafe1)} случаев (меньше 50% ✘), ` +
+            `поэтому безопасной ставки нет — ответ 0.</p>`
+          : `Проверка точным расчётом: ставка ${safe} сбывается в ${pct(pSafe)} случаев ` +
+            `(не меньше 50% ✔), а ставка ${safe + 1} — только в ${pct(pSafe1)} (меньше 50% ✘).</p>`) +
 
         `<p class="muted">Ожидание — это среднее, а безопасная ставка — «хватит с шансом 50%». ` +
         `Они отличаются меньше чем на полкубика, поэтому достаточно округлить.</p>` +
 
+        (noSafe ? '' :
         `<p class="muted">Для любознательных. Точный шанс считается по биномиальному распределению: ` +
         `из ${unk} чужих кубиков должно подойти не меньше ${Math.max(0, safe - ownCnt)}. ` +
         `P = Σ<sub>k = ${Math.max(0, safe - ownCnt)}</sub><sup>${unk}</sup> ` +
-        `C(${unk}, k) · p<sup>k</sup> · (1 − p)<sup>${unk} − k</sup>, где p = ${chance}.</p>` +
+        `C(${unk}, k) · p<sup>k</sup> · (1 − p)<sup>${unk} − k</sup>, где p = ${chance}.</p>`) +
 
         `</div>` +
         `</details>`;
@@ -170,11 +183,8 @@ export function setupDrill() {
         `<div class="calc-hint-body">` +
         (d.down
           ? `<p>Ставка на <b>обычную цифру</b> q = ${d.q}.<br>` +
-          `Единица встречается в 2 раза реже: 1/6 против 1/3 (последнее — потому что «1/3» ` +
-          `для обычной цифры учитывает 1-джокер: грань f + грань 1).<br>` +
-          `Чтобы ожидаемое количество совпало, количество ставки нужно примерно вдвое уменьшить, ` +
-          `а округление — вверх, чтобы не потерять вероятность:<br>` +
-          `⌈${d.q} / 2⌉ = <b>${exp}</b>.</p>`
+          `Единицы встречаются вдвое реже, поэтому нужное количество примерно вдвое меньше. ` +
+          `Округляем вверх: ⌈${d.q} / 2⌉ = <b>${exp}</b>.</p>`
           : `<p>Ставка на <b>единицы</b> q = ${d.q}.<br>` +
           `Обратный переход: на обычной цифре вероятность на кубик вдвое выше, ` +
           `но ставка должна быть строго «безопаснее» исходной.<br>` +
