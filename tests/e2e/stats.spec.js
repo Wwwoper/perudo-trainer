@@ -19,6 +19,8 @@ async function answerTrainer(page) {
 
 async function answerDrill(page) {
   await openTab(page, 'drill');
+  // после проверки кнопка недоступна до «Новое»: одна задача — одна запись
+  if (await page.locator('#dACheck').isDisabled()) await page.click('#dNew');
   await page.fill('#dA1', '5');
   await page.fill('#dA2', '5');
   await page.click('#dACheck');
@@ -57,7 +59,7 @@ test.describe('Статистика: разделы не затирают дру
     await openTab(page, 'train');
     await page.click('#tNext');
     await page.click('#tDudo');
-    await answerDrill(page);   // «Проверить» повторно: новый вопрос не нужен, ответ считается
+    await answerDrill(page);   // новая задача («Новое» нажимается внутри) — снова одна запись
 
     const p = await profile(page);
     expect(p.n).toBe(2);

@@ -309,7 +309,7 @@ async function copyDiag() {
 async function onAction(act) {
   if (act === 'later') {
     closeDialog();
-    say('Выбор можно сделать позже в «Статистике», блок «Игрок».');
+    say('Выбор можно сделать позже: «Статистика» → «Данные».');
     renderCloudCard();
     return;
   }
@@ -364,7 +364,7 @@ export function setupCloudCard({ downloadBackup } = {}) {
       setAccount('guest');
       renderWelcome();
       renderCloudCard();
-      toast('Вы играете как гость. Войти через Яндекс можно в «Статистике», блок «Игрок».', 'muted');
+      toast('Вы играете как гость. Войти через Яндекс можно в «Статистике», вкладка «Данные».', 'muted');
     } else if (e.target.closest('#clLogout')) {
       if (!confirm('Выйти из облака? Данные на этом устройстве и файл на Диске останутся.')) return;
       sync.logout();
