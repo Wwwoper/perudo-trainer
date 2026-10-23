@@ -81,22 +81,6 @@
           </div>
 
           <div class="card">
-            <b>Чтение чужих ставок</b>
-            <div class="field-row">
-              <label class="field">Кубиков у игроков, ставивших на эту цифру
-                <input id="cK" type="number" min="0" max="60" value="0" inputmode="numeric">
-              </label>
-              <label class="field">Доверие к ставкам
-                <span class="range-line">
-                  <input id="cTr" type="range" min="0" max="0.6" step="0.05" value="0.25">
-                  <span id="cTrV">0.25</span>
-                </span>
-              </label>
-            </div>
-            <div id="cRead"></div>
-          </div>
-
-          <div class="card">
             <b>Ваши лучшие ставки</b>
             <div id="cTbl" class="table-scroll"></div>
           </div>
@@ -115,6 +99,24 @@
             <select id="cF" hidden aria-hidden="true" tabindex="-1"></select>
           </div>
           <div id="cRes" class="big calc-result" role="status" aria-live="polite"></div>
+          <!-- Чтение чужих ставок относится к ставке соперника, поэтому лежит рядом с ней -->
+          <div class="dock-scroll">
+            <details class="dock-more" id="cReadBox">
+              <summary>Чтение чужих ставок</summary>
+              <div class="field-row">
+                <label class="field">Кубиков у игроков, ставивших на эту цифру
+                  <input id="cK" type="number" min="0" max="60" value="0" inputmode="numeric">
+                </label>
+                <label class="field">Доверие к ставкам
+                  <span class="range-line">
+                    <input id="cTr" type="range" min="0" max="0.6" step="0.05" value="0.25">
+                    <span id="cTrV">0.25</span>
+                  </span>
+                </label>
+              </div>
+              <div id="cRead"></div>
+            </details>
+          </div>
         </div>
       </div>
     </section>

@@ -8,6 +8,10 @@ export function setupCalculator() {
 
   let hand = [1, 3, 5, 5, 6];
 
+  // «Чтение чужих ставок»: на широком экране блок раскрыт, на телефоне свёрнут, чтобы не загромождать панель
+  const readBox = $('#cReadBox');
+  if (readBox && window.matchMedia?.('(min-width: 720px)').matches) readBox.open = true;
+
   const faceSel = $('#cF');
   if (faceSel) {
     faceSel.innerHTML = '';

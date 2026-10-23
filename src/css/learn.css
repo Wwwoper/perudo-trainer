@@ -227,6 +227,7 @@
 }
 
 @media (max-width: 719px) {
+  #cDock,
   #tDock,
   #dDock,
   #duelDock {
@@ -243,6 +244,7 @@
 /* ===== Упражнения: панель проверки ===== */
 /* Панели с разбором (Упражнения, Тренажёр, Дуэль): прокручивается только .dock-scroll,
    заголовок и кнопки остаются на виду */
+#cDock,
 #tDock,
 #dDock,
 #duelDock {
@@ -252,10 +254,35 @@
   overflow: hidden;
 }
 
+#cDock > :not(.dock-scroll),
 #tDock > :not(.dock-scroll),
 #dDock > :not(.dock-scroll),
 #duelDock > :not(.dock-scroll) {
   flex: none;
+}
+
+/* Свёрнутый дополнительный блок в панели (Калькулятор: «Чтение чужих ставок») */
+.dock-more > summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dock-more > summary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--mut);
+}
+
+.dock-more[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.dock-more .field-row {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .dock-scroll {

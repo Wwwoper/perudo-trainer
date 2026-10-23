@@ -70,6 +70,20 @@ test.describe('Учебные вкладки', () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     });
 
+    test('«Чтение чужих ставок» лежит в панели ставки: на широком экране раскрыто, на телефоне свёрнуто и открывается', async ({ page }) => {
+      await open(page, 'calc');
+      const box = page.locator('#cReadBox');
+      expect(await box.evaluate((el) => el.closest('#cDock') !== null)).toBe(true);
+      const wide = page.viewportSize().width >= 720;
+      expect(await box.evaluate((el) => el.open)).toBe(wide);
+      await box.locator('summary').click();
+      if (wide) await box.locator('summary').click();      // на широком раскрыто с начала: закрыли, открываем снова
+      await expect(page.locator('#cK')).toBeVisible();
+      const before = await page.locator('#cRead').innerText();
+      await page.locator('#cK').fill('6');
+      await expect(page.locator('#cRead')).not.toHaveText(before);
+    });
+
     test('рука собирается кнопками «+», «Убрать последний» и «Очистить»', async ({ page }) => {
       await open(page, 'calc');
       const dice = page.locator('#cHand .die');
