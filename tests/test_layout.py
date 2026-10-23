@@ -1024,6 +1024,23 @@ class LayoutTest(unittest.TestCase):
         return page.evaluate("""() => { const g = window.__perudo_v2.game;
             return g.players.find(p => p.id === g.winner).name; }""")
 
+    def test_side_panel_log_last_rows_visible_on_laptop(self):
+        """Ноутбук: панель не выходит за низ экрана при странице, не прокрученной вниз,
+        и последняя строка длинного журнала видна после прокрутки самой панели."""
+        for w, h in ((1366, 768), (1280, 650), (1440, 800), (1920, 1080)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 3)
+                page.locator("#tabLog").click()
+                page.evaluate("""() => { const box = document.querySelector('#gHistory');
+                    for (let i = 0; i < 80; i++) { const d = document.createElement('div');
+                      d.className = 'log-row'; d.textContent = 'строка ' + i; box.appendChild(d); } }""")
+                page.evaluate("window.scrollTo(0, 0)")
+                side = page.locator(".game-side").bounding_box()
+                self.assertLessEqual(side["y"] + side["height"], h, "панель уходит ниже экрана")
+                page.evaluate("document.querySelector('.side-body').scrollTop = 1e6")
+                last = page.locator("#gHistory .log-row").last.bounding_box()
+                self.assertLessEqual(last["y"] + last["height"], h, "последняя строка журнала ниже экрана")
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)

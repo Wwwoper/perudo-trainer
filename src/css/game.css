@@ -926,11 +926,15 @@
 
 /* ===== Ноутбук: колонка справа ===== */
 @media (min-width: 1101px) {
+  /* Панель начинается под шапкой (отступ страницы 16 + шапка 40 + зазор 12 = 68px), поэтому
+     высота считается от этой точки: иначе нижние строки журнала оказываются ниже экрана
+     и видны только после прокрутки всей страницы. */
   .game-side {
+    --side-top: 68px;
     position: sticky;
     top: var(--space-3);
-    max-height: calc(100vh - 24px);
-    max-height: calc(100dvh - 24px);
+    max-height: calc(100vh - var(--side-top) - 16px);
+    max-height: calc(100dvh - var(--side-top) - 16px);
   }
 
   .hud-tab-btn {
