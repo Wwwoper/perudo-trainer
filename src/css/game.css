@@ -879,6 +879,23 @@
   margin: 0;
 }
 
+/* Телефон в альбомной ориентации: три кнопки в ряд, чтобы окно итогов помещалось без прокрутки */
+@media (max-height: 500px) and (orientation: landscape) {
+  .result-dialog {
+    width: min(560px, calc(100vw - 32px));
+  }
+
+  .result-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .result-actions button {
+    flex: 1 1 0;
+    min-width: 140px;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .result-dialog[open] {
     animation: result-pop .22s ease-out;

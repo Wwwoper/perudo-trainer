@@ -91,7 +91,14 @@ function setupGame() {
 
   setupBotStyles();
   setupBotMind();
-  setupResultDialog(() => game);
+  setupResultDialog(() => game, {
+    // Ключевые моменты и кнопки «Добавить в очередь повторов» лежат в карточке итога над вкладками боковой панели
+    onOpenCalc() {
+      sideApi.show('tabCalc');
+      const card = $('#gResultCard');
+      if (card && !card.hidden) { card.scrollIntoView({ block: 'start' }); card.focus({ preventScroll: true }); }
+    },
+  });
   setupKeyMoments(() => lastKeyMoments);
   setupBackupReminder(downloadBackup);
   setupReveal(() => {

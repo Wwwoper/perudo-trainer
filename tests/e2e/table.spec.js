@@ -428,6 +428,20 @@ test.describe('Покерный стол в партии', () => {
     expect(profile.byTag.endgame).toEqual({ n: 1, good: 0 });
   });
 
+  test('окно итогов: «Перейти к расчёту» закрывает окно и показывает вкладку «Расчёт» с карточкой итога', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await loseWithBluff(page);
+    await expect(page.locator('#gResultDialog')).toHaveJSProperty('open', true, { timeout: 10_000 });
+    // Уходим на другую вкладку: кнопка должна вернуть именно «Расчёт»
+    await page.evaluate(() => { document.querySelector('#tabLog')?.click(); });
+    await page.locator('#gResultCalc').click();
+    await expect(page.locator('#gResultDialog')).toHaveJSProperty('open', false);
+    await expect(page.locator('#tabCalc')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#panCalc')).toBeVisible();
+    await expect(page.locator('#gResultCard')).toBeVisible();
+    await expect(page.locator('#gResultCard')).toBeFocused();
+  });
+
   test('«Сбросить всё» стирает записанные решения и счётчики по меткам', async ({ page }) => {
     await page.evaluate(() => localStorage.clear());
     await loseWithBluff(page);

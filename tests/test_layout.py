@@ -1121,7 +1121,7 @@ class LayoutTest(unittest.TestCase):
                 self.assertLessEqual(dlg["width"], w - 32 + 1)
                 self.assertGreaterEqual(dlg["y"], 0)
                 self.assertLessEqual(dlg["y"] + dlg["height"], h + 1)
-                for sel in ("#gResultAgain", "#gResultView"):
+                for sel in ("#gResultAgain", "#gResultCalc", "#gResultView"):
                     box = page.locator(sel).bounding_box()
                     self.assertGreaterEqual(box["height"], 44, sel)
                     self.assertLessEqual(box["y"] + box["height"], h + 1, sel)

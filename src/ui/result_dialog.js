@@ -7,6 +7,7 @@ import { revealIsOpen } from './reveal_dialog.js';
 
 let resultTimer = null;
 let resultOpener = null;
+let skipFocusRestore = false;     // «Перейти к расчёту» сам ставит фокус на карточку итога
 
 export function hideResultUi() {
   clearTimeout(resultTimer);
@@ -41,13 +42,23 @@ function showResultDialog(game) {
   return true;
 }
 
-export function setupResultDialog(getGame) {
+/**
+ * @param {() => object} getGame
+ * @param {{onOpenCalc?: () => void}} [hooks] onOpenCalc — «Перейти к расчёту»: окно закрыто, показать панель с итогом и ключевыми моментами
+ */
+export function setupResultDialog(getGame, { onOpenCalc } = {}) {
   const dlg = $('#gResultDialog');
   if (!dlg) return;
   $('#gResultView')?.addEventListener('click', () => dlg.close());
+  $('#gResultCalc')?.addEventListener('click', () => {
+    skipFocusRestore = true;
+    dlg.close();
+    onOpenCalc?.();
+  });
   // После закрытия фокус возвращается туда, откуда окно открыли; если там уже ничего нет —
   // на «Сыграть ещё» в баннере (нативный диалог в Chromium оставляет фокус на скрытой кнопке).
   dlg.addEventListener('close', () => {
+    if (skipFocusRestore) { skipFocusRestore = false; resultOpener = null; return; }
     const usable = (el) => el && el.isConnected && !el.disabled && !el.closest('dialog') && el.offsetParent !== null;
     const target = usable(resultOpener) ? resultOpener : $('#gSummary [data-action="new-game"]');
     resultOpener = null;
