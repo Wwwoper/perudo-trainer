@@ -360,6 +360,19 @@ small {
   margin: 3px 0;
 }
 
+.log-row.log-loss,
+.log-row.log-gain {
+  color: var(--mut);
+  font-size: 14px;
+  padding-left: 10px;
+}
+
+.log-row.log-elim {
+  color: #ff8b8b;
+  font-weight: 600;
+  padding-left: 10px;
+}
+
 .player-name {
   font-weight: 700;
   min-width: 84px;

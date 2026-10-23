@@ -193,6 +193,23 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gReviewNote')).toContainText('с учётом ставок за столом');
   });
 
+  test('журнал: потеря последнего кубика — запись о выбывании', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 1 });
+    await waitMyTurn(page);
+    await rigBots(page, [2]);
+
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click(); // грань 2
+    await page.locator('#gRaise').click();
+    await waitBotBid(page);
+    await page.locator('#gDudo').click();
+
+    await openTab(page, 'tabLog');
+    await expect(page.locator('#gHistory .log-elim')).toHaveCount(1);
+    await expect(page.locator('#gHistory .log-elim')).toContainText(/выбыва/);
+    await expect(page.locator('#gHistory .log-elim')).toContainText('без кубиков');
+  });
+
   test('кнопка «Не верю» завершает раунд и обновляет стол', async ({ page }) => {
     await startGame(page, { bots: 1, dice: 2 });
     await waitMyTurn(page);

@@ -6,6 +6,7 @@ import { createGame, startGame, applyAction, canCalza as engineCanCalza }
 import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
 import { readInfo, readNote } from './table_read.js';
+import { describeRoundEvents } from './game_log.js';
 import { updateStats, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState } from './storage.js';
 import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
@@ -204,20 +205,31 @@ function startNewGame() {
 
 // ----- Журнал и разбор -----
 
-function addGameLog(type, html) {
+const LOG_ROW_CLASS = { dudo: 'dudo', round: 'round-head', loss: 'log-loss', gain: 'log-gain', elim: 'log-elim' };
+
+/** Кто потерял кубик, кто выбыл, результат Calza — после «Проверка: …». Строка внизу стола остаётся прежней. */
+function logRoundEffects(events) {
+  if (!game) return;
+  for (const l of describeRoundEvents(events, game.players, 'human')) {
+    if (l.type === 'round') addGameLog('round', escapeHtml(l.text));
+    else addGameLog(l.type, escapeHtml(l.text), { feed: false });
+  }
+}
+
+function addGameLog(type, html, { feed = true } = {}) {
   gameLogEntries.push({ type, html, round: game ? game.round : 0 });
   const el = $('#gHistory');
   if (el) {
     el.innerHTML = gameLogEntries
       .map((e) => {
-        const cls = e.type === 'dudo' ? 'dudo' : e.type === 'round' ? 'round-head' : '';
+        const cls = LOG_ROW_CLASS[e.type] || '';
         return `<div class="log-row ${cls}">${e.html}</div>`;
       })
       .join('');
     sideApi.keepAtEnd('panLog');
   }
-  const feed = $('#gFeed');
-  if (feed) feed.innerHTML = html;
+  const feedEl = $('#gFeed');
+  if (feedEl && feed) feedEl.innerHTML = html;
 }
 
 /** Шанс ставки q×f с учётом ставок за столом + размер руки и число подходящих кубиков (для воспроизведения разбора). */
@@ -624,6 +636,7 @@ function onPlayerDudo() {
       `Проверка: на столе ${revealed.actualCount} из ${q} — ` +
       (revealed.bidSuccessful ? 'ставка верна' : 'ставка ложна') + '.');
   }
+  logRoundEffects(res.events);
 
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
@@ -656,6 +669,7 @@ function onPlayerCalza() {
   }
 
   addGameLog('dudo', `<b class="warn">CALZA</b> (${renderBid(q, f)})`);
+  logRoundEffects(res.events);
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
   presentReveal(game, res.events);
@@ -757,6 +771,7 @@ function runBotTurn() {
         (revealed.bidSuccessful ? 'ставка верна' : 'ставка ложна') + '.');
     }
   }
+  if (action.type !== 'raise') logRoundEffects(res.events);
 
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
