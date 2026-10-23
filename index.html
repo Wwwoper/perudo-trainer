@@ -175,7 +175,9 @@
 
         <!-- Ответ: внизу экрана на телефоне, справа на широком. После ответа здесь же разбор -->
         <div class="action-dock" id="tDock">
-          <div id="tFb" class="trainer-feedback" role="status" aria-live="polite"></div>
+          <div class="dock-scroll">
+            <div id="tFb" class="trainer-feedback" role="status" aria-live="polite"></div>
+          </div>
           <div class="trainer-controls">
             <div class="dock-controls">
               <div class="stepper" role="group" aria-label="Количество кубиков">
@@ -536,7 +538,7 @@
         <div class="action-dock" id="duelDock">
           <b>Игра</b>
           <button id="dStart" class="btn-primary duel-start">Играть против оптимального бота</button>
-          <div id="dPlay" class="muted">Нажмите «Играть» — решение посчитается автоматически.</div>
+          <div id="dPlay" class="muted dock-scroll">Нажмите «Играть» — решение посчитается автоматически.</div>
         </div>
       </div>
     </section>

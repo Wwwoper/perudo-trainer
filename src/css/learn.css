@@ -241,14 +241,23 @@
 }
 
 /* ===== Упражнения: панель проверки ===== */
-#dDock {
+/* Панели с разбором (Упражнения, Тренажёр, Дуэль): прокручивается только .dock-scroll,
+   заголовок и кнопки остаются на виду */
+#tDock,
+#dDock,
+#duelDock {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  overflow: hidden;           /* прокручивается только .dock-scroll, кнопки остаются на виду */
+  overflow: hidden;
 }
 
-/* Прокручиваемая часть панели: разбор ответа; кнопки под ней закреплены */
+#tDock > :not(.dock-scroll),
+#dDock > :not(.dock-scroll),
+#duelDock > :not(.dock-scroll) {
+  flex: none;
+}
+
 .dock-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -257,7 +266,6 @@
 }
 
 #dDock .dock-buttons {
-  flex: none;
   grid-template-columns: 1.6fr 1fr;
 }
 

@@ -1075,6 +1075,25 @@ class LayoutTest(unittest.TestCase):
                     const s = document.querySelector(sel); return s.scrollHeight > s.clientHeight; })""")
                 self.assertTrue(scroll, "разбор должен прокручиваться внутри панели")
 
+    def test_trainer_and_duel_controls_stay_visible_with_long_content(self):
+        """Тренажёр и Дуэль: при длинном разборе кнопки остаются на экране, лишнее прокручивается внутри."""
+        cases = (("train", "#tFb", ("#tDudo", "#tRaise")), ("duel", "#dPlay", ("#dStart",)))
+        for w, h in ((1366, 768), (1280, 650), (768, 1024), (844, 390), (390, 844), (360, 640)):
+            page = self.open_game(w, h, 1)
+            for tab, box_sel, buttons in cases:
+                with self.subTest(w=w, h=h, tab=tab):
+                    self.goto_tab(page, tab)
+                    page.evaluate("""(sel) => { document.querySelector(sel).innerHTML =
+                        '<div style="height:3000px">длинный разбор</div>'; window.scrollTo(0, 0); }""", box_sel)
+                    for sel in buttons:
+                        box = page.locator(sel).bounding_box()
+                        self.assertIsNotNone(box, sel)
+                        self.assertLessEqual(box["y"] + box["height"], h + 1, f"{sel} ниже экрана")
+                        self.assertGreaterEqual(box["y"], 0, f"{sel} выше экрана")
+                    scroll = page.evaluate("""(sel) => [sel, '.dock-scroll'].some(x => [...document.querySelectorAll(x)]
+                        .some(s => s.offsetParent && s.scrollHeight > s.clientHeight))""", box_sel)
+                    self.assertTrue(scroll, "содержимое должно прокручиваться внутри панели")
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)
