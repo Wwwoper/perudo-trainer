@@ -18,9 +18,28 @@
   --radius-m: 12px;
   --radius-l: 16px;
   --tap: 44px;
+
+  /* Правая колонка (панель ставки, панель партии): общая ширина и верхняя точка.
+     68px = отступ страницы 16 + шапка 40 + зазор 12. Высота колонки считается от этой точки. */
+  --dock-w: 360px;
+  --dock-top: 68px;
+  --dock-max-h: calc(100vh - var(--dock-top) - var(--space-4));
   --tap-lg: 52px;
   --die-hand: 36px;
   --shadow-dock: 0 -8px 24px rgba(0, 0, 0, .45);
+}
+
+/* Телефон в ландшафте: вместо шапки узкая полоса раздела (≈52px) */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --dock-top: 60px;
+  }
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --dock-max-h: calc(100dvh - var(--dock-top) - var(--space-4));
+  }
 }
 
 * {

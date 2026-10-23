@@ -1041,6 +1041,22 @@ class LayoutTest(unittest.TestCase):
                 last = page.locator("#gHistory .log-row").last.bounding_box()
                 self.assertLessEqual(last["y"] + last["height"], h, "последняя строка журнала ниже экрана")
 
+    def test_right_docks_fit_screen_on_wide_tabs(self):
+        """Правая колонка вкладок обучения не выходит за низ экрана, даже если содержимое длинное:
+        лишнее прокручивается внутри панели."""
+        docks = (("calc", "#cDock"), ("train", "#tDock"), ("drill", "#dDock"), ("duel", "#duelDock"))
+        for w, h in ((1366, 768), (1280, 650), (1440, 900), (768, 1024), (844, 390)):
+            page = self.open_game(w, h, 1)
+            for tab, sel in docks:
+                with self.subTest(w=w, h=h, tab=tab):
+                    self.goto_tab(page, tab)
+                    page.evaluate("""(sel) => { const d = document.querySelector(sel);
+                        const pad = document.createElement('div'); pad.className = 'test-pad';
+                        pad.style.height = '3000px'; d.appendChild(pad); window.scrollTo(0, 0); }""", sel)
+                    box = page.locator(sel).bounding_box()
+                    page.evaluate("document.querySelector('.test-pad').remove()")
+                    self.assertLessEqual(box["y"] + box["height"], h, f"{sel}: панель ниже экрана")
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)

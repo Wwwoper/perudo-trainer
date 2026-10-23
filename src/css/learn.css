@@ -164,7 +164,7 @@
 /* Широкий экран и ландшафт: панель ставки — правая колонка, закреплена при прокрутке */
 @media (min-width: 720px), (max-height: 500px) and (orientation: landscape) {
   .learn-layout {
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) var(--dock-w);
     grid-template-areas: "main dock";
     align-items: start;
   }
@@ -173,10 +173,11 @@
     grid-area: main;
   }
 
+  #cDock,
   #tDock,
   #dDock,
   #duelDock {
-    max-height: calc(100vh - 2 * var(--space-3));
+    max-height: var(--dock-max-h);
     overflow-y: auto;
   }
 
