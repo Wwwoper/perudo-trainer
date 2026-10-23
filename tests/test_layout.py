@@ -1057,6 +1057,24 @@ class LayoutTest(unittest.TestCase):
                     page.evaluate("document.querySelector('.test-pad').remove()")
                     self.assertLessEqual(box["y"] + box["height"], h, f"{sel}: панель ниже экрана")
 
+    def test_drill_buttons_stay_visible_with_long_feedback(self):
+        """Упражнения: при длинном разборе кнопки «Проверить» и «Новое» остаются на экране,
+        прокручивается только область разбора."""
+        for w, h in ((1366, 768), (1280, 650), (768, 1024), (844, 390), (390, 844), (360, 640)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 1)
+                self.goto_tab(page, "drill")
+                page.evaluate("""() => { const fb = document.querySelector('#dAfb');
+                    fb.innerHTML = '<div style="height:3000px">длинный разбор</div>'; }""")
+                for sel in ("#dACheck", "#dNew"):
+                    box = page.locator(sel).bounding_box()
+                    self.assertIsNotNone(box, sel)
+                    self.assertLessEqual(box["y"] + box["height"], h + 1, f"{sel} ниже экрана")
+                    self.assertGreaterEqual(box["height"], 44, sel)
+                scroll = page.evaluate("""() => ['#dDock .dock-scroll', '#dAfb'].some(sel => {
+                    const s = document.querySelector(sel); return s.scrollHeight > s.clientHeight; })""")
+                self.assertTrue(scroll, "разбор должен прокручиваться внутри панели")
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)

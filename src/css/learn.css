@@ -242,10 +242,22 @@
 
 /* ===== Упражнения: панель проверки ===== */
 #dDock {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
+  overflow: hidden;           /* прокручивается только .dock-scroll, кнопки остаются на виду */
+}
+
+/* Прокручиваемая часть панели: разбор ответа; кнопки под ней закреплены */
+.dock-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 #dDock .dock-buttons {
+  flex: none;
   grid-template-columns: 1.6fr 1fr;
 }
 

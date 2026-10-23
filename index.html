@@ -267,11 +267,13 @@
 
         <!-- Проверка и разбор: внизу экрана на телефоне, справа на широком -->
         <div class="action-dock" id="dDock">
-          <div data-drill-for="A">
-            <div id="dAfb" class="drill-feedback" role="status" aria-live="polite"></div>
-          </div>
-          <div data-drill-for="B" class="hide">
-            <div id="dBfb" class="drill-feedback" role="status" aria-live="polite"></div>
+          <div class="dock-scroll">
+            <div data-drill-for="A">
+              <div id="dAfb" class="drill-feedback" role="status" aria-live="polite"></div>
+            </div>
+            <div data-drill-for="B" class="hide">
+              <div id="dBfb" class="drill-feedback" role="status" aria-live="polite"></div>
+            </div>
           </div>
           <div class="dock-buttons">
             <button id="dACheck" class="btn-primary" data-drill-for="A"><span class="btn-main">Проверить</span></button>
