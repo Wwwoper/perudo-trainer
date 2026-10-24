@@ -52,6 +52,12 @@
         <button class="tab-btn" data-t="stats">Статистика</button>
       </nav>
     </header>
+
+    <!-- Уведомление: в потоке страницы под шапкой, ничего не перекрывает; закрывается кнопкой и Esc -->
+    <div id="clToast" class="cloud-toast" role="status" aria-live="polite" hidden>
+      <span id="clToastText" class="cloud-toast-text"></span>
+      <button type="button" id="clToastClose" class="cloud-toast-close" aria-label="Закрыть уведомление">✕</button>
+    </div>
     <div id="navScrim" class="nav-scrim" hidden></div>
 
     <!-- ================= КАЛЬКУЛЯТОР ================= -->
@@ -648,7 +654,6 @@
       </div>
     </section>
 
-    <div id="clToast" class="cloud-toast" role="status" aria-live="polite" hidden></div>
   </main>
 
   <!-- ===== Скрипты ===== -->

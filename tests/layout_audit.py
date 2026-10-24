@@ -100,6 +100,8 @@ class _Quiet(http.server.SimpleHTTPRequestHandler):
 
 
 def _tab(page, name):
+    # Ошибка облака остаётся на экране, пока её не закроют, и сдвигает страницу вниз; замеры вкладок делаем без неё
+    page.evaluate("document.querySelector('#clToastClose')?.click()")
     btn = page.locator(f'.tab-btn[data-t="{name}"]')
     if not btn.is_visible():
         page.locator(".hud-menu:visible").click()

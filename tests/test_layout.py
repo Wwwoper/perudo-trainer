@@ -1163,6 +1163,35 @@ class LayoutTest(unittest.TestCase):
                 self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
                                 "горизонтальная прокрутка страницы")
 
+    def test_toast_is_in_flow_and_docks_still_fit(self):
+        """Уведомление лежит под шапкой и ничего не перекрывает; с ним правые панели по-прежнему помещаются в экран."""
+        for w, h in ((1366, 768), (768, 1024), (390, 844), (360, 640), (844, 390)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 1)
+                self.goto_tab(page, "calc")
+                page.evaluate("""() => { const t = document.querySelector('#clToast');
+                    document.querySelector('#clToastText').textContent =
+                      'Нет связи с Яндекс Диском: копия не проверена. Данные на этом устройстве целы, проверка повторится сама.';
+                    t.hidden = false;
+                    document.documentElement.style.setProperty('--toast-h', (t.offsetHeight + 12) + 'px');
+                    window.scrollTo(0, 0); }""")
+                head = page.locator(".app-header").bounding_box()
+                toast = page.locator("#clToast").bounding_box()
+                close = page.locator("#clToastClose").bounding_box()
+                nav_visible = page.locator("#mainNav").is_visible()
+                if nav_visible:
+                    self.assertGreaterEqual(toast["y"], head["y"] + head["height"] - 1, "уведомление перекрывает шапку")
+                self.assertGreaterEqual(close["width"], 44)
+                self.assertGreaterEqual(close["height"], 44)
+                self.assertLessEqual(toast["x"] + toast["width"], w + 1, "уведомление шире экрана")
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
+                                "горизонтальная прокрутка страницы")
+                if w >= 720 or h <= 500:
+                    page.evaluate("""() => { const d = document.querySelector('#cDock'); const pad = document.createElement('div');
+                        pad.className = 'test-pad'; pad.style.height = '3000px'; d.appendChild(pad); }""")
+                    dock = page.locator("#cDock").bounding_box()
+                    self.assertLessEqual(dock["y"] + dock["height"], h, "правая панель ниже экрана при уведомлении")
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)

@@ -868,24 +868,38 @@
   overflow-wrap: anywhere;
 }
 
-/* Уведомление поверх любой вкладки */
+/* Уведомление под шапкой: в потоке страницы, ничего не перекрывает */
 .cloud-toast {
-  position: fixed;
-  top: var(--space-2);
-  right: var(--space-2);
-  left: var(--space-2);
-  z-index: 60;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
   border: 1px solid rgb(255 255 255 / 10%);
   border-radius: var(--radius-m);
   background: var(--card);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
 }
 
 .cloud-toast[hidden] {
   display: none;
+}
+
+.cloud-toast-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cloud-toast-close {
+  flex: none;
+  width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mut);
+  font-size: 18px;
+  cursor: pointer;
 }
 
 /* Низкий экран (телефон в ландшафте): окно шире, кнопки в два столбца, чтобы всё помещалось без прокрутки */

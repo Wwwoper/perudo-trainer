@@ -24,6 +24,7 @@ test.describe('Выбор «гость или Яндекс» при первом
     await expect(card.locator('#clWelcomeLogin')).toBeVisible();
     await card.locator('#clGuest').click();
     await expect(card).toBeHidden();
+    await expect(page.locator('#clToast'), 'выбор «гость» уведомления не показывает').toBeHidden();
     expect((await readJson(page, 'perudo.device')).account).toBe('guest');
     await page.reload();
     await page.waitForFunction(() => Boolean(window.__perudo_v2));
@@ -45,6 +46,21 @@ test.describe('Выбор «гость или Яндекс» при первом
     expect((await readJson(page, 'perudo.device')).account).toBe('yandex');
     await expect(page.locator('#clToast')).toBeVisible();
     await expect(page.locator('#clWelcome')).toBeHidden();
+  });
+
+  test('информационное уведомление скрывается само через 7 секунд, под шапкой и со своей кнопкой «✕»', async ({ page }) => {
+    await page.clock.install();
+    await stubYandex(page);
+    await seed(page, { games: 2, signedIn: false, account: null });
+    await page.locator('#clWelcomeLogin').click();
+    const toast = page.locator('#clToast');
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText('Вход выполнен');
+    const head = await page.locator('.app-header').boundingBox();
+    const box = await toast.boundingBox();
+    expect(box.y, 'уведомление не перекрывает шапку').toBeGreaterThanOrEqual(head.y + head.height - 1);
+    await page.clock.fastForward(8000);
+    await expect(toast).toBeHidden();
   });
 
   test('вход выполнен раньше выбора (токен уже есть): окно не показываем, аккаунт — Яндекс', async ({ page }) => {

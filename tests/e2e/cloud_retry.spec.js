@@ -25,6 +25,33 @@ test.describe('Облако: сбой проверки и повтор', () => {
     await expect(page.locator('#clCheck')).toHaveCount(0);
   });
 
+  test('ошибка не исчезает сама; её закрывают кнопкой «✕» или Esc; уведомление не перекрывает шапку', async ({ page }) => {
+    await page.clock.install();
+    await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(7) }), mode: 'offline' });
+    await seed(page, { games: 0 });
+    const toast = page.locator('#clToast');
+    await expect(toast).toContainText('Нет связи');
+    const head = await page.locator('.app-header').boundingBox();
+    const box = await toast.boundingBox();
+    expect(box.y, 'уведомление не перекрывает шапку и вкладки').toBeGreaterThanOrEqual(head.y + head.height - 1);
+    const close = await page.locator('#clToastClose').boundingBox();
+    expect(close.width).toBeGreaterThanOrEqual(44);
+    expect(close.height).toBeGreaterThanOrEqual(44);
+    await page.clock.fastForward(15000);
+    await expect(toast, 'ошибка остаётся, пока её не закроют').toBeVisible();
+    await page.locator('#clToastClose').click();
+    await expect(toast).toBeHidden();
+    expect(await page.evaluate(() => document.documentElement.style.getPropertyValue('--toast-h'))).toBe('');
+  });
+
+  test('Esc закрывает уведомление, если нет открытого окна', async ({ page }) => {
+    await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(7) }), mode: 'offline' });
+    await seed(page, { games: 0 });
+    await expect(page.locator('#clToast')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#clToast')).toBeHidden();
+  });
+
   test('связь появилась (событие online): проверка повторяется сама', async ({ page }) => {
     const cloud = await stubYandex(page, { text: cloudFile({ 'perudo.userProfile': progress(7) }), mode: 'offline' });
     await seed(page, { games: 0 });

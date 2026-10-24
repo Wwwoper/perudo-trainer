@@ -36,15 +36,31 @@ function say(text, cls = 'muted') {
   el.textContent = text;
 }
 
-/** Заметное уведомление поверх любой вкладки: итог входа, обновление данных, ошибка. */
+/** Закрывает уведомление и возвращает странице занятое им место. */
+function closeToast() {
+  const el = $('#clToast');
+  clearTimeout(toastTimer);
+  if (!el) return;
+  el.hidden = true;
+  document.documentElement.style.removeProperty('--toast-h');
+}
+
+/**
+ * Уведомление под шапкой, над любой вкладкой: итог входа, обновление данных, ошибка.
+ * Оно в потоке страницы и ничего не перекрывает. Информация скрывается сама через TOAST_MS,
+ * ошибки и просьбы выбрать остаются, пока их не закроют (кнопка «✕» или Esc).
+ */
 function toast(text, cls = 'text-ok') {
   const el = $('#clToast');
   if (!el) return;
   el.className = `cloud-toast ${cls}`;
-  el.textContent = text;
+  const textEl = $('#clToastText');
+  if (textEl) textEl.textContent = text;
   el.hidden = false;
+  // Правые панели считают высоту от верха страницы: добавляем высоту уведомления
+  document.documentElement.style.setProperty('--toast-h', `${el.offsetHeight + 12}px`);
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.hidden = true; }, TOAST_MS);
+  if (cls !== 'text-bad') toastTimer = setTimeout(closeToast, TOAST_MS);
 }
 
 /** Сообщение для показа после перезагрузки страницы. */
@@ -353,6 +369,13 @@ export function setupCloudCard({ downloadBackup } = {}) {
   } catch (e) { }
   if (back && !back.ok) toast(back.text, 'text-bad');
 
+  $('#clToastClose')?.addEventListener('click', closeToast);
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || $('#clToast')?.hidden) return;
+    if (document.querySelector('dialog[open]')) return;      // у окон своё закрытие по Esc
+    closeToast();
+  });
+
   document.addEventListener('click', async (e) => {
     const act = e.target.closest('[data-cl]')?.dataset.cl;
     if (act) { onAction(act); return; }
@@ -364,7 +387,6 @@ export function setupCloudCard({ downloadBackup } = {}) {
       setAccount('guest');
       renderWelcome();
       renderCloudCard();
-      toast('Вы играете как гость. Войти через Яндекс можно в «Статистике», вкладка «Данные».', 'muted');
     } else if (e.target.closest('#clLogout')) {
       if (!confirm('Выйти из облака? Данные на этом устройстве и файл на Диске останутся.')) return;
       sync.logout();
