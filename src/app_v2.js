@@ -24,6 +24,7 @@ import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/resu
 import { recordDecision, markRoundOutcome, startDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
+import { setupSettingsHelp } from './ui/settings_help.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
 import { renderStats, setupStats, downloadBackup } from './ui/stats.js';
 import { backupReminderHtml, setupBackupReminder } from './ui/backup_reminder.js';
@@ -90,6 +91,7 @@ function setupGame() {
   if ($('#gQ') && window.matchMedia?.('(pointer: coarse)').matches) $('#gQ').readOnly = true;
 
   setupBotStyles();
+  setupSettingsHelp();
   setupBotMind();
   setupResultDialog(() => game, {
     // Ключевые моменты и кнопки «Добавить в очередь повторов» лежат в карточке итога над вкладками боковой панели

@@ -457,20 +457,47 @@
                 </label>
               </div>
 
-              <label class="check"><input id="gCalzaOpt" type="checkbox"> Calza</label>
-              <label class="check"><input id="gPalificoOpt" type="checkbox"> Палифико</label>
+              <small id="gAssistHelp" class="game-settings-help"></small>
+
+              <div class="rules-group" role="group" aria-labelledby="gRulesLabel">
+                <div class="set-label" id="gRulesLabel">Дополнительные правила</div>
+                <label class="rule-card">
+                  <input id="gCalzaOpt" type="checkbox">
+                  <span class="rule-body">
+                    <b>Calza</b>
+                    <span class="rule-text">Вместо «Не верю!» можно сказать «Calza»: «на столе ровно столько, сколько заявлено».
+                      Угадали — получаете кубик обратно, ошиблись — теряете кубик. Доступна, пока за столом осталось
+                      не меньше половины начальных кубиков.</span>
+                  </span>
+                </label>
+                <label class="rule-card">
+                  <input id="gPalificoOpt" type="checkbox">
+                  <span class="rule-body">
+                    <b>Палифико</b>
+                    <span class="rule-text">Когда у игрока остаётся один кубик, раунд идёт по особым правилам: единицы больше
+                      не джокеры, цифру менять нельзя, можно только повышать количество. Один раз на игрока, пока за столом
+                      больше двух игроков.</span>
+                  </span>
+                </label>
+                <small class="game-settings-help">Для первой партии оба правила можно оставить выключенными.</small>
+              </div>
+
               <label class="check"><input id="gRevealOpt" type="checkbox" checked> Показывать вскрытие кубиков</label>
 
               <button type="button" class="btn-primary side-start" data-action="new-game">Начать новую партию</button>
               <span id="gConfigSummary" class="muted"></span>
 
-              <small id="gStyleHelp" class="game-settings-help"></small>
-              <small class="game-settings-help">
-                Настройки применяются, когда вы начинаете новую партию.
-                Единицы — джокеры, кроме ставок на единицы. С обычной цифры на единицы — половина с округлением
-                вверх, с единиц на обычную — больше удвоенного. Calza: ставка точна — получаете кубик;
-                нет — теряете. Палифико: раунд без джокеров с фиксированной цифрой.
-              </small>
+              <small class="game-settings-help">Настройки применяются, когда вы начинаете новую партию.</small>
+
+              <details class="help-more">
+                <summary>Что значат стили ботов</summary>
+                <ul id="gStyleHelp" class="help-list"></ul>
+              </details>
+              <details class="help-more">
+                <summary>Как повышать ставку</summary>
+                <p class="game-settings-help">Единицы — джокеры, кроме ставок на единицы. С обычной цифры на единицы —
+                  половина количества с округлением вверх, с единиц на обычную цифру — больше удвоенного.</p>
+              </details>
             </div>
 
           </div>

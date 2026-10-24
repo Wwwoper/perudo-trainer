@@ -1192,6 +1192,35 @@ class LayoutTest(unittest.TestCase):
                     dock = page.locator("#cDock").bounding_box()
                     self.assertLessEqual(dock["y"] + dock["height"], h, "правая панель ниже экрана при уведомлении")
 
+    def test_settings_rule_cards_and_help_fit(self):
+        """Настройки партии: карточки Calza и Палифико с пояснениями помещаются, клик по тексту переключает правило."""
+        for w, h in ((1366, 768), (768, 1024), (390, 844), (360, 640), (844, 390)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 1)
+                hud = page.locator('.hud-tab-btn[data-open-tab="tabSettings"]')
+                if hud.is_visible():
+                    hud.click()
+                else:
+                    page.locator("#tabSettings").click()
+                page.wait_for_selector("#panSettings .rule-card", state="visible")
+                for opt in ("#gCalzaOpt", "#gPalificoOpt"):
+                    card = page.locator(f".rule-card:has({opt})")
+                    card.scroll_into_view_if_needed()
+                    box = card.bounding_box()
+                    body = page.locator(".side-body").bounding_box()
+                    self.assertGreaterEqual(box["x"], body["x"] - 1, opt)
+                    self.assertLessEqual(box["x"] + box["width"], body["x"] + body["width"] + 1, f"{opt}: карточка шире панели")
+                    self.assertGreaterEqual(box["height"], 44, opt)
+                    before = page.locator(opt).is_checked()
+                    card.locator(".rule-text").click()
+                    self.assertEqual(page.locator(opt).is_checked(), not before, f"{opt}: клик по тексту не переключил")
+                    card.locator(".rule-text").click()
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
+                help_text = page.locator("#gAssistHelp").inner_text()
+                self.assertIn("Тренировка", help_text)
+                page.select_option("#gAssist", "novice")
+                self.assertIn("советует", page.locator("#gAssistHelp").inner_text())
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)

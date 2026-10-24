@@ -15,9 +15,9 @@ export function setupBotStyles() {
 
   const help = $('#gStyleHelp');
   if (help) {
-    help.textContent = BOT_STYLE_IDS
-      .map((id) => `${BOT_STYLES[id].icon} ${BOT_STYLES[id].name} — ${BOT_STYLES[id].desc}`)
-      .join('. ') + '.';
+    help.innerHTML = BOT_STYLE_IDS
+      .map((id) => `<li><b>${BOT_STYLES[id].icon} ${BOT_STYLES[id].name}</b> — ${BOT_STYLES[id].desc}</li>`)
+      .join('');
   }
 
   const options = [

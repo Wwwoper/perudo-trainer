@@ -553,6 +553,86 @@
   line-height: 1.4;
 }
 
+/* Дополнительные правила: карточки с переключателем и объяснением */
+.rules-group {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.set-label {
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.rule-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid #353b49;
+  border-radius: var(--radius-m);
+  background: #1a1f28;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.rule-card:has(input:checked) {
+  border-color: var(--acc);
+}
+
+.rule-card input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+}
+
+.rule-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rule-text {
+  color: var(--mut);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Свёрнутые пояснения внизу настроек */
+.help-more {
+  margin-top: var(--space-2);
+  color: var(--mut);
+}
+
+.help-more > summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.help-more > summary::after {
+  content: "▾";
+  margin-left: auto;
+}
+
+.help-more[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.help-list {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 #gConfigSummary {
   display: block;
   margin-top: 4px;
