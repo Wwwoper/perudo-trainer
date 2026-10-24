@@ -1143,6 +1143,26 @@ class LayoutTest(unittest.TestCase):
                     if r["id"] != "gBots":
                         self.assertGreaterEqual(r["width"], r["inner"] - 2, f"{r['id']}: список не на всю ширину")
 
+    def test_trainer_settings_panel_layout(self):
+        """Настройки тренажёра: плитки режимов и степпер крупные, всё помещается без горизонтальной прокрутки."""
+        for w, h in ((1366, 768), (768, 1024), (390, 844), (360, 640), (844, 390)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 1)
+                self.goto_tab(page, "train")
+                page.locator(".trainer-settings-more summary").click()
+                tiles = page.locator("#tModePick .mode-btn")
+                self.assertEqual(tiles.count(), 6)
+                card = page.locator(".trainer-top").bounding_box()
+                for i in range(tiles.count()):
+                    b = tiles.nth(i).bounding_box()
+                    self.assertGreaterEqual(b["height"], 44, f"плитка {i} ниже 44px")
+                    self.assertLessEqual(b["x"] + b["width"], card["x"] + card["width"] + 1, f"плитка {i} за краем карточки")
+                for sel in ("#tTMinus", "#tTPlus", "#tReset"):
+                    b = page.locator(sel).bounding_box()
+                    self.assertGreaterEqual(b["height"], 44, sel)
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
+                                "горизонтальная прокрутка страницы")
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)

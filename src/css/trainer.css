@@ -28,17 +28,32 @@
   color: var(--mut);
 }
 
+/* Закрытое состояние: «пилюля» как у меток ситуации */
 .trainer-settings-more>summary {
   cursor: pointer;
   list-style: none;
   display: flex;
   align-items: center;
+  gap: 6px;
   min-height: var(--tap);
   font-size: 14px;
-  padding: 4px 12px;
-  border-radius: 6px;
+  padding: 4px 14px;
+  border-radius: 999px;
   background: #262b37;
   color: var(--mut);
+}
+
+.trainer-settings-more>summary::after {
+  content: "▾";
+  margin-left: 4px;
+}
+
+.trainer-settings-more[open]>summary::after {
+  transform: rotate(180deg);
+}
+
+.trainer-settings-more>summary:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .trainer-settings-more>summary::-webkit-details-marker {
@@ -50,10 +65,89 @@
 }
 
 .trainer-settings-body {
+  display: grid;
+  gap: var(--space-4);
   margin-top: 8px;
-  padding-top: 8px;
+  padding-top: 12px;
   border-top: 1px solid #2f3543;
   width: 100%;
+}
+
+.tset-group {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.tset-label {
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.tset-note,
+.tset-desc {
+  margin: 0;
+  color: var(--mut);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.tset-desc {
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--acc);
+}
+
+/* Режим: плитки-«пилюли» вместо выпадающего списка */
+.mode-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mode-btn {
+  min-height: var(--tap);
+  padding: 4px 14px;
+  border: 1px solid #353b49;
+  border-radius: 999px;
+  background: #2a2f3b;
+  color: var(--fg);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mode-btn.is-on {
+  border-color: var(--acc);
+  background: var(--acc);
+  color: #111;
+  font-weight: 700;
+}
+
+.tset-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.tset-default {
+  color: var(--mut);
+  font-size: 13px;
+}
+
+/* Опасное и редкое действие — не кнопка, а ссылка */
+.link-danger {
+  min-height: var(--tap);
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  color: #ff8b8b;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* Теги с контекстом */

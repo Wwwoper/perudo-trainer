@@ -24,6 +24,33 @@ export function setupTrainer() {
     modeSel.innerHTML = '';
     for (const key in MODES) modeSel.add(new Option(MODES[key].name, key));
   }
+
+  // Выбор режима плитками; источник правды остаётся в #tMode (скрытый select)
+  const modePick = $('#tModePick');
+  const syncModePick = () => {
+    if (!modePick || !modeSel) return;
+    modePick.querySelectorAll('[data-mode]').forEach((b) => {
+      const on = b.dataset.mode === modeSel.value;
+      b.setAttribute('aria-checked', String(on));
+      b.classList.toggle('is-on', on);
+      b.tabIndex = on ? 0 : -1;
+    });
+  };
+  if (modePick) {
+    modePick.innerHTML = '';
+    for (const key in MODES) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mode-btn';
+      b.dataset.mode = key;
+      b.setAttribute('role', 'radio');
+      b.textContent = MODES[key].short || modeLabel(key);
+      b.title = MODES[key].name;
+      b.onclick = () => { modeSel.value = key; modeSel.onchange?.(); };
+      modePick.appendChild(b);
+    }
+    syncModePick();
+  }
   const faceSel = $('#tF');
   if (faceSel) {
     faceSel.innerHTML = '';
@@ -125,6 +152,7 @@ export function setupTrainer() {
     if (!el) return;
     const thr = (+$('#tT').value || 0.5).toFixed(2);
     el.textContent = `${modeLabel($('#tMode').value)} · порог ${thr}`;
+    syncModePick();
   }
 
   /** Варианты хода по шансу ставки; choice — что выбрал игрок: { type: 'dudo' } или { type: 'raise', q, f }. */
@@ -214,8 +242,17 @@ export function setupTrainer() {
 
   if ($('#tT')) {
     $('#tT').addEventListener('input', updateSettingsHint);
+    // «−» и «+» двигают порог на 0.05 в пределах 0.05–0.95
+    const stepThr = (d) => {
+      const cur = +$('#tT').value || 0.5;
+      $('#tT').value = String(Math.min(0.95, Math.max(0.05, Math.round((cur + d) * 100) / 100)));
+      updateSettingsHint();
+    };
+    if ($('#tTMinus')) $('#tTMinus').onclick = () => stepThr(-0.05);
+    if ($('#tTPlus')) $('#tTPlus').onclick = () => stepThr(0.05);
   }
   if ($('#tReset')) $('#tReset').onclick = () => {
+    if (!window.confirm('Сбросить статистику тренажёра и очередь повторов?')) return;
     updateStats((S) => {
       S.n = 0; S.good = 0; S.byMode = {};
       S.drill = { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };

@@ -137,18 +137,31 @@
               <button id="tNew" class="trainer-new">🔄 Новая ситуация</button>
               <details class="trainer-settings-more">
                 <summary>
-                  ⚙️ <span id="tSettingsHint">Классика · порог 0.5</span>
+                  <span aria-hidden="true">⚙️</span> <span id="tSettingsHint">Классика · порог 0.50</span>
                 </summary>
                 <div class="trainer-settings-body">
-                  <div class="field-row">
-                    <label class="field">Режим <select id="tMode"></select></label>
-                    <label class="field">Порог <input id="tT" type="number" min="0.05" max="0.95" step="0.05"
-                        value="0.5" inputmode="decimal"></label>
+                  <section class="tset-group" aria-labelledby="tModeLabel">
+                    <div class="tset-label" id="tModeLabel">Режим</div>
+                    <p class="tset-note">Какие ситуации вам выпадают: сколько кубиков за столом, есть ли джокеры, как часто соперник блефует.</p>
+                    <div id="tModePick" class="mode-pick" role="radiogroup" aria-labelledby="tModeLabel"></div>
+                    <select id="tMode" hidden aria-hidden="true" tabindex="-1"></select>
+                    <p id="tDesc" class="tset-desc"></p>
+                  </section>
+                  <section class="tset-group" aria-labelledby="tThrLabel">
+                    <div class="tset-label" id="tThrLabel">Порог шанса</div>
+                    <p class="tset-note">С какого шанса ставка считается безопасной. При 0.50 ставка безопасна, если сбывается хотя бы в половине случаев:
+                      выше порога — повышайте, ниже — верно «Не верю».</p>
+                    <div class="stepper" role="group" aria-label="Порог шанса">
+                      <button id="tTMinus" type="button" aria-label="Меньше">−</button>
+                      <input id="tT" type="number" min="0.05" max="0.95" step="0.05" value="0.5" inputmode="decimal"
+                        aria-label="Порог шанса">
+                      <button id="tTPlus" type="button" aria-label="Больше">+</button>
+                    </div>
+                  </section>
+                  <div class="tset-foot">
+                    <span class="tset-default">По умолчанию: «Классика» и порог 0.50. С них удобно начинать.</span>
+                    <button type="button" id="tReset" class="link-danger">Сбросить статистику</button>
                   </div>
-                  <div class="row">
-                    <button id="tReset">Сбросить статистику</button>
-                  </div>
-                  <small id="tDesc"></small>
                 </div>
               </details>
             </div>

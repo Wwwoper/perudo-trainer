@@ -204,8 +204,39 @@ test.describe('Учебные вкладки', () => {
     test('смена режима даёт новую ситуацию и обновляет подпись', async ({ page }) => {
       await open(page, 'train');
       await page.click('.trainer-settings-more summary');
-      await page.selectOption('#tMode', 'endgame');
+      await page.locator('#tModePick [data-mode="endgame"]').click();
+      await expect(page.locator('#tMode')).toHaveValue('endgame');
       await expect(page.locator('#tSettingsHint')).toContainText('Эндшпиль');
+      await expect(page.locator('#tModePick [data-mode="endgame"]')).toHaveAttribute('aria-checked', 'true');
+      await expect(page.locator('#tModePick [aria-checked="true"]')).toHaveCount(1);
+      await expect(page.locator('#tDesc')).toContainText('3–6 кубиков');
+    });
+
+    test('порог меняется степпером на 0.05 в пределах 0.05–0.95, подпись обновляется', async ({ page }) => {
+      await open(page, 'train');
+      await page.click('.trainer-settings-more summary');
+      await page.locator('#tTPlus').click();
+      await expect(page.locator('#tT')).toHaveValue('0.55');
+      await expect(page.locator('#tSettingsHint')).toContainText('порог 0.55');
+      await page.locator('#tTMinus').click();
+      await page.locator('#tTMinus').click();
+      await expect(page.locator('#tT')).toHaveValue('0.45');
+      await page.fill('#tT', '0.95');
+      await page.locator('#tTPlus').click();
+      await expect(page.locator('#tT')).toHaveValue('0.95');
+    });
+
+    test('«Сбросить статистику»: без подтверждения ничего не стирается, с подтверждением счётчики обнуляются', async ({ page }) => {
+      await open(page, 'train');
+      await page.locator('#tDudo').click();
+      await expect(page.locator('#tStat')).toContainText('Всего: 1');
+      await page.click('.trainer-settings-more summary');
+      page.once('dialog', (d) => d.dismiss());
+      await page.locator('#tReset').click();
+      await expect(page.locator('#tStat')).toContainText('Всего: 1');
+      page.once('dialog', (d) => d.accept());
+      await page.locator('#tReset').click();
+      await expect(page.locator('#tStat')).toContainText('Всего: 0');
     });
   });
 

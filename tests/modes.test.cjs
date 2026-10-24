@@ -45,3 +45,14 @@ test('bestSafeRaise: при недостижимом пороге возвращ
   const { bestSafeRaise } = await load();
   assert.equal(bestSafeRaise({ q: 3, f: 3 }, 12, [2, 2, 2, 2, 2], { wild: true }, 1.01), null);
 });
+
+test('MODES: у каждого режима есть уникальная короткая подпись для плитки и пояснение для новичка', async () => {
+  const { MODES } = await load();
+  const shorts = new Set();
+  for (const [key, m] of Object.entries(MODES)) {
+    assert.ok(m.short && m.short.length <= 14, `${key}: короткая подпись есть и помещается в плитку`);
+    assert.ok(!shorts.has(m.short), `${key}: подпись уникальна`);
+    shorts.add(m.short);
+    assert.ok(m.d && m.d.length >= 40, `${key}: пояснение достаточно подробное`);
+  }
+});
