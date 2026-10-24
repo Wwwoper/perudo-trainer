@@ -1114,6 +1114,35 @@ class LayoutTest(unittest.TestCase):
                 else:
                     self.assertGreaterEqual(go["y"], h * 0.6, "на телефоне кнопка у нижнего края")
 
+    def test_settings_selects_fill_panel_width(self):
+        """Настройки партии: выпадающие списки на всю ширину панели, подписи вариантов не обрезаны."""
+        for w, h in ((1366, 768), (768, 1024), (390, 844), (360, 640)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 3)
+                hud = page.locator('.hud-tab-btn[data-open-tab="tabSettings"]')
+                if hud.is_visible():
+                    hud.click()
+                else:
+                    page.locator("#tabSettings").click()
+                page.wait_for_selector("#panSettings select", state="visible")
+                res = page.evaluate("""() => {
+                    const body = document.querySelector('.side-body');
+                    const cs = getComputedStyle(body);
+                    const inner = body.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+                    const probe = document.createElement('canvas').getContext('2d');
+                    return [...document.querySelectorAll('#panSettings select')].filter(s => s.offsetParent).map(s => {
+                        const st = getComputedStyle(s);
+                        probe.font = st.fontSize + ' ' + st.fontFamily;
+                        const longest = Math.max(...[...s.options].map(o => probe.measureText(o.text).width));
+                        return { id: s.id, width: s.getBoundingClientRect().width, inner, longest,
+                                 pad: parseFloat(st.paddingLeft) + parseFloat(st.paddingRight) + 28 };
+                    }); }""")
+                self.assertTrue(res, "в настройках нет списков")
+                for r in res:
+                    self.assertGreaterEqual(r["width"], r["longest"] + r["pad"], f"{r['id']}: подпись обрезана")
+                    if r["id"] != "gBots":
+                        self.assertGreaterEqual(r["width"], r["inner"] - 2, f"{r['id']}: список не на всю ширину")
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)

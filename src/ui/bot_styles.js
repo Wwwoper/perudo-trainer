@@ -30,12 +30,8 @@ export function setupBotStyles() {
     const prev = [...box.querySelectorAll('select')].map((sel) => sel.value);
     const n = botCountSetting();
     let html = '';
-    for (let i = 0; i < n; i += 2) {
-      html += '<div class="field-row">';
-      for (let j = i; j < Math.min(i + 2, n); j++) {
-        html += `<label class="field">Бот ${j + 1}<select id="gBotStyle${j}" data-bot-style>${options}</select></label>`;
-      }
-      html += '</div>';
+    for (let j = 0; j < n; j++) {
+      html += `<div class="field-row is-stacked"><label class="field">Бот ${j + 1}<select id="gBotStyle${j}" data-bot-style>${options}</select></label></div>`;
     }
     box.innerHTML = html;
     box.querySelectorAll('select').forEach((sel, i) => { if (prev[i]) sel.value = prev[i]; });

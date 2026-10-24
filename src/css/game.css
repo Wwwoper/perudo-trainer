@@ -515,7 +515,15 @@
 .side-body .field input:not([type=checkbox]),
 .side-body .field select {
   width: 100%;
+  max-width: none;            /* без этого .field select из learn.css ограничивает список 140px и обрезает подписи */
   min-height: var(--tap);
+}
+
+/* Строка с длинными подписями: поля друг под другом на всю ширину панели */
+.side-body .field-row.is-stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .check {
