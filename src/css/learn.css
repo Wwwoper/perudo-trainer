@@ -184,8 +184,7 @@
   #cDock,
   #tDock,
   #dDock,
-  #duelDock,
-  #simDock {
+  #duelDock {
     position: sticky;
     top: var(--space-3);
   }
@@ -582,8 +581,41 @@
   font-weight: 700;
 }
 
+/* Широкий экран: одна колонка «поля → кнопка запуска → таблица», таблица на всю ширину.
+   На телефоне кнопка остаётся панелью у нижнего края. */
+@media (min-width: 720px), (max-height: 500px) and (orientation: landscape) {
+  .sim-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "fields" "dock" "out";
+  }
+
+  .sim-layout .learn-main {
+    display: contents;
+  }
+
+  .sim-fields {
+    grid-area: fields;
+    margin-bottom: 0;
+  }
+
+  #simDock {
+    grid-area: dock;
+    padding: 0;
+    background: none;
+  }
+
+  .sim-go {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .sim-out {
+    grid-area: out;
+    margin-bottom: 0;
+  }
+}
+
 .sim-out {
-  margin-top: var(--space-3);
   overflow-x: auto;
 }
 

@@ -553,7 +553,7 @@
       </header>
       <div class="learn-layout sim-layout" id="simLayout">
         <div class="learn-main">
-          <div class="card">
+          <div class="card sim-fields">
             <div class="field-row">
               <label class="field">Всего кубиков <input id="sN" type="number" min="2" max="60" value="15"
                   inputmode="numeric"></label>
@@ -563,11 +563,11 @@
             </div>
             <small>Проверка формулы: бросаем все кубики много раз и смотрим, как часто ставка оказывается верной,
               когда рук никто не видит.</small>
-            <div id="sOut" class="sim-out"></div>
           </div>
+          <div id="sOut" class="card sim-out"></div>
         </div>
 
-        <!-- Запуск: внизу экрана на телефоне, справа на широком -->
+        <!-- Запуск: внизу экрана на телефоне; на широком экране под полями, таблица занимает всю ширину -->
         <div class="action-dock" id="simDock">
           <button id="sGo" class="btn-primary sim-go">Запустить Монте-Карло</button>
         </div>

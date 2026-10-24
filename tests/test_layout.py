@@ -1094,6 +1094,26 @@ class LayoutTest(unittest.TestCase):
                         .some(s => s.offsetParent && s.scrollHeight > s.clientHeight))""", box_sel)
                     self.assertTrue(scroll, "содержимое должно прокручиваться внутри панели")
 
+    def test_simulation_layout_wide_and_phone(self):
+        """Симуляция: на широком экране кнопка под полями, таблица на всю ширину; на телефоне кнопка у нижнего края."""
+        for w, h in ((1366, 768), (768, 1024), (390, 844), (360, 640)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 1)
+                self.goto_tab(page, "sim")
+                page.fill("#sR", "2000")
+                page.click("#sGo")
+                page.wait_for_selector("#sOut table")
+                go = page.locator("#sGo").bounding_box()
+                out = page.locator("#sOut").bounding_box()
+                fields = page.locator(".sim-fields").bounding_box()
+                self.assertLessEqual(go["y"] + go["height"], h + 1, "кнопка ниже экрана")
+                if w >= 720:
+                    self.assertLess(fields["y"], go["y"], "кнопка должна быть под полями")
+                    self.assertLess(go["y"], out["y"], "таблица должна быть под кнопкой")
+                    self.assertGreaterEqual(out["width"], fields["width"] - 2, "таблица уже блока полей")
+                else:
+                    self.assertGreaterEqual(go["y"], h * 0.6, "на телефоне кнопка у нижнего края")
+
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)
         self.finish(page)
