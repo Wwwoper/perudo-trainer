@@ -1,6 +1,6 @@
 {
   "name": "perudo-trainer",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "private": true,
   "type": "module",
   "description": "Тренажёр и игра в Перудо в браузере",
