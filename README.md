@@ -409,12 +409,14 @@ python3 -m http.server 8000      # или: npm start
 | Вёрстка (`tests/test_layout.py`) | размеры, шторка, меню, прокрутка, окна; панели ставки в Калькуляторе, Тренажёре и Упражнениях | `python3 -m unittest tests.test_layout` |
 | Вёрстка учебных вкладок (`tests/test_learning_layout.py`) | на пяти размерах экрана: нет горизонтальной прокрутки, нет элементов меньше 44 px и полей меньше 16 px, результат виден на экране | `python3 -m unittest tests.test_learning_layout` (несколько секунд; таблицу показателей печатает `python3 -m tests.layout_audit`) |
 
+**Проверка на GitHub.** При каждом push в `main` и каждом pull request GitHub Actions (`.github/workflows/test.yml`) запускает три независимых задания: «логика» (`npm test`), «сценарии в браузере» (`npm run test:e2e`) и «вёрстка» (оба Python-набора). Результат виден зелёной или красной отметкой у коммита и значком в начале README. Если сценарии в браузере упали, файлы `test-results/` (скриншоты и трассировки) сохраняются как артефакт запуска на 7 дней. На GitHub упавший сценарий повторяется один раз, поэтому единичный сбой медленного сервера не краснит сборку, а повторяющаяся ошибка краснит. Зависимости Python-тестов перечислены в `requirements-test.txt`.
+
 Тесты логики нужен только Node.js 18+: `npm test` запускает `node --test` для `*.test.js` и `*.test.cjs`. Файл `core.test.cjs` читает `src/core.js` в изолированном контексте (`node:vm`), потому что это классический скрипт для `<script>`, а не ES-модуль.
 
 Тесты вёрстки запускаются в настоящем браузере (Chromium) через Playwright для Python и проверяют вёрстку: места игроков внутри стола, размеры кнопок, шторку, меню, окна вскрытия и итога, отсутствие прокрутки страницы и так далее:
 
 ```bash
-pip install playwright && playwright install chromium
+pip install -r requirements-test.txt && python3 -m playwright install chromium
 python3 -m unittest tests.test_layout           # весь набор (около двух минут)
 SHOTS_DIR=./shots python3 -m unittest tests.test_layout   # заодно сохранить скриншоты
 ```
@@ -436,6 +438,7 @@ index.html           разметка всех вкладок и небольш�
 package.json         скрипты npm (test, test:e2e, test:e2e:ui, start), devDependencies для e2e
 package-lock.json    зафиксированные версии npm-пакетов
 playwright.config.js настройки e2e-тестов (десктоп и телефон)
+requirements-test.txt зависимости Python-тестов вёрстки (playwright, Pillow)
 tools/               эмуляторы партий, тренажёра и упражнений на Python (см. tools/README.md)
 .github/workflows/   проверка тестов на GitHub при каждом push и pull request
 LICENSE              лицензия MIT
