@@ -5,6 +5,7 @@ import { sanitizePlayer } from './player.js';
 import { sanitizeDeviceState } from './backup_reminder.js';
 import { sanitizeCloudState } from './cloud_policy.js';
 import { sanitizeGameSettings } from './game_settings.js';
+import { makeSnapshot, restoreSnapshot } from './saved_game.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -18,6 +19,7 @@ const KEYS = {
   REVIEWS: 'perudo.reviews',
   PLAYER: 'perudo.player',
   DEVICE: 'perudo.device',
+  ACTIVE_GAME: 'perudo.activeGame',
   CLOUD: 'perudo.cloud',
   TRAINING_QUEUE: 'perudo.trainingQueue',
   TUTORIAL_PROGRESS: 'perudo.tutorialProgress',
@@ -71,6 +73,25 @@ export function clearLastGameSettings() {
   if (!s || typeof s !== 'object' || !('lastGame' in s)) return;
   const { lastGame, ...rest } = s;
   set(KEYS.SETTINGS, rest);
+}
+
+// Незавершённая партия: снимок для «Продолжить» после перезагрузки. Это состояние устройства:
+// в резервную копию и в облако не входит (BACKUP_KEYS его не содержит).
+// getActiveGame возвращает проверенные данные или null (нет снимка, он устарел или повреждён).
+export function getActiveGame() {
+  return restoreSnapshot(get(KEYS.ACTIVE_GAME, null));
+}
+
+/** Сохраняет снимок; false, если партии нет или она не идёт (тогда прежний снимок остаётся как был). */
+export function setActiveGame(parts) {
+  const snap = makeSnapshot(parts);
+  if (!snap) return false;
+  set(KEYS.ACTIVE_GAME, snap);
+  return true;
+}
+
+export function clearActiveGame() {
+  try { localStorage.removeItem(KEYS.ACTIVE_GAME); } catch (e) {}
 }
 
 // Профиль игрока: имя и аватар. Проверку и значения по умолчанию даёт sanitizePlayer.
