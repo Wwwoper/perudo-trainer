@@ -175,6 +175,22 @@ test.describe('Покерный стол в партии', () => {
     expect(await page.evaluate(() => window.__perudo_v2.game.players[0].dice)).toBe(4);
   });
 
+  test('имена за столом не повторяются, имя игрока ботам не достаётся', async ({ page }) => {
+    await page.evaluate(() => localStorage.setItem('perudo.player', JSON.stringify({ name: 'Сергей', avatar: null })));
+    await page.locator('#gBots').fill('5');
+    await page.locator('#gSetup .side-start').click();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(6);
+    for (let i = 0; i < 15; i++) {
+      const names = await page.evaluate(() => {
+        window.__perudo_v2.startNewGame();
+        return window.__perudo_v2.game.players.map((p) => p.name);
+      });
+      expect(names.length).toBe(6);
+      expect(new Set(names.map((n) => n.toLowerCase())).size, `повтор имён: ${names}`).toBe(6);
+      expect(names[0]).toBe('Сергей');
+    }
+  });
+
   test('изменённые, но не начатые настройки не запоминаются', async ({ page }) => {
     await page.locator('#gBots').fill('5');
     await page.locator('#gDice').fill('2');

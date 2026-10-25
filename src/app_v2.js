@@ -8,7 +8,7 @@ import { createAssistConfig, getClassification } from './assist.js';
 import { readInfo, readNote } from './table_read.js';
 import { describeRoundEvents } from './game_log.js';
 import { updateStats, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState } from './storage.js';
-import { BOT_STYLES, generateCharacter, botDecide } from './bots.js';
+import { BOT_STYLES, generateCharacters, botDecide } from './bots.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
 import { buildGameResult, resultHeadline } from './result.js';
 import { P, $, $$, pct, flash } from './ui/common.js';
@@ -174,7 +174,8 @@ function startNewGame() {
   $('#game')?.classList.remove('is-prestart');
   $$('.side-start').forEach((b) => { b.textContent = 'Начать новую партию'; });
 
-  const characters = chosenBotStyles(botCount).map((style) => generateCharacter(style));
+  // Имена ботов не повторяются и не совпадают с вашим именем.
+  const characters = generateCharacters(chosenBotStyles(botCount), { avoidNames: [playerDisplayName(getPlayer())] });
 
   game = createGame({
     playerId: 'human',

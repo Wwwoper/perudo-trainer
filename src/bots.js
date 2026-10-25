@@ -85,28 +85,45 @@ export function pickBotStyles(count, choices = [], rng = Math.random) {
 const MALE_NAMES = ['Алексей', 'Дмитрий', 'Иван', 'Сергей', 'Николай', 'Андрей', 'Максим', 'Александр', 'Павел', 'Михаил'];
 const FEMALE_NAMES = ['Мария', 'Ольга', 'Анна', 'Елена', 'Татьяна', 'Наталья', 'Екатерина', 'Анастасия', 'Ирина', 'Юлия'];
 
-export function generateName(gender = 'random') {
-  if (gender === 'male') return MALE_NAMES[Math.floor(Math.random() * MALE_NAMES.length)];
-  if (gender === 'female') return FEMALE_NAMES[Math.floor(Math.random() * FEMALE_NAMES.length)];
-  const all = [...MALE_NAMES, ...FEMALE_NAMES];
-  return all[Math.floor(Math.random() * all.length)];
+const norm = (n) => String(n ?? '').trim().toLowerCase();
+
+/**
+ * Случайное имя. `avoid` — имена, которые брать нельзя (уже занятые за столом, имя игрока):
+ * сравнение без учёта регистра. Если в нужном списке свободных не осталось, берётся из другого;
+ * если не осталось совсем (больше 20 имён за столом), к имени добавляется номер.
+ * `rng` — источник случайных чисел [0, 1), по умолчанию Math.random (нужен для тестов).
+ */
+export function generateName(gender = 'random', { avoid = [], rng = Math.random } = {}) {
+  const taken = new Set(avoid.map(norm));
+  const free = (list) => list.filter((n) => !taken.has(norm(n)));
+  const pick = (list) => list[Math.floor(rng() * list.length)];
+  let pool = gender === 'male' ? free(MALE_NAMES)
+    : gender === 'female' ? free(FEMALE_NAMES)
+      : free([...MALE_NAMES, ...FEMALE_NAMES]);
+  if (!pool.length) pool = free([...MALE_NAMES, ...FEMALE_NAMES]);
+  if (pool.length) return pick(pool);
+  const base = pick([...MALE_NAMES, ...FEMALE_NAMES]);
+  for (let n = 2; ; n++) if (!taken.has(norm(`${base} ${n}`))) return `${base} ${n}`;
 }
 
-// Генерация персонажа
-export function generateCharacter(style = 'random') {
-  const gender = Math.random() < 0.5 ? 'male' : 'female';
-  const name = generateName(gender);
+// Генерация персонажа. avoidNames — имена, которые нельзя использовать (см. generateName).
+export function generateCharacter(style = 'random', { avoidNames = [], rng = Math.random } = {}) {
+  const gender = rng() < 0.5 ? 'male' : 'female';
+  const name = generateName(gender, { avoid: avoidNames, rng });
   const styleKey = style === 'random'
-    ? BOT_STYLE_IDS[Math.floor(Math.random() * BOT_STYLE_IDS.length)]
+    ? BOT_STYLE_IDS[Math.floor(rng() * BOT_STYLE_IDS.length)]
     : style;
+  // Если имя пришлось взять из другого списка, пол персонажа следует за именем.
+  const base = name.replace(/ \d+$/, '');
+  const realGender = FEMALE_NAMES.includes(base) ? 'female' : MALE_NAMES.includes(base) ? 'male' : gender;
 
   return {
     id: `char_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     name,
-    gender,
+    gender: realGender,
     style: styleKey,
     styleConfig: BOT_STYLES[styleKey],
-    avatar: generateAvatar(gender),
+    avatar: generateAvatar(realGender),
     color: generateColor(),
     memory: {
       gamesPlayed: 0,
@@ -119,6 +136,19 @@ export function generateCharacter(style = 'random') {
       favoriteFaces: [0, 0, 0, 0, 0, 0, 0],
     },
   };
+}
+
+/**
+ * Персонажи для всех ботов за столом: имена не повторяются между собой
+ * и не совпадают с `avoidNames` (обычно это имя игрока).
+ */
+export function generateCharacters(styles, { avoidNames = [], rng = Math.random } = {}) {
+  const taken = [...avoidNames];
+  return styles.map((style) => {
+    const c = generateCharacter(style, { avoidNames: taken, rng });
+    taken.push(c.name);
+    return c;
+  });
 }
 
 // Простой SVG аватар
