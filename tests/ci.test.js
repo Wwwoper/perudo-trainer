@@ -37,6 +37,14 @@ describe('workflow .github/workflows/test.yml', () => {
     assert.match(wf, /python -m playwright install --with-deps chromium/);
     assert.strictEqual((wf.match(/timeout-minutes:/g) || []).length, 3);
   });
+  it('браузер Playwright кэшируется в обоих заданиях, ключ зависит от файла зависимостей', () => {
+    assert.strictEqual((wf.match(/path: ~\/\.cache\/ms-playwright/g) || []).length, 2);
+    assert.match(wf, /key: playwright-node-.*hashFiles\('package-lock\.json'\)/);
+    assert.match(wf, /key: playwright-py-.*hashFiles\('requirements-test\.txt'\)/);
+    // кэш восстанавливается раньше установки: иначе он бесполезен
+    assert.ok(wf.indexOf('playwright-node-') < wf.indexOf('npx playwright install'));
+    assert.ok(wf.indexOf('playwright-py-') < wf.indexOf('python -m playwright install'));
+  });
   it('используются только проверенные версии действий (актуальные мажорные)', () => {
     const acts = [...wf.matchAll(/uses: ([\w./-]+)@(v\d+)/g)].map((m) => `${m[1]}@${m[2]}`);
     assert.ok(acts.length >= 6);

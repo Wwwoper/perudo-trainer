@@ -38,6 +38,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Кэш браузера Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-node-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
         env:
@@ -62,5 +67,10 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-test.txt
       - run: pip install -r requirements-test.txt
+      - name: Кэш браузера Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-py-${{ runner.os }}-${{ hashFiles('requirements-test.txt') }}
       - run: python -m playwright install --with-deps chromium
       - run: python -m unittest tests.test_layout tests.test_learning_layout
