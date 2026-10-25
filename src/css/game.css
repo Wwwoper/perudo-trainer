@@ -28,45 +28,76 @@
   max-height: 620px;
 }
 
-/* ===== Перед стартом: заготовка вместо стола, действий нет ===== */
-.prestart {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 300px;
-  padding: var(--space-4);
-  border-radius: var(--radius-m);
-  background: #1a1f28;
-  text-align: center;
+/* ===== Перед стартом: экран подготовки партии вместо стола и боковой панели ===== */
+.setup-head {
+  padding: var(--space-2) 0;
 }
 
-.prestart-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+.setup-title {
+  margin: 0 0 var(--space-1);
+  font-size: 22px;
 }
 
-.prestart .muted {
-  max-width: 36ch;
+.setup-head .muted {
   margin: 0;
 }
 
-.prestart-actions {
-  display: grid;
-  gap: var(--space-2);
-  width: min(100%, 320px);
-  margin-top: var(--space-2);
-}
-
-.prestart-actions button {
-  min-height: var(--tap-lg);
-}
-
-#game.is-prestart #gDock {
+#game.is-prestart #gDock,
+#game.is-prestart #gameTable,
+#game.is-prestart .game-side,
+#game.is-prestart .game-ticker,
+#game.is-prestart .hud-actions {
   display: none;
 }
+
+#game.is-prestart .game-layout {
+  grid-template-columns: minmax(0, 720px);
+  justify-content: center;
+}
+
+/* На широком экране заголовок экрана подготовки заменяет шапку-статус */
+@media (min-width: 1101px) {
+  #game.is-prestart .game-hud {
+    display: none;
+  }
+}
+
+/* На телефоне и планшете статус «Новая партия» уже в шапке с кнопкой ☰ */
+@media (max-width: 1100px) {
+  .setup-head {
+    display: none;
+  }
+}
+
+/* Группы настроек: на экране подготовки это карточки, в боковой панели — просто разделы */
+.setup-card {
+  margin-bottom: var(--space-4);
+}
+
+.setup-screen .setup-card {
+  padding: var(--space-4);
+  border-radius: var(--radius-l);
+  background: var(--card);
+}
+
+/* Стили ботов на экране подготовки — по два в ряд */
+.setup-screen #gBotStyles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  column-gap: var(--space-3);
+}
+
+#panSettings button {
+  min-height: var(--tap);
+}
+
+.setup-screen .side-start {
+  position: sticky;
+  bottom: var(--space-3);
+  z-index: 5;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, .45);
+}
+
 
 /* ===== HUD: статус партии ===== */
 .game-hud {
@@ -513,14 +544,17 @@
 }
 
 .side-body .field input:not([type=checkbox]),
-.side-body .field select {
+.side-body .field select,
+.setup-screen .field input:not([type=checkbox]),
+.setup-screen .field select {
   width: 100%;
   max-width: none;            /* без этого .field select из learn.css ограничивает список 140px и обрезает подписи */
   min-height: var(--tap);
 }
 
 /* Строка с длинными подписями: поля друг под другом на всю ширину панели */
-.side-body .field-row.is-stacked {
+.side-body .field-row.is-stacked,
+.setup-screen .field-row.is-stacked {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -561,6 +595,7 @@
 }
 
 .set-label {
+  margin: 0 0 var(--space-2);
   color: var(--fg);
   font-size: 12px;
   font-weight: 700;
@@ -1226,15 +1261,3 @@
   font-size: 16px;
 }
 
-/* Телефон в ландшафте до старта: панели действий нет, стол занимает всю ширину */
-@media (max-height: 500px) and (orientation: landscape) and (max-width: 1099px) {
-  #game.is-prestart .game-main {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "hud" "tick" "table";
-  }
-
-  .prestart {
-    min-height: 0;
-    padding: var(--space-2);
-  }
-}

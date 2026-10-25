@@ -71,7 +71,6 @@ function trainInMode(mode) {
 function setupGame() {
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-action="new-game"]')) startNewGame();
-    if (e.target.closest('[data-prestart-settings]')) sideApi.show('tabSettings');
   });
   if ($('#gDudo')) $('#gDudo').onclick = onPlayerDudo;
   if ($('#gCalza')) $('#gCalza').onclick = onPlayerCalza;
@@ -113,38 +112,39 @@ function setupGame() {
 
 // ----- Перед стартом: партии ещё нет, показываем заготовку стола и настройки -----
 
-let prestartSheetShown = false;   // шторка настроек на телефоне открывается сама один раз за загрузку страницы
+/** Перенос панели настроек: до старта она — экран подготовки партии, после — вкладка боковой панели. */
+function moveSettings(toSetup) {
+  const panel = $('#panSettings');
+  const host = $('#gSetup');
+  const body = $('#gSide .side-body');
+  if (!panel || !host || !body) return;
+  if (toSetup) {
+    host.appendChild(panel);
+    panel.hidden = false;
+    host.hidden = false;
+  } else {
+    body.appendChild(panel);
+    panel.hidden = true;           // вкладку покажет sideApi.pick()/select()
+    host.hidden = true;
+  }
+}
 
-/** Вид «партия не начата»: заготовка вместо стола, действия скрыты, кнопка «Начать партию». */
+/** Вид «партия не начата»: экран подготовки вместо стола и боковой панели, кнопка «Начать партию». */
 function renderPrestart() {
   if (game) return;
   $('#game')?.classList.add('is-prestart');
   $$('.side-start').forEach((b) => { b.textContent = 'Начать партию'; });
   if ($('#gStatus')) $('#gStatus').textContent = 'Новая партия';
-  if ($('#gMeta')) $('#gMeta').textContent = 'Выберите настройки и начните';
+  if ($('#gMeta')) $('#gMeta').textContent = '';
   if ($('#gFeed')) $('#gFeed').textContent = '';
-  if ($('#gameTable')) {
-    $('#gameTable').innerHTML =
-      '<div class="prestart">' +
-      '<p class="prestart-title">Партия ещё не начата</p>' +
-      '<p class="muted">Выберите число ботов, их уровень и режим помощи, затем начните. ' +
-      'Настройки запоминаются: в следующий раз достаточно одной кнопки.</p>' +
-      '<div class="prestart-actions">' +
-      '<button type="button" class="btn-primary prestart-start" data-action="new-game">Начать партию</button>' +
-      '<button type="button" data-prestart-settings>Настройки</button>' +
-      '</div></div>';
-  }
+  if ($('#gameTable')) $('#gameTable').innerHTML = '';
+  moveSettings(true);
 }
 
-/** Заход во вкладку «Партия» без начатой партии: настройки на виду. */
+/** Заход во вкладку «Партия» без начатой партии: экран подготовки. */
 function showPrestart() {
   if (game) return;
   renderPrestart();
-  sideApi.select('tabSettings');
-  if (!prestartSheetShown && !window.matchMedia?.('(min-width: 1101px)').matches) {
-    prestartSheetShown = true;
-    sideApi.show('tabSettings');
-  }
 }
 
 function totalDice() {
@@ -165,6 +165,7 @@ function startNewGame() {
   applyBotMindSettings();
 
   assistConfig = createAssistConfig(assistMode);
+  moveSettings(false);
   sideApi.close();
   sideApi.pick();
   $('#game')?.classList.remove('is-prestart');
@@ -860,6 +861,9 @@ function finalizeGame() {
       </table>` + keyMomentsHtml(currentDecisions(), lastKeyMoments) + backupReminderHtml(cloudConnected());
     card.hidden = false;
     sideApi.select('tabReview');
+    // select() прокручивает «Разбор» вниз, а итог лежит выше вкладок: возвращаем его на виду
+    const sideBody = $('#gSide .side-body');
+    if (sideBody) sideBody.scrollTop = 0;
   }
 
   // 3) Окно — чуть позже, чтобы успеть увидеть итог последней проверки

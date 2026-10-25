@@ -747,6 +747,7 @@ class LayoutTest(unittest.TestCase):
     # ---------- До старта партии ----------
 
     def test_prestart_fits_and_buttons_are_touch_sized(self):
+        """До старта: экран подготовки вместо стола и боковой панели, кнопка старта на экране, всё помещается."""
         for w, h in VIEWPORTS:
             with self.subTest(w=w, h=h):
                 ctx = self.browser.new_context(viewport={"width": w, "height": h})
@@ -754,11 +755,19 @@ class LayoutTest(unittest.TestCase):
                 self.addCleanup(ctx.close)
                 page.goto(self.url)
                 self.goto_tab(page, "game")
-                self.assertTrue(page.locator(".prestart").is_visible())
+                self.assertTrue(page.locator("#gSetup").is_visible())
+                self.assertTrue(page.locator("#gSetup #panSettings").is_visible(), "настройки должны быть на экране подготовки")
                 self.assertEqual(page.locator(".seat").count(), 0)
                 self.assertFalse(page.locator("#gDock").is_visible(), "панели действий до старта быть не должно")
+                self.assertFalse(page.locator("#gSide").is_visible(), "боковая панель до старта скрыта")
+                self.assertFalse(page.locator("#gameTable").is_visible())
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
-                small = page.evaluate("""() => [...document.querySelectorAll('.prestart button')]
+                start = page.locator("#gSetup .side-start").bounding_box()
+                self.assertGreaterEqual(start["height"], 44)
+                self.assertGreaterEqual(start["y"], 0)
+                self.assertLessEqual(start["y"] + start["height"], h + 1, "кнопка «Начать партию» должна быть на экране")
+                small = page.evaluate("""() => [...document.querySelectorAll('#gSetup button')]
+                    .filter(e => e.offsetParent !== null)
                     .filter(e => { const r = e.getBoundingClientRect(); return r.height < 44 || r.width < 44; })
                     .map(e => e.textContent.trim())""")
                 self.assertEqual(small, [])
@@ -1361,8 +1370,13 @@ class LayoutTest(unittest.TestCase):
                       " document.querySelector('#gDice').value = 1;"
                       " document.querySelector('#gRevealOpt').checked = false; window.__perudo_v2.startNewGame(); }")
         page.wait_for_selector(".seat")
+        # Длинный «Разбор»: после партии итог должен остаться на виду, а не уехать вверх за край панели
+        page.evaluate("""() => { const pad = document.createElement('div'); pad.style.height = '3000px';
+            document.querySelector('#panReview').appendChild(pad); }""")
         self.finish(page)
         page.keyboard.press("Escape")
+        self.assertEqual(page.evaluate("document.querySelector('#gSide .side-body').scrollTop"), 0,
+                         "итог партии прокручен за край панели")
         reminder = page.locator("#gResultCard .backup-reminder")
         self.assertTrue(reminder.is_visible())
         for sel in ("[data-backup-save]", "[data-backup-later]"):

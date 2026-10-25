@@ -335,6 +335,14 @@
 
           <div id="gFeed" class="game-ticker" aria-live="polite"></div>
 
+          <!-- До старта: экран подготовки партии; в него переезжает панель настроек, а после старта возвращается в боковую панель -->
+          <section id="gSetup" class="setup-screen" aria-labelledby="gSetupTitle" hidden>
+            <div class="setup-head">
+              <h2 class="setup-title" id="gSetupTitle">Новая партия</h2>
+              <p class="muted">Выберите соперников, помощь и правила. Настройки запоминаются: в следующий раз достаточно одной кнопки.</p>
+            </div>
+          </section>
+
           <div id="gameTable" class="table-stage" aria-label="Игровой стол"></div>
 
           <div id="gSummary"></div>
@@ -412,6 +420,8 @@
             </div>
 
             <div role="tabpanel" id="panSettings" aria-labelledby="tabSettings" hidden>
+              <section class="setup-card" aria-labelledby="gOppLabel">
+              <h3 class="set-label" id="gOppLabel">Соперники</h3>
               <div class="field-row">
                 <label class="field">Кубиков каждому
                   <input id="gDice" type="number" min="1" max="10" value="5" inputmode="numeric">
@@ -439,6 +449,10 @@
                 <button type="button" id="gMemoryReset">Забыть мою игру</button>
               </div>
 
+              </section>
+
+              <section class="setup-card" aria-labelledby="gHelpLabel">
+              <h3 class="set-label" id="gHelpLabel">Помощь и темп</h3>
               <div class="field-row is-stacked">
                 <label class="field">Режим помощи
                   <select id="gAssist">
@@ -458,9 +472,11 @@
               </div>
 
               <small id="gAssistHelp" class="game-settings-help"></small>
+              </section>
 
+              <section class="setup-card">
               <div class="rules-group" role="group" aria-labelledby="gRulesLabel">
-                <div class="set-label" id="gRulesLabel">Дополнительные правила</div>
+                <h3 class="set-label" id="gRulesLabel">Дополнительные правила</h3>
                 <label class="rule-card">
                   <input id="gCalzaOpt" type="checkbox">
                   <span class="rule-body">
@@ -483,6 +499,7 @@
               </div>
 
               <label class="check"><input id="gRevealOpt" type="checkbox" checked> Показывать вскрытие кубиков</label>
+              </section>
 
               <button type="button" class="btn-primary side-start" data-action="new-game">Начать новую партию</button>
               <span id="gConfigSummary" class="muted"></span>
