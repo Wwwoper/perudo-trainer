@@ -72,7 +72,9 @@ export function sanitizeGameSettings(raw) {
 
 /** Совпадают ли настройки со стандартными (для кнопки «Сбросить»). */
 export function isDefaultGameSettings(s) {
-  return JSON.stringify(sanitizeGameSettings(s)) === JSON.stringify(defaultGameSettings());
+  const v = sanitizeGameSettings(s);
+  if (v.botStyles.every((x) => x === STYLE_AUTO)) v.botStyles = [];   // «по умолчанию» у всех = ничего не выбрано
+  return JSON.stringify(v) === JSON.stringify(defaultGameSettings());
 }
 
 /** Короткая строка для сводки: «5 кубиков · 3 бота · Тренировка · Нормально». */

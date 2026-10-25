@@ -746,6 +746,28 @@ class LayoutTest(unittest.TestCase):
 
     # ---------- До старта партии ----------
 
+    def test_prestart_reset_button_visible_only_for_changed_settings(self):
+        """«Сбросить к стандартным»: при стандартных настройках скрыта, при изменённых крупная и в пределах экрана."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                self.assertFalse(page.locator("#gSettingsReset").is_visible())
+                page.locator("#gCalzaOpt").check()
+                btn = page.locator("#gSettingsReset")
+                btn.scroll_into_view_if_needed()
+                self.assertTrue(btn.is_visible())
+                box = btn.bounding_box()
+                self.assertGreaterEqual(box["height"], 44)
+                self.assertGreaterEqual(box["x"], 0)
+                self.assertLessEqual(box["x"] + box["width"], w + 1, "кнопка не должна выходить за экран")
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                btn.click()
+                self.assertFalse(page.locator("#gSettingsReset").is_visible())
+
     def test_prestart_fits_and_buttons_are_touch_sized(self):
         """До старта: экран подготовки вместо стола и боковой панели, кнопка старта на экране, всё помещается."""
         for w, h in VIEWPORTS:

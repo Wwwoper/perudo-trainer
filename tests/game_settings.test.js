@@ -79,6 +79,8 @@ describe('isDefaultGameSettings и describeGameSettings', () => {
     assert.ok(isDefaultGameSettings(defaultGameSettings()));
     assert.ok(isDefaultGameSettings(null));
     assert.ok(!isDefaultGameSettings({ ...defaultGameSettings(), calza: true }));
+    assert.ok(isDefaultGameSettings({ ...defaultGameSettings(), botStyles: ['auto', 'auto', 'auto'] }));
+    assert.ok(!isDefaultGameSettings({ ...defaultGameSettings(), botStyles: ['auto', 'smart', 'auto'] }));
   });
   it('сводка с правильными склонениями', () => {
     assert.strictEqual(describeGameSettings(defaultGameSettings()), '5 кубиков · 3 бота · Тренировка · Нормально');

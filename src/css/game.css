@@ -668,6 +668,24 @@
   line-height: 1.5;
 }
 
+/* Кнопка-ссылка «Сбросить к стандартным настройкам» под «Начать партию» */
+.link-btn {
+  display: block;
+  min-height: var(--tap);
+  margin: 0 auto;
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  color: var(--mut);
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-btn[hidden] {
+  display: none;
+}
+
 #gConfigSummary {
   display: block;
   margin-top: 4px;

@@ -126,6 +126,97 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gameTable .seat')).toHaveCount(3);            // 2 бота и вы
   });
 
+  // ----- Настройки последней партии запоминаются -----
+  const reloadToSetup = async (page) => {
+    await page.reload();
+    await page.waitForFunction(() => Boolean(window.__perudo_v2));
+    await expect(async () => {
+      await goTab(page, 'game');
+      await expect(page.locator('#gSetup')).toBeVisible({ timeout: 1_000 });
+    }).toPass({ timeout: 10_000 });
+  };
+  const lastGame = (page) => page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('perudo.settings'))?.lastGame ?? null; } catch { return null; }
+  });
+
+  test('настройки сыгранной партии возвращаются после перезагрузки страницы', async ({ page }) => {
+    await page.locator('#gDice').fill('4');
+    await page.locator('#gBots').fill('2');
+    await page.locator('#gBotStyle0').selectOption('smart');
+    await page.locator('#gBotStyle1').selectOption('random');
+    await page.locator('#gBotLevel').selectOption('hard');
+    await page.locator('#gMemoryOpt').uncheck();
+    await page.locator('#gAssist').selectOption('game');
+    await page.locator('#gSpeed').selectOption('fast');
+    await page.locator('#gCalzaOpt').check();
+    await page.locator('#gPalificoOpt').check();
+    await page.locator('#gRevealOpt').uncheck();
+    await page.locator('#gSetup .side-start').click();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(3);
+
+    await reloadToSetup(page);
+    await expect(page.locator('#gDice')).toHaveValue('4');
+    await expect(page.locator('#gBots')).toHaveValue('2');
+    await expect(page.locator('#gBotStyles select')).toHaveCount(2);
+    await expect(page.locator('#gBotStyle0')).toHaveValue('smart');
+    await expect(page.locator('#gBotStyle1')).toHaveValue('random');
+    await expect(page.locator('#gBotLevel')).toHaveValue('hard');
+    await expect(page.locator('#gMemoryOpt')).not.toBeChecked();
+    await expect(page.locator('#gAssist')).toHaveValue('game');
+    await expect(page.locator('#gSpeed')).toHaveValue('fast');
+    await expect(page.locator('#gCalzaOpt')).toBeChecked();
+    await expect(page.locator('#gPalificoOpt')).toBeChecked();
+    await expect(page.locator('#gRevealOpt')).not.toBeChecked();
+    await expect(page.locator('#gConfigSummary')).toContainText('4×3');       // сводка «Сейчас: …» тоже обновилась
+    await expect(page.locator('#gAssistHelp')).toContainText('без шансов');   // пояснение к режиму помощи тоже
+
+    await page.locator('#gSetup .side-start').click();                         // и партия действительно идёт по ним
+    await expect(page.locator('#gameTable .seat')).toHaveCount(3);
+    expect(await page.evaluate(() => window.__perudo_v2.game.players[0].dice)).toBe(4);
+  });
+
+  test('изменённые, но не начатые настройки не запоминаются', async ({ page }) => {
+    await page.locator('#gBots').fill('5');
+    await page.locator('#gDice').fill('2');
+    await reloadToSetup(page);
+    await expect(page.locator('#gBots')).toHaveValue('3');
+    await expect(page.locator('#gDice')).toHaveValue('5');
+    expect(await lastGame(page)).toBeNull();
+  });
+
+  test('«Сбросить к стандартным» прячется при стандартных настройках, возвращает значения и забывает сохранённое', async ({ page }) => {
+    const reset = page.locator('#gSettingsReset');
+    await expect(reset).toBeHidden();
+    await page.locator('#gBots').fill('2');
+    await page.locator('#gCalzaOpt').check();
+    await expect(reset).toBeVisible();
+    await page.locator('#gSetup .side-start').click();
+    await reloadToSetup(page);
+    await expect(reset).toBeVisible();
+    await reset.click();
+    await expect(page.locator('#gBots')).toHaveValue('3');
+    await expect(page.locator('#gCalzaOpt')).not.toBeChecked();
+    await expect(reset).toBeHidden();
+    expect(await lastGame(page)).toBeNull();
+    await reloadToSetup(page);
+    await expect(page.locator('#gBots')).toHaveValue('3');
+  });
+
+  test('повреждённые сохранённые настройки не ломают страницу: берутся стандартные', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await page.evaluate(() => localStorage.setItem('perudo.settings', JSON.stringify({
+      lastGame: { dice: 999, bots: 'много', botStyles: ['nope', 5], assist: 'cheat', speed: 7, calza: 'да' },
+    })));
+    await reloadToSetup(page);
+    await expect(page.locator('#gDice')).toHaveValue('10');                    // зажато в допустимый предел
+    await expect(page.locator('#gBots')).toHaveValue('3');
+    await expect(page.locator('#gAssist')).toHaveValue('training');
+    await expect(page.locator('#gSpeed')).toHaveValue('normal');
+    await expect(page.locator('#gCalzaOpt')).not.toBeChecked();
+    expect(errors).toEqual([]);
+  });
+
   test('после смены вкладки экран подготовки остаётся, настройки не сбрасываются', async ({ page }) => {
     await page.locator('#gBots').fill('2');
     await goTab(page, 'stats');

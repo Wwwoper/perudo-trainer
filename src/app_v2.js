@@ -25,6 +25,7 @@ import { recordDecision, markRoundOutcome, startDecisionLog, saveKeyMoments, cur
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
+import { setupGameSettings, rememberGameSettings } from './ui/game_settings_ui.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
 import { renderStats, setupStats, downloadBackup } from './ui/stats.js';
 import { backupReminderHtml, setupBackupReminder } from './ui/backup_reminder.js';
@@ -91,6 +92,7 @@ function setupGame() {
 
   setupBotStyles();
   setupSettingsHelp();
+  setupGameSettings();     // после списка стилей: возвращает настройки прошлой партии
   setupBotMind();
   setupResultDialog(() => game, {
     // Ключевые моменты и кнопки «Добавить в очередь повторов» лежат в карточке итога над вкладками боковой панели
@@ -163,6 +165,7 @@ function startNewGame() {
   const assistMode = $('#gAssist')?.value || 'training';
   const botSpeed = $('#gSpeed')?.value || 'normal';
   applyBotMindSettings();
+  rememberGameSettings();
 
   assistConfig = createAssistConfig(assistMode);
   moveSettings(false);
