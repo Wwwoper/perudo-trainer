@@ -4,6 +4,7 @@ import { normalizeMoments } from './moments.js';
 import { sanitizePlayer } from './player.js';
 import { sanitizeDeviceState } from './backup_reminder.js';
 import { sanitizeCloudState } from './cloud_policy.js';
+import { sanitizeGameSettings } from './game_settings.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -51,6 +52,25 @@ export function getSettings() {
 
 export function setSettings(settings) {
   set(KEYS.SETTINGS, { ...getSettings(), ...settings });
+}
+
+// Настройки последней сыгранной партии: лежат в perudo.settings.lastGame (так попадают в экспорт и копию).
+// null — партий с сохранёнными настройками ещё не было.
+export function getLastGameSettings() {
+  const s = get(KEYS.SETTINGS, null);
+  const raw = s && typeof s === 'object' ? s.lastGame : null;
+  return raw ? sanitizeGameSettings(raw) : null;
+}
+
+export function setLastGameSettings(settings) {
+  setSettings({ lastGame: sanitizeGameSettings(settings) });
+}
+
+export function clearLastGameSettings() {
+  const s = get(KEYS.SETTINGS, null);
+  if (!s || typeof s !== 'object' || !('lastGame' in s)) return;
+  const { lastGame, ...rest } = s;
+  set(KEYS.SETTINGS, rest);
 }
 
 // Профиль игрока: имя и аватар. Проверку и значения по умолчанию даёт sanitizePlayer.
