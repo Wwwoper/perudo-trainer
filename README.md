@@ -387,6 +387,10 @@
 
 Приложение написано на чистых **HTML, CSS и JavaScript (ES-модули)**: без сборки и фреймворков, весь код работает прямо в браузере; для запуска приложения ничего устанавливать не нужно. Node.js и npm-пакеты `@playwright/test` и `playwright` (в `devDependencies`) нужны только для тестов.
 
+## История изменений
+
+Что нового в каждой версии, смотрите в [CHANGELOG.md](CHANGELOG.md). Текущая версия записана в `package.json`; тест `changelog.test.js` следит, чтобы верхняя запись истории совпадала с ней.
+
 ## Запуск локально
 
 ```bash
@@ -430,6 +434,8 @@ python3 -m unittest tests.test_layout           # весь набор (окол�
 SHOTS_DIR=./shots python3 -m unittest tests.test_layout   # заодно сохранить скриншоты
 ```
 
+**Скриншоты для README** снимает скрипт `tools/screenshots.py`: `python3 tools/screenshots.py` обновляет настройки партии, партию, Симуляцию и настройки Тренажёра в `docs/img` (`--only game-phone` — выбранные, `--list` — список, `--out` — другая папка). Случайные числа на странице подменены детерминированными, поэтому при неизменной вёрстке картинки не меняются, а diff в git показывает только реальные изменения. Остальные снимки (Калькулятор с результатом, разбор в Тренажёре, итог партии, Дуэль, Статистика) собираются вручную и скриптом не трогаются. Сам скрипт проверяет `tests/test_screenshots.py` (размеры и воспроизводимость).
+
 Сценарии игры в браузере (стол, ставка, «Не верю», Calza, подсказки, окно вскрытия) проверяет Playwright Test на двух экранах: десктопном и телефонном. Он сам поднимает небольшой локальный сервер (`tests/e2e/static-server.mjs`, без зависимостей):
 
 ```bash
@@ -448,6 +454,7 @@ package.json         скрипты npm (test, test:e2e, test:e2e:ui, start), de
 package-lock.json    зафиксированные версии npm-пакетов
 playwright.config.js настройки e2e-тестов (десктоп и телефон)
 requirements-test.txt зависимости Python-тестов вёрстки (playwright, Pillow)
+CHANGELOG.md        история изменений по версиям
 tools/               эмуляторы партий, тренажёра и упражнений на Python (см. tools/README.md)
 .github/workflows/   проверка тестов на GitHub при каждом push и pull request
 LICENSE              лицензия MIT
@@ -502,7 +509,7 @@ tests/
 ├── test_layout.py   тесты вёрстки в браузере (Playwright)
 ├── test_learning_layout.py  пороги вёрстки учебных вкладок
 └── layout_audit.py  измеритель вёрстки учебных вкладок (таблица показателей)
-docs/img/            скриншоты для README (game-desktop.png также служит превью ссылки)
+docs/img/            скриншоты для README (game-desktop.png также служит превью ссылки); часть снимает tools/screenshots.py
 ```
 
 ## Как устроен код
