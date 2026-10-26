@@ -191,6 +191,143 @@ test.describe('Покерный стол в партии', () => {
     }
   });
 
+  // ----- Продолжение партии после перезагрузки -----
+  const activeSaved = (page) => page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('perudo.activeGame')); } catch { return null; }
+  });
+  const humanTurn = (page) => page.waitForFunction(() => {
+    const g = window.__perudo_v2.game;
+    return g && g.state === 'active' && g.currentPlayer === 0;
+  }, null, { timeout: 15_000 });
+  const stateOf = (page) => page.evaluate(() => {
+    const g = window.__perudo_v2.game;
+    return {
+      id: g.id, round: g.round, current: g.currentPlayer, bid: g.bid && { q: g.bid.q, f: g.bid.f, by: g.bid.playerId },
+      players: g.players.map((p) => ({ name: p.name, dice: p.dice, hand: p.hand, alive: p.alive, style: p.style })),
+    };
+  });
+  const startFastGame = async (page, bots = 3) => {
+    await page.locator('#gBots').fill(String(bots));
+    await page.locator('#gSpeed').selectOption('fast');
+    await page.locator('#gSetup .side-start').click();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(bots + 1);
+    await humanTurn(page);
+  };
+
+  test('партия после перезагрузки: карточка «Продолжить» возвращает ту же партию', async ({ page }) => {
+    await startFastGame(page);
+    // Делаем ход, дожидаемся ответов ботов и снова своего хода: в снимке есть ставки, журнал и «Разбор».
+    await page.evaluate(() => document.querySelector('#gRaise').click());
+    await humanTurn(page);
+    const before = await stateOf(page);
+    const logRows = await page.locator('#gHistory .log-row').count();
+    expect((await activeSaved(page)).game.round).toBe(before.round);
+
+    await reloadToSetup(page);
+    const card = page.locator('#gResume');
+    await expect(card).toBeVisible();
+    await expect(page.locator('#gResumeInfo')).toContainText(`Раунд ${before.round}`);
+    await page.locator('#gResumeBtn').click();
+
+    await expect(page.locator('#gSetup')).toBeHidden();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(4);
+    const after = await stateOf(page);
+    expect(after.round).toBe(before.round);
+    expect(after.current).toBe(0);
+    expect(after.bid).toEqual(before.bid);
+    expect(after.players.map((p) => [p.dice, p.hand, p.alive, p.style]))
+      .toEqual(before.players.map((p) => [p.dice, p.hand, p.alive, p.style]));
+    expect(after.players.slice(1).map((p) => p.name)).toEqual(before.players.slice(1).map((p) => p.name));
+    await expect(page.locator('#gHistory .log-row')).toHaveCount(logRows + 1);       // + «Партия продолжена…»
+    await expect(page.locator('#gHistory')).toContainText('продолжена после перезагрузки');
+    await expect(page.locator('#gDock')).toBeVisible();
+    await expect(page.locator('#gResume')).toBeHidden();
+
+    // Партия живая: ход принимается, боты отвечают.
+    await page.locator('#gRaise').click();
+    await expect(async () => {
+      expect((await stateOf(page)).bid).not.toEqual(before.bid);
+    }).toPass({ timeout: 10_000 });
+  });
+
+  test('после перезагрузки в ход бота партия идёт дальше сама', async ({ page }) => {
+    await startFastGame(page, 2);
+    await page.evaluate(() => document.querySelector('#gRaise').click());
+    // сохраняем момент, когда ходит бот
+    await page.waitForFunction(() => {
+      const g = window.__perudo_v2.game;
+      return g && g.state === 'active' && g.currentPlayer !== 0;
+    });
+    await reloadToSetup(page);
+    await page.locator('#gSpeed').selectOption('fast');
+    const snapRound = (await activeSaved(page)).game.round;
+    await page.locator('#gResumeBtn').click();
+    await expect(async () => {
+      const g = await stateOf(page);
+      expect(g.current === 0 || g.round > snapRound).toBe(true);                     // боты доиграли до вашего хода
+    }).toPass({ timeout: 15_000 });
+  });
+
+  test('«Начать заново» стирает снимок; «Начать партию» тоже заменяет его', async ({ page }) => {
+    await startFastGame(page);
+    const firstId = (await activeSaved(page)).game.id;
+    await reloadToSetup(page);
+    await expect(page.locator('#gResume')).toBeVisible();
+    await page.locator('#gResumeDrop').click();
+    await expect(page.locator('#gResume')).toBeHidden();
+    expect(await activeSaved(page)).toBeNull();
+    await reloadToSetup(page);
+    await expect(page.locator('#gResume')).toBeHidden();
+
+    // обычный старт новой партии поверх незавершённой
+    await startFastGame(page);
+    await reloadToSetup(page);
+    await expect(page.locator('#gResume')).toBeVisible();
+    await page.locator('#gSetup .side-start').click();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(4);
+    const second = await activeSaved(page);
+    expect(second.game.id).not.toBe(firstId);
+  });
+
+  test('законченная партия не предлагается к продолжению', async ({ page }) => {
+    await page.locator('#gDice').fill('1');
+    await page.locator('#gBots').fill('1');
+    await page.locator('#gRevealOpt').setChecked(false);
+    await page.locator('#gSpeed').selectOption('fast');
+    await page.locator('#gSetup .side-start').click();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(2);
+    // доигрываем: игрок каждый раз поднимает/проверяет, пока кто-то не выбудет
+    await expect(async () => {
+      const done = await page.evaluate(() => window.__perudo_v2.game.state === 'finished');
+      if (!done) {
+        await page.evaluate(() => {
+          const g = window.__perudo_v2.game;
+          if (g.state === 'active' && g.currentPlayer === 0) {
+            const dudo = document.querySelector('#gDudo');
+            if (g.bid && dudo && !dudo.disabled) dudo.click(); else document.querySelector('#gRaise')?.click();
+          }
+        });
+      }
+      expect(done).toBe(true);
+    }).toPass({ timeout: 60_000, intervals: [200] });
+    expect(await activeSaved(page)).toBeNull();
+    await reloadToSetup(page);
+    await expect(page.locator('#gResume')).toBeHidden();
+  });
+
+  test('повреждённый снимок игнорируется, страница работает', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    for (const bad of ['{не json', JSON.stringify({ v: 1, savedAt: Date.now(), game: { state: 'active' } }), JSON.stringify([1, 2])]) {
+      await page.evaluate((v) => localStorage.setItem('perudo.activeGame', v), bad);
+      await reloadToSetup(page);
+      await expect(page.locator('#gResume')).toBeHidden();
+    }
+    await page.locator('#gSetup .side-start').click();
+    await expect(page.locator('#gameTable .seat')).toHaveCount(4);
+    expect(errors).toEqual([]);
+  });
+
   test('изменённые, но не начатые настройки не запоминаются', async ({ page }) => {
     await page.locator('#gBots').fill('5');
     await page.locator('#gDice').fill('2');
@@ -1005,7 +1142,8 @@ test.describe('Покерный стол в партии', () => {
       const cloud = await stubYandex(page);
       await seed(page, { games: 3, synced: null });
       await expect.poll(() => cloud.puts).toBe(1);                        // вход, облако пусто: копия записана
-      expect((await cloudState(page)).syncedHash).toMatch(/^[0-9a-f]+$/);
+      // состояние входа записывается чуть позже самой отправки копии: ждём, а не читаем сразу
+      await expect.poll(async () => (await cloudState(page)).syncedHash).toMatch(/^[0-9a-f]+$/);
       // «другое устройство» записало новую копию
       cloud.text = cloudFile({ 'perudo.userProfile': progress(8), 'perudo.player': { name: 'С ноутбука', avatar: null } }, Date.now() + 60_000);
       await page.reload();

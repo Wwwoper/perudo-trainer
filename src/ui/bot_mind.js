@@ -41,6 +41,17 @@ export function applyBotMindSettings() {
   gameMemoryOn = $('#gMemoryOpt') ? $('#gMemoryOpt').checked : true;
 }
 
+/** Текущие настройки умов ботов (для снимка партии). */
+export function getBotMind() {
+  return { level: gameBotLevel, memory: gameMemoryOn };
+}
+
+/** Вернуть настройки умов ботов из снимка: партия продолжается с теми же уровнем и памятью. */
+export function setBotMind({ level, memory }) {
+  gameBotLevel = level || DEFAULT_BOT_LEVEL;
+  gameMemoryOn = memory !== false;
+}
+
 /** Параметры решения бота: множитель ошибок и модель игрока (если память включена и ставка его). */
 export function botMindFor(game) {
   return {

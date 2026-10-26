@@ -7,7 +7,8 @@ import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
 import { readInfo, readNote } from './table_read.js';
 import { describeRoundEvents } from './game_log.js';
-import { updateStats, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState } from './storage.js';
+import { updateStats, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
+import { describeSnapshot } from './saved_game.js';
 import { BOT_STYLES, generateCharacters, botDecide } from './bots.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
 import { buildGameResult, resultHeadline } from './result.js';
@@ -21,12 +22,12 @@ import { setupSim } from './ui/sim.js';
 import { sideApi, setupSidePanel } from './ui/side_panel.js';
 import { revealIsOpen, presentReveal, setupReveal, hideRevealUi } from './ui/reveal_dialog.js';
 import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/result_dialog.js';
-import { recordDecision, markRoundOutcome, startDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
+import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
 import { setupGameSettings, rememberGameSettings } from './ui/game_settings_ui.js';
-import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal } from './ui/bot_mind.js';
+import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal, getBotMind, setBotMind } from './ui/bot_mind.js';
 import { renderStats, setupStats, downloadBackup } from './ui/stats.js';
 import { backupReminderHtml, setupBackupReminder } from './ui/backup_reminder.js';
 import { setupCloudCard, cloudConnected } from './ui/cloud_card.js';
@@ -93,6 +94,8 @@ function setupGame() {
   setupBotStyles();
   setupSettingsHelp();
   setupGameSettings();     // после списка стилей: возвращает настройки прошлой партии
+  $('#gResumeBtn')?.addEventListener('click', resumeGame);
+  $('#gResumeDrop')?.addEventListener('click', discardSavedGame);
   setupBotMind();
   setupResultDialog(() => game, {
     // Ключевые моменты и кнопки «Добавить в очередь повторов» лежат в карточке итога над вкладками боковой панели
@@ -141,6 +144,79 @@ function renderPrestart() {
   if ($('#gFeed')) $('#gFeed').textContent = '';
   if ($('#gameTable')) $('#gameTable').innerHTML = '';
   moveSettings(true);
+  refreshResume();
+}
+
+// ----- Продолжение незавершённой партии после перезагрузки страницы -----
+
+let savedGame = null;      // проверенный снимок, который сейчас предлагается на экране подготовки
+
+/** Карточка «Незавершённая партия» на экране подготовки: есть ли что продолжать. */
+function refreshResume() {
+  const box = $('#gResume');
+  if (!box) return;
+  savedGame = game ? null : getActiveGame();
+  box.hidden = !savedGame;
+  if (savedGame && $('#gResumeInfo')) $('#gResumeInfo').textContent = describeSnapshot(savedGame);
+}
+
+/** Записывает партию на устройство после каждого изменения; закончившаяся партия стирается. */
+let lastSavedKey = '';
+function persistGame() {
+  if (!game) return;
+  if (game.state === 'finished') {
+    if (lastSavedKey !== 'finished') { clearActiveGame(); lastSavedKey = 'finished'; }
+    return;
+  }
+  // Ход игрока (выбор грани, переключение вкладок) вызывает renderGame тоже: пишем, только если что-то изменилось.
+  const key = [game.id, game.round, game.currentPlayer, game.bidHistory.length,
+    game.players.map((p) => p.dice).join(','), gameLogEntries.length, reviewEntries.length,
+    reviewEntries.map((e) => e.outcome ? 1 : 0).join('')].join('|');
+  if (key === lastSavedKey) return;
+  lastSavedKey = key;
+  setActiveGame({
+    game, log: gameLogEntries, reviews: reviewEntries, moments: currentDecisions(), mind: getBotMind(),
+  });
+}
+
+/** «Продолжить»: возвращает партию из снимка и запускает ход, если сейчас очередь бота. */
+function resumeGame() {
+  const snap = savedGame || getActiveGame();
+  if (!snap) { refreshResume(); return; }
+  clearTimeout(botTimer);
+  setBotMind(snap.mind);
+  assistConfig = createAssistConfig(snap.game.assistMode);
+  moveSettings(false);
+  sideApi.close();
+  sideApi.pick();
+  $('#game')?.classList.remove('is-prestart');
+  $$('.side-start').forEach((b) => { b.textContent = 'Начать новую партию'; });
+  if ($('#gResume')) $('#gResume').hidden = true;
+  savedGame = null;
+
+  game = snap.game;
+  applyPlayerToGame();
+  gameLogEntries = snap.log;
+  reviewEntries = snap.reviews;
+  lastBidKey = '';
+  lastLoggedRound = game.round;
+  hideRevealUi();
+  hideResultUi();
+  restoreDecisionLog(game.id, snap.moments);
+  lastKeyMoments = [];
+  lastSavedKey = '';
+  renderGameLog();
+  addGameLog('info', 'Партия продолжена после перезагрузки страницы.');
+  resetBidInput();
+  renderGame();
+  if (game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
+}
+
+/** «Начать заново»: сохранённая партия стирается, остаются обычные настройки. */
+function discardSavedGame() {
+  clearActiveGame();
+  savedGame = null;
+  refreshResume();
 }
 
 /** Заход во вкладку «Партия» без начатой партии: экран подготовки. */
@@ -166,6 +242,8 @@ function startNewGame() {
   const botSpeed = $('#gSpeed')?.value || 'normal';
   applyBotMindSettings();
   rememberGameSettings();
+  clearActiveGame();         // новая партия заменяет незавершённую
+  lastSavedKey = '';
 
   assistConfig = createAssistConfig(assistMode);
   moveSettings(false);
@@ -230,18 +308,21 @@ function logRoundEffects(events) {
   }
 }
 
+function renderGameLog() {
+  const el = $('#gHistory');
+  if (!el) return;
+  el.innerHTML = gameLogEntries
+    .map((e) => {
+      const cls = LOG_ROW_CLASS[e.type] || '';
+      return `<div class="log-row ${cls}">${e.html}</div>`;
+    })
+    .join('');
+  sideApi.keepAtEnd('panLog');
+}
+
 function addGameLog(type, html, { feed = true } = {}) {
   gameLogEntries.push({ type, html, round: game ? game.round : 0 });
-  const el = $('#gHistory');
-  if (el) {
-    el.innerHTML = gameLogEntries
-      .map((e) => {
-        const cls = LOG_ROW_CLASS[e.type] || '';
-        return `<div class="log-row ${cls}">${e.html}</div>`;
-      })
-      .join('');
-    sideApi.keepAtEnd('panLog');
-  }
+  renderGameLog();
   const feedEl = $('#gFeed');
   if (feedEl && feed) feedEl.innerHTML = html;
 }
@@ -515,6 +596,7 @@ function renderGame() {
   renderReview();
 
   if (game.state === 'finished') finalizeGame();
+  persistGame();
 }
 
 function renderPick() { updatePrev(); }

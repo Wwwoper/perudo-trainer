@@ -768,6 +768,32 @@ class LayoutTest(unittest.TestCase):
                 btn.click()
                 self.assertFalse(page.locator("#gSettingsReset").is_visible())
 
+    def test_resume_card_fits_and_buttons_are_touch_sized(self):
+        """После перезагрузки посреди партии: карточка «Продолжить» помещается, кнопки крупные, партия возвращается."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 3)
+                page.wait_for_timeout(300)
+                page.reload()
+                page.wait_for_function("window.__perudo_v2")
+                self.goto_tab(page, "game")
+                card = page.locator("#gResume")
+                self.assertTrue(card.is_visible(), "карточка «Незавершённая партия» должна быть видна")
+                self.assertIn("Раунд", page.locator("#gResumeInfo").inner_text())
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                box = card.bounding_box()
+                self.assertGreaterEqual(box["x"], 0)
+                self.assertLessEqual(box["x"] + box["width"], w + 1)
+                for sel in ("#gResumeBtn", "#gResumeDrop"):
+                    b = page.locator(sel).bounding_box()
+                    self.assertGreaterEqual(b["height"], 44, sel)
+                    self.assertGreaterEqual(b["width"], 44, sel)
+                    self.assertLessEqual(b["x"] + b["width"], w + 1, sel)
+                page.locator("#gResumeBtn").click()
+                self.assertEqual(page.locator(".seat").count(), 4)
+                self.assertFalse(page.locator("#gResume").is_visible())
+                self.assertFalse(page.locator("#gSetup").is_visible())
+
     def test_prestart_fits_and_buttons_are_touch_sized(self):
         """До старта: экран подготовки вместо стола и боковой панели, кнопка старта на экране, всё помещается."""
         for w, h in VIEWPORTS:

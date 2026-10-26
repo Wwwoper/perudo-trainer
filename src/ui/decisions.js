@@ -21,6 +21,13 @@ export function startDecisionLog(id) {
   moments = [];
 }
 
+/** Партия продолжается после перезагрузки: возвращаем решения, записанные до неё (уже проверенные). */
+export function restoreDecisionLog(id, list) {
+  gameId = String(id ?? '');
+  moments = Array.isArray(list) ? list.map((m) => ({ ...m, h: m.h.slice(), tags: m.tags.slice() })) : [];
+  seq = moments.length;
+}
+
 /**
  * Записывает решение и обновляет счётчики. Возвращает момент или null, если данные непригодны.
  * @param {{round:number, kind:string, total:number, hand:number[], bid:?{q:number,f:number},

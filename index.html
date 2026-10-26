@@ -341,6 +341,15 @@
               <h2 class="setup-title" id="gSetupTitle">Новая партия</h2>
               <p class="muted">Выберите соперников, помощь и правила. Настройки запоминаются: в следующий раз достаточно одной кнопки.</p>
             </div>
+            <!-- Если страницу перезагрузили посреди партии, предлагаем её продолжить -->
+            <section id="gResume" class="setup-card resume-card" aria-labelledby="gResumeTitle" hidden>
+              <h3 class="set-label" id="gResumeTitle">Незавершённая партия</h3>
+              <p id="gResumeInfo" class="muted"></p>
+              <div class="resume-actions">
+                <button type="button" id="gResumeBtn" class="btn-primary">Продолжить партию</button>
+                <button type="button" id="gResumeDrop">Начать заново</button>
+              </div>
+            </section>
           </section>
 
           <div id="gameTable" class="table-stage" aria-label="Игровой стол"></div>
