@@ -45,6 +45,30 @@ describe('getStats', () => {
   });
 });
 
+describe('getStats: повреждённые данные', () => {
+  it('мусор в хранилище не ломает чтение', () => {
+    mockStorage['perudo.userProfile'] = JSON.stringify({ n: 'x', good: 3, byMode: { m: 5 }, drill: 1 });
+    const s = getStats();
+    assert.strictEqual(s.n, 0);
+    assert.deepStrictEqual(s.byMode, {});
+    assert.deepStrictEqual(s.drill, { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } });
+  });
+  it('updateStats работает поверх мусора и записывает чистые данные', () => {
+    mockStorage['perudo.userProfile'] = JSON.stringify({ n: 'x', byMode: 7 });
+    updateStats((S) => { S.n++; S.byMode.t = { n: 1, good: 1 }; S.drill.A.n++; });
+    const saved = JSON.parse(mockStorage['perudo.userProfile']);
+    assert.strictEqual(saved.n, 1);
+    assert.deepStrictEqual(saved.byMode, { t: { n: 1, good: 1 } });
+    assert.strictEqual(saved.drill.A.n, 1);
+  });
+  it('setStats не записывает мусор', () => {
+    setStats({ n: -5, evil: 1 });
+    const saved = JSON.parse(mockStorage['perudo.userProfile']);
+    assert.strictEqual(saved.n, 0);
+    assert.ok(!('evil' in saved));
+  });
+});
+
 describe('getTrainingQueue', () => {
   it('возвращает пустую очередь', () => {
     mockStorage['perudo.trainingQueue'] = undefined;

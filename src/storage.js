@@ -7,6 +7,7 @@ import { sanitizeCloudState } from './cloud_policy.js';
 import { sanitizeGameSettings } from './game_settings.js';
 import { makeSnapshot, restoreSnapshot } from './saved_game.js';
 import { sanitizeSoundMode } from './sound_plan.js';
+import { sanitizeStats } from './data_schema.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -144,20 +145,11 @@ export function setBotMemory(memory) {
 }
 
 export function getStats() {
-  return get(KEYS.USER_PROFILE, {
-    n: 0,
-    good: 0,
-    totalGames: 0,
-    totalWins: 0,
-    totalDecisions: 0,
-    goodDecisions: 0,
-    byMode: {},
-    drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } },
-  });
+  return sanitizeStats(get(KEYS.USER_PROFILE, null)).value;
 }
 
 export function setStats(stats) {
-  set(KEYS.USER_PROFILE, stats);
+  set(KEYS.USER_PROFILE, sanitizeStats(stats).value);
 }
 
 /**
@@ -173,10 +165,6 @@ export function setStats(stats) {
  */
 export function updateStats(mutator) {
   const stats = getStats();
-  stats.byMode = stats.byMode || {};
-  stats.drill = stats.drill || {};
-  stats.drill.A = stats.drill.A || { n: 0, good: 0 };
-  stats.drill.B = stats.drill.B || { n: 0, good: 0 };
   mutator(stats);
   setStats(stats);
   return stats;
