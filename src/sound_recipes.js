@@ -66,3 +66,52 @@ export const RECIPES = Object.freeze({
     { at: 0, dur: 70, freq: 700, type: 'sine', gain: 0.22 },
   ],
 });
+
+/** Звук должен занимать хотя бы эту долю отведённой ему длительности (иначе он «обрезан» и неразличим). */
+export const MIN_FILL = 0.5;
+
+/**
+ * Проверка рецепта. Возвращает список проблем по-русски; пусто — рецепт годится.
+ * @param {unknown} notes   ноты звука
+ * @param {number} [cueDur] длительность звука из sound_plan.js (мс); если не задана, она не проверяется
+ */
+export function validateRecipe(notes, cueDur) {
+  if (!Array.isArray(notes) || notes.length === 0) return ['нет ни одной ноты'];
+  const problems = [];
+  let end = 0;
+  notes.forEach((n, i) => {
+    const p = `нота ${i + 1}`;
+    if (!n || typeof n !== 'object') { problems.push(`${p}: это не нота`); return; }
+    if (!Number.isInteger(n.at) || n.at < 0) problems.push(`${p}: начало — целое число мс, не меньше 0`);
+    if (!Number.isInteger(n.dur) || n.dur < 20) problems.push(`${p}: длительность — целое число мс, не меньше 20`);
+    if (!Number.isFinite(n.freq) || n.freq < FREQ_MIN || n.freq > FREQ_MAX) problems.push(`${p}: частота от ${FREQ_MIN} до ${FREQ_MAX} Гц`);
+    if (n.to !== undefined && (!Number.isFinite(n.to) || n.to < FREQ_MIN || n.to > FREQ_MAX)) problems.push(`${p}: конечная частота от ${FREQ_MIN} до ${FREQ_MAX} Гц`);
+    if (!Number.isFinite(n.gain) || n.gain <= 0 || n.gain > GAIN_MAX) problems.push(`${p}: громкость больше 0 и не выше ${GAIN_MAX}`);
+    if (!WAVE_TYPES.includes(n.type)) problems.push(`${p}: тембр — ${WAVE_TYPES.join(', ')}`);
+    if (Number.isInteger(n.at) && Number.isInteger(n.dur)) end = Math.max(end, n.at + n.dur);
+  });
+  if (Number.isFinite(cueDur) && !problems.length) {
+    if (end > cueDur) problems.push(`звук длится ${end} мс, а отведено не больше ${cueDur} мс`);
+    else if (end < cueDur * MIN_FILL) problems.push(`звук слишком короткий: ${end} мс из ${cueDur} мс`);
+  }
+  return problems;
+}
+
+const key = (name) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : `'${name}'`);
+const num = (v) => String(v);
+
+/** Рецепт одного звука в том виде, в каком он записан в этом файле: «имя: [ …ноты… ],». */
+export function formatRecipe(name, notes) {
+  const lines = notes.map((n) => {
+    const parts = [`at: ${num(n.at)}`, `dur: ${num(n.dur)}`, `freq: ${num(n.freq)}`];
+    if (n.to !== undefined) parts.push(`to: ${num(n.to)}`);
+    parts.push(`type: '${n.type}'`, `gain: ${num(n.gain)}`);
+    return `    { ${parts.join(', ')} },`;
+  });
+  return `  ${key(name)}: [\n${lines.join('\n')}\n  ],`;
+}
+
+/** Все рецепты: вставляется между «Object.freeze({» и «});» (комментарии к звукам при этом теряются). */
+export function formatRecipes(recipes) {
+  return Object.entries(recipes).map(([name, notes]) => formatRecipe(name, notes)).join('\n');
+}

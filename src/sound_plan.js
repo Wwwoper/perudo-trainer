@@ -104,3 +104,9 @@ export function createCuePlanner() {
     },
   };
 }
+
+/** Пояснение под переключателем «Звуки» в настройках. */
+export function describeSoundMode(mode) {
+  if (sanitizeSoundMode(mode) === 'off') return 'Звуки выключены.';
+  return 'Звучат ваш ход, «Не верю!», потеря кубика и конец партии. На быстром темпе ставки ботов и раздача не озвучиваются, чтобы звуки не сливались.';
+}

@@ -5,10 +5,34 @@
 // из-за того, что звук недоступен (старый браузер, запрет, закрытый контекст).
 
 import { createCuePlanner, sanitizeSoundMode } from './sound_plan.js';
-import { RECIPES } from './sound_recipes.js';
+import { RECIPES as DEFAULT_RECIPES } from './sound_recipes.js';
 
 const ATTACK_S = 0.005;     // нарастание громкости: без щелчка в начале ноты
 const RELEASE_FLOOR = 0.0001;
+
+/**
+ * Проигрывает ноты рецепта через переданный AudioContext. Каждая нота — свой осциллятор и усилитель
+ * с плавным началом и затуханием (без щелчков). Используется движком и страницей tools/sound_lab.html.
+ */
+export function playNotes(ctx, recipe, volume, startAt) {
+  for (const n of recipe) {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const t0 = startAt + n.at / 1000;
+    const t1 = t0 + n.dur / 1000;
+    const peak = Math.max(RELEASE_FLOOR * 2, n.gain * volume);
+    osc.type = n.type;
+    osc.frequency.setValueAtTime(n.freq, t0);
+    if (n.to) osc.frequency.linearRampToValueAtTime(n.to, t1);
+    g.gain.setValueAtTime(RELEASE_FLOOR, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + Math.min(ATTACK_S, (t1 - t0) / 2));
+    g.gain.exponentialRampToValueAtTime(RELEASE_FLOOR, t1);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t1 + 0.02);
+  }
+}
 
 /**
  * @param {object} deps
@@ -16,8 +40,9 @@ const RELEASE_FLOOR = 0.0001;
  * @param {() => string} deps.getMode            режим звука: off | quiet | normal
  * @param {() => string} deps.getSpeed           темп ботов: step | slow | normal | fast
  * @param {() => number} [deps.now]              время в мс (для тестов можно подменить)
+ * @param {object} [deps.recipes]                рецепты звуков (по умолчанию из sound_recipes.js; лаборатория подставляет свои)
  */
-export function createSoundEngine({ AudioContextCtor, getMode, getSpeed, now = () => Date.now() }) {
+export function createSoundEngine({ AudioContextCtor, getMode, getSpeed, now = () => Date.now(), recipes = DEFAULT_RECIPES }) {
   const planner = createCuePlanner();
   let ctx = null;
   let broken = false;
@@ -42,26 +67,6 @@ export function createSoundEngine({ AudioContextCtor, getMode, getSpeed, now = (
     }
   }
 
-  function playNotes(recipe, volume, startAt) {
-    for (const n of recipe) {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      const t0 = startAt + n.at / 1000;
-      const t1 = t0 + n.dur / 1000;
-      const peak = Math.max(RELEASE_FLOOR * 2, n.gain * volume);
-      osc.type = n.type;
-      osc.frequency.setValueAtTime(n.freq, t0);
-      if (n.to) osc.frequency.linearRampToValueAtTime(n.to, t1);
-      g.gain.setValueAtTime(RELEASE_FLOOR, t0);
-      g.gain.linearRampToValueAtTime(peak, t0 + Math.min(ATTACK_S, (t1 - t0) / 2));
-      g.gain.exponentialRampToValueAtTime(RELEASE_FLOOR, t1);
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.start(t0);
-      osc.stop(t1 + 0.02);
-    }
-  }
-
   /** Событие игры: звучит, если режим, темп и очередь это позволяют. Возвращает true, если звук запущен. */
   function cue(event) {
     try {
@@ -74,9 +79,22 @@ export function createSoundEngine({ AudioContextCtor, getMode, getSpeed, now = (
       }
       const plan = planner.plan(event, { mode, speed: getSpeed(), now: now() });
       if (!plan) return false;
-      const recipe = RECIPES[plan.sound];
+      const recipe = recipes[plan.sound];
       if (!recipe) return false;
-      playNotes(recipe, plan.volume, ctx.currentTime + plan.delayMs / 1000);
+      playNotes(ctx, recipe, plan.volume, ctx.currentTime + plan.delayMs / 1000);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /** Проиграть звук сразу, мимо режима, темпа и очереди (для лаборатории звуков). */
+  function playSound(sound, volume = 0.7) {
+    try {
+      if (!ctx || broken) return false;
+      const recipe = recipes[sound];
+      if (!Array.isArray(recipe)) return false;
+      playNotes(ctx, recipe, volume, ctx.currentTime + 0.02);
       return true;
     } catch (e) {
       return false;
@@ -86,6 +104,7 @@ export function createSoundEngine({ AudioContextCtor, getMode, getSpeed, now = (
   return {
     unlock,
     cue,
+    playSound,
     /** Новая партия: очередь звуков очищается. */
     reset() { planner.reset(); },
     get unlocked() { return !!ctx && !broken; },

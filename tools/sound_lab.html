@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Лаборатория звуков — Перудо</title>
+  <style>
+    :root { --bg:#14161c; --card:#1e222b; --fg:#e8eaf0; --mut:#8b93a5; --ok:#3ecf8e; --bad:#ef5b5b; --acc:#6ea8fe; --line:#2c3240; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 980px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 22px; margin: 8px 0; }
+    h2 { font-size: 16px; margin: 0; }
+    p { margin: 6px 0; }
+    .muted { color: var(--mut); }
+    .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; align-items: end; padding: 12px; margin: 12px 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+    label { display: grid; gap: 4px; font-size: 13px; color: var(--mut); }
+    select, input, button, textarea { font: inherit; color: var(--fg); background: #2a2f3b; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 44px; }
+    button { cursor: pointer; }
+    button.primary { background: var(--acc); color: #0b1220; border-color: var(--acc); font-weight: 600; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .cards { display: grid; gap: 12px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .card-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .meta { font-size: 13px; color: var(--mut); }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .notes { display: grid; gap: 6px; margin: 8px 0; }
+    .note { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 6px; align-items: end; padding: 8px; background: #181b22; border-radius: 8px; }
+    .note label { font-size: 12px; }
+    .note input, .note select { min-height: 40px; width: 100%; padding: 6px 8px; }
+    .status { font-size: 13px; min-height: 20px; }
+    .status.ok { color: var(--ok); }
+    .status.bad { color: var(--bad); }
+    textarea { width: 100%; min-height: 96px; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
+    .log { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-top: 12px; font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; }
+    .log .skip { color: var(--mut); }
+    @media (max-width: 600px) { main { padding: 12px; } .bar { position: static; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>🎲 Лаборатория звуков</h1>
+    <p class="muted">Здесь можно послушать каждый звук игры, изменить ноты и проверить, подходит ли звук приложению.
+      Когда звук понравится, нажмите «Копировать» и вставьте текст в <code>src/sound_recipes.js</code> вместо прежней записи (или пришлите его мне).
+      Изменения здесь живут только на этой странице: пока вы не вставили рецепт в файл, в игре ничего не меняется.</p>
+
+    <div class="bar" role="group" aria-label="Общие настройки">
+      <label>Громкость
+        <select id="vol">
+          <option value="quiet">Тихо (как режим «тихо»)</option>
+          <option value="normal" selected>Обычно (как режим «обычно»)</option>
+        </select>
+      </label>
+      <label>Темп ботов
+        <select id="speed">
+          <option value="fast">Быстро (0,32 с)</option>
+          <option value="step">Пошагово (0,7 с)</option>
+          <option value="normal" selected>Нормально (1,1 с)</option>
+          <option value="slow">Медленно (2,6 с)</option>
+        </select>
+      </label>
+      <button id="scenario" class="primary" type="button">▶ Сыграть раунд</button>
+      <button id="copyAll" type="button">Копировать всё</button>
+      <button id="resetAll" type="button">Сбросить всё</button>
+    </div>
+    <p id="allStatus" class="status muted" role="status"></p>
+
+    <div id="cards" class="cards"></div>
+
+    <h2 style="margin-top:20px">Как звучит раунд на выбранном темпе</h2>
+    <p class="muted">«Сыграть раунд» воспроизводит типичный раунд с тремя ботами теми же правилами очереди и темпа, что и в игре: на быстром ставки ботов и раздача молчат, важные звуки ждут друг друга, а не накладываются.</p>
+    <div id="log" class="log" aria-live="polite">Нажмите «Сыграть раунд».</div>
+  </main>
+  <script type="module" src="sound_lab.js"></script>
+</body>
+</html>

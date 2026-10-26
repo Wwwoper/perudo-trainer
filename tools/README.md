@@ -8,6 +8,7 @@ Python-порты логики приложения и скрипт скринш
 | `trainer_emulator.py` | «Тренажёр»: ситуации, проверка ставки по правилам, оценка, очередь повторов | `python3 tools/trainer_emulator.py --shows 300` (`--repro` — случай из отчёта) |
 | `drill_emulator.py` | «Упражнения»: задачи A и B, ответы «учеников», учёт попыток | `python3 tools/drill_emulator.py --tasks 300` |
 | `screenshots.py` | снимки экрана для README (Playwright, воспроизводимые) | `python3 tools/screenshots.py` (`--list`, `--only имя`, `--out папка`) |
+| `sound_lab.html` | лаборатория звуков: правка нот, проверка, прослушивание, «Сыграть раунд», копирование рецепта в `src/sound_recipes.js` | открыть `/tools/sound_lab.html` на статическом сервере |
 | `emu_cases.py` | случайные входы и ответы эмуляторов для теста `tests/emulators.test.js` | — |
 
 Логи по умолчанию пишутся в `logs/`, `trainer_logs/`, `drill_logs/` (в git не попадают); папку меняет `--out`.

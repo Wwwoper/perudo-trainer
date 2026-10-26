@@ -2,7 +2,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { CUES } from '../src/sound_plan.js';
-import { RECIPES, WAVE_TYPES, FREQ_MIN, FREQ_MAX, GAIN_MAX } from '../src/sound_recipes.js';
+import { RECIPES, WAVE_TYPES, FREQ_MIN, FREQ_MAX, GAIN_MAX, validateRecipe, formatRecipe, formatRecipes } from '../src/sound_recipes.js';
+import { describeSoundMode } from '../src/sound_plan.js';
 import { createSoundEngine } from '../src/sound_engine.js';
 
 describe('рецепты звуков', () => {
@@ -169,5 +170,73 @@ describe('движок звука', () => {
     const { engine, audio } = engineWith();
     engine.unlock(); engine.cue('loseDie');
     assert.ok(audio.log.oscillators[0].freqCalls.some((c) => c[0] === 'lin'));
+  });
+});
+
+describe('движок звука: свои рецепты и playSound (лаборатория)', () => {
+  const custom = { turn: [{ at: 0, dur: 100, freq: 440, type: 'square', gain: 0.2 }], mine: [{ at: 0, dur: 50, freq: 500, type: 'sine', gain: 0.1 }] };
+  const make = (recipes) => {
+    const audio = fakeAudio();
+    const engine = createSoundEngine({ AudioContextCtor: audio.Ctor, getMode: () => 'normal', getSpeed: () => 'normal', now: () => 1000, recipes });
+    return { engine, audio };
+  };
+  it('cue играет подставленный рецепт, а не стандартный', () => {
+    const { engine, audio } = make(custom);
+    engine.unlock();
+    assert.strictEqual(engine.cue('turn'), true);
+    assert.strictEqual(audio.log.oscillators.length, 1);
+    assert.strictEqual(audio.log.oscillators[0].type, 'square');
+  });
+  it('playSound играет звук по имени сразу, мимо режима', () => {
+    const audio = fakeAudio();
+    const engine = createSoundEngine({ AudioContextCtor: audio.Ctor, getMode: () => 'off', getSpeed: () => 'fast', recipes: custom });
+    engine.unlock();
+    assert.strictEqual(engine.playSound('mine', 0.5), true);
+    assert.strictEqual(audio.log.oscillators.length, 1);
+  });
+  it('playSound: до жеста, неизвестное имя и мусор — тишина без исключений', () => {
+    const { engine } = make(custom);
+    assert.strictEqual(engine.playSound('mine'), false);
+    engine.unlock();
+    assert.strictEqual(engine.playSound('нет-такого'), false);
+    assert.strictEqual(engine.playSound(undefined), false);
+  });
+});
+
+describe('проверка и запись рецептов', () => {
+  const ok = [{ at: 0, dur: 100, freq: 440, type: 'sine', gain: 0.3 }];
+  it('все стандартные рецепты проходят проверку', () => {
+    for (const [name, notes] of Object.entries(RECIPES)) {
+      assert.deepStrictEqual(validateRecipe(notes, CUES[Object.keys(CUES).find((k) => (CUES[k].sound || k) === name)]?.dur), [], name);
+    }
+  });
+  it('находит ошибки в нотах', () => {
+    assert.ok(validateRecipe([]).length);
+    assert.ok(validateRecipe('x').length);
+    assert.ok(validateRecipe([null]).length);
+    assert.ok(validateRecipe([{ ...ok[0], freq: 10 }]).length);
+    assert.ok(validateRecipe([{ ...ok[0], to: 99999 }]).length);
+    assert.ok(validateRecipe([{ ...ok[0], gain: 5 }]).length);
+    assert.ok(validateRecipe([{ ...ok[0], type: 'noise' }]).length);
+    assert.ok(validateRecipe([{ ...ok[0], dur: 5 }]).length);
+    assert.ok(validateRecipe([{ ...ok[0], at: -1 }]).length);
+  });
+  it('длительность: не длиннее отведённого и не слишком короткий', () => {
+    assert.deepStrictEqual(validateRecipe(ok, 150), []);
+    assert.ok(validateRecipe(ok, 90)[0].includes('отведено'));
+    assert.ok(validateRecipe(ok, 400)[0].includes('короткий'));
+  });
+  it('formatRecipe даёт текст, который читается обратно в тот же рецепт', () => {
+    const notes = [{ at: 0, dur: 100, freq: 440, to: 220, type: 'sine', gain: 0.3 }];
+    const text = formatRecipe('lose-die', notes);
+    assert.ok(text.startsWith("  'lose-die': ["));
+    const back = new Function(`return {${formatRecipes({ 'lose-die': notes })}}`)();
+    assert.deepStrictEqual(back['lose-die'], notes);
+    assert.ok(formatRecipe('turn', ok).startsWith('  turn: ['));
+  });
+  it('describeSoundMode: выключено и включено', () => {
+    assert.strictEqual(describeSoundMode('off'), 'Звуки выключены.');
+    assert.ok(describeSoundMode('quiet').includes('быстром темпе'));
+    assert.strictEqual(describeSoundMode('мусор'), 'Звуки выключены.');
   });
 });

@@ -26,7 +26,7 @@ import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog,
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
-import { setupSound, playCue, resetSound, changeSoundMode } from './ui/sound.js';
+import { setupSound, setupSoundControls, playCue, resetSound, changeSoundMode } from './ui/sound.js';
 import { setupGameSettings, rememberGameSettings } from './ui/game_settings_ui.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal, getBotMind, setBotMind } from './ui/bot_mind.js';
 import { renderStats, setupStats, downloadBackup } from './ui/stats.js';
@@ -95,6 +95,7 @@ function setupGame() {
   setupBotStyles();
   setupSettingsHelp();
   setupSound({ getSpeed: () => $('#gSpeed')?.value || 'normal' });
+  setupSoundControls();
   setupGameSettings();     // после списка стилей: возвращает настройки прошлой партии
   $('#gResumeBtn')?.addEventListener('click', resumeGame);
   $('#gResumeDrop')?.addEventListener('click', discardSavedGame);
@@ -1022,7 +1023,7 @@ window.__perudo_v2 = {
   get duelState() { return getDuelState(); },
   startNewGame,
   renderGame,
-  setSoundMode: changeSoundMode,   // пока без переключателя в настройках: __perudo_v2.setSoundMode('normal')
+  setSoundMode: changeSoundMode,   // то же, что переключатель «Звуки» в настройках: __perudo_v2.setSoundMode('normal')
   solveNow,
   startDuel,
   moveDuel,

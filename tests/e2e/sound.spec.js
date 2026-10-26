@@ -120,4 +120,47 @@ test.describe('Звуки', () => {
     await humanTurn(page);
     expect(errors).toEqual([]);
   });
+
+  test('переключатель в настройках: выбор режима звучит, запоминается, кнопка проверки появляется', async ({ page }) => {
+    await setup(page);
+    const sel = page.locator('#gSound');
+    await expect(sel).toHaveValue('off');
+    await expect(page.locator('#gSoundTest')).toBeHidden();
+    await expect(page.locator('#gSoundHelp')).toHaveText('Звуки выключены.');
+    await sel.selectOption('normal');
+    await expect.poll(() => freqs(page)).toContain(FREQ.turn);          // выбор режима сразу слышно
+    await expect(page.locator('#gSoundTest')).toBeVisible();
+    await expect(page.locator('#gSoundHelp')).toContainText('быстром темпе');
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode)).toBe('normal');
+    const before = (await freqs(page)).length;
+    await page.locator('#gSoundTest').click();
+    await expect.poll(async () => (await freqs(page)).length).toBeGreaterThan(before);
+    await page.reload();
+    await page.waitForFunction(() => Boolean(window.__perudo_v2));
+    await openTab(page, 'game');
+    await expect(page.locator('#gSound')).toHaveValue('normal');
+    await sel.selectOption('off');
+    await expect(page.locator('#gSoundTest')).toBeHidden();
+  });
+
+  test('лаборатория звуков: открывается, играет, проверяет и копирует рецепт', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await page.addInitScript(STUB);
+    await page.goto('/tools/sound_lab.html');
+    const card = page.locator('.card[data-event="turn"]');
+    await expect(card).toBeVisible();
+    await expect(card.locator('.status')).toContainText('подходит');
+    await card.getByRole('button', { name: /Играть/ }).click();
+    await expect.poll(() => freqs(page)).toContain(FREQ.turn);
+    await card.locator('[data-note="0"] input').nth(2).fill('5000');     // частота вне допустимой
+    await expect(card.locator('.status')).toContainText('Не годится');
+    await expect(card.getByRole('button', { name: /Играть/ })).toBeDisabled();
+    await card.getByRole('button', { name: 'Сбросить' }).click();
+    await expect(card.locator('.status')).toContainText('подходит');
+    await expect(card.locator('textarea')).toHaveValue(/turn: \[/);
+    await page.locator('#scenario').click();
+    await expect(page.locator('#log')).not.toHaveText('Нажмите «Сыграть раунд».');
+    expect(errors).toEqual([]);
+  });
 });

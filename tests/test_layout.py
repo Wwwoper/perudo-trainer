@@ -768,6 +768,30 @@ class LayoutTest(unittest.TestCase):
                 btn.click()
                 self.assertFalse(page.locator("#gSettingsReset").is_visible())
 
+    def test_prestart_sound_select_and_test_button_fit(self):
+        """«Звуки»: переключатель и кнопка «Проверить звук» помещаются на экране, кнопка крупная и видна только при включённых звуках."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                sel = page.locator("#gSound")
+                sel.scroll_into_view_if_needed()
+                self.assertFalse(page.locator("#gSoundTest").is_visible())
+                box = sel.bounding_box()
+                self.assertGreaterEqual(box["height"], 40)
+                self.assertLessEqual(box["x"] + box["width"], w + 1)
+                page.select_option("#gSound", "quiet")
+                btn = page.locator("#gSoundTest")
+                btn.scroll_into_view_if_needed()
+                self.assertTrue(btn.is_visible())
+                bb = btn.bounding_box()
+                self.assertGreaterEqual(bb["height"], 44)
+                self.assertLessEqual(bb["x"] + bb["width"], w + 1)
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+
     def test_resume_card_fits_and_buttons_are_touch_sized(self):
         """После перезагрузки посреди партии: карточка «Продолжить» помещается, кнопки крупные, партия возвращается."""
         for w, h in VIEWPORTS:
