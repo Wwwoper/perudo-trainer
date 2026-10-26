@@ -6,6 +6,7 @@ import { sanitizeDeviceState } from './backup_reminder.js';
 import { sanitizeCloudState } from './cloud_policy.js';
 import { sanitizeGameSettings } from './game_settings.js';
 import { makeSnapshot, restoreSnapshot } from './saved_game.js';
+import { sanitizeSoundMode } from './sound_plan.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -92,6 +93,16 @@ export function setActiveGame(parts) {
 
 export function clearActiveGame() {
   try { localStorage.removeItem(KEYS.ACTIVE_GAME); } catch (e) {}
+}
+
+// Звуки: режим «выкл / тихо / обычно». Хранится в perudo.settings.soundMode; по умолчанию выключены.
+export function getSoundMode() {
+  const s = get(KEYS.SETTINGS, null);
+  return sanitizeSoundMode(s && typeof s === 'object' ? s.soundMode : null);
+}
+
+export function setSoundMode(mode) {
+  setSettings({ soundMode: sanitizeSoundMode(mode) });
 }
 
 // Профиль игрока: имя и аватар. Проверку и значения по умолчанию даёт sanitizePlayer.

@@ -26,6 +26,7 @@ import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog,
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
+import { setupSound, playCue, resetSound, changeSoundMode } from './ui/sound.js';
 import { setupGameSettings, rememberGameSettings } from './ui/game_settings_ui.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal, getBotMind, setBotMind } from './ui/bot_mind.js';
 import { renderStats, setupStats, downloadBackup } from './ui/stats.js';
@@ -93,6 +94,7 @@ function setupGame() {
 
   setupBotStyles();
   setupSettingsHelp();
+  setupSound({ getSpeed: () => $('#gSpeed')?.value || 'normal' });
   setupGameSettings();     // после списка стилей: возвращает настройки прошлой партии
   $('#gResumeBtn')?.addEventListener('click', resumeGame);
   $('#gResumeDrop')?.addEventListener('click', discardSavedGame);
@@ -205,6 +207,7 @@ function resumeGame() {
   restoreDecisionLog(game.id, snap.moments);
   lastKeyMoments = [];
   lastSavedKey = '';
+  resetSound();
   renderGameLog();
   addGameLog('info', 'Партия продолжена после перезагрузки страницы.');
   resetBidInput();
@@ -244,6 +247,7 @@ function startNewGame() {
   rememberGameSettings();
   clearActiveGame();         // новая партия заменяет незавершённую
   lastSavedKey = '';
+  resetSound();
 
   assistConfig = createAssistConfig(assistMode);
   moveSettings(false);
@@ -491,6 +495,7 @@ function renderGame() {
 
   if (game.round > lastLoggedRound) {
     lastLoggedRound = game.round;
+    playCue('deal');
     if (game.round > 1) {
       const totalNow = totalDice();
       const starterName = escapeHtml(game.players[game.currentPlayer]?.name || '');
@@ -596,7 +601,24 @@ function renderGame() {
   renderReview();
 
   if (game.state === 'finished') finalizeGame();
+  cueMyTurn();
   persistGame();
+}
+
+// Звук «ваш ход»: один раз на ход, а не при каждой перерисовке (выбор грани тоже вызывает renderGame).
+let lastTurnCueKey = '';
+function cueMyTurn() {
+  if (!game || game.state !== 'active' || game.currentPlayer !== 0) return;
+  const key = `${game.id}|${game.round}|${game.bidHistory.length}`;
+  if (key === lastTurnCueKey) return;
+  lastTurnCueKey = key;
+  playCue('turn');
+}
+
+/** Звуки проверки: «Не верю!» / Calza, а если кто-то потерял кубик — ещё и звук потери. */
+function cueResolution(type, events) {
+  playCue(type === 'calza' ? 'calza' : 'dudo');
+  if ((events || []).some((e) => e.type === 'PLAYER_LOST_DIE')) playCue('loseDie');
 }
 
 function renderPick() { updatePrev(); }
@@ -680,6 +702,7 @@ function onPlayerRaise() {
 
   if (!legal(q, f, game.bid, { wild: !game.palifico })) {
     flash($('#gPrev'), 'Ставка недопустима.');
+    playCue('illegal');
     return;
   }
 
@@ -691,8 +714,10 @@ function onPlayerRaise() {
   if (!res.success) {
     reviewEntries.pop();
     flash($('#gPrev'), `Ставка отклонена: ${res.error}`);
+    playCue('illegal');
     return;
   }
+  playCue('bidYou');
   recordDecision({ ...before, kind: 'raise', played: { q, f }, p, code: entry.v.code });
 
   addGameLog('', `<span class="player-name c0">Вы</span> ${renderBid(q, f)}`);
@@ -716,6 +741,7 @@ function onPlayerDudo() {
 
   const res = applyAction(game, 'human', { type: 'dudo' });
   if (!res.success) { reviewEntries.pop(); return; }
+  cueResolution('dudo', res.events);
   recordDecision({ ...before, kind: 'dudo', p, code: entry.v.code });
   markRoundOutcome(res.events, before.round);
 
@@ -755,6 +781,7 @@ function onPlayerCalza() {
 
   const res = applyAction(game, 'human', { type: 'calza' });
   if (!res.success) { reviewEntries.pop(); return; }
+  cueResolution('calza', res.events);
   recordDecision({ ...before, kind: 'calza', p: pe, code: entry.v.code });
   markRoundOutcome(res.events, before.round);
 
@@ -850,6 +877,7 @@ function runBotTurn() {
     res = res2;     // дальше нужны события сработавшего хода, а не отклонённого
   }
   if (action.type !== 'raise') markRoundOutcome(res.events, roundBefore);
+  if (action.type === 'raise') playCue('bidBot'); else cueResolution(action.type, res.events);
 
   let desc;
   if (action.type === 'raise') desc = renderBid(action.quantity, action.face);
@@ -890,6 +918,7 @@ function finalizeGame() {
   const me = game.players[0];
   const aliveCnt = game.players.filter((p) => p.alive).length;
   const won = me.alive && aliveCnt === 1;
+  playCue(won ? 'win' : 'lose');
 
   const history = get('perudo.games', []);
   history.push({
@@ -993,6 +1022,7 @@ window.__perudo_v2 = {
   get duelState() { return getDuelState(); },
   startNewGame,
   renderGame,
+  setSoundMode: changeSoundMode,   // пока без переключателя в настройках: __perudo_v2.setSoundMode('normal')
   solveNow,
   startDuel,
   moveDuel,

@@ -199,3 +199,28 @@ describe('Состояние облака', () => {
     }
   });
 });
+
+describe('режим звука', () => {
+  it('по умолчанию выключен и не ломается на мусоре', async () => {
+    const { getSoundMode, setSoundMode } = await import('../src/storage.js');
+    mockStorage['perudo.settings'] = undefined;
+    delete mockStorage['perudo.settings'];
+    assert.strictEqual(getSoundMode(), 'off');
+    mockStorage['perudo.settings'] = JSON.stringify({ soundMode: 'loud' });
+    assert.strictEqual(getSoundMode(), 'off');
+    mockStorage['perudo.settings'] = '{не json';
+    assert.strictEqual(getSoundMode(), 'off');
+    setSoundMode('quiet');
+    assert.strictEqual(getSoundMode(), 'quiet');
+    setSoundMode('что-то');
+    assert.strictEqual(getSoundMode(), 'off');
+  });
+  it('сохраняется вместе с остальными настройками', async () => {
+    const { getSoundMode, setSoundMode } = await import('../src/storage.js');
+    delete mockStorage['perudo.settings'];
+    setSettings({ animations: 'off' });
+    setSoundMode('normal');
+    assert.strictEqual(getSettings().animations, 'off');
+    assert.strictEqual(getSoundMode(), 'normal');
+  });
+});
