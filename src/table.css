@@ -58,21 +58,21 @@
 .table-felt {
   position: absolute;
   inset: calc(var(--seat-h) * .45) calc(var(--seat-w) * .35);
-  border: 10px solid #5a3218;
+  border: 10px solid var(--wood-rim);
   border-radius: 50%;
   background:
-    radial-gradient(ellipse at center, rgba(116, 67, 35, .18), transparent 65%),
+    radial-gradient(ellipse at center, var(--wood-sheen), transparent 65%),
     repeating-linear-gradient(
       8deg,
-      rgba(70, 35, 16, .16) 0 2px,
-      rgba(190, 117, 57, .12) 3px 7px,
-      rgba(74, 37, 17, .14) 8px 11px
+      var(--wood-grain-a) 0 2px,
+      var(--wood-grain-b) 3px 7px,
+      var(--wood-grain-c) 8px 11px
     ),
-    linear-gradient(135deg, #9c5b2d, #6d3b20 48%, #a66332);
+    linear-gradient(135deg, var(--wood-light), var(--wood-mid) 48%, var(--wood-hi));
   box-shadow:
-    inset 0 0 0 5px rgba(218, 154, 91, .22),
-    inset 0 -18px 35px rgba(35, 15, 5, .4),
-    0 15px 35px rgba(0, 0, 0, .48);
+    inset 0 0 0 5px var(--wood-edge),
+    inset 0 -18px 35px var(--wood-inner-shadow),
+    0 15px 35px var(--black-a48);
 }
 
 /* Внутренний обод — тонкая линия по фетру */
@@ -80,9 +80,9 @@
   content: "";
   position: absolute;
   inset: 7%;
-  border: 2px solid rgba(238, 185, 117, .18);
+  border: 2px solid var(--felt-ring);
   border-radius: 50%;
-  box-shadow: inset 0 0 45px rgba(30, 12, 3, .3);
+  box-shadow: inset 0 0 45px var(--felt-inner);
   pointer-events: none;
 }
 
@@ -99,12 +99,12 @@
   aspect-ratio: 1 / 1;
   padding: 12px;
   transform: translate(-50%, -50%);
-  border: 2px solid rgba(255, 220, 155, .2);
+  border: 2px solid var(--plate-ring);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(54, 27, 12, .82), rgba(37, 17, 8, .62));
+  background: radial-gradient(circle, var(--plate-1), var(--plate-2));
   box-shadow:
-    inset 0 0 25px rgba(0, 0, 0, .38),
-    0 5px 20px rgba(0, 0, 0, .25);
+    inset 0 0 25px var(--black-a38),
+    0 5px 20px var(--black-a25);
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -114,20 +114,20 @@
 }
 
 .table-bid {
-  color: #fff1cf;
+  color: var(--table-text);
   font-weight: 800;
-  text-shadow: 0 2px 4px #241006;
+  text-shadow: 0 2px 4px var(--table-text-shadow);
 }
 
 .table-bid-empty {
-  color: #d6b895;
+  color: var(--table-text-mut);
   font-size: 15px;
 }
 
 .bid-by {
   display: block;
   margin-top: 6px;
-  color: #e4c7a3;
+  color: var(--table-text-mut-2);
   font-size: 12px;
   font-weight: 500;
 }
@@ -135,8 +135,8 @@
 .palifico-badge {
   padding: 1px 6px;
   border-radius: 4px;
-  background: #ffd34e;
-  color: #2b1302;
+  background: var(--gold-chip);
+  color: var(--gold-chip-fg);
   font-size: 10px;
   font-weight: 900;
 }
@@ -162,7 +162,7 @@
   padding: 6px 8px;
   border: 2px solid transparent;
   border-radius: 14px;
-  background: rgba(35, 16, 7, .72);
+  background: var(--seat-bg);
   transition:
     border-color .25s ease,
     background .25s ease,
@@ -172,21 +172,21 @@
 /* Активный ход: только свечение рамки. Без scale — масштаб выносил место за сцену. */
 .seat.active {
   z-index: 5;
-  border-color: #ffd66b;
-  background: rgba(61, 29, 12, .85);
+  border-color: var(--gold);
+  background: var(--seat-active-bg);
   box-shadow:
-    0 0 0 3px rgba(255, 214, 107, .18),
-    0 0 18px rgba(255, 214, 107, .3);
+    0 0 0 3px var(--gold-a18),
+    0 0 18px var(--gold-a30);
 }
 
 /* Победитель завершённой партии */
 .seat.winner {
   z-index: 5;
-  border-color: #ffd66b;
-  background: rgba(74, 54, 14, .92);
+  border-color: var(--gold);
+  background: var(--seat-turn-bg);
   box-shadow:
-    0 0 0 3px rgba(255, 214, 107, .25),
-    0 0 22px rgba(255, 214, 107, .45);
+    0 0 0 3px var(--gold-a25),
+    0 0 22px var(--gold-a45);
 }
 
 .seat-crown {
@@ -206,10 +206,10 @@
   width: var(--avatar);
   height: var(--avatar);
   overflow: hidden;
-  border: 3px solid #f7e0bd;
+  border: 3px solid var(--avatar-ring);
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 3px 9px rgba(0, 0, 0, .38);
+  background: var(--avatar-face);
+  box-shadow: 0 3px 9px var(--black-a38);
 }
 
 .seat-emoji {
@@ -243,8 +243,8 @@
   bottom: 0;
   padding: 1px 2px;
   border-radius: 50%;
-  background: #fff8e9;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+  background: var(--die-face);
+  box-shadow: 0 1px 4px var(--black-a35);
   font-size: 11px;
   line-height: 1;
 }
@@ -254,7 +254,7 @@
 .seat-info {
   flex: 1;
   min-width: 0;
-  color: #fff;
+  color: var(--seat-text);
 }
 
 .seat-name {
@@ -269,7 +269,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #e5c8a6;
+  color: var(--table-text-mut-3);
   font-size: 12px;
   white-space: nowrap;
 }

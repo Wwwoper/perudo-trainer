@@ -95,7 +95,7 @@
   position: sticky;
   bottom: var(--space-3);
   z-index: 5;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, .45);
+  box-shadow: 0 -8px 24px var(--black-a45);
 }
 
 
@@ -297,7 +297,7 @@
 
 .btn-primary {
   background: var(--acc);
-  color: #111;
+  color: var(--on-accent);
   border-color: var(--acc);
 }
 
@@ -465,7 +465,7 @@
   flex: 1;
   gap: 4px;
   padding: 3px;
-  background: #1a1f28;
+  background: var(--surface-1);
   border-radius: var(--radius-s);
 }
 
@@ -483,7 +483,7 @@
 
 .side-tabs [role="tab"][aria-selected="true"] {
   background: var(--acc);
-  color: #111;
+  color: var(--on-accent);
 }
 
 /* Эмодзи нельзя перекрасить цветом текста — на синем фоне делаем силуэт */
@@ -608,9 +608,9 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3);
-  border: 1px solid #353b49;
+  border: 1px solid var(--line-3);
   border-radius: var(--radius-m);
-  background: #1a1f28;
+  background: var(--surface-1);
   color: var(--fg);
   cursor: pointer;
 }
@@ -728,12 +728,12 @@
   align-items: center;
   gap: var(--space-2) var(--space-3);
   padding: var(--space-3);
-  border: 1px solid rgba(255, 214, 107, .5);
-  background: linear-gradient(135deg, #2e2916, var(--card));
+  border: 1px solid var(--gold-a50);
+  background: linear-gradient(135deg, var(--gold-bg), var(--card));
 }
 
 .result-banner.is-lose {
-  border-color: #4a5164;
+  border-color: var(--line-4);
   background: var(--card);
 }
 
@@ -779,9 +779,9 @@
 .result-card {
   margin-bottom: var(--space-3);
   padding: var(--space-3);
-  border: 1px solid rgba(255, 214, 107, .35);
+  border: 1px solid var(--gold-a35);
   border-radius: var(--radius-m);
-  background: #252219;
+  background: var(--gold-bg-2);
 }
 
 .result-card p {
@@ -812,12 +812,12 @@
   gap: var(--space-2);
   padding: 6px 10px;
   border-radius: var(--radius-s);
-  background: #262b36;
+  background: var(--surface-4);
   font-size: 14px;
 }
 
 .result-stand li.is-winner {
-  outline: 1px solid #ffd66b;
+  outline: 1px solid var(--gold);
   font-weight: 700;
 }
 
@@ -828,15 +828,15 @@
   max-height: calc(100dvh - 32px);
   padding: 0;
   overflow: auto;
-  border: 1px solid #4a5164;
+  border: 1px solid var(--line-4);
   border-radius: var(--radius-l);
   background: var(--card);
   color: var(--fg);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+  box-shadow: 0 20px 60px var(--black-a60);
 }
 
 .reveal-dialog::backdrop {
-  background: rgba(5, 7, 10, .6);
+  background: var(--scrim);
 }
 
 .reveal-body {
@@ -871,7 +871,7 @@
   gap: var(--space-2);
   padding: 6px 10px;
   border-radius: var(--radius-s);
-  background: #262b36;
+  background: var(--surface-4);
   font-size: 14px;
 }
 
@@ -943,7 +943,7 @@
   margin-top: var(--space-3);
   margin-bottom: var(--space-3);
   border-radius: 2px;
-  background: #2b313d;
+  background: var(--surface-6);
   overflow: hidden;
 }
 
@@ -1001,15 +1001,15 @@
   max-height: calc(100dvh - 32px);
   padding: 0;
   overflow: auto;
-  border: 1px solid rgba(255, 214, 107, .5);
+  border: 1px solid var(--gold-a50);
   border-radius: var(--radius-l);
   background: var(--card);
   color: var(--fg);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+  box-shadow: 0 20px 60px var(--black-a60);
 }
 
 .result-dialog::backdrop {
-  background: rgba(5, 7, 10, .72);
+  background: var(--scrim-strong);
 }
 
 .result-dialog-body {
@@ -1142,7 +1142,7 @@
     inset: 0;
     z-index: 40;
     display: block;
-    background: rgba(0, 0, 0, .55);
+    background: var(--black-a55);
   }
 
   .sheet-backdrop[hidden] {
@@ -1167,7 +1167,7 @@
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(5, 7, 10, .55);
+  background: var(--scrim-soft);
 }
 
 .nav-scrim[hidden] {
@@ -1213,7 +1213,7 @@
     overflow: visible;
     border-radius: var(--radius-m);
     background: var(--card);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, .6);
+    box-shadow: 0 16px 48px var(--black-a60);
     -webkit-mask-image: none;
     mask-image: none;
   }
@@ -1244,7 +1244,7 @@
 .key-moments {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid var(--line-soft);
 }
 .key-moments > summary {
   display: flex;
@@ -1262,7 +1262,7 @@
   padding: var(--space-2) var(--space-3);
   border-left: 3px solid var(--mut);
   border-radius: var(--radius-s);
-  background: rgb(255 255 255 / 3%);
+  background: var(--tint-faint);
 }
 .key-moment.bad {
   border-left-color: var(--bad);
@@ -1284,7 +1284,7 @@
 .backup-reminder {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid var(--line-soft);
 }
 .backup-reminder p {
   margin: 0 0 var(--space-2);

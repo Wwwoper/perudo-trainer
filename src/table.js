@@ -90,7 +90,7 @@ export function renderHand(hand, wild = true, size = 'md') {
 
 export function renderHiddenDice(count) {
   return Array.from({ length: count }, () =>
-    '<span class="die xs" style="background:#3a4152; border:1px solid #555"></span>'
+    '<span class="die xs die-hidden"></span>'
   ).join('');
 }
 

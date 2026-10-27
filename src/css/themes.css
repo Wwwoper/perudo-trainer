@@ -1,0 +1,115 @@
+/* ===== Темы: цветовые токены =====
+   Все цвета интерфейса задаются здесь переменными; в остальных CSS-файлах прописанных цветов быть не должно
+   (проверяет tests/css.test.js). Сейчас единственная тема — тёмная: её значения лежат в :root.
+   Токены стола (дерево, сукно, места) относятся к оформлению сцены и от темы не зависят. */
+:root {
+  /* основные */
+  --bg: #14161c;
+  --card: #1e222b;
+  --fg: #e8eaf0;
+  --mut: #8b93a5;
+  --ok: #3ecf8e;
+  --bad: #ef5b5b;
+  --acc: #6ea8fe;
+  --warn: #f5b84b;
+
+  /* Поверхности */
+  --surface-2: #2a2f3b;
+  --surface-3: #262b37;
+  --surface-5: #242934;
+  --surface-1: #1a1f28;
+  --surface-4: #262b36;
+  --surface-6: #2b313d;
+  --die-hidden-line: #555;
+  --paper: #f4f4f0;
+  --ink: #1a1a1a;
+  --surface-7: #1f2430;
+
+  /* Линии и полупрозрачные слои */
+  --line-2: #3a4152;
+  --line: #2f3543;
+  --line-3: #353b49;
+  --line-4: #4a5164;
+  --line-soft: rgb(255 255 255 / 10%);
+  --tint-faint: rgb(255 255 255 / 3%);
+  --shade: rgb(0 0 0 / 25%);
+  --tint-soft: rgb(255 255 255 / 4%);
+
+  /* Состояния и плашки */
+  --selected: #32406a;
+  --info-bg: #26304a;
+  --bad-bg-2: #2d2330;
+  --bad-text: #ff8b8b;
+  --info-fg: #d8e2f5;
+  --ok-bg: #1e3a2c;
+  --ok-fg: #b8e6c8;
+  --info-bg-3: #1a2436;
+  --info-bg-2: #253047;
+  --warn-bg: #3a3020;
+  --warn-fg: #e0b060;
+  --bad-bg: #3a2530;
+  --bad-fg: #f080a0;
+
+  /* Текст и метки */
+  --on-accent: #111;
+  --hue-pink: #ef8bd0;
+  --hue-violet: #b794f6;
+  --hue-orange: #f08a5d;
+  --text-soft: #c8d0e0;
+
+  /* Золото (подсветка хода и итога) */
+  --gold-a50: rgba(255, 214, 107, .5);
+  --gold-bg: #2e2916;
+  --gold-a35: rgba(255, 214, 107, .35);
+  --gold-bg-2: #252219;
+  --gold: #ffd66b;
+  --gold-a18: rgba(255, 214, 107, .18);
+  --gold-a30: rgba(255, 214, 107, .3);
+  --gold-a25: rgba(255, 214, 107, .25);
+  --gold-a45: rgba(255, 214, 107, .45);
+
+  /* Тени и подложки */
+  --black-a45: rgba(0, 0, 0, .45);
+  --black-a60: rgba(0, 0, 0, .6);
+  --scrim: rgba(5, 7, 10, .6);
+  --scrim-strong: rgba(5, 7, 10, .72);
+  --black-a55: rgba(0, 0, 0, .55);
+  --scrim-soft: rgba(5, 7, 10, .55);
+  --black-a48: rgba(0, 0, 0, .48);
+  --black-a38: rgba(0, 0, 0, .38);
+  --black-a25: rgba(0, 0, 0, .25);
+  --black-a35: rgba(0, 0, 0, .35);
+
+  /* Стол: дерево, сукно и места (оформление сцены, от темы не зависит) */
+  --avatar-ring: #f7e0bd;
+  --avatar-face: #fff;
+  --wood-rim: #5a3218;
+  --wood-sheen: rgba(116, 67, 35, .18);
+  --wood-grain-a: rgba(70, 35, 16, .16);
+  --wood-grain-b: rgba(190, 117, 57, .12);
+  --wood-grain-c: rgba(74, 37, 17, .14);
+  --wood-light: #9c5b2d;
+  --wood-mid: #6d3b20;
+  --wood-hi: #a66332;
+  --wood-edge: rgba(218, 154, 91, .22);
+  --wood-inner-shadow: rgba(35, 15, 5, .4);
+  --felt-ring: rgba(238, 185, 117, .18);
+  --felt-inner: rgba(30, 12, 3, .3);
+  --plate-ring: rgba(255, 220, 155, .2);
+  --plate-1: rgba(54, 27, 12, .82);
+  --plate-2: rgba(37, 17, 8, .62);
+  --table-text: #fff1cf;
+  --table-text-shadow: #241006;
+  --table-text-mut: #d6b895;
+  --table-text-mut-2: #e4c7a3;
+  --gold-chip: #ffd34e;
+  --gold-chip-fg: #2b1302;
+  --seat-bg: rgba(35, 16, 7, .72);
+  --seat-active-bg: rgba(61, 29, 12, .85);
+  --seat-turn-bg: rgba(74, 54, 14, .92);
+  --die-face: #fff8e9;
+  --table-text-mut-3: #e5c8a6;
+  --seat-text: #fff;
+
+  --shadow-dock: 0 -8px 24px var(--black-a45);
+}

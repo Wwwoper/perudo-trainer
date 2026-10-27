@@ -7,7 +7,7 @@
 .drill-tabs {
   display: flex;
   gap: 3px;
-  background: #1a1f28;
+  background: var(--surface-1);
   border-radius: 8px;
   padding: 3px;
   flex: 1;
@@ -34,7 +34,7 @@
 
 .drill-tab.on {
   background: var(--acc);
-  color: #111;
+  color: var(--on-accent);
 }
 
 .drill-board {
@@ -43,7 +43,7 @@
 
 .drill-question {
   padding: 10px 12px;
-  background: #1a1f28;
+  background: var(--surface-1);
   border-radius: 8px;
   margin-bottom: 14px;
   font-size: 14px;
@@ -74,8 +74,8 @@
   font-size: 18px;
   text-align: center;
   border-radius: 10px;
-  background: #1a1f28;
-  border: 1px solid #2f3543;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
   color: var(--fg);
   font-family: inherit;
   box-sizing: border-box;
@@ -122,10 +122,10 @@
 .drill-hint-body {
   margin-top: 6px;
   padding: 10px 12px;
-  background: #1a1f28;
+  background: var(--surface-1);
   border-radius: 8px;
   line-height: 1.55;
-  color: #c8d0e0;
+  color: var(--text-soft);
 }
 
 .drill-hint-body p {
@@ -144,7 +144,7 @@
 .drill-feedback {
   padding: 10px 12px;
   border-radius: 8px;
-  background: #1a1f28;
+  background: var(--surface-1);
   font-size: 14px;
   line-height: 1.45;
 }

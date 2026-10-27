@@ -116,3 +116,51 @@ test('брейкпоинт телефона один: 719px (и 720px для «�
     assert.doesNotMatch(css, /min-width:\s*719px/, `${file}: используйте min-width: 720px`);
   }
 });
+
+// ----- Темы: цвета живут только в themes.css -----
+
+const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(/;
+
+test('цвета не прописаны в правилах: только переменные из src/css/themes.css', () => {
+  for (const file of cssFiles.filter((f) => f !== 'src/css/themes.css')) {
+    stripComments(read(file)).split('\n').forEach((line, i) => {
+      assert.doesNotMatch(line, COLOR_LITERAL, `${file}, строка ${i + 1}: цвет нужно вынести в переменную в themes.css: ${line.trim()}`);
+    });
+  }
+});
+
+test('цвета не прописаны в inline-стилях разметки и JS-шаблонов', () => {
+  for (const [name, text] of [['index.html', html], ...jsFiles.map((f) => [f, read(f)])]) {
+    for (const m of text.matchAll(/style="([^"]*)"/g)) {
+      assert.doesNotMatch(m[1], COLOR_LITERAL, `${name}: цвет в inline-стиле: ${m[1].slice(0, 80)}`);
+    }
+  }
+});
+
+test('каждая используемая переменная цвета определена в themes.css, а лишних определений нет', () => {
+  const themes = stripComments(read('src/css/themes.css'));
+  const defined = new Set([...themes.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
+  const usedEverywhere = new Set();
+  for (const file of cssFiles) {
+    for (const m of stripComments(read(file)).matchAll(/var\((--[\w-]+)/g)) usedEverywhere.add(m[1]);
+  }
+  for (const m of sources.matchAll(/var\((--[\w-]+)/g)) usedEverywhere.add(m[1]);
+  // переменные, заданные в других файлах (размеры, состояния), не проверяем: берём только имена из themes.css и «голые» использования
+  const definedAnywhere = new Set(defined);
+  for (const file of cssFiles) for (const m of stripComments(read(file)).matchAll(/(--[\w-]+)\s*:/g)) definedAnywhere.add(m[1]);
+  for (const m of sources.matchAll(/setProperty\('(--[\w-]+)'/g)) definedAnywhere.add(m[1]);   // задаются из JS
+  for (const m of sources.matchAll(/(--[\w-]+)\s*:\s*[^;"]/g)) definedAnywhere.add(m[1]);   // и inline-стилями в разметке
+  for (const name of usedEverywhere) assert.ok(definedAnywhere.has(name), `переменная ${name} используется, но нигде не определена`);
+  const selfRefs = (t) => [...stripComments(t).matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]);
+  const usedOutside = new Set([...usedEverywhere]);
+  for (const name of defined) {
+    const inThemesOnly = selfRefs(read('src/css/themes.css')).includes(name);
+    assert.ok(usedOutside.has(name) || inThemesOnly, `переменная ${name} определена в themes.css, но нигде не используется`);
+  }
+});
+
+test('themes.css подключён первым среди стилей', () => {
+  const hrefs = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(hrefs[0], 'src/css/themes.css');
+});

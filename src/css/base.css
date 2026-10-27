@@ -1,14 +1,5 @@
-/* ===== Общая тема приложения ===== */
+/* ===== Общие размеры (цвета — в themes.css) ===== */
 :root {
-  --bg: #14161c;
-  --card: #1e222b;
-  --fg: #e8eaf0;
-  --mut: #8b93a5;
-  --ok: #3ecf8e;
-  --bad: #ef5b5b;
-  --acc: #6ea8fe;
-  --warn: #f5b84b;
-
   /* отступы, радиусы, зоны касания */
   --space-1: 4px;
   --space-2: 8px;
@@ -26,7 +17,6 @@
   --dock-max-h: calc(100vh - var(--dock-top) - var(--space-4));
   --tap-lg: 52px;
   --die-hand: 36px;
-  --shadow-dock: 0 -8px 24px rgba(0, 0, 0, .45);
 }
 
 /* Телефон в ландшафте: вместо шапки узкая полоса раздела (≈52px) */
@@ -116,10 +106,10 @@ main {
 .app-header nav {
   --fade-l: 0px;
   --fade-r: 0px;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l),
-    #000 calc(100% - var(--fade-r)), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l),
-    #000 calc(100% - var(--fade-r)), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, black var(--fade-l),
+    black calc(100% - var(--fade-r)), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, black var(--fade-l),
+    black calc(100% - var(--fade-r)), transparent 100%);
 }
 
 button,
@@ -127,8 +117,8 @@ select,
 input {
   font: inherit;
   color: var(--fg);
-  background: #2a2f3b;
-  border: 1px solid #3a4152;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
   border-radius: 8px;
   padding: 8px 12px;
 }
@@ -152,7 +142,7 @@ button:hover {
 /* На устройствах без мыши hover не «залипает» после касания */
 @media (hover: none) {
   button:hover {
-    border-color: #3a4152;
+    border-color: var(--line-2);
   }
 }
 
@@ -170,18 +160,18 @@ input {
 
 button.on {
   background: var(--acc);
-  color: #111;
+  color: var(--on-accent);
   border-color: var(--acc);
 }
 
 button.bad {
   background: var(--bad);
-  color: #111;
+  color: var(--on-accent);
 }
 
 button.calza {
   background: var(--warn);
-  color: #111;
+  color: var(--on-accent);
 }
 
 button:disabled {
@@ -213,8 +203,8 @@ label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #2a2f3b;
-  border: 1px solid #3a4152;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
   border-radius: 10px;
   padding: 3px 10px 3px 12px;
   font-weight: 700;
@@ -266,7 +256,7 @@ label {
 
 .face-btn.sel {
   border-color: var(--acc);
-  background: #32406a;
+  background: var(--selected);
 }
 
 .face-btn .die {
@@ -281,7 +271,7 @@ table {
 td,
 th {
   padding: 6px 8px;
-  border-bottom: 1px solid #2f3543;
+  border-bottom: 1px solid var(--line);
   text-align: center;
 }
 
@@ -290,7 +280,7 @@ td:first-child {
 }
 
 tr.turn td {
-  background: #26304a;
+  background: var(--info-bg);
 }
 
 tr.dead td {
@@ -299,7 +289,7 @@ tr.dead td {
 
 .bar {
   height: 8px;
-  background: #2f3543;
+  background: var(--line);
   border-radius: 4px;
   overflow: hidden;
   min-width: 60px;
@@ -350,7 +340,7 @@ small {
 .round-head {
   margin: 10px 0 4px;
   padding: 4px 8px;
-  background: #262b37;
+  background: var(--surface-3);
   border-radius: 6px;
   color: var(--mut);
   font-size: 13px;
@@ -363,7 +353,7 @@ small {
   align-items: center;
   gap: 8px;
   padding: 4px 2px;
-  border-bottom: 1px solid #262b37;
+  border-bottom: 1px solid var(--surface-3);
   flex-wrap: wrap;
 }
 
@@ -373,7 +363,7 @@ small {
 }
 
 .log-row.dudo {
-  background: #2d2330;
+  background: var(--bad-bg-2);
   border-radius: 6px;
   padding: 6px 8px;
   margin: 3px 0;
@@ -387,7 +377,7 @@ small {
 }
 
 .log-row.log-elim {
-  color: #ff8b8b;
+  color: var(--bad-text);
   font-weight: 600;
   padding-left: 10px;
 }
@@ -398,27 +388,27 @@ small {
 }
 
 .c0 {
-  color: #6ea8fe;
+  color: var(--acc);
 }
 
 .c1 {
-  color: #f5b84b;
+  color: var(--warn);
 }
 
 .c2 {
-  color: #3ecf8e;
+  color: var(--ok);
 }
 
 .c3 {
-  color: #ef8bd0;
+  color: var(--hue-pink);
 }
 
 .c4 {
-  color: #b794f6;
+  color: var(--hue-violet);
 }
 
 .c5 {
-  color: #f08a5d;
+  color: var(--hue-orange);
 }
 
 .review-row {
@@ -427,8 +417,8 @@ small {
   padding: 8px;
   border-radius: 8px;
   margin: 5px 0;
-  background: #242934;
-  border-left: 4px solid #3a4152;
+  background: var(--surface-5);
+  border-left: 4px solid var(--line-2);
   align-items: flex-start;
 }
 

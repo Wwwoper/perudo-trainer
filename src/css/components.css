@@ -7,7 +7,7 @@
   padding: 6px;
   gap: 2px;
   border-radius: 9px;
-  background: #f4f4f0;
+  background: var(--paper);
   vertical-align: middle;
   margin: 2px;
   flex: none;
@@ -19,7 +19,7 @@
 }
 
 .die i.on {
-  background: #1a1a1a;
+  background: var(--ink);
 }
 
 .die.wild {
@@ -43,6 +43,12 @@
   margin: 1px;
 }
 
+/* Скрытый кубик соперника (грань не видна) */
+.die.die-hidden {
+  background: var(--line-2);
+  border: 1px solid var(--die-hidden-line);
+}
+
 /* Блок прямых советов в режиме «Новичок» */
 #gAdvice {
   min-height: 0;
@@ -56,23 +62,23 @@
   margin: 6px 0;
   padding: 6px 10px;
   border-radius: 6px;
-  background: #26304a;
-  color: #d8e2f5;
+  background: var(--info-bg);
+  color: var(--info-fg);
   font-size: 14px;
   line-height: 1.35;
 }
 
 #gAdvice .advice.good {
-  background: #1e3a2c;
-  color: #b8e6c8;
+  background: var(--ok-bg);
+  color: var(--ok-fg);
 }
 
 /* Раскрывающаяся подсказка «как это посчитано» в упражнениях */
 .calc-hint {
   margin-top: 10px;
   padding: 8px 12px;
-  background: #1f2430;
-  border: 1px solid #2f3543;
+  background: var(--surface-7);
+  border: 1px solid var(--line);
   border-radius: 8px;
   font-size: 14px;
 }
@@ -106,7 +112,7 @@
 .calc-hint-body {
   margin-top: 8px;
   line-height: 1.5;
-  color: #c8d0e0;
+  color: var(--text-soft);
 }
 
 .calc-hint-body p {
@@ -130,12 +136,12 @@
 #gPractical {
   margin: 0 0 12px;
   padding: 8px 12px;
-  background: #1a2436;
+  background: var(--info-bg-3);
   border-left: 3px solid var(--acc);
   border-radius: 6px;
   font-size: 13px;
   line-height: 1.5;
-  color: #c8d0e0;
+  color: var(--text-soft);
 }
 
 #gPractical .ph-title {
@@ -168,19 +174,19 @@
 #gPractical .ph-row-sep {
   margin-top: 4px;
   padding-top: 4px;
-  border-top: 1px solid #2f3543;
+  border-top: 1px solid var(--line);
 }
 
 #gPractical .ph-total {
   grid-column: 1 / -1;
   font-weight: 700;
-  color: #d8e2f5;
+  color: var(--info-fg);
   margin-top: 2px;
 }
 
 #gPractical .ph-total b {
   color: var(--fg);
-  background: #253047;
+  background: var(--info-bg-2);
   padding: 1px 8px;
   border-radius: 4px;
   margin-left: 6px;

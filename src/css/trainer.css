@@ -17,7 +17,7 @@
   padding: 8px 14px;
   font-weight: 700;
   background: var(--acc);
-  color: #111;
+  color: var(--on-accent);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -39,7 +39,7 @@
   font-size: 14px;
   padding: 4px 14px;
   border-radius: 999px;
-  background: #262b37;
+  background: var(--surface-3);
   color: var(--mut);
 }
 
@@ -69,7 +69,7 @@
   gap: var(--space-4);
   margin-top: 8px;
   padding-top: 12px;
-  border-top: 1px solid #2f3543;
+  border-top: 1px solid var(--line);
   width: 100%;
 }
 
@@ -110,9 +110,9 @@
 .mode-btn {
   min-height: var(--tap);
   padding: 4px 14px;
-  border: 1px solid #353b49;
+  border: 1px solid var(--line-3);
   border-radius: 999px;
-  background: #2a2f3b;
+  background: var(--surface-2);
   color: var(--fg);
   font-size: 14px;
   cursor: pointer;
@@ -121,7 +121,7 @@
 .mode-btn.is-on {
   border-color: var(--acc);
   background: var(--acc);
-  color: #111;
+  color: var(--on-accent);
   font-weight: 700;
 }
 
@@ -144,7 +144,7 @@
   padding: 4px 8px;
   border: 0;
   background: none;
-  color: #ff8b8b;
+  color: var(--bad-text);
   font-size: 14px;
   text-decoration: underline;
   cursor: pointer;
@@ -161,7 +161,7 @@
 .trainer-chip {
   padding: 3px 9px;
   border-radius: 12px;
-  background: #2a2f3b;
+  background: var(--surface-2);
   color: var(--mut);
   font-size: 12px;
   white-space: nowrap;
@@ -173,13 +173,13 @@
 }
 
 .trainer-chip.trainer-wild {
-  background: #3a3020;
-  color: #e0b060;
+  background: var(--warn-bg);
+  color: var(--warn-fg);
 }
 
 .trainer-chip.trainer-repeat {
-  background: #3a2530;
-  color: #f080a0;
+  background: var(--bad-bg);
+  color: var(--bad-fg);
 }
 
 /* Рука */
@@ -211,7 +211,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: #1a1f28;
+  background: var(--surface-1);
   border-radius: 8px;
   margin-bottom: 10px;
 }
@@ -223,7 +223,7 @@
 
 .trainer-feedback {
   padding: 10px 12px;
-  background: #1a1f28;
+  background: var(--surface-1);
   border-radius: 8px;
   font-size: 14px;
   line-height: 1.45;
@@ -300,7 +300,7 @@
 }
 .trainer-option.is-chosen {
   border-left-color: var(--acc);
-  background: rgb(255 255 255 / 4%);
+  background: var(--tint-soft);
 }
 .trainer-option-name {
   display: inline-block;

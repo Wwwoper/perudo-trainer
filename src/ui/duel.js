@@ -51,7 +51,7 @@ function renderOpening() {
     t += `<tr><td>${renderDie(h + 1, 'xs', h === 0)}</td>`;
     for (const c of used) {
       const v = root.avg[h][c.i];
-      t += `<td style="background:rgba(110,168,254,${Math.min(0.9, v * 1.2).toFixed(2)})">${v >= 0.01 ? (v * 100).toFixed(0) + '%' : ''}</td>`;
+      t += `<td style="background:color-mix(in srgb, var(--acc) ${Math.round(Math.min(0.9, v * 1.2) * 100)}%, transparent)">${v >= 0.01 ? (v * 100).toFixed(0) + '%' : ''}</td>`;
     }
     t += '</tr>';
   }
