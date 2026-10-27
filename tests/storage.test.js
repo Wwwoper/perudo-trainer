@@ -10,7 +10,7 @@ global.localStorage = {
   removeItem: key => { delete mockStorage[key]; },
 };
 
-import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer, getDeviceState, setDeviceState, getCloudState, setCloudState, getGames, addGame, setTrainingQueue, getBotMemory, setBotMemory, getDuelStats, setDuelStats } from '../src/storage.js';
+import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer, getDeviceState, setDeviceState, getCloudState, setCloudState, getGames, addGame, setTrainingQueue, getBotMemory, setBotMemory, getDuelStats, setDuelStats, getThemeMode, setThemeMode } from '../src/storage.js';
 
 describe('get/set', () => {
   it('сохраняет и загружает', () => {
@@ -116,6 +116,27 @@ describe('память ботов и статистика Дуэли: повре
     assert.deepStrictEqual(getDuelStats(), { games: 3, wins: 2, moves: 10, dev: 1 });
     setDuelStats(null);
     assert.deepStrictEqual(getDuelStats(), { games: 0, wins: 0, moves: 0, dev: 0 });
+  });
+});
+
+describe('тема оформления', () => {
+  it('нет выбора или мусор — режим по умолчанию', () => {
+    mockStorage['perudo.settings'] = undefined;
+    assert.strictEqual(getThemeMode(), 'dark');
+    mockStorage['perudo.settings'] = JSON.stringify({ theme: 'purple' });
+    assert.strictEqual(getThemeMode(), 'dark');
+    mockStorage['perudo.settings'] = JSON.stringify('x');
+    assert.strictEqual(getThemeMode(), 'dark');
+  });
+  it('выбор сохраняется, не затирает остальные настройки; мусор не записывается', () => {
+    mockStorage['perudo.settings'] = JSON.stringify({ assistMode: 'game' });
+    setThemeMode('light');
+    assert.strictEqual(getThemeMode(), 'light');
+    assert.strictEqual(JSON.parse(mockStorage['perudo.settings']).assistMode, 'game');
+    setThemeMode('system');
+    assert.strictEqual(getThemeMode(), 'system');
+    setThemeMode('мусор');
+    assert.strictEqual(JSON.parse(mockStorage['perudo.settings']).theme, 'dark');
   });
 });
 

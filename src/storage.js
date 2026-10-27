@@ -6,6 +6,7 @@ import { sanitizeCloudState } from './cloud_policy.js';
 import { sanitizeGameSettings } from './game_settings.js';
 import { makeSnapshot, restoreSnapshot } from './saved_game.js';
 import { sanitizeSoundMode } from './sound_plan.js';
+import { sanitizeThemeMode } from './theme.js';
 import { sanitizeStats, sanitizeTrainingQueue, sanitizeGames, sanitizeReviews, sanitizeDuelStats, sanitizeBotMemory } from './data_schema.js';
 
 const SCHEMA_VERSION = 1;
@@ -103,6 +104,16 @@ export function getSoundMode() {
 
 export function setSoundMode(mode) {
   setSettings({ soundMode: sanitizeSoundMode(mode) });
+}
+
+/** Тема оформления (perudo.settings.theme): 'system' | 'light' | 'dark'. */
+export function getThemeMode() {
+  const s = get(KEYS.SETTINGS, null);
+  return sanitizeThemeMode(s && typeof s === 'object' ? s.theme : null);
+}
+
+export function setThemeMode(mode) {
+  setSettings({ theme: sanitizeThemeMode(mode) });
 }
 
 // Профиль игрока: имя и аватар. Проверку и значения по умолчанию даёт sanitizePlayer.

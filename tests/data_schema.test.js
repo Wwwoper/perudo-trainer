@@ -273,13 +273,14 @@ describe('sanitizeSettings', () => {
   it('нет данных, не объект, годные настройки', () => {
     assert.deepStrictEqual(sanitizeSettings(null), { value: {}, dropped: 0 });
     assert.deepStrictEqual(sanitizeSettings([]), { value: {}, dropped: 1 });
-    const ok = { assistMode: 'game', botSpeed: 'fast', animations: 'normal', calzaEnabled: true, palificoEnabled: false, soundMode: 'quiet' };
+    const ok = { assistMode: 'game', botSpeed: 'fast', animations: 'normal', calzaEnabled: true, palificoEnabled: false, soundMode: 'quiet', theme: 'system' };
     assert.deepStrictEqual(sanitizeSettings(ok), { value: ok, dropped: 0 });
   });
   it('недопустимые значения и неизвестные поля отбрасываются', () => {
     const r = sanitizeSettings({ assistMode: 'x', botSpeed: 5, calzaEnabled: 'yes', soundMode: 'loud', evil: 1, lastGame: 'z' });
     assert.deepStrictEqual(r.value, { soundMode: 'off' });
     assert.strictEqual(r.dropped, 5);
+    assert.deepStrictEqual(sanitizeSettings({ theme: 'purple' }), { value: {}, dropped: 1 });
   });
   it('lastGame проходит проверку настроек партии', () => {
     const r = sanitizeSettings({ lastGame: { bots: 99, startDice: 'x' } });

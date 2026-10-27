@@ -496,6 +496,8 @@ src/
 ├── game_log.js      строки журнала партии: потеря кубика, выбывание, Calza ← чистая логика
 ├── table.js         отрисовка стола и мест игроков (строки HTML)
 ├── storage.js       localStorage с версией схемы
+├── theme.js         режимы темы оформления и выбор фактической темы        ← чистая логика
+├── theme_boot.js    ставит тему до отрисовки страницы (обычный скрипт в <head>)
 ├── table.css        стол и места игроков
 └── css/             themes (цветовые токены), base, game, learn, components, trainer, drill
 tests/

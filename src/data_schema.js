@@ -10,6 +10,7 @@ import { sanitizeMoment, MAX_MOMENTS } from './moments.js';
 import { ASSIST_MODES, BOT_SPEEDS, sanitizeGameSettings } from './game_settings.js';
 import { sanitizePlayer } from './player.js';
 import { sanitizeSoundMode } from './sound_plan.js';
+import { THEME_MODES } from './theme.js';
 import { MEMORY_VERSION } from './memory.js';
 
 /** Верхняя граница любого счётчика: защита от огромных и нечисловых значений. */
@@ -263,6 +264,7 @@ export function sanitizeSettings(raw) {
   };
   take('assistMode', (v) => ASSIST_MODES.includes(v));
   take('botSpeed', (v) => BOT_SPEEDS.includes(v));
+  take('theme', (v) => THEME_MODES.includes(v));
   take('animations', (v) => typeof v === 'string' && v.length > 0 && v.length <= 20);
   take('calzaEnabled', (v) => typeof v === 'boolean');
   take('palificoEnabled', (v) => typeof v === 'boolean');
