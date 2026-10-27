@@ -1,13 +1,12 @@
 // storage.js — работа с localStorage с версионированием
 
-import { normalizeMoments } from './moments.js';
 import { sanitizePlayer } from './player.js';
 import { sanitizeDeviceState } from './backup_reminder.js';
 import { sanitizeCloudState } from './cloud_policy.js';
 import { sanitizeGameSettings } from './game_settings.js';
 import { makeSnapshot, restoreSnapshot } from './saved_game.js';
 import { sanitizeSoundMode } from './sound_plan.js';
-import { sanitizeStats } from './data_schema.js';
+import { sanitizeStats, sanitizeTrainingQueue, sanitizeGames, sanitizeReviews } from './data_schema.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -171,25 +170,29 @@ export function updateStats(mutator) {
 }
 
 export function getTrainingQueue() {
-  return get(KEYS.TRAINING_QUEUE, []);
+  return sanitizeTrainingQueue(get(KEYS.TRAINING_QUEUE, null)).value;
 }
 
 export function setTrainingQueue(queue) {
-  set(KEYS.TRAINING_QUEUE, queue);
+  set(KEYS.TRAINING_QUEUE, sanitizeTrainingQueue(queue).value);
 }
 
 export function getGames(limit = 200) {
-  const games = get(KEYS.GAMES, []);
-  return games.slice(-limit);
+  return sanitizeGames(get(KEYS.GAMES, null)).value.slice(-limit);
+}
+
+/** Добавляет сыгранную партию в историю (хранятся последние 200). */
+export function addGame(record) {
+  set(KEYS.GAMES, sanitizeGames([...getGames(), record]).value);
 }
 
 /** Ключевые моменты партий (ключ perudo.reviews). Мусор в хранилище отбрасывается. */
 export function getMoments() {
-  return normalizeMoments(get(KEYS.REVIEWS, []));
+  return sanitizeReviews(get(KEYS.REVIEWS, null)).value;
 }
 
 export function setMoments(moments) {
-  set(KEYS.REVIEWS, normalizeMoments(moments));
+  set(KEYS.REVIEWS, sanitizeReviews(moments).value);
 }
 
 export function getSchemaVersion() {

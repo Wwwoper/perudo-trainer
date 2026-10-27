@@ -3,7 +3,7 @@
 // вход через Яндекс и привязка к хранилищу.
 
 import { showStatsTab } from './stats_tabs.js';
-import { get, set, getStats, getGames, getTrainingQueue, getCloudState, setCloudState, getDeviceState, setDeviceState } from '../storage.js';
+import { get, set, getStats, getGames, getTrainingQueue, getCloudState, setCloudState, getDeviceState, setDeviceState, getMoments } from '../storage.js';
 import { buildBackup, serializeBackup, parseBackup, applyBackup } from '../backup.js';
 import { createClient, buildAuthUrl, parseAuthHash, redirectUriFor, createState, CloudError } from '../cloud_yandex.js';
 import { runDiagnostics } from '../cloud_diag.js';
@@ -120,7 +120,7 @@ function realSync() {
       return { ok: true };
     },
     isLocalEmpty: () => isLocalDataEmpty({
-      stats: getStats(), games: getGames(), queue: getTrainingQueue(), reviews: get('perudo.reviews', []),
+      stats: getStats(), games: getGames(), queue: getTrainingQueue(), reviews: getMoments(),
     }),
   });
 }

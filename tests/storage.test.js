@@ -10,7 +10,7 @@ global.localStorage = {
   removeItem: key => { delete mockStorage[key]; },
 };
 
-import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer, getDeviceState, setDeviceState, getCloudState, setCloudState } from '../src/storage.js';
+import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer, getDeviceState, setDeviceState, getCloudState, setCloudState, getGames, addGame, setTrainingQueue } from '../src/storage.js';
 
 describe('get/set', () => {
   it('сохраняет и загружает', () => {
@@ -73,6 +73,32 @@ describe('getTrainingQueue', () => {
   it('возвращает пустую очередь', () => {
     mockStorage['perudo.trainingQueue'] = undefined;
     assert.deepStrictEqual(getTrainingQueue(), []);
+  });
+});
+
+describe('очередь, история партий и моменты: повреждённые данные', () => {
+  it('очередь: мусор отбрасывается при чтении и не записывается', () => {
+    mockStorage['perudo.trainingQueue'] = JSON.stringify([{ mode: 'classic', n: 10, h: [1], f: 2, q: 3 }, { mode: 'zzz' }, 7]);
+    assert.strictEqual(getTrainingQueue().length, 1);
+    setTrainingQueue([{ mode: 'solo', n: 5, h: [2], f: 3, q: 2 }, 'мусор']);
+    assert.strictEqual(JSON.parse(mockStorage['perudo.trainingQueue']).length, 1);
+  });
+  it('партии: не список — пустая история; addGame добавляет и чистит', () => {
+    mockStorage['perudo.games'] = JSON.stringify({ a: 1 });
+    assert.deepStrictEqual(getGames(), []);
+    mockStorage['perudo.games'] = JSON.stringify([{ ts: 1, players: 2, won: true }, { bad: 1 }]);
+    addGame({ ts: 2, players: 3, won: false, rounds: 4 });
+    const saved = JSON.parse(mockStorage['perudo.games']);
+    assert.deepStrictEqual(saved.map((g) => g.ts), [1, 2]);
+  });
+  it('addGame не записывает негодную запись', () => {
+    mockStorage['perudo.games'] = undefined;
+    addGame({ ts: 'x' });
+    assert.deepStrictEqual(getGames(), []);
+  });
+  it('моменты: мусор не ломает чтение', () => {
+    mockStorage['perudo.reviews'] = JSON.stringify('x');
+    assert.deepStrictEqual(getMoments(), []);
   });
 });
 

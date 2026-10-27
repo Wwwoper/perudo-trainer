@@ -7,7 +7,7 @@ import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification } from './assist.js';
 import { readInfo, readNote } from './table_read.js';
 import { describeRoundEvents } from './game_log.js';
-import { updateStats, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
+import { updateStats, addGame, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
 import { describeSnapshot } from './saved_game.js';
 import { BOT_STYLES, generateCharacters, botDecide } from './bots.js';
 import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
@@ -921,8 +921,7 @@ function finalizeGame() {
   const won = me.alive && aliveCnt === 1;
   playCue(won ? 'win' : 'lose');
 
-  const history = get('perudo.games', []);
-  history.push({
+  addGame({
     ts: Date.now(),
     players: game.players.length,
     startDice: game.config.startDice,
@@ -933,7 +932,6 @@ function finalizeGame() {
     calza: !!game.config.calzaEnabled,
     palifico: !!game.config.palificoEnabled,
   });
-  set('perudo.games', history.slice(-200));
 
   updateStats((stats) => {
     stats.totalGames = (stats.totalGames || 0) + 1;
