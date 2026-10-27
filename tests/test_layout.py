@@ -778,6 +778,10 @@ class LayoutTest(unittest.TestCase):
                 page.goto(self.url)
                 self.goto_tab(page, "game")
                 sel = page.locator("#gSound")
+                card = page.locator(".setup-card:has(#gSound)")
+                self.assertFalse(page.locator(".setup-card:has(#gSound):has(#gAssist)").count(),
+                                 "звуки должны быть в своей карточке, а не внутри «Помощь и темп»")
+                self.assertEqual(card.locator("h3.set-label").inner_text().strip().lower(), "звуки")
                 sel.scroll_into_view_if_needed()
                 self.assertFalse(page.locator("#gSoundTest").is_visible())
                 box = sel.bounding_box()
