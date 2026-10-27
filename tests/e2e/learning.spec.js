@@ -492,8 +492,8 @@ test.describe('Учебные вкладки', () => {
       memory: 'perudo.botMemory', duel: 'perudo.duelStats',
     };
     const seed = (page) => page.evaluate((K) => {
-      localStorage.setItem(K.stats, JSON.stringify({ n: 5, good: 4, byMode: { classic: { n: 5, good: 4 } }, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
-      localStorage.setItem(K.games, JSON.stringify([{ ts: 1700000000000, players: 4, rounds: 8, won: true, decisions: 20 }]));
+      localStorage.setItem(K.stats, JSON.stringify({ n: 5, good: 4, totalGames: 0, totalWins: 0, totalDecisions: 0, goodDecisions: 0, byMode: { classic: { n: 5, good: 4 } }, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
+      localStorage.setItem(K.games, JSON.stringify([{ ts: 1700000000000, players: 4, startDice: 5, rounds: 8, won: true, decisions: 20, calza: false, palifico: false }]));
       localStorage.setItem(K.settings, JSON.stringify({ assistMode: 'game', botSpeed: 'fast' }));
       localStorage.setItem(K.duel, JSON.stringify({ games: 2, wins: 1, moves: 4, dev: 0 }));
     }, KEYS);
@@ -564,6 +564,33 @@ test.describe('Учебные вкладки', () => {
       await page.setInputFiles('#stImportFile', { name: 'y.json', mimeType: 'application/json', buffer: Buffer.from('не json') });
       await expect(page.locator('#stBackupMsg')).toContainText('не JSON');
       expect((await dump(page)).stats.n).toBe(5);
+    });
+
+    test('файл с повреждёнными записями: сообщается число пропущенных, годное восстанавливается', async ({ page }) => {
+      await seed(page);
+      await page.reload();
+      await open(page, 'stats');
+      await openStatsTab(page, 'data');
+      const file = {
+        format: 'perudo-backup', version: 2, exportedAt: 1700000000000,
+        data: {
+          'perudo.userProfile': { n: 7, good: 3, byMode: { classic: { n: 7, good: 3 }, junk: 'x' } },
+          'perudo.games': [
+            { ts: 1700000000000, players: 4, rounds: 8, won: true, decisions: 20 },
+            { ts: 'вчера' }, 42,
+          ],
+        },
+      };
+      let confirmText = '';
+      page.once('dialog', (d) => { confirmText = d.message(); d.accept(); });
+      await page.setInputFiles('#stImportFile', { name: 'half.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) });
+      await page.waitForFunction(() => document.querySelector('#stBackupMsg')?.textContent.includes('восстановлены'));
+      expect(confirmText).toContain('повреждённые записи (3)');
+      await expect(page.locator('#stBackupMsg')).toContainText('Пропущено повреждённых записей: 3');
+      const after = await dump(page);
+      expect(after.stats.n).toBe(7);
+      expect(Object.keys(after.stats.byMode)).toEqual(['classic']);
+      expect(after.games).toHaveLength(1);
     });
 
     test('игрок (имя и аватар) входит в копию, возвращается при импорте и стирается «Сбросить всё»', async ({ page }) => {

@@ -6,6 +6,10 @@
 // Формат файла:
 //   { format: 'perudo-backup', version: 2, exportedAt: <мс>, data: { '<ключ хранилища>': <значение> } }
 // Старый формат (версия 1: stats, queue, games, duel) при импорте читается и приводится к новому.
+// Данные проходят единую проверку (data_schema.js) в обе стороны: при сборке копии (экспорт, отправка в облако)
+// и при разборе файла (импорт, получение из облака). Повреждённые записи пропускаются и подсчитываются.
+
+import { SANITIZERS } from './data_schema.js';
 
 export const BACKUP_FORMAT = 'perudo-backup';
 export const BACKUP_VERSION = 2;
@@ -13,64 +17,11 @@ export const BACKUP_VERSION = 2;
 /** Максимальный размер файла, который мы готовы разбирать (символов). */
 export const MAX_BACKUP_CHARS = 5 * 1024 * 1024;
 
-/** Предел размера записи игрока в копии (имя и снимок аватара). */
-const MAX_PLAYER_CHARS = 20000;
-
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 
-/** Что лежит в копии: ключ хранилища → проверка значения (возвращает текст ошибки или null). */
-const SCHEMA = {
-  'perudo.settings': (v) => (isObject(v) ? null : 'настройки должны быть объектом'),
-  'perudo.userProfile': (v) => {
-    if (!isObject(v)) return 'статистика должна быть объектом';
-    if ('n' in v && !isNum(v.n)) return 'статистика: поле n должно быть числом';
-    if ('good' in v && !isNum(v.good)) return 'статистика: поле good должно быть числом';
-    if ('byMode' in v && !isObject(v.byMode)) return 'статистика: byMode должен быть объектом';
-    if ('byTag' in v) {
-      if (!isObject(v.byTag)) return 'статистика: byTag должен быть объектом';
-      const ok = Object.values(v.byTag).every((b) => isObject(b) && isNum(b.n) && isNum(b.good));
-      if (!ok) return 'статистика: в byTag есть записи не того вида';
-    }
-    if ('drill' in v && !isObject(v.drill)) return 'статистика: drill должен быть объектом';
-    return null;
-  },
-  // Имя и аватар. Содержимое проверяет sanitizePlayer при чтении; здесь только вид и размер.
-  'perudo.player': (v) => {
-    if (!isObject(v)) return 'профиль игрока должен быть объектом';
-    return JSON.stringify(v).length <= MAX_PLAYER_CHARS ? null : 'профиль игрока слишком большой';
-  },
-  'perudo.botMemory': (v) => (isObject(v) ? null : 'память ботов должна быть объектом'),
-  'perudo.games': (v) => {
-    if (!Array.isArray(v)) return 'история партий должна быть списком';
-    return v.every(isObject) ? null : 'в истории партий есть записи не того вида';
-  },
-  // Ключевые моменты партий. Пустой объект принимается: так выглядел пустой раздел в первых копиях.
-  'perudo.reviews': (v) => {
-    if (isObject(v)) return Object.keys(v).length === 0 ? null : 'разбор партий должен быть списком';
-    if (!Array.isArray(v)) return 'разбор партий должен быть списком';
-    return v.every(isObject) ? null : 'в разборе партий есть записи не того вида';
-  },
-  'perudo.trainingQueue': (v) => {
-    if (!Array.isArray(v)) return 'очередь повторов должна быть списком';
-    const ok = v.every((x) => isObject(x) && typeof x.mode === 'string' && isNum(x.n) && isNum(x.f)
-      && isNum(x.q) && Array.isArray(x.h) && x.h.every(isNum));
-    return ok ? null : 'в очереди повторов есть записи не того вида';
-  },
-  'perudo.tutorialProgress': (v) => (isObject(v) || Array.isArray(v) ? null : 'прогресс обучения: неверный вид'),
-  'perudo.duelStats': (v) => {
-    if (!isObject(v)) return 'статистика дуэли должна быть объектом';
-    for (const k of ['games', 'wins', 'moves', 'dev']) {
-      if (k in v && !isNum(v[k])) return `статистика дуэли: поле ${k} должно быть числом`;
-    }
-    return null;
-  },
-  'perudo.characters': (v) => (isObject(v) || Array.isArray(v) ? null : 'персонажи: неверный вид'),
-  'perudo.characterMemories': (v) => (isObject(v) || Array.isArray(v) ? null : 'память персонажей: неверный вид'),
-};
-
-/** Ключи хранилища, которые входят в копию. */
-export const BACKUP_KEYS = Object.keys(SCHEMA);
+/** Ключи хранилища, которые входят в копию. Проверку значений даёт data_schema.js (SANITIZERS). */
+export const BACKUP_KEYS = Object.keys(SANITIZERS);
 
 /** Соответствие полей старой копии (версия 1) ключам хранилища. */
 const LEGACY_V1 = {
@@ -89,7 +40,7 @@ export function buildBackup(read, now = Date.now()) {
   const data = {};
   for (const key of BACKUP_KEYS) {
     const value = read(key);
-    if (value !== null && value !== undefined) data[key] = value;
+    if (value !== null && value !== undefined) data[key] = SANITIZERS[key](value).value;
   }
   return { format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: now, data };
 }
@@ -101,9 +52,10 @@ export function serializeBackup(backup) {
 
 /**
  * Разбирает и проверяет текст файла.
- * @returns {{ ok: true, data: object, skipped: string[], legacy: boolean, exportedAt: number|null }
+ * @returns {{ ok: true, data: object, skipped: string[], dropped: number, legacy: boolean, exportedAt: number|null }
  *   | { ok: false, error: string }}
- * data содержит только известные ключи; skipped — неизвестные ключи, которые были проигнорированы.
+ * data содержит только известные ключи и очищенные значения; skipped — неизвестные ключи, которые были проигнорированы;
+ * dropped — сколько повреждённых записей пропущено.
  */
 export function parseBackup(text) {
   if (typeof text !== 'string' || !text.trim()) return { ok: false, error: 'Файл пустой.' };
@@ -138,24 +90,30 @@ export function parseBackup(text) {
 
   const data = {};
   const skipped = [];
+  let dropped = 0;
+  let usable = 0;                // разделов, из которых что-то удалось прочитать
   for (const key of Object.keys(source)) {
-    const check = SCHEMA[key];
-    if (!Object.prototype.hasOwnProperty.call(SCHEMA, key)) {
+    if (!Object.prototype.hasOwnProperty.call(SANITIZERS, key)) {
       skipped.push(key);
       continue;
     }
     const value = source[key];
     if (value === null) continue;
-    const problem = check(value);
-    if (problem) return { ok: false, error: `Копия повреждена: ${problem}.` };
-    data[key] = value;
+    const r = SANITIZERS[key](value);
+    data[key] = r.value;
+    dropped += r.dropped;
+    // раздел «потерян целиком»: были повреждения и осталось только значение по умолчанию
+    const lost = r.dropped > 0 && JSON.stringify(r.value) === JSON.stringify(SANITIZERS[key](null).value);
+    if (!lost) usable++;
   }
   if (!Object.keys(data).length) return { ok: false, error: 'В копии нет данных для восстановления.' };
+  if (usable === 0) return { ok: false, error: 'Копия повреждена: ни один раздел не удалось прочитать.' };
 
   return {
     ok: true,
     data,
     skipped,
+    dropped,
     legacy,
     exportedAt: isNum(raw.exportedAt) ? raw.exportedAt : null,
   };

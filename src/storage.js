@@ -220,22 +220,3 @@ export function migrateIfNeeded() {
     setSchemaVersion(SCHEMA_VERSION);
   }
 }
-
-export function exportData() {
-  const data = {};
-  for (const key of Object.values(KEYS)) {
-    data[key] = get(key);
-  }
-  data.exportedAt = Date.now();
-  data.schemaVersion = SCHEMA_VERSION;
-  return data;
-}
-
-export function importData(data) {
-  if (!data || typeof data !== 'object') throw new Error('Invalid data format');
-  for (const [key, value] of Object.entries(data)) {
-    if (key !== 'exportedAt' && key !== 'schemaVersion' && Object.values(KEYS).includes(key)) {
-      set(key, value);
-    }
-  }
-}

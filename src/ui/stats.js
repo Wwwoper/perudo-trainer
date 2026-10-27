@@ -171,14 +171,15 @@ export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
         return;
       }
       const when = r.exportedAt ? ` от ${new Date(r.exportedAt).toLocaleString('ru')}` : '';
-      if (!confirm(`Заменить данные приложения копией${when}? Текущие статистика, настройки и память ботов будут потеряны.`)) {
+      const damaged = r.dropped ? ` В файле есть повреждённые записи (${r.dropped}): они будут пропущены.` : '';
+      if (!confirm(`Заменить данные приложения копией${when}? Текущие статистика, настройки и память ботов будут потеряны.${damaged}`)) {
         msg('Импорт отменён.');
         return;
       }
       applyBackup(r.data, (k, v) => set(k, v), (k) => {
         try { localStorage.removeItem(k); } catch (e) { }
       });
-      try { sessionStorage.setItem('perudo.importNotice', 'Данные восстановлены из копии.'); } catch (e) { }
+      try { sessionStorage.setItem('perudo.importNotice', r.dropped ? `Данные восстановлены из копии. Пропущено повреждённых записей: ${r.dropped}.` : 'Данные восстановлены из копии.'); } catch (e) { }
       location.reload();
     };
   }

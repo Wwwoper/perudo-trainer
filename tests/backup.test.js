@@ -7,11 +7,16 @@ import {
 } from '../src/backup.js';
 
 const queueItem = { mode: 'classic', n: 12, h: [1, 3, 5], f: 3, q: 4, streak: 0 };
+const gameRec = (ts = 1) => ({ ts, players: 4, startDice: 5, rounds: 9, won: true, decisions: 20, calza: false, palifico: false });
+const stats = (o = {}) => ({
+  n: 10, good: 7, totalGames: 0, totalWins: 0, totalDecisions: 0, goodDecisions: 0,
+  byMode: { classic: { n: 10, good: 7 } }, drill: { A: { n: 1, good: 1 }, B: { n: 0, good: 0 } }, ...o,
+});
 const sample = () => ({
   'perudo.settings': { assistMode: 'game', botSpeed: 'fast' },
-  'perudo.userProfile': { n: 10, good: 7, byMode: { classic: { n: 10, good: 7 } }, drill: { A: { n: 1, good: 1 }, B: { n: 0, good: 0 } } },
-  'perudo.botMemory': { version: 1, any: 'thing' },
-  'perudo.games': [{ ts: 1, players: 4, rounds: 9, won: true, decisions: 20 }],
+  'perudo.userProfile': stats(),
+  'perudo.botMemory': { v: 1, challenged: 4, bluffs: 1 },
+  'perudo.games': [gameRec()],
   'perudo.trainingQueue': [queueItem],
   'perudo.duelStats': { games: 3, wins: 2, moves: 6, dev: 1 },
 });
@@ -27,7 +32,7 @@ describe('buildBackup', () => {
   });
 
   it('пропускает отсутствующие значения', () => {
-    const b = buildBackup(reader({ 'perudo.settings': { a: 1 } }), 1);
+    const b = buildBackup(reader({ 'perudo.settings': { assistMode: 'game' } }), 1);
     assert.deepStrictEqual(Object.keys(b.data), ['perudo.settings']);
   });
 
@@ -115,21 +120,37 @@ describe('parseBackup: отказы', () => {
     assert.match(bad(JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: { evil: 1 } })), /нет данных/);
   });
 
-  it('повреждённые значения: каждый ключ проверяется', () => {
+  it('файл, где все разделы повреждены, отклоняется', () => {
     const wrap = (data) => JSON.stringify({ format: BACKUP_FORMAT, version: 2, data });
-    assert.match(bad(wrap({ 'perudo.userProfile': [] })), /статистика/);
-    assert.match(bad(wrap({ 'perudo.userProfile': { n: 'много' } })), /поле n/);
-    assert.match(bad(wrap({ 'perudo.userProfile': { byTag: [] } })), /byTag/);
-    assert.match(bad(wrap({ 'perudo.userProfile': { byTag: { dudo: { n: 'a', good: 1 } } } })), /byTag/);
-    assert.match(bad(wrap({ 'perudo.games': {} })), /история партий/);
-    assert.match(bad(wrap({ 'perudo.games': [1] })), /записи не того вида/);
-    assert.match(bad(wrap({ 'perudo.trainingQueue': [{ mode: 'x' }] })), /очереди повторов/);
-    assert.match(bad(wrap({ 'perudo.duelStats': { games: 'a' } })), /дуэли/);
-    assert.match(bad(wrap({ 'perudo.settings': [] })), /настройки/);
-    assert.match(bad(wrap({ 'perudo.botMemory': 5 })), /память ботов/);
-    assert.match(bad(wrap({ 'perudo.reviews': 5 })), /разбор партий/);
-    assert.match(bad(wrap({ 'perudo.reviews': { a: 1 } })), /разбор партий/);
-    assert.match(bad(wrap({ 'perudo.reviews': [1] })), /записи не того вида/);
+    for (const [key, value] of [
+      ['perudo.userProfile', []], ['perudo.games', {}], ['perudo.games', [1]], ['perudo.trainingQueue', [{ mode: 'x' }]],
+      ['perudo.duelStats', 'a'], ['perudo.settings', []], ['perudo.botMemory', 5], ['perudo.reviews', 5],
+      ['perudo.reviews', { a: 1 }], ['perudo.reviews', [1]], ['perudo.userProfile', { n: 'много' }],
+    ]) {
+      const r = parseBackup(wrap({ [key]: value }));
+      assert.strictEqual(r.ok, false, `${key}: ${JSON.stringify(value)}`);
+      assert.match(r.error, /повреждена/);
+    }
+  });
+
+  it('повреждённые записи пропускаются и считаются, остальное восстанавливается', () => {
+    const text = JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: {
+      'perudo.games': [gameRec(1), { ts: 'x' }, null, gameRec(2)],
+      'perudo.trainingQueue': [queueItem, { mode: 'zzz' }],
+      'perudo.userProfile': { n: 5, good: 9, byMode: { ok: { n: 1, good: 1 }, bad: 7 } },
+      'perudo.duelStats': { games: 3, wins: 2, moves: 6, dev: 1 },
+    } });
+    const r = parseBackup(text);
+    assert.ok(r.ok);
+    assert.deepStrictEqual(r.data['perudo.games'], [gameRec(1), gameRec(2)]);
+    assert.deepStrictEqual(r.data['perudo.trainingQueue'], [queueItem]);
+    assert.deepStrictEqual(r.data['perudo.userProfile'].byMode, { ok: { n: 1, good: 1 } });
+    assert.strictEqual(r.data['perudo.userProfile'].good, 5);
+    assert.strictEqual(r.dropped, 2 + 1 + 1);
+  });
+
+  it('чистая копия: dropped = 0', () => {
+    assert.strictEqual(parseBackup(serializeBackup(buildBackup(reader(sample()), 1))).dropped, 0);
   });
 
   it('статистика с byTag принимается', () => {
@@ -141,7 +162,6 @@ describe('parseBackup: отказы', () => {
   it('разбор партий: список и пустой объект из первых копий принимаются', () => {
     const wrap = (data) => JSON.stringify({ format: BACKUP_FORMAT, version: 2, data });
     assert.strictEqual(parseBackup(wrap({ 'perudo.reviews': [] })).ok, true);
-    assert.strictEqual(parseBackup(wrap({ 'perudo.reviews': [{ id: 'a' }] })).ok, true);
     assert.strictEqual(parseBackup(wrap({ 'perudo.reviews': {} })).ok, true);
   });
 
@@ -165,13 +185,13 @@ describe('applyBackup', () => {
     const store = { 'perudo.settings': { old: 1 }, 'perudo.games': [{ ts: 1 }], 'perudo.duelStats': { games: 9 }, foreign: 'stay' };
     const r = parseBackup(JSON.stringify({
       format: BACKUP_FORMAT, version: 2,
-      data: { 'perudo.games': [{ ts: 2 }], 'perudo.userProfile': { n: 1, good: 1 } },
+      data: { 'perudo.games': [gameRec(2)], 'perudo.userProfile': { n: 1, good: 1 } },
     }));
     const out = applyBackup(r.data,
       (k, v) => { store[k] = v; },
       (k) => { delete store[k]; });
-    assert.deepStrictEqual(store['perudo.games'], [{ ts: 2 }]);
-    assert.deepStrictEqual(store['perudo.userProfile'], { n: 1, good: 1 });
+    assert.deepStrictEqual(store['perudo.games'], [gameRec(2)]);
+    assert.deepStrictEqual(store['perudo.userProfile'], stats({ n: 1, good: 1, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
     assert.ok(!('perudo.settings' in store));
     assert.ok(!('perudo.duelStats' in store));
     assert.strictEqual(store.foreign, 'stay');
@@ -206,13 +226,14 @@ describe('Игрок в копии', () => {
     assert.ok(removed.includes('perudo.player'));
   });
 
-  it('не объект и слишком большая запись отклоняются', () => {
-    const wrap = (v) => JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: { 'perudo.player': v } });
-    assert.match(parseBackup(wrap('Анна')).error, /профиль игрока/);
-    assert.match(parseBackup(wrap([1])).error, /профиль игрока/);
-    const big = parseBackup(wrap({ name: 'x'.repeat(30000) }));
-    assert.strictEqual(big.ok, false);
-    assert.match(big.error, /слишком большой/);
+  it('не объект и слишком большая запись заменяются профилем по умолчанию и считаются', () => {
+    const wrap = (v) => JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: { 'perudo.player': v, 'perudo.games': [] } });
+    for (const v of ['Анна', [1], { name: 'x'.repeat(30000) }]) {
+      const r = parseBackup(wrap(v));
+      assert.ok(r.ok);
+      assert.strictEqual(r.dropped, 1);
+      assert.deepStrictEqual(r.data['perudo.player'], { name: '', avatar: null });
+    }
   });
 });
 
@@ -233,5 +254,25 @@ describe('Состояние устройства не входит в копи�
     assert.ok(r.ok);
     assert.deepStrictEqual(r.skipped, ['perudo.cloud']);
     assert.ok(!('perudo.cloud' in r.data));
+  });
+});
+
+describe('buildBackup: проверка перед экспортом и отправкой в облако', () => {
+  it('мусор из хранилища очищается, в копию попадает допустимое', () => {
+    const b = buildBackup(reader({
+      'perudo.games': [gameRec(1), { ts: 'x' }],
+      'perudo.userProfile': { n: -4, evil: 1 },
+      'perudo.settings': { assistMode: 'hack', soundMode: 'quiet', other: 1 },
+    }), 1);
+    assert.deepStrictEqual(b.data['perudo.games'], [gameRec(1)]);
+    assert.strictEqual(b.data['perudo.userProfile'].n, 0);
+    assert.ok(!('evil' in b.data['perudo.userProfile']));
+    assert.deepStrictEqual(b.data['perudo.settings'], { soundMode: 'quiet' });
+  });
+  it('результат разбирается без потерь: сборка → разбор → те же данные, dropped = 0', () => {
+    const b = buildBackup(reader({ 'perudo.games': [gameRec(1), null], 'perudo.duelStats': { games: 2, wins: 5 } }), 1);
+    const r = parseBackup(serializeBackup(b));
+    assert.deepStrictEqual(r.data, b.data);
+    assert.strictEqual(r.dropped, 0);
   });
 });

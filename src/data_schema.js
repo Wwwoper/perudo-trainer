@@ -7,7 +7,9 @@
 // Отсутствующее значение (null, undefined) повреждением не считается: dropped = 0.
 
 import { sanitizeMoment, MAX_MOMENTS } from './moments.js';
-import { ASSIST_MODES } from './game_settings.js';
+import { ASSIST_MODES, BOT_SPEEDS, sanitizeGameSettings } from './game_settings.js';
+import { sanitizePlayer } from './player.js';
+import { sanitizeSoundMode } from './sound_plan.js';
 import { MEMORY_VERSION } from './memory.js';
 
 /** Верхняя граница любого счётчика: защита от огромных и нечисловых значений. */
@@ -249,18 +251,62 @@ export function sanitizeOpaque(raw) {
   return { value: stripForbidden(JSON.parse(text)), dropped: 0 };
 }
 
+/** Настройки (perudo.settings). Сохраняются только известные поля с допустимыми значениями; неизвестные отбрасываются. */
+export function sanitizeSettings(raw) {
+  if (isMissing(raw)) return { value: {}, dropped: 0 };
+  if (!isPlainObject(raw)) return { value: {}, dropped: 1 };
+  const out = {};
+  let dropped = 0;
+  const take = (key, ok) => {
+    if (raw[key] === undefined) return;
+    if (ok(raw[key])) out[key] = raw[key]; else dropped++;
+  };
+  take('assistMode', (v) => ASSIST_MODES.includes(v));
+  take('botSpeed', (v) => BOT_SPEEDS.includes(v));
+  take('animations', (v) => typeof v === 'string' && v.length > 0 && v.length <= 20);
+  take('calzaEnabled', (v) => typeof v === 'boolean');
+  take('palificoEnabled', (v) => typeof v === 'boolean');
+  if (raw.soundMode !== undefined) {
+    out.soundMode = sanitizeSoundMode(raw.soundMode);
+    if (out.soundMode === 'off' && raw.soundMode !== 'off') dropped++;
+  }
+  if (raw.lastGame !== undefined) {
+    if (isPlainObject(raw.lastGame)) out.lastGame = sanitizeGameSettings(raw.lastGame);
+    else dropped++;
+  }
+  return { value: out, dropped };
+}
+
+/** Предел размера записи игрока (имя и снимок аватара), символов JSON. */
+export const MAX_PLAYER_CHARS = 20000;
+
+/** Профиль игрока (perudo.player): содержимое проверяет sanitizePlayer, здесь вид и размер. */
+export function sanitizePlayerEntry(raw) {
+  if (isMissing(raw)) return { value: sanitizePlayer(null), dropped: 0 };
+  if (!isPlainObject(raw)) return { value: sanitizePlayer(null), dropped: 1 };
+  let size;
+  try { size = JSON.stringify(raw).length; } catch (e) { size = Infinity; }
+  if (size > MAX_PLAYER_CHARS) return { value: sanitizePlayer(null), dropped: 1 };
+  const value = sanitizePlayer(raw);
+  const dropped = (raw.name !== undefined && !value.name && raw.name !== '' ? 1 : 0)
+    + (raw.avatar !== undefined && raw.avatar !== null && !value.avatar ? 1 : 0);
+  return { value, dropped };
+}
+
 /**
  * Проверка по ключу хранилища: ключ → функция sanitizeX. Резервная копия и облако (backup.js) используют её,
  * так что данные из файла и данные из хранилища проходят одну и ту же проверку.
  */
 export const SANITIZERS = Object.freeze({
+  'perudo.settings': sanitizeSettings,
   'perudo.userProfile': sanitizeStats,
-  'perudo.trainingQueue': sanitizeTrainingQueue,
+  'perudo.player': sanitizePlayerEntry,
+  'perudo.botMemory': sanitizeBotMemory,
   'perudo.games': sanitizeGames,
   'perudo.reviews': sanitizeReviews,
-  'perudo.duelStats': sanitizeDuelStats,
-  'perudo.botMemory': sanitizeBotMemory,
+  'perudo.trainingQueue': sanitizeTrainingQueue,
   'perudo.tutorialProgress': sanitizeOpaque,
+  'perudo.duelStats': sanitizeDuelStats,
   'perudo.characters': sanitizeOpaque,
   'perudo.characterMemories': sanitizeOpaque,
 });

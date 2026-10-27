@@ -266,3 +266,39 @@ describe('SANITIZERS', () => {
     }
   });
 });
+
+import { sanitizeSettings, sanitizePlayerEntry, MAX_PLAYER_CHARS } from '../src/data_schema.js';
+
+describe('sanitizeSettings', () => {
+  it('нет данных, не объект, годные настройки', () => {
+    assert.deepStrictEqual(sanitizeSettings(null), { value: {}, dropped: 0 });
+    assert.deepStrictEqual(sanitizeSettings([]), { value: {}, dropped: 1 });
+    const ok = { assistMode: 'game', botSpeed: 'fast', animations: 'normal', calzaEnabled: true, palificoEnabled: false, soundMode: 'quiet' };
+    assert.deepStrictEqual(sanitizeSettings(ok), { value: ok, dropped: 0 });
+  });
+  it('недопустимые значения и неизвестные поля отбрасываются', () => {
+    const r = sanitizeSettings({ assistMode: 'x', botSpeed: 5, calzaEnabled: 'yes', soundMode: 'loud', evil: 1, lastGame: 'z' });
+    assert.deepStrictEqual(r.value, { soundMode: 'off' });
+    assert.strictEqual(r.dropped, 5);
+  });
+  it('lastGame проходит проверку настроек партии', () => {
+    const r = sanitizeSettings({ lastGame: { bots: 99, startDice: 'x' } });
+    assert.ok(r.value.lastGame && typeof r.value.lastGame === 'object');
+    assert.ok(r.value.lastGame.bots <= 10);
+  });
+  it('идемпотентна', () => {
+    const v = sanitizeSettings({ assistMode: 'game', soundMode: 'normal', lastGame: { bots: 3 } }).value;
+    assert.deepStrictEqual(sanitizeSettings(v), { value: v, dropped: 0 });
+  });
+});
+
+describe('sanitizePlayerEntry', () => {
+  it('нет данных, не объект, слишком большой, годный', () => {
+    const def = { name: '', avatar: null };
+    assert.deepStrictEqual(sanitizePlayerEntry(null), { value: def, dropped: 0 });
+    assert.deepStrictEqual(sanitizePlayerEntry('x'), { value: def, dropped: 1 });
+    assert.deepStrictEqual(sanitizePlayerEntry({ name: 'x'.repeat(MAX_PLAYER_CHARS) }), { value: def, dropped: 1 });
+    const ok = { name: 'Анна', avatar: { type: 'emoji', value: '🦊' } };
+    assert.deepStrictEqual(sanitizePlayerEntry(ok), { value: ok, dropped: 0 });
+  });
+});
