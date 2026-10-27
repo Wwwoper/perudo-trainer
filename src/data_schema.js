@@ -8,6 +8,7 @@
 
 import { sanitizeMoment, MAX_MOMENTS } from './moments.js';
 import { ASSIST_MODES } from './game_settings.js';
+import { MEMORY_VERSION } from './memory.js';
 
 /** Верхняя граница любого счётчика: защита от огромных и нечисловых значений. */
 export const MAX_COUNT = 1e9;
@@ -190,3 +191,76 @@ export function sanitizeReviews(raw) {
   }
   return { value: [...byId.values()].slice(-MAX_MOMENTS), dropped };
 }
+
+// ----- Дуэль, память ботов и разделы без собственной логики -----
+
+/** Статистика Дуэли (perudo.duelStats): { games, wins, moves, dev }. */
+export function sanitizeDuelStats(raw) {
+  const out = { games: 0, wins: 0, moves: 0, dev: 0 };
+  if (isMissing(raw)) return { value: out, dropped: 0 };
+  if (!isPlainObject(raw)) return { value: out, dropped: 1 };
+  let dropped = 0;
+  for (const k of Object.keys(out)) {
+    if (raw[k] === undefined) continue;
+    const c = toCount(raw[k]);
+    if (c === null) dropped++; else out[k] = c;
+  }
+  if (out.wins > out.games) out.wins = out.games;
+  if (out.dev > out.moves) out.dev = out.moves;
+  return { value: out, dropped };
+}
+
+/** Память ботов об игроке (perudo.botMemory): { v, challenged, bluffs }, bluffs ≤ challenged. */
+export function sanitizeBotMemory(raw) {
+  const empty = () => ({ v: MEMORY_VERSION, challenged: 0, bluffs: 0 });
+  if (isMissing(raw)) return { value: empty(), dropped: 0 };
+  if (!isPlainObject(raw)) return { value: empty(), dropped: 1 };
+  const challenged = raw.challenged === undefined ? 0 : toCount(raw.challenged);
+  const bluffs = raw.bluffs === undefined ? 0 : toCount(raw.bluffs);
+  if (challenged === null || bluffs === null || bluffs > challenged) return { value: empty(), dropped: 1 };
+  return { value: { v: MEMORY_VERSION, challenged, bluffs }, dropped: 0 };
+}
+
+/** Предел размера разделов, которых приложение само не читает (символов JSON). */
+export const MAX_OPAQUE_CHARS = 200000;
+
+/** Служебные ключи убираются на любой глубине. */
+function stripForbidden(v, depth = 0) {
+  if (depth > 20) return undefined;
+  if (Array.isArray(v)) return v.map((x) => stripForbidden(x, depth + 1));
+  if (isPlainObject(v)) {
+    const o = {};
+    for (const [k, x] of Object.entries(v)) if (!FORBIDDEN_KEYS.has(k)) o[k] = stripForbidden(x, depth + 1);
+    return o;
+  }
+  return v;
+}
+
+/**
+ * Разделы perudo.tutorialProgress, perudo.characters, perudo.characterMemories: приложение их сейчас не читает,
+ * но они входят в копию. Принимается объект или список ограниченного размера, служебные ключи убираются.
+ */
+export function sanitizeOpaque(raw) {
+  if (isMissing(raw)) return { value: {}, dropped: 0 };
+  if (!isPlainObject(raw) && !Array.isArray(raw)) return { value: {}, dropped: 1 };
+  let text;
+  try { text = JSON.stringify(raw); } catch (e) { return { value: {}, dropped: 1 }; }
+  if (text.length > MAX_OPAQUE_CHARS) return { value: {}, dropped: 1 };
+  return { value: stripForbidden(JSON.parse(text)), dropped: 0 };
+}
+
+/**
+ * Проверка по ключу хранилища: ключ → функция sanitizeX. Резервная копия и облако (backup.js) используют её,
+ * так что данные из файла и данные из хранилища проходят одну и ту же проверку.
+ */
+export const SANITIZERS = Object.freeze({
+  'perudo.userProfile': sanitizeStats,
+  'perudo.trainingQueue': sanitizeTrainingQueue,
+  'perudo.games': sanitizeGames,
+  'perudo.reviews': sanitizeReviews,
+  'perudo.duelStats': sanitizeDuelStats,
+  'perudo.botMemory': sanitizeBotMemory,
+  'perudo.tutorialProgress': sanitizeOpaque,
+  'perudo.characters': sanitizeOpaque,
+  'perudo.characterMemories': sanitizeOpaque,
+});

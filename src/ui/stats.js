@@ -1,6 +1,6 @@
 // src/ui/stats.js — вкладка «Статистика»: результаты, профиль игрока, данные (облако, экспорт/импорт JSON, сброс).
 
-import { getStats, setStats, getTrainingQueue, setTrainingQueue, getGames, get, set, getDeviceState, setDeviceState } from '../storage.js';
+import { getStats, setStats, getTrainingQueue, setTrainingQueue, getGames, setDuelStats, get, set, getDeviceState, setDeviceState } from '../storage.js';
 import { buildBackup, serializeBackup, parseBackup, applyBackup } from '../backup.js';
 import { escapeHtml } from '../table.js';
 import { P, $, pct } from './common.js';
@@ -195,7 +195,7 @@ export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
     setStats({ n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, byTag: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } });
     setTrainingQueue([]);
     set('perudo.games', []);
-    set('perudo.duelStats', { games: 0, wins: 0, moves: 0, dev: 0 });
+    setDuelStats(null);
     resetDuelStats();
     renderStats();
   };

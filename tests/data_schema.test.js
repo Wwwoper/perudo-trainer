@@ -208,3 +208,61 @@ describe('sanitizeReviews', () => {
     }
   });
 });
+
+import { sanitizeDuelStats, sanitizeBotMemory, sanitizeOpaque, SANITIZERS, MAX_OPAQUE_CHARS } from '../src/data_schema.js';
+import { BACKUP_KEYS } from '../src/backup.js';
+
+describe('sanitizeDuelStats', () => {
+  it('нет данных, не объект, годные данные', () => {
+    const zero = { games: 0, wins: 0, moves: 0, dev: 0 };
+    assert.deepStrictEqual(sanitizeDuelStats(null), { value: zero, dropped: 0 });
+    assert.deepStrictEqual(sanitizeDuelStats([]), { value: zero, dropped: 1 });
+    const ok = { games: 5, wins: 2, moves: 30, dev: 4 };
+    assert.deepStrictEqual(sanitizeDuelStats(ok), { value: ok, dropped: 0 });
+  });
+  it('мусор и согласованность: побед не больше игр, отклонений не больше ходов', () => {
+    const r = sanitizeDuelStats({ games: 'x', wins: 9, moves: 3, dev: 8, evil: 1 });
+    assert.deepStrictEqual(r.value, { games: 0, wins: 0, moves: 3, dev: 3 });
+    assert.strictEqual(r.dropped, 1);
+  });
+});
+
+describe('sanitizeBotMemory', () => {
+  it('нет данных и годные данные', () => {
+    assert.deepStrictEqual(sanitizeBotMemory(undefined), { value: { v: 1, challenged: 0, bluffs: 0 }, dropped: 0 });
+    assert.deepStrictEqual(sanitizeBotMemory({ v: 1, challenged: 10, bluffs: 4 }), { value: { v: 1, challenged: 10, bluffs: 4 }, dropped: 0 });
+  });
+  it('мусор заменяется пустой памятью и считается', () => {
+    for (const bad of ['x', 5, [], { challenged: 3, bluffs: 9 }, { challenged: -1, bluffs: 0 }, { challenged: 'a' }]) {
+      assert.deepStrictEqual(sanitizeBotMemory(bad), { value: { v: 1, challenged: 0, bluffs: 0 }, dropped: 1 }, JSON.stringify(bad));
+    }
+  });
+});
+
+describe('sanitizeOpaque', () => {
+  it('объект и список проходят, служебные ключи убираются на любой глубине', () => {
+    assert.deepStrictEqual(sanitizeOpaque({ a: [1, 2] }), { value: { a: [1, 2] }, dropped: 0 });
+    assert.deepStrictEqual(sanitizeOpaque([1, 'x']), { value: [1, 'x'], dropped: 0 });
+    const r = sanitizeOpaque(JSON.parse('{"a":{"__proto__":{"x":1},"b":2}}'));
+    assert.deepStrictEqual(r.value, { a: { b: 2 } });
+    assert.strictEqual(Object.getPrototypeOf(r.value.a), Object.prototype);
+  });
+  it('нет данных, не объект, слишком большой', () => {
+    assert.deepStrictEqual(sanitizeOpaque(null), { value: {}, dropped: 0 });
+    assert.deepStrictEqual(sanitizeOpaque('x'), { value: {}, dropped: 1 });
+    assert.deepStrictEqual(sanitizeOpaque({ big: 'x'.repeat(MAX_OPAQUE_CHARS) }), { value: {}, dropped: 1 });
+  });
+});
+
+describe('SANITIZERS', () => {
+  it('все ключи — ключи резервной копии, у каждого функция с { value, dropped }', () => {
+    for (const [key, fn] of Object.entries(SANITIZERS)) {
+      assert.ok(BACKUP_KEYS.includes(key), key);
+      const r = fn(null);
+      assert.ok('value' in r && r.dropped === 0, key);
+      assert.deepStrictEqual(fn(r.value), { value: r.value, dropped: 0 }, `${key}: идемпотентность`);
+      const junk = fn('мусор');
+      assert.strictEqual(junk.dropped, 1, key);
+    }
+  });
+});

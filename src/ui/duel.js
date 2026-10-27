@@ -1,12 +1,12 @@
 // src/ui/duel.js — Дуэль 1 на 1 против решения CFR.
 
-import { get, set } from '../storage.js';
+import { getDuelStats, setDuelStats } from '../storage.js';
 import { renderDie, renderBid } from '../table.js';
 import { P, $ } from './common.js';
 
 let duelTree = null;
 let duelState = null;
-let duelStats = get('perudo.duelStats', { games: 0, wins: 0, moves: 0, dev: 0 });
+let duelStats = getDuelStats();
 
 export function setupDuel() {
   if (!P) return;
@@ -108,7 +108,7 @@ function endDuel(caller, node) {
   D.over = true;
   duelStats.games++;
   if (meWin) duelStats.wins++;
-  set('perudo.duelStats', duelStats);
+  setDuelStats(duelStats);
 
   D.result = `Проверка ${renderBid(q, f)}: вместе <b>${c}</b>. ` +
     (meWin ? '<b class="text-ok">Вы выиграли раунд 🎉</b>' : '<b class="text-bad">Вы проиграли раунд</b>') +
@@ -155,7 +155,7 @@ export function moveDuel(i) {
 
   duelStats.moves++;
   if (pr < 0.05) duelStats.dev++;
-  set('perudo.duelStats', duelStats);
+  setDuelStats(duelStats);
 
   D.fb = `Ваш ход ${act === 'D' ? '«Не верю»' : act.q + '×' + act.f}: оптимальная частота ` +
     `${(pr * 100).toFixed(0)}% ${pr < 0.05 ? '<b class="text-bad">— редкое отклонение</b>' : '<b class="text-ok">— в рамках</b>'}.`;

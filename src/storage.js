@@ -6,7 +6,7 @@ import { sanitizeCloudState } from './cloud_policy.js';
 import { sanitizeGameSettings } from './game_settings.js';
 import { makeSnapshot, restoreSnapshot } from './saved_game.js';
 import { sanitizeSoundMode } from './sound_plan.js';
-import { sanitizeStats, sanitizeTrainingQueue, sanitizeGames, sanitizeReviews } from './data_schema.js';
+import { sanitizeStats, sanitizeTrainingQueue, sanitizeGames, sanitizeReviews, sanitizeDuelStats, sanitizeBotMemory } from './data_schema.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -136,11 +136,20 @@ export function setCloudState(state) {
 
 // Что боты помнят об игроке (см. memory.js). Проверку формата делает normalizeMemory.
 export function getBotMemory() {
-  return get(KEYS.BOT_MEMORY, null);
+  return sanitizeBotMemory(get(KEYS.BOT_MEMORY, null)).value;
 }
 
 export function setBotMemory(memory) {
-  set(KEYS.BOT_MEMORY, memory);
+  set(KEYS.BOT_MEMORY, sanitizeBotMemory(memory).value);
+}
+
+/** Статистика Дуэли. */
+export function getDuelStats() {
+  return sanitizeDuelStats(get(KEYS.DUEL_STATS, null)).value;
+}
+
+export function setDuelStats(stats) {
+  set(KEYS.DUEL_STATS, sanitizeDuelStats(stats).value);
 }
 
 export function getStats() {

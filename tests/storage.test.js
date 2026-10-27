@@ -10,7 +10,7 @@ global.localStorage = {
   removeItem: key => { delete mockStorage[key]; },
 };
 
-import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer, getDeviceState, setDeviceState, getCloudState, setCloudState, getGames, addGame, setTrainingQueue } from '../src/storage.js';
+import { get, set, getSettings, setSettings, getStats, setStats, updateStats, getTrainingQueue, migrateIfNeeded, getSchemaVersion, getMoments, setMoments, getPlayer, setPlayer, getDeviceState, setDeviceState, getCloudState, setCloudState, getGames, addGame, setTrainingQueue, getBotMemory, setBotMemory, getDuelStats, setDuelStats } from '../src/storage.js';
 
 describe('get/set', () => {
   it('сохраняет и загружает', () => {
@@ -99,6 +99,23 @@ describe('очередь, история партий и моменты: пов�
   it('моменты: мусор не ломает чтение', () => {
     mockStorage['perudo.reviews'] = JSON.stringify('x');
     assert.deepStrictEqual(getMoments(), []);
+  });
+});
+
+describe('память ботов и статистика Дуэли: повреждённые данные', () => {
+  it('память: мусор даёт пустую память, запись чистая', () => {
+    mockStorage['perudo.botMemory'] = JSON.stringify({ challenged: 2, bluffs: 5 });
+    assert.deepStrictEqual(getBotMemory(), { v: 1, challenged: 0, bluffs: 0 });
+    setBotMemory({ challenged: 4, bluffs: 1, evil: 1 });
+    assert.deepStrictEqual(JSON.parse(mockStorage['perudo.botMemory']), { v: 1, challenged: 4, bluffs: 1 });
+  });
+  it('Дуэль: чтение и запись через проверку', () => {
+    mockStorage['perudo.duelStats'] = JSON.stringify({ games: 'x', wins: 3 });
+    assert.deepStrictEqual(getDuelStats(), { games: 0, wins: 0, moves: 0, dev: 0 });
+    setDuelStats({ games: 3, wins: 2, moves: 10, dev: 1 });
+    assert.deepStrictEqual(getDuelStats(), { games: 3, wins: 2, moves: 10, dev: 1 });
+    setDuelStats(null);
+    assert.deepStrictEqual(getDuelStats(), { games: 0, wins: 0, moves: 0, dev: 0 });
   });
 });
 
