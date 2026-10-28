@@ -11,9 +11,9 @@
 
 Снимки воспроизводимы: генератор случайных чисел в странице подменён на детерминированный,
 поэтому имена ботов, кубики и числа симуляции при каждом запуске одни и те же, а diff в git
-показывает только реальные изменения вида. Состояния, которые нужно собирать руками
-(Калькулятор с результатом, Тренажёр с разбором, итог партии, Дуэль, Статистика), скрипт не трогает:
-их картинки в docs/img остаются прежними.
+показывает только реальные изменения вида. Все снимки светлые, кроме двух с «dark» в имени (тёмная тема).
+Состояния, которые нужно собирать руками (Калькулятор с результатом, Тренажёр с разбором,
+итог партии, Дуэль, Статистика), скрипт не трогает: их картинки в docs/img остаются прежними.
 """
 import argparse
 import functools
@@ -41,6 +41,12 @@ SEED = """(() => {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 })();"""
+
+
+def theme_script(theme):
+    """Выбор темы до загрузки страницы: снимки не зависят от настроек системы."""
+    return ("(() => { const s = JSON.parse(localStorage.getItem('perudo.settings') || '{}'); "
+            f"s.theme = '{theme}'; localStorage.setItem('perudo.settings', JSON.stringify(s)); }})();")
 
 
 class _Quiet(http.server.SimpleHTTPRequestHandler):
@@ -105,7 +111,7 @@ def scene_trainer_settings(page, phone):
     page.wait_for_timeout(500)
 
 
-# (имя файла без .png, окно, масштаб, сцена)
+# (имя файла без .png, окно, масштаб, сцена[, тема]); тема по умолчанию светлая
 SHOTS = [
     ("settings-desktop", None, 1, scene_settings_desktop_tall),
     ("settings-phone", PHONE, 2, scene_settings),
@@ -116,16 +122,20 @@ SHOTS = [
     ("sim-phone", PHONE, 2, scene_sim),
     ("trainer-settings-desktop", DESKTOP, 1, scene_trainer_settings),
     ("trainer-settings-phone", PHONE, 2, scene_trainer_settings),
+    ("settings-dark-desktop", None, 1, scene_settings_desktop_tall, "dark"),
+    ("game-dark-phone", PHONE, 2, scene_game, "dark"),
 ]
 NAMES = [s[0] for s in SHOTS]
 
 
 def take(browser, url, name, out_dir):
     """Снимает один кадр. Возвращает путь к файлу."""
-    _, viewport, scale, scene = next(s for s in SHOTS if s[0] == name)
+    _, viewport, scale, scene, *rest = next(s for s in SHOTS if s[0] == name)
+    theme = rest[0] if rest else "light"
     ctx = browser.new_context(viewport=viewport or DESKTOP, device_scale_factor=scale)
     try:
         ctx.add_init_script(GUEST)
+        ctx.add_init_script(theme_script(theme))
         ctx.add_init_script(SEED)
         page = ctx.new_page()
         errors = []

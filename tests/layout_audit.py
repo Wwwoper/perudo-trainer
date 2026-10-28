@@ -67,6 +67,14 @@ WEAK_SEED = """() => {
 
 
 # Постоянный игрок уже выбрал режим: окно «Как вы будете играть?» не открывается.
+# Тема для замеров: PERUDO_THEME=dark|light (по умолчанию — как в приложении). Нужна, чтобы проверить вёрстку в тёмной теме.
+THEME = os.environ.get("PERUDO_THEME", "")
+THEME_SEED = (
+    "(() => { const s = JSON.parse(localStorage.getItem('perudo.settings') || '{}'); s.theme = '%s'; "
+    "localStorage.setItem('perudo.settings', JSON.stringify(s)); })();" % THEME
+    if THEME in ("dark", "light") else ""
+)
+
 GUEST_SEED = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\"}');"
 
 # Вход в облако выполнен, на устройстве есть партии, а в облаке другая копия: окно выбора и блок «Игрок» с выбором.
@@ -122,7 +130,7 @@ def measure_all(base_url, browser):
         m = fresh.evaluate(MEASURE, "#clGuest")
         rows.append({"size": f"{w}x{h}", "state": "stats: welcome dialog", **m})
         fresh.close()
-        ctx.add_init_script(GUEST_SEED)
+        ctx.add_init_script(GUEST_SEED + THEME_SEED)
         page = ctx.new_page()
         page.goto(base_url)
         page.wait_for_selector("#cRes")

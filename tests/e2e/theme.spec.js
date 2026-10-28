@@ -110,4 +110,40 @@ test.describe('Тема оформления', () => {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')));
     expect(saved.theme).toBe('system');
   });
+
+  test('в тёмной теме партия идёт без ошибок: стол, ставка, ход ботов', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await page.addInitScript(() => localStorage.setItem('perudo.settings', JSON.stringify({ theme: 'dark', botSpeed: 'fast' })));
+    await page.goto('/');
+    await ready(page);
+    await openTab(page, 'game');
+    await page.locator('#gBots').fill('2');
+    await page.locator('#gRevealOpt').setChecked(false);
+    await page.locator('#gSetup .side-start').click();
+    await expect(page.locator('#gameTable .seat').first()).toBeVisible();
+    await page.waitForFunction(() => {
+      const g = window.__perudo_v2.game;
+      return g && g.state === 'active' && g.currentPlayer === 0;
+    }, null, { timeout: 15_000 });
+    await page.locator('#gRaise').click();
+    await page.waitForFunction(() => window.__perudo_v2.game.currentPlayer === 0, null, { timeout: 15_000 });
+    expect(await theme(page)).toBe('dark');
+    expect(errors).toEqual([]);
+  });
+
+  test('цвет текста и фон меняются вместе с темой', async ({ page }) => {
+    await page.goto('/');
+    await ready(page);
+    const colors = () => page.evaluate(() => {
+      const cs = getComputedStyle(document.body);
+      return { bg: cs.backgroundColor, fg: cs.color };
+    });
+    await page.evaluate(() => window.__perudo_v2.setThemeMode('light'));
+    const light = await colors();
+    await page.evaluate(() => window.__perudo_v2.setThemeMode('dark'));
+    const dark = await colors();
+    expect(light.bg).not.toBe(dark.bg);
+    expect(light.fg).not.toBe(dark.fg);
+  });
 });
