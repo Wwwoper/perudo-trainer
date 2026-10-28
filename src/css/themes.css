@@ -1,6 +1,6 @@
 /* ===== Темы: цветовые токены =====
    Все цвета интерфейса задаются здесь переменными; в остальных CSS-файлах прописанных цветов быть не должно
-   (проверяет tests/css.test.js). Сейчас единственная тема — тёмная: её значения лежат в :root.
+   (проверяет tests/css.test.js). Значения тёмной темы лежат в :root, светлой — в блоке :root[data-theme="light"] ниже. Какая тема действует по умолчанию, решает src/theme.js.
    Токены стола (дерево, сукно, места) относятся к оформлению сцены и от темы не зависят. */
 :root {
   /* основные */
@@ -21,6 +21,8 @@
   --surface-4: #262b36;
   --surface-6: #2b313d;
   --die-hidden-line: #555;
+  --die-shadow: none;
+  --die-wild: #f5b84b;
   --paper: #f4f4f0;
   --ink: #1a1a1a;
   --surface-7: #1f2430;
@@ -63,10 +65,6 @@
   --gold-a35: rgba(255, 214, 107, .35);
   --gold-bg-2: #252219;
   --gold: #ffd66b;
-  --gold-a18: rgba(255, 214, 107, .18);
-  --gold-a30: rgba(255, 214, 107, .3);
-  --gold-a25: rgba(255, 214, 107, .25);
-  --gold-a45: rgba(255, 214, 107, .45);
 
   /* Тени и подложки */
   --black-a45: rgba(0, 0, 0, .45);
@@ -110,6 +108,78 @@
   --die-face: #fff8e9;
   --table-text-mut-3: #e5c8a6;
   --seat-text: #fff;
+  --table-gold: #ffd66b;
+  --table-gold-a18: rgba(255, 214, 107, .18);
+  --table-gold-a30: rgba(255, 214, 107, .3);
+  --table-gold-a25: rgba(255, 214, 107, .25);
+  --table-gold-a45: rgba(255, 214, 107, .45);
 
   --shadow-dock: 0 -8px 24px var(--black-a45);
+}
+
+/* ===== Светлая тема =====
+   Переопределяет только цвета интерфейса. Стол (дерево, сукно, места), тени и подложки остаются прежними.
+   Контраст пар «текст/фон» проверяет tests/contrast.test.js (WCAG AA). */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* основные */
+  --bg: #f3f5f9;
+  --card: #ffffff;
+  --fg: #1a1f2b;
+  --mut: #566074;
+  --ok: #12804a;
+  --bad: #c62f2f;
+  --acc: #2159bd;
+  --warn: #9a5b00;
+
+  /* Поверхности */
+  --surface-1: #eef1f6;
+  --surface-2: #e7ebf2;
+  --surface-3: #eaeef4;
+  --surface-4: #e9edf3;
+  --surface-5: #edf0f5;
+  --surface-6: #e4e8ef;
+  --surface-7: #f1f4f8;
+  --die-shadow: inset 0 0 0 1px #c9ced9;
+  --die-hidden-line: #5d6578;
+
+  /* Линии и полупрозрачные слои */
+  --line: #dfe3ec;
+  --line-2: #838c9e;
+  --line-3: #8c95a7;
+  --line-4: #6d768a;
+  --line-soft: rgb(20 30 60 / 10%);
+  --tint-soft: rgb(20 30 60 / 4%);
+  --tint-faint: rgb(20 30 60 / 3%);
+  --shade: rgb(20 30 60 / 8%);
+
+  /* Состояния и плашки */
+  --selected: #dbe6fb;
+  --info-bg: #e3ecfb;
+  --info-fg: #1c3a73;
+  --info-bg-2: #e6edf9;
+  --info-bg-3: #edf2fa;
+  --ok-bg: #def3e6;
+  --ok-fg: #11603a;
+  --warn-bg: #fbeed2;
+  --warn-fg: #7a4a00;
+  --bad-bg: #fbe1e4;
+  --bad-fg: #a3243f;
+  --bad-bg-2: #fbe9ec;
+  --bad-text: #b3261e;
+
+  /* Текст и метки */
+  --text-soft: #3a4357;
+  --on-accent: #ffffff;
+  --hue-pink: #b0307f;
+  --hue-violet: #6a3fc2;
+  --hue-orange: #b4500f;
+
+  /* Золото (подсветка хода и итога) */
+  --gold: #b07a00;
+  --gold-a50: rgba(176, 122, 0, .5);
+  --gold-a35: rgba(176, 122, 0, .35);
+  --gold-bg: #fff4d6;
+  --gold-bg-2: #fff8e6;
 }

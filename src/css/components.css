@@ -8,6 +8,7 @@
   gap: 2px;
   border-radius: 9px;
   background: var(--paper);
+  box-shadow: var(--die-shadow);
   vertical-align: middle;
   margin: 2px;
   flex: none;
@@ -23,7 +24,7 @@
 }
 
 .die.wild {
-  background: var(--warn);
+  background: var(--die-wild);
 }
 
 .die.s {

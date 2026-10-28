@@ -122,11 +122,11 @@ describe('память ботов и статистика Дуэли: повре
 describe('тема оформления', () => {
   it('нет выбора или мусор — режим по умолчанию', () => {
     mockStorage['perudo.settings'] = undefined;
-    assert.strictEqual(getThemeMode(), 'dark');
+    assert.strictEqual(getThemeMode(), 'light');
     mockStorage['perudo.settings'] = JSON.stringify({ theme: 'purple' });
-    assert.strictEqual(getThemeMode(), 'dark');
+    assert.strictEqual(getThemeMode(), 'light');
     mockStorage['perudo.settings'] = JSON.stringify('x');
-    assert.strictEqual(getThemeMode(), 'dark');
+    assert.strictEqual(getThemeMode(), 'light');
   });
   it('выбор сохраняется, не затирает остальные настройки; мусор не записывается', () => {
     mockStorage['perudo.settings'] = JSON.stringify({ assistMode: 'game' });
@@ -136,7 +136,7 @@ describe('тема оформления', () => {
     setThemeMode('system');
     assert.strictEqual(getThemeMode(), 'system');
     setThemeMode('мусор');
-    assert.strictEqual(JSON.parse(mockStorage['perudo.settings']).theme, 'dark');
+    assert.strictEqual(JSON.parse(mockStorage['perudo.settings']).theme, 'light');
   });
 });
 

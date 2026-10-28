@@ -24,11 +24,11 @@ describe('resolveTheme', () => {
       assert.strictEqual(resolveTheme('dark', sys), 'dark');
     }
   });
-  it('«Системная» следует системе, а без сведений о ней — тёмная', () => {
+  it('«Системная» следует системе, а без сведений о ней — светлая (как по умолчанию)', () => {
     assert.strictEqual(resolveTheme('system', true), 'dark');
     assert.strictEqual(resolveTheme('system', false), 'light');
-    assert.strictEqual(resolveTheme('system', null), 'dark');
-    assert.strictEqual(resolveTheme('system', undefined), 'dark');
+    assert.strictEqual(resolveTheme('system', null), 'light');
+    assert.strictEqual(resolveTheme('system', undefined), 'light');
   });
   it('всегда возвращает одну из двух тем, даже при мусоре', () => {
     for (const mode of [null, 'x', 7, 'system', 'light', 'dark']) {
@@ -73,8 +73,8 @@ describe('theme_boot.js: правила совпадают с theme.js', () => {
     }
     assert.strictEqual(boot({ storageBroken: true }), resolveTheme(DEFAULT_THEME_MODE, null));
   });
-  it('режим «Системная» без matchMedia — тёмная', () => {
-    assert.strictEqual(boot({ settings: withTheme('system'), noMatchMedia: true }), 'dark');
+  it('режим «Системная» без matchMedia — светлая', () => {
+    assert.strictEqual(boot({ settings: withTheme('system'), noMatchMedia: true }), 'light');
   });
   it('режим по умолчанию в скрипте тот же, что в theme.js', () => {
     assert.match(code, new RegExp(`DEFAULT_MODE = '${DEFAULT_THEME_MODE}'`));
@@ -89,7 +89,8 @@ describe('describeThemeMode', () => {
     assert.match(describeThemeMode('dark', false), /Тёмная.*всегда/);
     assert.match(describeThemeMode('system', true), /тёмная/);
     assert.match(describeThemeMode('system', false), /светлая/);
-    assert.match(describeThemeMode('system', null), /не сообщает/);
+    assert.match(describeThemeMode('system', null), /не сообщает.*светлая/);
+    assert.strictEqual(DEFAULT_THEME_MODE, 'light');
   });
   it('мусор не ломает: берётся режим по умолчанию', () => {
     assert.strictEqual(typeof describeThemeMode(undefined, undefined), 'string');

@@ -172,21 +172,21 @@
 /* Активный ход: только свечение рамки. Без scale — масштаб выносил место за сцену. */
 .seat.active {
   z-index: 5;
-  border-color: var(--gold);
+  border-color: var(--table-gold);
   background: var(--seat-active-bg);
   box-shadow:
-    0 0 0 3px var(--gold-a18),
-    0 0 18px var(--gold-a30);
+    0 0 0 3px var(--table-gold-a18),
+    0 0 18px var(--table-gold-a30);
 }
 
 /* Победитель завершённой партии */
 .seat.winner {
   z-index: 5;
-  border-color: var(--gold);
+  border-color: var(--table-gold);
   background: var(--seat-turn-bg);
   box-shadow:
-    0 0 0 3px var(--gold-a25),
-    0 0 22px var(--gold-a45);
+    0 0 0 3px var(--table-gold-a25),
+    0 0 22px var(--table-gold-a45);
 }
 
 .seat-crown {

@@ -8,7 +8,7 @@ export const THEME_MODES = Object.freeze(['system', 'light', 'dark']);
 export const THEMES = Object.freeze(['light', 'dark']);
 
 /** Режим по умолчанию, пока у игрока нет сохранённого выбора. */
-export const DEFAULT_THEME_MODE = 'dark';
+export const DEFAULT_THEME_MODE = 'light';
 
 export const THEME_LABELS = Object.freeze({ system: 'Системная', light: 'Светлая', dark: 'Тёмная' });
 
@@ -19,7 +19,7 @@ export function describeThemeMode(mode, systemPrefersDark) {
   if (m === 'dark') return 'Тёмная тема действует всегда.';
   if (systemPrefersDark === true) return 'Сейчас по настройке устройства действует тёмная тема.';
   if (systemPrefersDark === false) return 'Сейчас по настройке устройства действует светлая тема.';
-  return 'Устройство не сообщает, какая тема включена, поэтому действует тёмная.';
+  return 'Устройство не сообщает, какая тема включена, поэтому действует светлая.';
 }
 
 /** Любое значение из хранилища → допустимый режим (мусор заменяется режимом по умолчанию). */
@@ -37,5 +37,5 @@ export function resolveTheme(mode, systemPrefersDark) {
   if (m === 'light' || m === 'dark') return m;
   if (systemPrefersDark === true) return 'dark';
   if (systemPrefersDark === false) return 'light';
-  return 'dark';        // система не сообщает предпочтение
+  return 'light';       // система не сообщает предпочтение: как по умолчанию
 }

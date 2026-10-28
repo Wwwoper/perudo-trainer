@@ -6,30 +6,30 @@ const theme = (page) => page.evaluate(() => document.documentElement.getAttribut
 const ready = (page) => page.waitForFunction(() => Boolean(window.__perudo_v2));
 
 test.describe('Тема оформления', () => {
-  test('по умолчанию — тёмная, data-theme стоит на <html>', async ({ page }) => {
+  test('по умолчанию — светлая, data-theme стоит на <html>', async ({ page }) => {
     await page.goto('/');
     await ready(page);
-    expect(await theme(page)).toBe('dark');
+    expect(await theme(page)).toBe('light');
   });
 
   test('тема ставится до загрузки приложения: без модулей страница уже с нужной темой', async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('perudo.settings', JSON.stringify({ theme: 'light' })));
+    await page.addInitScript(() => localStorage.setItem('perudo.settings', JSON.stringify({ theme: 'dark' })));
     await page.route('**/src/app_v2.js', (route) => route.abort());
     await page.goto('/');
-    expect(await theme(page)).toBe('light');
+    expect(await theme(page)).toBe('dark');
   });
 
   test('выбор сохраняется между перезагрузками', async ({ page }) => {
     await page.goto('/');
     await ready(page);
-    await page.evaluate(() => window.__perudo_v2.setThemeMode('light'));
-    expect(await theme(page)).toBe('light');
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).theme)).toBe('light');
+    await page.evaluate(() => window.__perudo_v2.setThemeMode('dark'));
+    expect(await theme(page)).toBe('dark');
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).theme)).toBe('dark');
     await page.reload();
     await ready(page);
-    expect(await theme(page)).toBe('light');
-    await page.evaluate(() => window.__perudo_v2.setThemeMode('мусор'));
     expect(await theme(page)).toBe('dark');
+    await page.evaluate(() => window.__perudo_v2.setThemeMode('мусор'));
+    expect(await theme(page)).toBe('light');
   });
 
   test('«Системная» следует системной теме и реагирует на её смену без перезагрузки', async ({ page }) => {
@@ -53,6 +53,9 @@ test.describe('Тема оформления', () => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.emulateMedia({ colorScheme: 'light' });
     expect(await theme(page)).toBe('dark');
+    await page.evaluate(() => window.__perudo_v2.setThemeMode('light'));
+    await page.emulateMedia({ colorScheme: 'dark' });
+    expect(await theme(page)).toBe('light');
   });
 
   test('цвет адресной строки (theme-color) совпадает с фоном темы', async ({ page }) => {
@@ -71,7 +74,7 @@ test.describe('Тема оформления', () => {
     await page.addInitScript(() => localStorage.setItem('perudo.settings', '{oops'));
     await page.goto('/');
     await ready(page);
-    expect(await theme(page)).toBe('dark');
+    expect(await theme(page)).toBe('light');
     expect(errors).toEqual([]);
   });
 
@@ -83,11 +86,11 @@ test.describe('Тема оформления', () => {
     await page.locator('#stTabPlayer').click();
     const radios = page.locator('input[name="stTheme"]');
     await expect(radios).toHaveCount(3);
-    await expect(page.locator('input[name="stTheme"][value="dark"]')).toBeChecked();   // по умолчанию
-    await expect(page.locator('#stThemeHelp')).toContainText('Тёмная');
-    await page.locator('label:has(input[name="stTheme"][value="light"])').click();
-    expect(await theme(page)).toBe('light');
+    await expect(page.locator('input[name="stTheme"][value="light"]')).toBeChecked();   // по умолчанию
     await expect(page.locator('#stThemeHelp')).toContainText('Светлая');
+    await page.locator('label:has(input[name="stTheme"][value="dark"])').click();
+    expect(await theme(page)).toBe('dark');
+    await expect(page.locator('#stThemeHelp')).toContainText('Тёмная');
     await page.locator('label:has(input[name="stTheme"][value="system"])').click();
     await expect(page.locator('#stThemeHelp')).toContainText('светлая');                 // система светлая
     await page.emulateMedia({ colorScheme: 'dark' });

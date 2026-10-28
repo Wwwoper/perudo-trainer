@@ -2,7 +2,7 @@
 // Обычный (не модульный) скрипт в <head>: модули выполняются после первой отрисовки.
 // Правила совпадают с src/theme.js (см. tests/theme.test.js).
 function perudoBootTheme(env) {
-  var DEFAULT_MODE = 'dark';
+  var DEFAULT_MODE = 'light';
   var mode = DEFAULT_MODE;
   try {
     var raw = env.storage.getItem('perudo.settings');
@@ -11,10 +11,10 @@ function perudoBootTheme(env) {
   } catch (e) { mode = DEFAULT_MODE; }
   var theme = mode;
   if (mode === 'system') {
-    theme = 'dark';
+    theme = 'light';
     try {
       if (env.matchMedia) theme = env.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } catch (e) { theme = 'dark'; }
+    } catch (e) { theme = 'light'; }
   }
   env.root.setAttribute('data-theme', theme);
   return theme;
