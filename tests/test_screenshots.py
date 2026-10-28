@@ -47,6 +47,38 @@ class ScreenshotsTest(unittest.TestCase):
                 h = [hashlib.sha256(open(os.path.join(d, name), "rb").read()).hexdigest() for d in (a, b)]
                 self.assertEqual(h[0], h[1], f"{name}: два запуска дали разные картинки")
 
+    def test_new_scenes_are_reproducible(self):
+        """Сцены с игрой, Дуэлью и данными Статистики: два запуска дают одинаковые картинки."""
+        names = "stats-desktop,duel-phone,key-moments-desktop,reveal-phone,trainer-feedback"
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            for out in (a, b):
+                self.assertEqual(shots.main(["--only", names, "--out", out]), 0)
+            for name in names.split(","):
+                h = [hashlib.sha256(open(os.path.join(d, name + ".png"), "rb").read()).hexdigest() for d in (a, b)]
+                self.assertEqual(h[0], h[1], f"{name}: два запуска дали разные картинки")
+
+    def test_every_image_in_docs_is_made_by_the_script_and_has_a_standard_size(self):
+        """В docs/img нет ручных и лишних картинок; размеры — только стандартные."""
+        allowed = {(1280, 720), (780, 1688), (1280, 1330)}
+        files = sorted(f for f in os.listdir(os.path.join(ROOT, "docs", "img")) if f.endswith(".png"))
+        self.assertEqual(sorted(f[:-4] for f in files), sorted(shots.NAMES), "картинки docs/img и список скрипта расходятся")
+        for f in files:
+            self.assertIn(png_size(os.path.join(ROOT, "docs", "img", f)), allowed, f"{f}: нестандартный размер")
+
+    def test_images_are_optimized(self):
+        """Вес всех картинок вместе не растёт неограниченно (сейчас около 4,6 МБ: в основном дерево стола)."""
+        total = sum(os.path.getsize(os.path.join(ROOT, "docs", "img", f + ".png")) for f in shots.NAMES)
+        self.assertLess(total, 5_500_000, f"картинки весят {total} байт")
+
+    def test_png_is_optimized_without_changing_pixels(self):
+        from PIL import Image, ImageChops
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "x.png")
+            Image.effect_noise((200, 100), 40).convert("RGB").save(path)
+            before = Image.open(path).convert("RGB")
+            shots.optimize_png(path)
+            self.assertIsNone(ImageChops.difference(before, Image.open(path).convert("RGB")).getbbox())
+
 
 if __name__ == "__main__":
     unittest.main()
