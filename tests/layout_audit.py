@@ -44,9 +44,11 @@ MEASURE = """(resultSel) => {
   const visible = (e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
     return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && e.offsetParent !== null; };
   const controls = [...sec.querySelectorAll('button, input, select, summary, [role=tab]')].filter(visible);
+  // Флажки и переключатели лежат внутри крупной подписи (label), она и есть зона касания; её размер проверяют отдельные тесты
+  const boxy = (e) => e.type === 'checkbox' || e.type === 'radio';
   const small = controls.filter((e) => { const r = e.getBoundingClientRect();
-    return e.type !== 'checkbox' && (r.height < 44 || r.width < 44); }).length;
-  const font = controls.filter((e) => ['INPUT', 'SELECT'].includes(e.tagName) && e.type !== 'checkbox'
+    return !boxy(e) && (r.height < 44 || r.width < 44); }).length;
+  const font = controls.filter((e) => ['INPUT', 'SELECT'].includes(e.tagName) && !boxy(e)
     && parseFloat(getComputedStyle(e).fontSize) < 16).length;
   const res = sec.querySelector(resultSel);
   const resBottom = res && visible(res) ? Math.round(res.getBoundingClientRect().bottom - vh) : null;

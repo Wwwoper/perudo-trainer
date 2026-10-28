@@ -26,7 +26,7 @@ import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog,
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
-import { setupTheme, changeThemeMode } from './ui/theme.js';
+import { setupTheme, setupThemeControls, changeThemeMode } from './ui/theme.js';
 import { setupSound, setupSoundControls, playCue, resetSound, changeSoundMode } from './ui/sound.js';
 import { setupGameSettings, rememberGameSettings } from './ui/game_settings_ui.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal, getBotMind, setBotMind } from './ui/bot_mind.js';
@@ -96,6 +96,7 @@ function setupGame() {
   setupBotStyles();
   setupSettingsHelp();
   setupTheme();
+  setupThemeControls();
   setupSound({ getSpeed: () => $('#gSpeed')?.value || 'normal' });
   setupSoundControls();
   setupGameSettings();     // после списка стилей: возвращает настройки прошлой партии

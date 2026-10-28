@@ -796,6 +796,31 @@ class LayoutTest(unittest.TestCase):
                 self.assertLessEqual(bb["x"] + bb["width"], w + 1)
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
+    def test_theme_card_in_stats_player_tab_fits(self):
+        """«Оформление» на вкладке «Статистика» → «Игрок»: три крупных варианта помещаются, выбор работает."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "stats")
+                page.locator("#stTabPlayer").click()
+                card = page.locator(".theme-card")
+                card.scroll_into_view_if_needed()
+                self.assertEqual(page.locator("input[name=stTheme]").count(), 3)
+                for value in ("system", "light", "dark"):
+                    label = page.locator(f"label:has(input[name=stTheme][value={value}])")
+                    box = label.bounding_box()
+                    self.assertGreaterEqual(box["height"], 44, value)
+                    self.assertGreaterEqual(box["x"], 0, value)
+                    self.assertLessEqual(box["x"] + box["width"], w + 1, f"{value}: вариант шире экрана")
+                cb = card.bounding_box()
+                self.assertLessEqual(cb["x"] + cb["width"], w + 1)
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                page.locator("label:has(input[name=stTheme][value=light])").click()
+                self.assertTrue(page.locator("input[name=stTheme][value=light]").is_checked())
+
     def test_resume_card_fits_and_buttons_are_touch_sized(self):
         """После перезагрузки посреди партии: карточка «Продолжить» помещается, кнопки крупные, партия возвращается."""
         for w, h in VIEWPORTS:

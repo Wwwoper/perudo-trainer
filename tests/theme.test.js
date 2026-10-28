@@ -80,3 +80,19 @@ describe('theme_boot.js: правила совпадают с theme.js', () => {
     assert.match(code, new RegExp(`DEFAULT_MODE = '${DEFAULT_THEME_MODE}'`));
   });
 });
+
+import { describeThemeMode } from '../src/theme.js';
+
+describe('describeThemeMode', () => {
+  it('явные режимы и «Системная» с разными сведениями о системе', () => {
+    assert.match(describeThemeMode('light', true), /Светлая.*всегда/);
+    assert.match(describeThemeMode('dark', false), /Тёмная.*всегда/);
+    assert.match(describeThemeMode('system', true), /тёмная/);
+    assert.match(describeThemeMode('system', false), /светлая/);
+    assert.match(describeThemeMode('system', null), /не сообщает/);
+  });
+  it('мусор не ломает: берётся режим по умолчанию', () => {
+    assert.strictEqual(typeof describeThemeMode(undefined, undefined), 'string');
+    assert.strictEqual(describeThemeMode('x', true), describeThemeMode(DEFAULT_THEME_MODE, true));
+  });
+});

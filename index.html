@@ -704,6 +704,33 @@
         </div>
         <div id="stPanelPlayer" role="tabpanel" data-st-panel="player" aria-labelledby="stTabPlayer" hidden>
           <div id="stPlayer" class="card player-card"></div>
+          <div class="card theme-card" role="radiogroup" aria-labelledby="stThemeLabel">
+            <b class="data-title" id="stThemeLabel">Оформление</b>
+            <div class="theme-options">
+              <label class="rule-card">
+                <input type="radio" name="stTheme" value="system">
+                <span class="rule-body">
+                  <b>Системная</b>
+                  <span class="rule-text">Следует настройке устройства: светлая или тёмная, как выбрано в системе.</span>
+                </span>
+              </label>
+              <label class="rule-card">
+                <input type="radio" name="stTheme" value="light">
+                <span class="rule-body">
+                  <b>Светлая</b>
+                  <span class="rule-text">Светлый фон всегда, независимо от системы.</span>
+                </span>
+              </label>
+              <label class="rule-card">
+                <input type="radio" name="stTheme" value="dark">
+                <span class="rule-body">
+                  <b>Тёмная</b>
+                  <span class="rule-text">Тёмный фон всегда, независимо от системы.</span>
+                </span>
+              </label>
+            </div>
+            <small id="stThemeHelp" class="muted" role="status" aria-live="polite"></small>
+          </div>
         </div>
         <div id="stPanelData" role="tabpanel" data-st-panel="data" aria-labelledby="stTabData" hidden>
           <div class="card data-card">

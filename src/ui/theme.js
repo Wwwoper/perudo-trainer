@@ -1,6 +1,7 @@
 // src/ui/theme.js — тема оформления: применение к странице и реакция на смену системной темы.
 
-import { resolveTheme, sanitizeThemeMode } from '../theme.js';
+import { resolveTheme, sanitizeThemeMode, describeThemeMode } from '../theme.js';
+import { $ } from './common.js';
 import { getThemeMode, setThemeMode } from '../storage.js';
 
 let mode = 'dark';
@@ -16,7 +17,22 @@ function apply() {
   const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta && bg) meta.setAttribute('content', bg);
+  refreshThemeControls();
   return theme;
+}
+
+/** Выбор темы на вкладке «Статистика»: отмечает текущий режим и пишет пояснение. */
+function refreshThemeControls() {
+  for (const r of document.querySelectorAll('input[name="stTheme"]')) r.checked = r.value === mode;
+  const help = $('#stThemeHelp');
+  if (help) help.textContent = describeThemeMode(mode, systemPrefersDark());
+}
+
+export function setupThemeControls() {
+  for (const r of document.querySelectorAll('input[name="stTheme"]')) {
+    r.addEventListener('change', () => { if (r.checked) changeThemeMode(r.value); });
+  }
+  refreshThemeControls();
 }
 
 export function setupTheme() {

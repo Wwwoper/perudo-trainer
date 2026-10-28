@@ -12,6 +12,16 @@ export const DEFAULT_THEME_MODE = 'dark';
 
 export const THEME_LABELS = Object.freeze({ system: 'Системная', light: 'Светлая', dark: 'Тёмная' });
 
+/** Пояснение под выбором темы: что действует сейчас. */
+export function describeThemeMode(mode, systemPrefersDark) {
+  const m = sanitizeThemeMode(mode);
+  if (m === 'light') return 'Светлая тема действует всегда.';
+  if (m === 'dark') return 'Тёмная тема действует всегда.';
+  if (systemPrefersDark === true) return 'Сейчас по настройке устройства действует тёмная тема.';
+  if (systemPrefersDark === false) return 'Сейчас по настройке устройства действует светлая тема.';
+  return 'Устройство не сообщает, какая тема включена, поэтому действует тёмная.';
+}
+
 /** Любое значение из хранилища → допустимый режим (мусор заменяется режимом по умолчанию). */
 export function sanitizeThemeMode(v) {
   return THEME_MODES.includes(v) ? v : DEFAULT_THEME_MODE;

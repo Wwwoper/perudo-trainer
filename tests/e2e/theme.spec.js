@@ -1,5 +1,6 @@
 // tests/e2e/theme.spec.js — тема оформления: ранняя установка, сохранение, «Системная».
 import { test, expect } from './fixtures.js';
+import { openTab } from './helpers.js';
 
 const theme = (page) => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
 const ready = (page) => page.waitForFunction(() => Boolean(window.__perudo_v2));
@@ -72,5 +73,38 @@ test.describe('Тема оформления', () => {
     await ready(page);
     expect(await theme(page)).toBe('dark');
     expect(errors).toEqual([]);
+  });
+
+  test('выбор на вкладке «Статистика» → «Игрок»: применяется сразу, запоминается, пояснение меняется', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/');
+    await ready(page);
+    await openTab(page, 'stats');
+    await page.locator('#stTabPlayer').click();
+    const radios = page.locator('input[name="stTheme"]');
+    await expect(radios).toHaveCount(3);
+    await expect(page.locator('input[name="stTheme"][value="dark"]')).toBeChecked();   // по умолчанию
+    await expect(page.locator('#stThemeHelp')).toContainText('Тёмная');
+    await page.locator('label:has(input[name="stTheme"][value="light"])').click();
+    expect(await theme(page)).toBe('light');
+    await expect(page.locator('#stThemeHelp')).toContainText('Светлая');
+    await page.locator('label:has(input[name="stTheme"][value="system"])').click();
+    await expect(page.locator('#stThemeHelp')).toContainText('светлая');                 // система светлая
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect(page.locator('#stThemeHelp')).toContainText('тёмная');                  // пояснение следует за системой
+    expect(await theme(page)).toBe('dark');
+    await page.reload();
+    await ready(page);
+    await openTab(page, 'stats');
+    await page.locator('#stTabPlayer').click();
+    await expect(page.locator('input[name="stTheme"][value="system"]')).toBeChecked();
+  });
+
+  test('режим сохраняется в настройках, которые входят в копию', async ({ page }) => {
+    await page.goto('/');
+    await ready(page);
+    await page.evaluate(() => window.__perudo_v2.setThemeMode('system'));
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')));
+    expect(saved.theme).toBe('system');
   });
 });
