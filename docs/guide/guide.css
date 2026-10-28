@@ -1,0 +1,128 @@
+/* Руководство: стиль страниц. Цвета только через переменные из src/css/themes.css (там же светлая и тёмная темы). */
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+a { color: var(--acc); text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, summary:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; border-radius: 4px; }
+
+.guide-top {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.guide-top-in {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-brand { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--fg); text-decoration: none; }
+
+.guide-open {
+  display: inline-block;
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: 10px;
+  background: var(--acc);
+  color: var(--on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 12px; }
+h2 { font-size: 1.35rem; line-height: 1.3; margin: 36px 0 10px; }
+h3 { font-size: 1.1rem; margin: 24px 0 8px; }
+p, ul, ol { margin: 0 0 14px; }
+li { margin-bottom: 6px; }
+
+.lead { font-size: 1.1rem; color: var(--mut); }
+
+.crumbs { font-size: 0.9rem; color: var(--mut); margin-bottom: 8px; }
+.crumbs a { color: var(--mut); }
+
+.note {
+  margin: 16px 0;
+  padding: 12px 14px;
+  background: var(--info-bg);
+  color: var(--info-fg);
+  border-radius: 10px;
+}
+
+.table-wrap { overflow-x: auto; margin: 0 0 16px; }
+
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; vertical-align: top; padding: 8px 8px; border-bottom: 1px solid var(--line); }
+th { color: var(--mut); font-weight: 600; font-size: 0.9rem; }
+
+code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: 0.95em;
+}
+
+figure { margin: 18px 0; }
+figure img, .shots img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
+figcaption { margin-top: 6px; font-size: 0.9rem; color: var(--mut); }
+
+/* Два телефонных снимка рядом: каждый не шире 260 px, чтобы страница не превращалась в длинную ленту */
+.shots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 260px));
+  gap: 12px;
+  justify-content: center;
+  margin: 18px 0;
+}
+
+.toc { list-style: none; padding: 0; margin: 0 0 24px; }
+.toc li { margin: 0; border-bottom: 1px solid var(--line); }
+.toc a { display: block; padding: 14px 4px; min-height: 44px; text-decoration: none; color: var(--fg); }
+.toc a strong { display: block; color: var(--acc); }
+.toc a span { color: var(--mut); font-size: 0.95rem; }
+
+.pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.pager a {
+  display: inline-block;
+  padding: 10px 14px;
+  min-height: 44px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  text-decoration: none;
+}
+
+.pager .next { margin-left: auto; text-align: right; }
+
+.guide-foot { max-width: 760px; margin: 0 auto; padding: 0 16px 32px; color: var(--mut); font-size: 0.9rem; }
+
+@media (max-width: 480px) {
+  body { font-size: 16px; }
+  h1 { font-size: 1.6rem; }
+}
