@@ -132,6 +132,30 @@ test.describe('Тема оформления', () => {
     expect(errors).toEqual([]);
   });
 
+  test('«О приложении»: ссылки на руководство и GitHub открываются в новой вкладке, руководство подхватывает тему', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('perudo.settings', JSON.stringify({ theme: 'dark' })));
+    await page.goto('/');
+    await ready(page);
+    await openTab(page, 'stats');
+    await page.locator('#stTabPlayer').click();
+    const guide = page.locator('#stGuideLink');
+    const github = page.locator('#stGithubLink');
+    await expect(guide).toBeVisible();
+    await expect(github).toBeVisible();
+    for (const link of [guide, github]) {
+      await expect(link).toHaveAttribute('target', '_blank');
+      await expect(link).toHaveAttribute('rel', /noopener/);
+      expect((await link.boundingBox()).height).toBeGreaterThanOrEqual(43.5);
+    }
+    await expect(github).toHaveAttribute('href', 'https://github.com/Wwwoper/perudo-trainer');
+    const [popup] = await Promise.all([context.waitForEvent('page'), guide.click()]);
+    await popup.waitForLoadState();
+    await expect(popup).toHaveTitle(/руководство по Перудо/i);
+    await expect(popup.locator('h1')).toHaveText('Руководство по Перудо');
+    expect(await popup.evaluate(() => document.documentElement.getAttribute('data-theme'))).toBe('dark');   // тема общая с приложением
+    await popup.close();
+  });
+
   test('цвет текста и фон меняются вместе с темой', async ({ page }) => {
     await page.goto('/');
     await ready(page);

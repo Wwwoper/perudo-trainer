@@ -681,6 +681,40 @@
   margin-bottom: var(--space-3);
 }
 
+.about-card {
+  margin-bottom: var(--space-3);
+}
+
+/* Ссылка, оформленная как кнопка (руководство, GitHub) */
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: 8px 12px;
+  color: var(--fg);
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.link-btn:hover {
+  border-color: var(--acc);
+}
+
+.link-btn:focus-visible {
+  outline: 3px solid var(--acc);
+  outline-offset: 2px;
+}
+
+@media (hover: none) {
+  .link-btn:hover {
+    border-color: var(--line-2);
+  }
+}
+
 .theme-options {
   display: grid;
   gap: var(--space-2);
