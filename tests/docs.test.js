@@ -131,3 +131,29 @@ test('docs/dev/README.md ссылается на все страницы пап�
     assert.ok(idx.includes(`(${f})`), `оглавление docs/dev не ссылается на ${f}`);
   }
 });
+
+test('README — краткая витрина: короткий файл, ссылка на руководство на GitHub Pages, ссылки на страницы руководства ведут в существующие файлы', () => {
+  const readme = read('README.md');
+  assert.ok(readme.split('\n').length <= 100, 'README длиннее 100 строк: подробности должны жить в руководстве');
+  const PAGES = 'https://wwwoper.github.io/perudo-trainer/';
+  assert.ok(readme.includes(`${PAGES}docs/guide/`), 'нет ссылки на руководство');
+  const guideLinks = [...readme.matchAll(/\]\((https:\/\/wwwoper\.github\.io\/perudo-trainer\/[^)\s]*)\)/g)].map((m) => m[1]);
+  for (const url of guideLinks) {
+    const path = url.slice(PAGES.length);
+    const file = path === '' ? 'index.html' : path.endsWith('/') ? `${path}index.html` : path;
+    assert.ok(existsSync(join(root, file)), `ссылка ${url} ведёт на несуществующий файл ${file}`);
+  }
+  const guidePages = readdirSync(join(root, 'docs', 'guide')).filter((f) => f.endsWith('.html'));
+  for (const f of guidePages) assert.ok(readme.includes(`docs/guide/${f === 'index.html' ? '' : f}`), `README не ссылается на страницу руководства ${f}`);
+});
+
+test('README: картинки из HTML-разметки (<img>) тоже существуют и имеют alt', () => {
+  const readme = read('README.md');
+  const imgs = [...readme.matchAll(/<img\b[^>]*>/g)].map((m) => m[0]);
+  assert.ok(imgs.length >= 3);
+  for (const tag of imgs) {
+    const src = tag.match(/src="([^"]+)"/)[1];
+    assert.ok(existsSync(join(root, src)), `нет файла ${src}`);
+    assert.match(tag, /alt="[^"]{5,}"/, `у ${src} нет alt`);
+  }
+});

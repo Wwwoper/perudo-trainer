@@ -70,7 +70,7 @@ tests/
 ├── test_layout.py   тесты вёрстки в браузере (Playwright)
 ├── test_learning_layout.py  пороги вёрстки учебных вкладок
 └── layout_audit.py  измеритель вёрстки учебных вкладок (таблица показателей)
-docs/img/            скриншоты для README (game-desktop.png также служит превью ссылки); все снимает tools/screenshots.py
+docs/img/            скриншоты для README и руководства (game-desktop.png также служит превью ссылки); все снимает tools/screenshots.py
 ```
 
 ## Как устроен код

@@ -24,12 +24,17 @@ def png_size(path):
 
 
 class ScreenshotsTest(unittest.TestCase):
-    def test_names_are_unique_and_used_by_readme(self):
+    def test_names_are_unique_and_used_by_readme_or_guide(self):
+        """Каждый снимок скрипта существует и нужен: его показывает README или страница руководства."""
         self.assertEqual(len(shots.NAMES), len(set(shots.NAMES)))
-        readme = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+        text = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+        guide = os.path.join(ROOT, "docs", "guide")
+        for page in sorted(os.listdir(guide)):
+            if page.endswith(".html"):
+                text += open(os.path.join(guide, page), encoding="utf-8").read()
         for name in shots.NAMES:
             self.assertTrue(os.path.exists(os.path.join(ROOT, "docs", "img", f"{name}.png")), f"нет docs/img/{name}.png")
-            self.assertIn(f"docs/img/{name}.png", readme, f"README не использует {name}.png")
+            self.assertTrue(f"docs/img/{name}.png" in text or f"../img/{name}.png" in text, f"{name}.png нигде не используется")
 
     def test_unknown_name_is_rejected(self):
         self.assertEqual(shots.main(["--only", "нет-такого", "--out", tempfile.gettempdir()]), 2)
