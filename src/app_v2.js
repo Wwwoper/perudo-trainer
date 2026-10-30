@@ -24,6 +24,9 @@ import { revealIsOpen, presentReveal, setupReveal, hideRevealUi } from './ui/rev
 import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/result_dialog.js';
 import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
 import { buildCtx } from './moments.js';
+import { describeSituation } from './situation.js';
+import { situationLines, planLines } from './situation_text.js';
+import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/situation_card.js';
 import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
@@ -93,6 +96,8 @@ function setupGame() {
     renderPick();
   };
   if ($('#gQ')) $('#gQ').oninput = () => { renderPick(); renderPractical(); };
+  $('#gSituation')?.addEventListener('sit-plan-toggle', () => renderSituation());
+  for (const id of ['#gExplain', '#gExplainDepth']) $(id)?.addEventListener('change', () => { if (game) renderSituation(); });
   // На телефоне количество меняется кнопками «−/+»: системная клавиатура
   // закрыла бы панель действий.
   if ($('#gQ') && window.matchMedia?.('(pointer: coarse)').matches) $('#gQ').readOnly = true;
@@ -206,6 +211,7 @@ function resumeGame() {
 
   game = snap.game;
   stylesHidden = !$('#gShowStylesOpt')?.checked;
+  resetSituationCard();
   applyPlayerToGame();
   gameLogEntries = snap.log;
   reviewEntries = snap.reviews;
@@ -247,6 +253,7 @@ function startNewGame() {
   clearTimeout(botTimer);
   if (!P) return;
   stylesHidden = !$('#gShowStylesOpt')?.checked;   // решение на всю партию: переключатель посреди партии стили не раскроет
+  resetSituationCard();
 
   const botCount = botCountSetting();
   const startDice = Math.max(1, Math.min(10, +($('#gDice')?.value || 5)));
@@ -449,6 +456,48 @@ function renderAdvice() {
 /* Практический расчёт в уме — какие числа складывать, чтобы
    получить безопасную ставку. Показывается в Новичке и Тренировке,
    полностью скрыт в режиме «Игра». */
+/**
+ * Карточка «Картина стола»: на вашем ходу при объяснениях «до и после хода», не в режиме «Игра».
+ * В описание передаются только публичные данные (кубики, ставки раунда) и ваша рука — чужих рук там нет.
+ */
+function renderSituation() {
+  const el = $('#gSituation');
+  if (!el) return;
+  const me = game?.players?.[0];
+  const show = !!game && !!me && shouldShowCard({
+    assistMode: game.config.assistMode,
+    explain: $('#gExplain')?.value || 'auto',
+    active: game.state === 'active',
+    myTurn: me.alive && game.currentPlayer === 0,
+  });
+  if (!show) { renderSituationCard(el, null); return; }
+  try {
+    const sit = describeSituation({
+      publicState: {
+        players: game.players.map((p) => ({ id: p.id, dice: p.dice, alive: p.alive, style: p.style })),
+        bid: game.bid ? { playerId: game.bid.playerId, q: game.bid.q, f: game.bid.f } : null,
+        palifico: !!game.palifico,
+      },
+      myHand: me.hand.slice(),
+      bidLog: game.bidHistory.map((b) => ({ playerId: b.playerId, q: b.q, f: b.f })),
+      meSeat: 0,
+      rules: { startDice: game.config.startDice },
+      settings: { hideStyles: stylesHidden },
+      probBid: P.probBid,
+      probBidRead: P.probBidRead,
+    });
+    const names = Object.fromEntries(game.players.map((p) => [p.id, p.name]));
+    renderSituationCard(el, {
+      lines: situationLines(sit, { depth: $('#gExplainDepth')?.value || 'short', names }),
+      plan: planLines(sit),
+      key: `${game.id}:${game.round}:${game.bidHistory.length}`,
+    });
+  } catch (e) {
+    console.warn('situation card failed:', e);
+    renderSituationCard(el, null);
+  }
+}
+
 function renderPractical() {
   const el = $('#gPractical');
   if (!el) return;
@@ -609,6 +658,7 @@ function renderGame() {
   // Ручной выбор грани не должен принудительно заменяться автоматической нормализацией.
   updatePrev();
   renderAdvice();
+  renderSituation();
   renderPractical();
   renderReview();
 

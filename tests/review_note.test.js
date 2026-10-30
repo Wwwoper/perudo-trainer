@@ -27,6 +27,10 @@ describe('источник числа в «Разборе»', () => {
   it('оценка и классификация хода идут по P.probBid; probBidRead — только дополнительные данные записи', () => {
     const src = readFileSync(new URL('../src/app_v2.js', import.meta.url), 'utf8');
     assert.match(src, /const p = P\.probBid\(q, f, total, me\.hand, !game\.palifico\);\s*\n\s*const entry = addReview\('raise', p,/);
-    assert.equal((src.match(/probBidRead/g) || []).length, 1, 'probBidRead вызывается только в tableRead');
+    // probBidRead встречается дважды: в tableRead (данные записи «Разбора») и в renderSituation, где он
+    // передаётся в describeSituation только для дополнительной строки «с учётом ставок за столом».
+    const uses = src.match(/P\.probBidRead/g) || [];
+    assert.equal(uses.length, 2, 'P.probBidRead: tableRead и renderSituation');
+    assert.equal((src.match(/probBidRead: P\.probBidRead/g) || []).length, 1, 'вторая — передача в describeSituation');
   });
 });

@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { describeSituation } from '../src/situation.js';
 import {
-  situationLines, beforeMoveLines, canExplain, BANNED, EVIDENCE, LINE_TYPES, OBS_MIN, GAP_NEAR,
+  situationLines, planLines, beforeMoveLines, canExplain, BANNED, EVIDENCE, LINE_TYPES, OBS_MIN, GAP_NEAR,
 } from '../src/situation_text.js';
 import { AssistMode } from '../src/assist.js';
 
@@ -245,5 +245,45 @@ describe('режим «Игра»', () => {
     const short = beforeMoveLines(s, { mode: AssistMode.TRAINING, depth: 'short' });
     const det = beforeMoveLines(s, { mode: AssistMode.TRAINING, depth: 'detailed' });
     assert.ok(det.length > short.length);
+  });
+});
+
+describe('«Подсказка плана»', () => {
+  it('проверка: шансы, вывод по порогу и оговорка', () => {
+    const lines = planLines(sit({ log: bids(['b3', 12, 4]) }));
+    const ids = lines.map((l) => l.id);
+    assert.ok(ids.includes('plan_dudo') && ids.includes('plan_min') && ids.includes('plan_verdict') && ids.includes('plan_note'));
+    assert.match(lines.find((l) => l.id === 'plan_dudo').text, /Проверка: ставка соперника верна с шансом \d+ %, проверка сработает с шансом \d+ %/);
+    assert.match(lines.find((l) => l.id === 'plan_verdict').text, /проверка срабатывает чаще/);
+    assert.match(lines.find((l) => l.id === 'plan_note').text, /чужие кубики/);
+    assert.equal(lines.find((l) => l.id === 'plan_note').type, 'fact');
+  });
+  it('правдоподобная ставка: проверка срабатывает реже', () => {
+    const lines = planLines(sit({ log: bids(['b3', 2, 2]) }));
+    assert.match(lines.find((l) => l.id === 'plan_verdict').text, /проверка срабатывает реже/);
+  });
+  it('первый ход: «проверки» нет, есть повышения', () => {
+    const lines = planLines(sit());
+    assert.ok(!lines.some((l) => l.id === 'plan_dudo'));
+    assert.ok(lines.some((l) => l.id === 'plan_min'));
+  });
+  it('порог из настроек попадает в текст', () => {
+    const t = planLines(sit({ log: bids(['b3', 8, 4]) }), { threshold: 0.3 }).find((l) => l.id === 'plan_verdict').text;
+    assert.match(t, /30 %/);
+  });
+  it('нет вариантов — нет строк', () => {
+    assert.deepEqual(planLines({ options: [] }), []);
+  });
+  it('в плане нет запрещённых формулировок и приказов', () => {
+    let seed = 3;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    for (let i = 0; i < 200; i++) {
+      const q = 1 + Math.floor(rnd() * 12);
+      const f = 1 + Math.floor(rnd() * 6);
+      for (const l of planLines(sit({ log: bids(['b2', q, f]) }), { threshold: [0.3, 0.5, 0.7][i % 3] })) {
+        for (const re of BANNED) assert.ok(!re.test(l.text), `${l.id}: «${l.text}» совпало с ${re}`);
+        assert.ok(LINE_TYPES.includes(l.type));
+      }
+    }
   });
 });

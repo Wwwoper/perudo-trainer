@@ -209,3 +209,111 @@
     padding: 6px 10px;
   }
 }
+
+
+/* ============ Картина стола (ui/situation_card.js) ============ */
+.sit-card {
+  margin: 0 0 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--acc);
+  border-radius: 6px;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sit-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--acc);
+}
+
+.sit-body {
+  padding: 0 12px 10px;
+}
+
+.sit-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sit-line {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.sit-line:first-child {
+  border-top: 0;
+}
+
+.sit-tag {
+  align-self: start;
+  justify-self: start;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  background: var(--info-bg-2);
+  color: var(--info-fg);
+}
+
+.sit-estimate .sit-tag {
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+}
+
+.sit-hypothesis .sit-tag {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+
+.sit-hypothesis .sit-text {
+  font-style: italic;
+}
+
+.sit-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sit-plan-wrap {
+  margin-top: 8px;
+}
+
+.sit-plan-btn {
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.sit-plan {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: var(--info-bg-3);
+  border-radius: 6px;
+}
+
+.sit-plan-title {
+  font-weight: 700;
+  color: var(--acc);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+@media (max-width: 420px) {
+  .sit-line {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

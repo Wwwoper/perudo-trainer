@@ -502,6 +502,46 @@ class LayoutTest(unittest.TestCase):
         page.locator("#panSettings .side-start").click()
         self.assertEqual(page.locator("#tabCalc").get_attribute("aria-selected"), "true")
 
+    def test_situation_card_fits_and_is_tappable(self):
+        """Карточка «Картина стола» в «Расчёте»: помещается в панель, кнопки не меньше 44 px, страница не ползёт вбок."""
+        for w, h in ((360, 640), (390, 844), (844, 390), (768, 1024), (1366, 768)):
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                self.addCleanup(ctx.close)
+                page = ctx.new_page()
+                errors = []
+                page.on("pageerror", lambda e: errors.append(str(e)))
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                page.evaluate(
+                    "() => { document.querySelector('#gBots').value = 3; document.querySelector('#gRevealOpt').checked = false;"
+                    " document.querySelector('#gAssist').value = 'novice'; document.querySelector('#gExplainDepth').value = 'detailed';"
+                    " window.__perudo_v2.startNewGame(); }")
+                page.wait_for_function("document.querySelector('#gStatus')?.textContent?.includes('Ваш ход')", timeout=10000)
+                calc = page.locator('.hud-tab-btn[data-open-tab="tabCalc"]')
+                if calc.is_visible():
+                    calc.click()
+                card = page.locator("#gSitCard")
+                self.assertEqual(card.count(), 1)
+                self.assertGreaterEqual(page.locator(".sit-summary").bounding_box()["height"], 44)
+                page.locator(".sit-summary").click()
+                self.assertTrue(page.evaluate("document.querySelector('#gSitCard').open"))
+                btn = page.locator("#gPlanBtn")
+                btn.scroll_into_view_if_needed()
+                self.assertGreaterEqual(btn.bounding_box()["height"], 44)
+                btn.click()
+                self.assertEqual(page.locator("#gPlanBody").count(), 1)
+                body = page.locator(".side-body").bounding_box()
+                for sel in (".sit-card", ".sit-plan", ".sit-line >> nth=0"):
+                    box = page.locator(sel).bounding_box()
+                    self.assertGreaterEqual(box["x"], body["x"] - 1, sel)
+                    self.assertLessEqual(box["x"] + box["width"], body["x"] + body["width"] + 1, f"{sel}: шире панели")
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "горизонтальная прокрутка")
+                self.assertTrue(page.evaluate(
+                    "(() => { const b = document.querySelector('.side-body'); return b.scrollWidth <= b.clientWidth + 1; })()"),
+                    "панель прокручивается вбок")
+                self.assertEqual(errors, [])
+
     def test_resizing_to_wide_closes_open_sheet(self):
         page = self.open_game(390, 844, 3)
         page.locator('.hud-tab-btn[data-open-tab="tabLog"]').click()

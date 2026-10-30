@@ -35,7 +35,7 @@ async function setQuantity(page, n) {
  * Вскрытие кубиков по умолчанию выключаем: модальное окно блокирует клики
  * и ставит ботов на паузу (его проверяет отдельный тест).
  */
-async function startGame(page, { bots, dice, assist, calza, reveal = false, styles, level, memory, showStyles } = {}) {
+async function startGame(page, { bots, dice, assist, calza, reveal = false, styles, level, memory, showStyles, explain, explainDepth } = {}) {
   await openSettings(page);
   if (bots !== undefined) await page.locator('#gBots').fill(String(bots));
   // Стили ботов: массив id по порядку ботов ('skeptic', 'random', 'auto' …).
@@ -47,6 +47,8 @@ async function startGame(page, { bots, dice, assist, calza, reveal = false, styl
   if (level) await page.selectOption('#gBotLevel', level);
   if (memory !== undefined) await page.locator('#gMemoryOpt').setChecked(memory);
   if (showStyles !== undefined) await page.locator('#gShowStylesOpt').setChecked(showStyles);
+  if (explain) await page.selectOption('#gExplain', explain);
+  if (explainDepth) await page.selectOption('#gExplainDepth', explainDepth);
   if (calza !== undefined) await page.locator('#gCalzaOpt').setChecked(calza);
   await page.locator('#gRevealOpt').setChecked(reveal);
   // Партия создана и стол отрисован — дальше тесты работают уже с готовым столом.
@@ -535,6 +537,67 @@ test.describe('Покерный стол в партии', () => {
     const advice = page.locator('#gAdvice');
     await expect(advice).toBeVisible();
     await expect(advice).toContainText(/Лучше сказать «Не верю»|Ставка вероятна/);
+  });
+
+  test('карточка «Картина стола»: есть в «Новичке», свёрнута, план только по кнопке', async ({ page }) => {
+    await startGame(page, { bots: 2, dice: 3, assist: 'novice' });
+    await waitMyTurn(page);
+    await expect(page.locator('#gSitCard')).toHaveCount(1);
+    expect(await page.evaluate(() => document.querySelector('#gSitCard').open)).toBe(false);
+    const text = await page.locator('#gSitCard').textContent();
+    expect(text).toContain('Картина стола');
+    expect(text).toMatch(/Факт/);
+    expect(text).toMatch(/Начало партии|Середина партии|Эндшпиль|Палифико/);
+    await expect(page.locator('#gPlanBody')).toHaveCount(0);        // текста плана нет, пока кнопка не нажата
+    expect(text).not.toMatch(/Проверка:|Минимальное повышение/);
+    await page.evaluate(() => document.querySelector('#gPlanBtn').click());
+    await expect(page.locator('#gPlanBody')).toHaveCount(1);
+    await expect(page.locator('#gPlanBody')).toContainText(/Минимальное повышение|Проверка/);
+    await page.evaluate(() => document.querySelector('#gPlanBtn').click());
+    await expect(page.locator('#gPlanBody')).toHaveCount(0);
+  });
+
+  test('карточка «Картина стола»: раскрытие переживает перерисовку, а новая партия сворачивает её', async ({ page }) => {
+    await startGame(page, { bots: 2, dice: 3, assist: 'novice' });
+    await waitMyTurn(page);
+    await page.evaluate(() => { document.querySelector('.sit-summary').click(); });
+    expect(await page.evaluate(() => document.querySelector('#gSitCard').open)).toBe(true);
+    await page.evaluate(() => window.__perudo_v2.renderGame());
+    expect(await page.evaluate(() => document.querySelector('#gSitCard').open)).toBe(true);
+  });
+
+  for (const c of [
+    { assist: 'training', explain: undefined, want: 0 },
+    { assist: 'training', explain: 'after', want: 0 },
+    { assist: 'training', explain: 'full', want: 1 },
+    { assist: 'novice', explain: 'off', want: 0 },
+    { assist: 'game', explain: 'full', want: 0 },
+  ]) {
+    test(`карточка «Картина стола»: ${c.assist} + «${c.explain ?? 'авто'}» → ${c.want ? 'есть' : 'нет'}`, async ({ page }) => {
+      await startGame(page, { bots: 2, dice: 3, assist: c.assist, explain: c.explain });
+      await waitMyTurn(page);
+      await expect(page.locator('#gSitCard')).toHaveCount(c.want);
+    });
+  }
+
+  test('карточка «Картина стола» не зависит от чужих кубиков', async ({ page }) => {
+    await startGame(page, { bots: 3, dice: 4, assist: 'novice', explainDepth: 'detailed' });
+    await waitMyTurn(page);
+    await page.evaluate(() => document.querySelector('.sit-summary').click());
+    const read = () => page.evaluate(() => document.querySelector('#gSituation').textContent.replace(/\s+/g, ' ').trim());
+    const before = await read();
+    await page.evaluate(() => {
+      const g = window.__perudo_v2.game;
+      for (const p of g.players.slice(1)) p.hand = p.hand.map(() => 6);
+      window.__perudo_v2.renderGame();
+    });
+    expect(await read()).toBe(before);
+    await page.evaluate(() => {
+      const g = window.__perudo_v2.game;
+      for (const p of g.players.slice(1)) p.hand = p.hand.map(() => 1);
+      window.__perudo_v2.renderGame();
+    });
+    expect(await read()).toBe(before);
   });
 
   test('режим «Игра» не показывает прямые советы', async ({ page }) => {

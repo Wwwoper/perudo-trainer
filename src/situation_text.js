@@ -159,3 +159,41 @@ export function beforeMoveLines(sit, { mode, finished = false, depth, names } = 
   if (!canExplain({ mode, finished })) return null;
   return situationLines(sit, { depth, names });
 }
+
+const pct = (x) => `${Math.round(x * 100)} %`;
+const bidText = (o) => `${o.q}×${o.f}`;
+
+/**
+ * «Подсказка плана»: варианты хода с шансами и нейтральный вывод по расчёту. Показывается только по кнопке.
+ * Без приказов: это сравнение шансов по вашим кубикам, а не совет, как играть против живых людей.
+ * @param {object} sit результат describeSituation
+ * @param {{threshold?: number}} [opts]
+ * @returns {{id:string, type:string, text:string}[]}
+ */
+export function planLines(sit, { threshold = 0.5 } = {}) {
+  const out = [];
+  const thr = Number.isFinite(threshold) ? threshold : 0.5;
+  const dudo = sit.options.find((o) => o.type === 'dudo');
+  const min = sit.options.find((o) => o.type === 'minRaise');
+  const safe = sit.options.find((o) => o.type === 'safeRaise') || (min && min.isBestSafe ? min : null);
+
+  if (dudo) {
+    out.push(line('plan_dudo', 'estimate',
+      `Проверка: ставка соперника верна с шансом ${pct(dudo.p)}, проверка сработает с шансом ${pct(dudo.success)}.`));
+  }
+  if (min) {
+    out.push(line('plan_min', 'estimate', `Минимальное повышение ${bidText(min)}: верно с шансом ${pct(min.p)}.`));
+  }
+  if (safe && safe !== min) {
+    out.push(line('plan_safe', 'estimate', `Самая сильная ставка с шансом не ниже ${pct(thr)}: ${bidText(safe)} (${pct(safe.p)}).`));
+  }
+  if (dudo) {
+    out.push(line('plan_verdict', 'estimate', dudo.meetsThreshold
+      ? `По расчёту ставка соперника верна реже порога ${pct(thr)}, поэтому проверка срабатывает чаще, чем нет.`
+      : `По расчёту ставка соперника верна не реже порога ${pct(thr)}, поэтому проверка срабатывает реже, чем нет.`));
+  } else if (min && !min.meetsThreshold && !safe) {
+    out.push(line('plan_verdict', 'estimate', `По расчёту допустимые ставки ниже порога ${pct(thr)}: любая ставка здесь рискованна.`));
+  }
+  if (out.length) out.push(line('plan_note', 'fact', 'Это расчёт по вашим кубикам: чужие кубики он не знает, а соперники могут ходить по-своему.'));
+  return out;
+}

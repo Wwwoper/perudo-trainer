@@ -1,9 +1,13 @@
 // tests/e2e/helpers.js
+import { expect } from '@playwright/test';
 // Общие помощники e2e: на телефоне лента разделов спрятана за кнопкой ☰ (партия и учебные вкладки).
 export async function openTab(page, name) {
   const btn = page.locator(`.tab-btn[data-t="${name}"]`);
+  const menu = page.locator('.hud-menu:visible');
+  // Страница могла только что перерисоваться (вход, перезагрузка): ждём, пока появится кнопка раздела или кнопка ☰.
+  await expect.poll(async () => (await btn.isVisible()) || (await menu.count()) > 0).toBe(true);
   if (!(await btn.isVisible())) {
-    await page.locator('.hud-menu:visible').click();
+    await menu.click();
   }
   await btn.click();
 }
