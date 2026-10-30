@@ -75,7 +75,7 @@ describe('sanitizeMoment', () => {
   it('принимает корректный момент и возвращает копию', () => {
     const src = mk('a');
     const m = sanitizeMoment(src);
-    assert.deepEqual(m, src);
+    assert.deepEqual(m, { ...src, ctx: null });      // контекст стола необязателен: в старых записях его нет
     assert.notEqual(m.h, src.h);
   });
   it('лишние поля отбрасываются, неизвестные метки тоже', () => {

@@ -9,7 +9,13 @@
 //     bid: ставка соперника перед вашим ходом или null (вы ходили первым в раунде),
 //     played: ваша ставка (только для kind 'raise') или null,
 //     wild: единицы — джокеры?, p: шанс ставки (0…1), code: 'good'|'meh'|'bad',
-//     lostDie: потеряли ли вы кубик в этом раунде, tags: [метки] }
+//     lostDie: потеряли ли вы кубик в этом раунде, tags: [метки],
+//     ctx: контекст стола в момент решения или null (в старых записях его нет) }
+//
+// Контекст (ctx) — то, что игрок видел за столом: { me, dice, styles, bids }.
+//   me — ваше место среди живых игроков (0…), dice — кубики каждого живого игрока по местам,
+//   styles — стили игроков по местам (null у вас и у тех, чей стиль неизвестен),
+//   bids — ставки этого раунда до вашего хода (последние CTX_MAX_BIDS): { s: место автора, q, f }.
 
 export const MOMENT_KINDS = ['raise', 'dudo', 'calza'];
 export const MOMENT_CODES = ['good', 'meh', 'bad'];
@@ -25,6 +31,8 @@ export const KEY_MOMENTS_PER_GAME = 3;
 const ENDGAME_TOTAL = 6;      // на столе не больше стольких кубиков — эндшпиль
 const BIG_TABLE_TOTAL = 25;   // на столе не меньше стольких — большой стол
 const MAX_DICE = 100;         // защита от мусора в хранилище
+export const CTX_MAX_BIDS = 12;   // сколько последних ставок раунда хранится в контексте
+const CTX_MAX_PLAYERS = 6;        // не больше игроков за столом (человек и до пяти ботов)
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isInt = (v) => Number.isInteger(v);
@@ -34,6 +42,46 @@ const isFace = (v) => isInt(v) && v >= 1 && v <= 6;
 function cleanBid(raw) {
   if (!isObject(raw) || !isInt(raw.q) || raw.q < 1 || raw.q > MAX_DICE || !isFace(raw.f)) return null;
   return { q: raw.q, f: raw.f };
+}
+
+/** Проверка контекста стола; для непригодного контекста возвращает null (сам момент остаётся). */
+export function sanitizeCtx(raw, { n, myDice } = {}) {
+  if (!isObject(raw)) return null;
+  const { me, dice, styles, bids } = raw;
+  if (!Array.isArray(dice) || dice.length < 2 || dice.length > CTX_MAX_PLAYERS) return null;
+  if (!dice.every((d) => isInt(d) && d >= 1 && d <= MAX_DICE)) return null;
+  if (!isInt(me) || me < 0 || me >= dice.length) return null;
+  if (isInt(n) && dice.reduce((a, b) => a + b, 0) !== n) return null;
+  if (isInt(myDice) && dice[me] !== myDice) return null;
+  if (!Array.isArray(styles) || styles.length !== dice.length) return null;
+  const cleanStyles = styles.map((st, i) => (i !== me && typeof st === 'string' && /^[a-z]{1,20}$/.test(st) ? st : null));
+  if (!Array.isArray(bids)) return null;
+  const cleanBids = [];
+  for (const b of bids) {
+    const bid = cleanBid(b);
+    if (!bid || !isInt(b.s) || b.s < 0 || b.s >= dice.length) return null;
+    cleanBids.push({ s: b.s, q: bid.q, f: bid.f });
+  }
+  return { me, dice: dice.slice(), styles: cleanStyles, bids: cleanBids.slice(-CTX_MAX_BIDS) };
+}
+
+/**
+ * Контекст стола из состояния игры.
+ * @param {{players: {id:string, dice:number, alive:boolean, style?:string}[],
+ *          bidHistory: {playerId:string, q:number, f:number}[], meId: string}} s
+ * @returns {object|null} контекст или null, если данные непригодны
+ */
+export function buildCtx({ players, bidHistory, meId }) {
+  if (!Array.isArray(players)) return null;
+  const alive = players.filter((p) => p && p.alive !== false);
+  const me = alive.findIndex((p) => p.id === meId);
+  if (me < 0) return null;
+  const seat = new Map(alive.map((p, i) => [p.id, i]));
+  const bids = [];
+  for (const b of Array.isArray(bidHistory) ? bidHistory : []) {
+    if (b && seat.has(b.playerId)) bids.push({ s: seat.get(b.playerId), q: b.q, f: b.f });
+  }
+  return sanitizeCtx({ me, dice: alive.map((p) => p.dice), styles: alive.map((p) => p.style ?? null), bids });
 }
 
 /**
@@ -56,7 +104,7 @@ export function decisionTags({ kind, total, myDice, face, palifico }) {
  * Собирает момент из данных решения (проверку и приведение делает sanitizeMoment).
  * Возвращает null, если данные непригодны.
  */
-export function buildMoment({ id, ts, round, kind, total, hand, bid = null, played = null, palifico = false, p, code, lostDie = false }) {
+export function buildMoment({ id, ts, round, kind, total, hand, bid = null, played = null, palifico = false, p, code, lostDie = false, ctx = null }) {
   const face = kind === 'raise' ? played?.f : bid?.f;
   return sanitizeMoment({
     id, ts, round, kind,
@@ -66,7 +114,7 @@ export function buildMoment({ id, ts, round, kind, total, hand, bid = null, play
     bid,
     played: kind === 'raise' ? played : null,
     wild: !palifico,
-    p, code, lostDie,
+    p, code, lostDie, ctx,
     tags: decisionTags({ kind, total, myDice: Array.isArray(hand) ? hand.length : 0, face, palifico }),
   });
 }
@@ -104,6 +152,7 @@ export function sanitizeMoment(raw) {
     n: raw.n, h: raw.h.slice(), myDice: raw.myDice,
     bid, played, wild: raw.wild, p: raw.p, code: raw.code,
     lostDie: raw.lostDie === true, tags,
+    ctx: sanitizeCtx(raw.ctx, { n: raw.n, myDice: raw.myDice }),
   };
 }
 
@@ -135,6 +184,14 @@ export function momentMode(m) {
   if (m.myDice <= 2) return 'solo';
   if (m.n >= BIG_TABLE_TOTAL) return 'big';
   return 'classic';
+}
+
+/** Глубокая копия момента (кубики, метки и контекст). */
+export function cloneMoment(m) {
+  return {
+    ...m, h: m.h.slice(), tags: m.tags.slice(),
+    ctx: m.ctx ? { ...m.ctx, dice: m.ctx.dice.slice(), styles: m.ctx.styles.slice(), bids: m.ctx.bids.map((b) => ({ ...b })) } : null,
+  };
 }
 
 /** Момент можно разыграть в тренажёре: есть ставка соперника, которую нужно оценить. */

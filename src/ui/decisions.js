@@ -8,7 +8,7 @@
 // Здесь только запись: правила игры и подсказки она не меняет.
 
 import { getMoments, setMoments, updateStats } from '../storage.js';
-import { buildMoment, pickKeyMoments, appendMoments } from '../moments.js';
+import { buildMoment, pickKeyMoments, appendMoments, cloneMoment } from '../moments.js';
 
 let gameId = '';
 let seq = 0;
@@ -24,7 +24,7 @@ export function startDecisionLog(id) {
 /** Партия продолжается после перезагрузки: возвращаем решения, записанные до неё (уже проверенные). */
 export function restoreDecisionLog(id, list) {
   gameId = String(id ?? '');
-  moments = Array.isArray(list) ? list.map((m) => ({ ...m, h: m.h.slice(), tags: m.tags.slice() })) : [];
+  moments = Array.isArray(list) ? list.map(cloneMoment) : [];
   seq = moments.length;
 }
 
@@ -38,6 +38,7 @@ export function recordDecision(d) {
     id: `${gameId}-${seq + 1}`, ts: Date.now(),
     round: d.round, kind: d.kind, total: d.total, hand: Array.isArray(d.hand) ? d.hand.slice() : d.hand,
     bid: d.bid ?? null, played: d.played ?? null, palifico: !!d.palifico, p: d.p, code: d.code,
+    ctx: d.ctx ?? null,
   });
   if (!m) return null;
   seq += 1;
@@ -72,5 +73,5 @@ export function saveKeyMoments() {
 
 /** Решения текущей партии (копия) — для проверок и для итога партии. */
 export function currentDecisions() {
-  return moments.map((m) => ({ ...m, h: m.h.slice(), tags: m.tags.slice() }));
+  return moments.map(cloneMoment);
 }

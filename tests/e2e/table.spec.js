@@ -661,6 +661,10 @@ test.describe('Покерный стол в партии', () => {
     const [m] = await readJson(page, 'perudo.reviews');
     expect(m).toMatchObject({ kind: 'raise', code: 'bad', lostDie: true, n: 2, myDice: 1, bid: null, played: { q: 2, f: 6 }, wild: true });
     expect(m.tags).toEqual(expect.arrayContaining(['raise', 'endgame', 'lastDie']));
+    // контекст стола: вы и бот по одному кубику, ставок до вашего хода не было, стиль бота записан
+    expect(m.ctx).toMatchObject({ me: 0, dice: [1, 1], bids: [] });
+    expect(m.ctx.styles[0]).toBeNull();
+    expect(m.ctx.styles[1]).toMatch(/^[a-z]+$/);
 
     const profile = await readJson(page, 'perudo.userProfile');
     expect(profile.byTag.raise).toEqual({ n: 1, good: 0 });

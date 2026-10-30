@@ -23,6 +23,7 @@ import { sideApi, setupSidePanel } from './ui/side_panel.js';
 import { revealIsOpen, presentReveal, setupReveal, hideRevealUi } from './ui/reveal_dialog.js';
 import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/result_dialog.js';
 import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
+import { buildCtx } from './moments.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
@@ -694,6 +695,7 @@ function decisionContext(total, me) {
     hand: me.hand.slice(),
     bid: game.bid ? { q: game.bid.q, f: game.bid.f } : null,
     palifico: !!game.palifico,
+    ctx: buildCtx({ players: game.players, bidHistory: game.bidHistory, meId: 'human' }),
   };
 }
 
