@@ -7,6 +7,7 @@ Python-порты логики приложения и скрипт скринш
 | `emulator.py` | партии между ботами: движок, Палифико, Calza, стили и уровни ботов | `python3 tools/emulator.py --games 300 --quiet` |
 | `trainer_emulator.py` | «Тренажёр»: ситуации, проверка ставки по правилам, оценка, очередь повторов | `python3 tools/trainer_emulator.py --shows 300` (`--repro` — случай из отчёта) |
 | `drill_emulator.py` | «Упражнения»: задачи A и B, ответы «учеников», учёт попыток | `python3 tools/drill_emulator.py --tasks 300` |
+| `strategy_evidence.py` | факты о ботах для текстов тренера: доля ложных ставок по стилям, «прыжки», проверки, первая ставка; пишет `docs/dev/strategy-evidence.md` | `python3 tools/strategy_evidence.py --games 1500 --seed 1 --out docs/dev/strategy-evidence.md` |
 | `screenshots.py` | снимки экрана для README (Playwright, воспроизводимые) | `python3 tools/screenshots.py` (`--list`, `--only имя`, `--out папка`) |
 | `sound_lab.html` | лаборатория звуков: правка нот, проверка, прослушивание, «Сыграть раунд», копирование рецепта в `src/sound_recipes.js` | открыть `/tools/sound_lab.html` на статическом сервере |
 | `emu_cases.py` | случайные входы и ответы эмуляторов для теста `tests/emulators.test.js` | — |
