@@ -35,7 +35,7 @@ async function setQuantity(page, n) {
  * Вскрытие кубиков по умолчанию выключаем: модальное окно блокирует клики
  * и ставит ботов на паузу (его проверяет отдельный тест).
  */
-async function startGame(page, { bots, dice, assist, calza, reveal = false, styles, level, memory } = {}) {
+async function startGame(page, { bots, dice, assist, calza, reveal = false, styles, level, memory, showStyles } = {}) {
   await openSettings(page);
   if (bots !== undefined) await page.locator('#gBots').fill(String(bots));
   // Стили ботов: массив id по порядку ботов ('skeptic', 'random', 'auto' …).
@@ -46,6 +46,7 @@ async function startGame(page, { bots, dice, assist, calza, reveal = false, styl
   if (assist) await page.selectOption('#gAssist', assist);
   if (level) await page.selectOption('#gBotLevel', level);
   if (memory !== undefined) await page.locator('#gMemoryOpt').setChecked(memory);
+  if (showStyles !== undefined) await page.locator('#gShowStylesOpt').setChecked(showStyles);
   if (calza !== undefined) await page.locator('#gCalzaOpt').setChecked(calza);
   await page.locator('#gRevealOpt').setChecked(reveal);
   // Партия создана и стол отрисован — дальше тесты работают уже с готовым столом.
@@ -543,10 +544,44 @@ test.describe('Покерный стол в партии', () => {
   });
 
   test('стиль каждого бота выбирается в настройках и виден за столом', async ({ page }) => {
-    await startGame(page, { bots: 2, dice: 3, styles: ['skeptic', 'aggressor'] });
+    await startGame(page, { bots: 2, dice: 3, styles: ['skeptic', 'aggressor'], showStyles: true });
     const styles = await page.evaluate(() => window.__perudo_v2.game.players.slice(1).map((p) => p.style));
     expect(styles).toEqual(['skeptic', 'aggressor']);
     await expect(page.locator('#gameTable .seat-style')).toHaveText(['🧐', '🔥']);
+  });
+
+  test('стили ботов скрыты по умолчанию: значков нет, настройка запомнена', async ({ page }) => {
+    await expect(page.locator('#gShowStylesOpt')).not.toBeChecked();
+    await startGame(page, { bots: 2, dice: 3, styles: ['skeptic', 'aggressor'] });
+    await expect(page.locator('#gameTable .seat')).toHaveCount(3);
+    await expect(page.locator('#gameTable .seat-style')).toHaveCount(0);
+    expect(await page.locator('#gameTable').innerHTML()).not.toMatch(/🧐|🔥|🛡|🎭|🧠/u);
+    expect((await lastGame(page)).hideStyles).toBe(true);
+  });
+
+  test('показ стилей включается переключателем, запоминается и возвращается после перезагрузки', async ({ page }) => {
+    await startGame(page, { bots: 2, dice: 3, styles: ['skeptic', 'aggressor'], showStyles: true });
+    expect((await lastGame(page)).hideStyles).toBe(false);
+    await reloadToSetup(page);
+    await expect(page.locator('#gShowStylesOpt')).toBeChecked();
+    await expect(page.locator('#gSettingsReset')).toBeVisible();
+    await page.locator('#gSettingsReset').click();
+    await expect(page.locator('#gShowStylesOpt')).not.toBeChecked();
+  });
+
+  test('переключатель посреди партии стили не раскрывает, а в конце партии они появляются', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 1, styles: ['skeptic'] });
+    await waitMyTurn(page);
+    await openSettings(page);
+    await page.locator('#gShowStylesOpt').setChecked(true);
+    await page.keyboard.press('Escape');   // на телефоне закрывает шторку настроек
+    await page.evaluate(() => { const g = window.__perudo_v2.game; g.players[0].hand = [2]; g.players[1].hand = [2]; });
+    await expect(page.locator('#gameTable .seat-style')).toHaveCount(0);
+    await setQuantity(page, 2);
+    await page.locator('#gPick button').nth(5).click();
+    await page.locator('#gRaise').click();
+    await expect.poll(() => page.evaluate(() => window.__perudo_v2.game.state), { timeout: 10_000 }).toBe('finished');
+    await expect(page.locator('#gameTable .seat-style')).toHaveText(['🧐']);
   });
 
   test('по умолчанию стили раздаются по кругу: осторожный, блефующий, умный', async ({ page }) => {

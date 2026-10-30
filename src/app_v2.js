@@ -10,7 +10,7 @@ import { describeRoundEvents } from './game_log.js';
 import { updateStats, addGame, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
 import { describeSnapshot } from './saved_game.js';
 import { BOT_STYLES, generateCharacters, botDecide } from './bots.js';
-import { renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
+import { visibleStyle, renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
 import { buildGameResult, resultHeadline } from './result.js';
 import { P, $, $$, pct, flash } from './ui/common.js';
 import { setupTabs } from './ui/tabs.js';
@@ -51,6 +51,8 @@ let lastKeyMoments = [];        // ключевые моменты послед�
 // ================= Партия (движок + стол) =================
 
 let game = null;
+/** Стили ботов скрыты в текущей партии (запоминается при её начале). */
+let stylesHidden = true;
 let gameLogEntries = [];
 let reviewEntries = [];
 let selectedFace = 2;
@@ -203,6 +205,7 @@ function resumeGame() {
   savedGame = null;
 
   game = snap.game;
+  stylesHidden = !$('#gShowStylesOpt')?.checked;
   applyPlayerToGame();
   gameLogEntries = snap.log;
   reviewEntries = snap.reviews;
@@ -243,6 +246,7 @@ function totalDice() {
 function startNewGame() {
   clearTimeout(botTimer);
   if (!P) return;
+  stylesHidden = !$('#gShowStylesOpt')?.checked;   // решение на всю партию: переключатель посреди партии стили не раскроет
 
   const botCount = botCountSetting();
   const startDice = Math.max(1, Math.min(10, +($('#gDice')?.value || 5)));
@@ -400,7 +404,7 @@ function gameViewForRender() {
       isHuman: i === 0,
       isBot: p.isBot,
       hand: p.hand || [],
-      style: p.style,
+      style: visibleStyle(p.style, stylesHidden, game.state === 'finished'),
       avatar: p.avatar,
       gender: p.gender,
       lastBid: (game.bid && game.bid.playerId === p.id)

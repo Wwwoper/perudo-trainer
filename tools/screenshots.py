@@ -118,7 +118,8 @@ def new_game(page, bots, dice, reveal=False):
     open_tab(page, "game")
     page.evaluate(
         "([b, d, r]) => { document.querySelector('#gBots').value = b; document.querySelector('#gDice').value = d;"
-        " document.querySelector('#gRevealOpt').checked = r; window.__perudo_v2.startNewGame(); }",
+        " document.querySelector('#gRevealOpt').checked = r; document.querySelector('#gShowStylesOpt').checked = true;"
+        " window.__perudo_v2.startNewGame(); }",
         [str(bots), str(dice), reveal])
     page.wait_for_selector(".seat")
     wait_my_turn(page)

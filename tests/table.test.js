@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  seatLayouts, seatLabel, renderPlayerAvatar, renderBid, renderSeat, renderTable, generateDefaultAvatar,
+  visibleStyle, seatLayouts, seatLabel, renderPlayerAvatar, renderBid, renderSeat, renderTable, generateDefaultAvatar,
 } from '../src/table.js';
 import { generateAvatar } from '../src/bots.js';
 
@@ -157,4 +157,25 @@ test('renderPlayerAvatar: эмодзи, снимок, подделка и отс
     { type: 'photo', value: 'javascript:alert(1)' }, { type: 'photo', value: 'data:image/jpeg;base64,AA"onerror="x' }]) {
     assert.equal(renderPlayerAvatar(bad), '', JSON.stringify(bad));
   }
+});
+
+test('visibleStyle: при скрытых стилях стиль виден только в конце партии', () => {
+  assert.equal(visibleStyle('smart', true, false), null);
+  assert.equal(visibleStyle('smart', true, true), 'smart');
+  assert.equal(visibleStyle('smart', false, false), 'smart');
+  assert.equal(visibleStyle('smart', false, true), 'smart');
+});
+
+test('visibleStyle: пустое и не строка — нет стиля', () => {
+  for (const bad of [undefined, null, '', 5, {}, []]) {
+    assert.equal(visibleStyle(bad, false, true), null);
+    assert.equal(visibleStyle(bad, true, false), null);
+  }
+});
+
+test('renderSeat: без стиля значка нет, со стилем он есть', () => {
+  const p = { id: 'a', name: 'A', alive: true, dice: 1 };
+  const layout = { d: [50, 50], m: [50, 50] };
+  assert.ok(!renderSeat(p, layout, false, null).includes('seat-style'));
+  assert.ok(renderSeat(p, layout, false, 'smart').includes('seat-style'));
 });

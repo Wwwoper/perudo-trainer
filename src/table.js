@@ -103,6 +103,16 @@ export function renderBid(q, f, cls = '') {
   return `<span class="chip ${cls}">${q}<em>×</em>${renderDie(f, dieSize)}</span>`;
 }
 
+/**
+ * Стиль бота, который можно показать на экране. При скрытых стилях он остаётся тайной до конца партии:
+ * за настоящим столом вы тоже не знаете, как играет сосед.
+ * @returns {string|null}
+ */
+export function visibleStyle(style, hideStyles, finished) {
+  if (typeof style !== 'string' || !style) return null;
+  return hideStyles && !finished ? null : style;
+}
+
 export function renderSeat(player, layout, isActive, style = null, isWinner = false) {
   if (!layout) return '';
 

@@ -66,3 +66,11 @@ describe('пояснения к объяснениям', () => {
     assert.ok(!/после окончания партии/.test(explainHelpText('training', 'full')));
   });
 });
+
+describe('переключатель «Показывать стили ботов»', () => {
+  it('есть в форме, по умолчанию выключен, с пояснением', () => {
+    assert.match(html, /<input id="gShowStylesOpt" type="checkbox">/);
+    assert.ok(!/id="gShowStylesOpt"[^>]*checked/.test(html));
+    assert.match(html, /id="gShowStylesInfo"[^>]*>[^<]*раскроются в конце партии/);
+  });
+});
