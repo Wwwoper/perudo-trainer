@@ -28,7 +28,7 @@ export const MAX_MOMENTS = 50;
 /** Сколько моментов отбирается из одной партии. */
 export const KEY_MOMENTS_PER_GAME = 3;
 
-const ENDGAME_TOTAL = 6;      // на столе не больше стольких кубиков — эндшпиль
+export const ENDGAME_TOTAL = 6;      // на столе не больше стольких кубиков — эндшпиль
 const BIG_TABLE_TOTAL = 25;   // на столе не меньше стольких — большой стол
 const MAX_DICE = 100;         // защита от мусора в хранилище
 export const CTX_MAX_BIDS = 12;   // сколько последних ставок раунда хранится в контексте
