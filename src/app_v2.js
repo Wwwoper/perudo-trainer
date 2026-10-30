@@ -24,6 +24,7 @@ import { revealIsOpen, presentReveal, setupReveal, hideRevealUi } from './ui/rev
 import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/result_dialog.js';
 import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
 import { buildCtx } from './moments.js';
+import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
@@ -210,6 +211,7 @@ function resumeGame() {
   hideRevealUi();
   hideResultUi();
   restoreDecisionLog(game.id, snap.moments);
+  startRoundsLog(game.id);
   lastKeyMoments = [];
   lastSavedKey = '';
   resetSound();
@@ -294,6 +296,7 @@ function startNewGame() {
 
   startGame(game);
   startDecisionLog(game.id);
+  startRoundsLog(game.id);
   lastKeyMoments = [];
 
   addGameLog('info', `Партия началась: ${botCount + 1} игроков, по ${startDice} кубиков.` +
@@ -744,9 +747,11 @@ function onPlayerDudo() {
   const entry = addReview('dudo', p,
     `вы не поверили ${renderBid(q, f)} — шанс, что ставка верна: ${pct(p)}.`, tableRead(q, f, me));
   const before = decisionContext(total, me);
+  const roundSnap = snapRound(game);
 
   const res = applyAction(game, 'human', { type: 'dudo' });
   if (!res.success) { reviewEntries.pop(); return; }
+  recordRound(roundSnap, res.events);
   cueResolution('dudo', res.events);
   recordDecision({ ...before, kind: 'dudo', p, code: entry.v.code });
   markRoundOutcome(res.events, before.round);
@@ -784,9 +789,11 @@ function onPlayerCalza() {
   const entry = addReview('calza', pe,
     `вы сказали Calza на ${renderBid(q, f)} — шанс точного совпадения ${pct(pe)}.`);
   const before = decisionContext(total, me);
+  const roundSnap = snapRound(game);
 
   const res = applyAction(game, 'human', { type: 'calza' });
   if (!res.success) { reviewEntries.pop(); return; }
+  recordRound(roundSnap, res.events);
   cueResolution('calza', res.events);
   recordDecision({ ...before, kind: 'calza', p: pe, code: entry.v.code });
   markRoundOutcome(res.events, before.round);
@@ -867,6 +874,7 @@ function runBotTurn() {
   else if (decision.type === 'calza') action = { type: 'calza' };
   else action = { type: 'dudo' };
 
+  const roundSnap = snapRound(game);
   let res = applyAction(game, bot.id, action);
 
   if (!res.success) {
@@ -882,7 +890,7 @@ function runBotTurn() {
     action = fallback;
     res = res2;     // дальше нужны события сработавшего хода, а не отклонённого
   }
-  if (action.type !== 'raise') markRoundOutcome(res.events, roundBefore);
+  if (action.type !== 'raise') { markRoundOutcome(res.events, roundBefore); recordRound(roundSnap, res.events); }
   if (action.type === 'raise') playCue('bidBot'); else cueResolution(action.type, res.events);
 
   let desc;

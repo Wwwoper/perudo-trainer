@@ -7,7 +7,7 @@ import { sanitizeGameSettings } from './game_settings.js';
 import { makeSnapshot, restoreSnapshot } from './saved_game.js';
 import { sanitizeSoundMode } from './sound_plan.js';
 import { sanitizeThemeMode } from './theme.js';
-import { sanitizeStats, sanitizeTrainingQueue, sanitizeGames, sanitizeReviews, sanitizeDuelStats, sanitizeBotMemory } from './data_schema.js';
+import { sanitizeStats, sanitizeTrainingQueue, sanitizeGames, sanitizeReviews, sanitizeRounds, sanitizeDuelStats, sanitizeBotMemory } from './data_schema.js';
 
 const SCHEMA_VERSION = 1;
 
@@ -19,6 +19,7 @@ const KEYS = {
   BOT_MEMORY: 'perudo.botMemory',
   GAMES: 'perudo.games',
   REVIEWS: 'perudo.reviews',
+  ROUNDS: 'perudo.rounds',
   PLAYER: 'perudo.player',
   DEVICE: 'perudo.device',
   ACTIVE_GAME: 'perudo.activeGame',
@@ -213,6 +214,15 @@ export function getMoments() {
 
 export function setMoments(moments) {
   set(KEYS.REVIEWS, sanitizeReviews(moments).value);
+}
+
+/** Завершённые раунды для упражнений (ключ perudo.rounds, последние 40). Мусор отбрасывается. */
+export function getRounds() {
+  return sanitizeRounds(get(KEYS.ROUNDS, null)).value;
+}
+
+export function setRounds(rounds) {
+  set(KEYS.ROUNDS, sanitizeRounds(rounds).value);
 }
 
 export function getSchemaVersion() {

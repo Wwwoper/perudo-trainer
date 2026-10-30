@@ -7,6 +7,7 @@
 // Отсутствующее значение (null, undefined) повреждением не считается: dropped = 0.
 
 import { sanitizeMoment, MAX_MOMENTS } from './moments.js';
+import { sanitizeRound, MAX_ROUNDS } from './rounds.js';
 import { ASSIST_MODES, BOT_SPEEDS, sanitizeGameSettings } from './game_settings.js';
 import { sanitizePlayer } from './player.js';
 import { sanitizeSoundMode } from './sound_plan.js';
@@ -195,6 +196,21 @@ export function sanitizeReviews(raw) {
   return { value: [...byId.values()].slice(-MAX_MOMENTS), dropped };
 }
 
+/** Раунды для упражнений (perudo.rounds): как и ключевые моменты, пустой объект не считается повреждением. */
+export function sanitizeRounds(raw) {
+  if (isMissing(raw)) return { value: [], dropped: 0 };
+  if (!Array.isArray(raw)) return { value: [], dropped: isPlainObject(raw) && Object.keys(raw).length === 0 ? 0 : 1 };
+  const byId = new Map();
+  let dropped = 0;
+  for (const item of raw) {
+    const r = sanitizeRound(item);
+    if (!r) { dropped++; continue; }
+    byId.delete(r.id);
+    byId.set(r.id, r);
+  }
+  return { value: [...byId.values()].slice(-MAX_ROUNDS), dropped };
+}
+
 // ----- Дуэль, память ботов и разделы без собственной логики -----
 
 /** Статистика Дуэли (perudo.duelStats): { games, wins, moves, dev }. */
@@ -306,6 +322,7 @@ export const SANITIZERS = Object.freeze({
   'perudo.botMemory': sanitizeBotMemory,
   'perudo.games': sanitizeGames,
   'perudo.reviews': sanitizeReviews,
+  'perudo.rounds': sanitizeRounds,
   'perudo.trainingQueue': sanitizeTrainingQueue,
   'perudo.tutorialProgress': sanitizeOpaque,
   'perudo.duelStats': sanitizeDuelStats,

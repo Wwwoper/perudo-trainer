@@ -17,6 +17,7 @@ const GOOD = {
   'perudo.botMemory': { v: 1, challenged: 6, bluffs: 2 },
   'perudo.games': [{ ts: 1, players: 4, startDice: 5, rounds: 9, won: true, decisions: 20, calza: false, palifico: false }],
   'perudo.reviews': [],
+  'perudo.rounds': [],
   'perudo.trainingQueue': [{ mode: 'classic', n: 12, h: [1, 3, 5], f: 3, q: 4, streak: 0 }],
   'perudo.tutorialProgress': { done: [1, 2] },
   'perudo.duelStats': { games: 3, wins: 2, moves: 6, dev: 1 },

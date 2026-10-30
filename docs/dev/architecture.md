@@ -21,7 +21,7 @@ docs/dev/            описание устройства кода (эта па
 docs/guide/          руководство для новичков (HTML для GitHub Pages)
 src/
 ├── app_v2.js        точка входа: запуск вкладок и ядро партии (ход игры, стол, ход бота)
-├── ui/              части интерфейса: common.js (помощники), modes.js (режимы тренажёра), tabs.js (разделы и ☰), calculator.js, trainer.js, drill.js, duel.js, sim.js, stats.js (вкладки), side_panel.js (панель партии), bot_styles.js и bot_mind.js (настройки ботов), reveal_dialog.js и result_dialog.js (окна партии), decisions.js (запись решений), key_moments.js (итог: ключевые моменты), options_view.js (список вариантов хода), weak_spots.js (блок «Над чем поработать»), player_card.js (блок «Игрок»), stats_tabs.js (подвкладки статистики), cloud_card.js (блок «Копия на Яндекс Диске»), backup_reminder.js (напоминание о копии в итоге партии)
+├── ui/              части интерфейса: common.js (помощники), modes.js (режимы тренажёра), tabs.js (разделы и ☰), calculator.js, trainer.js, drill.js, duel.js, sim.js, stats.js (вкладки), side_panel.js (панель партии), bot_styles.js и bot_mind.js (настройки ботов), reveal_dialog.js и result_dialog.js (окна партии), decisions.js (запись решений), rounds_log.js (запись завершённых раундов), key_moments.js (итог: ключевые моменты), options_view.js (список вариантов хода), weak_spots.js (блок «Над чем поработать»), player_card.js (блок «Игрок»), stats_tabs.js (подвкладки статистики), cloud_card.js (блок «Копия на Яндекс Диске»), backup_reminder.js (напоминание о копии в итоге партии)
 ├── core.js          вероятности, симуляция, решатель CFR (классический скрипт, глобальный Perudo)
 ├── rules.js         правила ставок: legal(), minLegal()          ← чистая логика
 ├── engine.js        игровой движок без привязки к интерфейсу     ← чистая логика
@@ -30,6 +30,7 @@ src/
 ├── assist.js        режимы помощи, оценка решений                ← чистая логика
 ├── result.js        итог партии: победитель, тексты окна         ← чистая логика
 ├── moments.js       ключевые решения партии: метки, отбор, чтение, контекст стола (ctx)   ← чистая логика
+├── rounds.js        завершённые раунды (руки, ставки, итог вскрытия), последние 40   ← чистая логика
 ├── compare.js       сравнение вариантов хода по шансу ставки       ← чистая логика
 ├── repeat_pick.js   выбор повтора с паузой между показами          ← чистая логика
 ├── backup_reminder.js  когда напомнить про копию, сколько раз просили хранилище ← чистая логика

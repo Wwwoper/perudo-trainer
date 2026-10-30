@@ -189,7 +189,7 @@ export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
     if (!confirm('Сбросить статистику, очередь повторов, историю партий и профиль игрока (имя и аватар)?')) return;
     try {
       ['perudo.settings', 'perudo.userProfile', 'perudo.games',
-        'perudo.trainingQueue', 'perudo.duelStats', 'perudo.botMemory', 'perudo.reviews', 'perudo.player'].forEach((k) => localStorage.removeItem(k));
+        'perudo.trainingQueue', 'perudo.duelStats', 'perudo.botMemory', 'perudo.reviews', 'perudo.rounds', 'perudo.player'].forEach((k) => localStorage.removeItem(k));
     } catch (e) { }
     onReset?.();
     setDeviceState({ ...getDeviceState(), nextAt: REMIND_FIRST });   // счёт партий начался заново

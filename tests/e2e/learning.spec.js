@@ -540,6 +540,20 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#stats')).toBeVisible();
     });
 
+    test('«Сбросить всё» стирает и сохранённые раунды', async ({ page }) => {
+      await seed(page);
+      await page.evaluate(() => localStorage.setItem('perudo.rounds', JSON.stringify([{
+        id: 'g-r1', ts: 1, round: 1, wild: true, me: 0, dice: [1, 1], styles: [null, 'smart'],
+        hands: [[2], [3]], bids: [{ s: 0, q: 1, f: 2 }], end: { kind: 'dudo', by: 1, bidder: 0, actual: 1, ok: true },
+      }])));
+      await page.reload();
+      await open(page, 'stats');
+      await openStatsTab(page, 'data');
+      page.once('dialog', (d) => d.accept());
+      await page.click('#stClear');
+      expect(await page.evaluate(() => localStorage.getItem('perudo.rounds'))).toBeNull();
+    });
+
     test('отмена в окне подтверждения ничего не меняет', async ({ page }) => {
       await seed(page);
       await page.reload();

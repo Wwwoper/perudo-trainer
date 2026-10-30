@@ -666,6 +666,14 @@ test.describe('Покерный стол в партии', () => {
     expect(m.ctx.styles[0]).toBeNull();
     expect(m.ctx.styles[1]).toMatch(/^[a-z]+$/);
 
+    // завершённый раунд сохранён целиком: руки, ставка, итог проверки
+    const rounds = await readJson(page, 'perudo.rounds');
+    expect(rounds).toHaveLength(1);
+    expect(rounds[0]).toMatchObject({
+      me: 0, wild: true, dice: [1, 1], hands: [[2], [2]], bids: [{ s: 0, q: 2, f: 6 }],
+      end: { kind: 'dudo', by: 1, bidder: 0, actual: 0, ok: false },
+    });
+
     const profile = await readJson(page, 'perudo.userProfile');
     expect(profile.byTag.raise).toEqual({ n: 1, good: 0 });
     expect(profile.byTag.endgame).toEqual({ n: 1, good: 0 });
