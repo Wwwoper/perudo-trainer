@@ -11,6 +11,7 @@ global.localStorage = {
 
 const {
   defaultGameSettings, sanitizeGameSettings, isDefaultGameSettings, describeGameSettings,
+  GAME_SETTINGS_VERSION, EXPLAIN_MODES, EXPLAIN_DEPTHS,
 } = await import('../src/game_settings.js');
 const {
   getLastGameSettings, setLastGameSettings, clearLastGameSettings, getSettings, setSettings,
@@ -28,6 +29,7 @@ describe('sanitizeGameSettings', () => {
     const s = {
       dice: 6, bots: 4, botStyles: ['careful', 'random', 'auto', 'bluffer'], botLevel: 'hard',
       memory: false, assist: 'game', speed: 'fast', calza: true, palifico: true, reveal: false,
+      explain: 'full', explainDepth: 'detailed', hideStyles: false,
     };
     assert.deepStrictEqual(sanitizeGameSettings(s), s);
   });
@@ -134,5 +136,48 @@ describe('хранилище настроек последней партии', 
     global.localStorage.setItem = () => { throw new Error('quota'); };
     assert.doesNotThrow(() => setLastGameSettings(defaultGameSettings()));
     global.localStorage.setItem = orig;
+  });
+});
+
+describe('настройки версии 2: объяснения и стили', () => {
+  it('версия 2; стандартные значения: авто, коротко, стили скрыты', () => {
+    assert.strictEqual(GAME_SETTINGS_VERSION, 2);
+    const d = defaultGameSettings();
+    assert.deepStrictEqual([d.explain, d.explainDepth, d.hideStyles], ['auto', 'short', true]);
+  });
+  it('миграция: настройки версии 1 без новых полей читаются со стандартными значениями', () => {
+    const old = { dice: 6, bots: 2, botStyles: ['careful'], botLevel: 'hard', memory: false, assist: 'novice', speed: 'fast', calza: true, palifico: false, reveal: true };
+    const s = sanitizeGameSettings(old);
+    assert.deepStrictEqual([s.explain, s.explainDepth, s.hideStyles], ['auto', 'short', true]);
+    assert.strictEqual(s.dice, 6);
+    assert.strictEqual(s.assist, 'novice');
+  });
+  it('неизвестные значения заменяются стандартными', () => {
+    const s = sanitizeGameSettings({ explain: 'всё', explainDepth: 'очень', hideStyles: 'нет' });
+    assert.deepStrictEqual([s.explain, s.explainDepth, s.hideStyles], ['auto', 'short', true]);
+  });
+  it('допустимые значения сохраняются', () => {
+    for (const e of EXPLAIN_MODES) assert.strictEqual(sanitizeGameSettings({ explain: e }).explain, e);
+    for (const e of EXPLAIN_DEPTHS) assert.strictEqual(sanitizeGameSettings({ explainDepth: e }).explainDepth, e);
+    assert.strictEqual(sanitizeGameSettings({ hideStyles: false }).hideStyles, false);
+    assert.deepStrictEqual([...EXPLAIN_MODES], ['auto', 'off', 'after', 'full']);
+  });
+  it('сброс «стандартные настройки» учитывает новые поля', () => {
+    assert.ok(isDefaultGameSettings(defaultGameSettings()));
+    assert.ok(!isDefaultGameSettings({ explain: 'full' }));
+    assert.ok(!isDefaultGameSettings({ explainDepth: 'detailed' }));
+    assert.ok(!isDefaultGameSettings({ hideStyles: false }));
+  });
+  it('сводка: объяснения называются, только если они не «авто»', () => {
+    assert.strictEqual(describeGameSettings({ explain: 'auto' }), '5 кубиков · 3 бота · Тренировка · Нормально');
+    assert.match(describeGameSettings({ explain: 'off' }), /без объяснений/);
+    assert.match(describeGameSettings({ explain: 'full' }), /до и после/);
+    assert.match(describeGameSettings({ explain: 'after' }), /после хода/);
+  });
+  it('идемпотентность и круг через хранилище', () => {
+    const s = sanitizeGameSettings({ explain: 'after', explainDepth: 'detailed', hideStyles: false });
+    assert.deepStrictEqual(sanitizeGameSettings(s), s);
+    setLastGameSettings(s);
+    assert.deepStrictEqual(getLastGameSettings(), s);
   });
 });

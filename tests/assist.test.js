@@ -1,7 +1,7 @@
 // assist.test.js — тесты для assist.js
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { createAssistConfig, AssistMode, getAdviceText, getClassification, SOFTEN_FROM } from '../src/assist.js';
+import { createAssistConfig, AssistMode, getAdviceText, getClassification, SOFTEN_FROM, effectiveExplain } from '../src/assist.js';
 
 describe('AssistMode — константы', () => {
   it('определены все режимы', () => {
@@ -16,7 +16,7 @@ describe('createAssistConfig — Новичок', () => {
     const config = createAssistConfig(AssistMode.NOVICE);
     assert.strictEqual(config.showCurrentBidOdds, true);
     assert.strictEqual(config.showDirectAdvice, true);
-    assert.strictEqual(config.showRuleExplanations, 'always');
+    assert.strictEqual(config.explain, 'full');
   });
 });
 
@@ -26,7 +26,7 @@ describe('createAssistConfig — Игра', () => {
     assert.strictEqual(config.showCurrentBidOdds, false);
     assert.strictEqual(config.showDirectAdvice, false);
     assert.strictEqual(config.showBestSafeRaise, false);
-    assert.strictEqual(config.showRuleExplanations, 'off');
+    assert.strictEqual(config.explain, 'off');
   });
 });
 
@@ -77,5 +77,36 @@ describe('getClassification: смягчение по ставкам за сто�
   it('«Не верю» и Calza не смягчаются', () => {
     assert.strictEqual(getClassification(0.7, 'dudo', 0.1).code, 'bad');
     assert.strictEqual(getClassification(0.1, 'calza', 0.9).code, 'bad');
+  });
+});
+
+describe('createAssistConfig — убранные флаги', () => {
+  it('неиспользуемых флагов в конфигурации нет', () => {
+    for (const mode of Object.values(AssistMode)) {
+      const c = createAssistConfig(mode);
+      for (const dead of ['showOpponentReasoning', 'showRuleExplanations', 'reviewTiming']) assert.ok(!(dead in c), `${mode}: ${dead}`);
+    }
+  });
+  it('у Тренировки объяснения после хода', () => {
+    assert.strictEqual(createAssistConfig(AssistMode.TRAINING).explain, 'after');
+  });
+});
+
+describe('effectiveExplain: 3 режима × 4 значения', () => {
+  const table = {
+    novice: { auto: 'full', off: 'off', after: 'after', full: 'full' },
+    training: { auto: 'after', off: 'off', after: 'after', full: 'full' },
+    game: { auto: 'off', off: 'off', after: 'after', full: 'full' },
+  };
+  for (const [mode, row] of Object.entries(table)) {
+    for (const [explain, want] of Object.entries(row)) {
+      it(`${mode} + ${explain} → ${want}`, () => assert.strictEqual(effectiveExplain(mode, explain), want));
+    }
+  }
+  it('мусор: неизвестное значение — как «авто», неизвестный режим — как Тренировка', () => {
+    assert.strictEqual(effectiveExplain('training', 'всё'), 'after');
+    assert.strictEqual(effectiveExplain('нет', 'auto'), 'after');
+    assert.strictEqual(effectiveExplain(undefined, undefined), 'after');
+    assert.strictEqual(effectiveExplain('novice', null), 'full');
   });
 });

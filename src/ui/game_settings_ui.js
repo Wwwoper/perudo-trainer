@@ -24,6 +24,9 @@ export function readGameSettings() {
     calza: !!$('#gCalzaOpt')?.checked,
     palifico: !!$('#gPalificoOpt')?.checked,
     reveal: $('#gRevealOpt') ? $('#gRevealOpt').checked : true,
+    explain: num('#gExplain', 'auto'),
+    explainDepth: num('#gExplainDepth', 'short'),
+    hideStyles: getLastGameSettings()?.hideStyles ?? defaultGameSettings().hideStyles,   // переключатель появится отдельным шагом; сохранённое значение не теряется
   });
 }
 
@@ -64,6 +67,8 @@ export function applyGameSettings(raw) {
   setChecked('#gCalzaOpt', s.calza);
   setChecked('#gPalificoOpt', s.palifico);
   setChecked('#gRevealOpt', s.reveal);
+  setValue('#gExplain', s.explain);
+  setValue('#gExplainDepth', s.explainDepth);
 }
 
 /** Запомнить то, с чем начинается партия. */

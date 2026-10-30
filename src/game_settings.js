@@ -3,13 +3,19 @@
 // Модуль чистый: ничего не знает ни о браузере, ни о localStorage. Хранилище читает и пишет
 // storage.js (поле lastGame внутри perudo.settings), интерфейс подключается отдельно.
 //
-// Настройки: { dice, bots, botStyles[], botLevel, memory, assist, speed, calza, palifico, reveal }.
+// Настройки: { dice, bots, botStyles[], botLevel, memory, assist, speed, calza, palifico, reveal,
+//              explain, explainDepth, hideStyles }.
 // Всё, что пришло извне (старая копия, ручная правка, повреждённые данные), проходит sanitizeGameSettings:
 // числа зажимаются в допустимые пределы, неизвестные значения заменяются стандартными.
 
 import { BOT_STYLE_IDS, BOT_LEVELS, DEFAULT_BOT_LEVEL, STYLE_AUTO, STYLE_RANDOM } from './bots.js';
 
-export const GAME_SETTINGS_VERSION = 1;
+/**
+ * Версия набора полей. 2: добавлены explain, explainDepth, hideStyles. Отдельного номера в данных нет:
+ * поле, которого нет в старой копии, при чтении получает стандартное значение (sanitizeGameSettings),
+ * так что настройки версии 1 читаются как версия 2.
+ */
+export const GAME_SETTINGS_VERSION = 2;
 export const DICE_MIN = 1;
 export const DICE_MAX = 10;
 export const BOTS_MIN = 1;
@@ -17,6 +23,9 @@ export const BOTS_MAX = 5;
 
 export const ASSIST_MODES = Object.freeze(['novice', 'training', 'game']);
 export const BOT_SPEEDS = Object.freeze(['step', 'slow', 'normal', 'fast']);
+/** Объяснения: auto — по режиму помощи (см. effectiveExplain в assist.js), off — нет, after — после хода, full — до и после. */
+export const EXPLAIN_MODES = Object.freeze(['auto', 'off', 'after', 'full']);
+export const EXPLAIN_DEPTHS = Object.freeze(['short', 'detailed']);
 
 const VALID_STYLES = new Set([STYLE_AUTO, STYLE_RANDOM, ...BOT_STYLE_IDS]);
 
@@ -33,6 +42,9 @@ export function defaultGameSettings() {
     calza: false,
     palifico: false,
     reveal: true,
+    explain: 'auto',
+    explainDepth: 'short',
+    hideStyles: true,
   };
 }
 
@@ -67,6 +79,9 @@ export function sanitizeGameSettings(raw) {
     calza: bool(raw.calza, d.calza),
     palifico: bool(raw.palifico, d.palifico),
     reveal: bool(raw.reveal, d.reveal),
+    explain: oneOf(raw.explain, EXPLAIN_MODES, d.explain),
+    explainDepth: oneOf(raw.explainDepth, EXPLAIN_DEPTHS, d.explainDepth),
+    hideStyles: bool(raw.hideStyles, d.hideStyles),
   };
 }
 
@@ -84,5 +99,6 @@ export function describeGameSettings(s) {
   const dice = v.dice === 1 ? '1 кубик' : v.dice < 5 ? `${v.dice} кубика` : `${v.dice} кубиков`;
   const assist = { novice: 'Новичок', training: 'Тренировка', game: 'Игра без подсказок' }[v.assist];
   const speed = { step: 'Пошагово', slow: 'Медленно', normal: 'Нормально', fast: 'Быстро' }[v.speed];
-  return [dice, bots, assist, speed].join(' · ');
+  const explain = { off: 'без объяснений', after: 'объяснения после хода', full: 'объяснения до и после' }[v.explain];
+  return [dice, bots, assist, ...(explain ? [explain] : []), speed].join(' · ');
 }

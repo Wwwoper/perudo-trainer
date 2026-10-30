@@ -1330,6 +1330,17 @@ class LayoutTest(unittest.TestCase):
                 self.assertIn("Тренировка", help_text)
                 page.select_option("#gAssist", "novice")
                 self.assertIn("советует", page.locator("#gAssistHelp").inner_text())
+                for sel in ("#gExplain", "#gExplainDepth"):
+                    box = page.locator(sel).bounding_box()
+                    self.assertIsNotNone(box, sel)
+                    self.assertGreaterEqual(box["height"], 44, sel)
+                    body = page.locator(".side-body").bounding_box()
+                    self.assertGreaterEqual(box["x"], body["x"] - 1, sel)
+                    self.assertLessEqual(box["x"] + box["width"], body["x"] + body["width"] + 1, f"{sel}: шире панели")
+                self.assertIn("до и после хода", page.locator("#gExplainHelp").inner_text())
+                page.select_option("#gExplain", "off")
+                self.assertIn("выключены", page.locator("#gExplainHelp").inner_text())
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
 
     def test_dialog_names_winner_and_opens_once(self):
         page = self.open_game(1366, 768, 1)

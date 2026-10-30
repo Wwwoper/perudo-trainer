@@ -14,10 +14,8 @@ export function createAssistConfig(mode = AssistMode.TRAINING) {
         showFutureBidOdds: true,
         showDirectAdvice: true,
         showBestSafeRaise: false,
-        showOpponentReasoning: true,
         showLegalMoveHighlight: true,
-        showRuleExplanations: 'always',
-        reviewTiming: 'every_turn',
+        explain: 'full',
       };
 
     case AssistMode.TRAINING:
@@ -26,10 +24,8 @@ export function createAssistConfig(mode = AssistMode.TRAINING) {
         showFutureBidOdds: true,
         showDirectAdvice: false,
         showBestSafeRaise: false,
-        showOpponentReasoning: true,
         showLegalMoveHighlight: true,
-        showRuleExplanations: 'on_demand',
-        reviewTiming: 'end_round',
+        explain: 'after',
       };
 
     case AssistMode.GAME:
@@ -38,15 +34,27 @@ export function createAssistConfig(mode = AssistMode.TRAINING) {
         showFutureBidOdds: false,
         showDirectAdvice: false,
         showBestSafeRaise: false,
-        showOpponentReasoning: false,
         showLegalMoveHighlight: true,
-        showRuleExplanations: 'off',
-        reviewTiming: 'manual',
+        explain: 'off',
       };
 
     default:
       throw new Error(`Unknown assist mode: ${mode}`);
   }
+}
+
+/**
+ * Какие объяснения показывать на самом деле. Единственное место, где «авто» превращается в значение:
+ * Новичок — до и после хода, Тренировка — после хода, Игра — без объяснений.
+ * Явный выбор игрока (off / after / full) сильнее режима помощи.
+ * В режиме «Игра» пояснения до конца партии не показываются, даже если выбрано «full» (см. situation_text.js).
+ * @param {string} assistMode 'novice' | 'training' | 'game'
+ * @param {string} explain 'auto' | 'off' | 'after' | 'full'
+ * @returns {'off'|'after'|'full'}
+ */
+export function effectiveExplain(assistMode, explain = 'auto') {
+  if (explain === 'off' || explain === 'after' || explain === 'full') return explain;
+  return createAssistConfig(Object.values(AssistMode).includes(assistMode) ? assistMode : AssistMode.TRAINING).explain;
 }
 
 export function getAdviceText(action, probability, threshold = 0.5) {

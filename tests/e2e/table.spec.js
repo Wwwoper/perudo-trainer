@@ -355,6 +355,29 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gBots')).toHaveValue('3');
   });
 
+  test('«Объяснения»: выбор запоминается после партии и перезагрузки, пояснение меняется с режимом помощи', async ({ page }) => {
+    await expect(page.locator('#gExplain')).toHaveValue('auto');
+    await expect(page.locator('#gExplainDepth')).toHaveValue('short');
+    await expect(page.locator('#gExplainHelp')).toContainText('Сейчас: после хода');   // Тренировка по умолчанию
+    await page.locator('#gAssist').selectOption('novice');
+    await expect(page.locator('#gExplainHelp')).toContainText('Сейчас: до и после хода');
+    await page.locator('#gAssist').selectOption('game');
+    await expect(page.locator('#gExplainHelp')).toContainText('Сейчас: выключены');
+    await page.locator('#gExplain').selectOption('full');
+    await expect(page.locator('#gExplainHelp')).toContainText('после окончания партии');
+    await page.locator('#gExplainDepth').selectOption('detailed');
+    await expect(page.locator('#gSettingsReset')).toBeVisible();
+    await page.locator('#gSetup .side-start').click();
+    const saved = await lastGame(page);
+    expect(saved).toMatchObject({ assist: 'game', explain: 'full', explainDepth: 'detailed', hideStyles: true });
+    await reloadToSetup(page);
+    await expect(page.locator('#gExplain')).toHaveValue('full');
+    await expect(page.locator('#gExplainDepth')).toHaveValue('detailed');
+    await page.locator('#gSettingsReset').click();
+    await expect(page.locator('#gExplain')).toHaveValue('auto');
+    await expect(page.locator('#gExplainDepth')).toHaveValue('short');
+  });
+
   test('повреждённые сохранённые настройки не ломают страницу: берутся стандартные', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
