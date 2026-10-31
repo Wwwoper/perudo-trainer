@@ -15,6 +15,24 @@ describe('situationKey', () => {
   });
 });
 
+describe('situationKey: лестница ставок', () => {
+  const L = { mode: 'ladder', n: 14, h: [1, 2, 3, 5], f: 5, q: 5, streak: 0, wild: true, ks: [3, 4, 3],
+    bids: [{ s: 0, q: 3, f: 5 }, { s: 1, q: 4, f: 5 }, { s: 2, q: 5, f: 5 }] };
+  it('учитывает историю торгов, соперников и режим', () => {
+    assert.equal(situationKey(L), situationKey({ ...L, streak: 3 }));
+    for (const d of [
+      { bids: [{ s: 0, q: 3, f: 5 }, { s: 1, q: 4, f: 4 }, { s: 2, q: 5, f: 5 }] },
+      { bids: L.bids.slice(1) }, { ks: [3, 3, 4] }, { wild: false },
+    ]) assert.notEqual(situationKey(L), situationKey({ ...L, ...d }), JSON.stringify(d));
+  });
+  it('ключи старых режимов не изменились', () => {
+    assert.equal(situationKey(A), 'classic|14|7|5|135');
+  });
+  it('запись без bids не ломает ключ', () => {
+    assert.equal(typeof situationKey({ ...L, bids: undefined, ks: undefined }), 'string');
+  });
+});
+
 describe('eligibleRepeats', () => {
   it('ещё не показанные доступны', () => {
     assert.deepEqual(eligibleRepeats([A, B], new Map(), 1), [A, B]);

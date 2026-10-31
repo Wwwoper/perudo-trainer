@@ -8,6 +8,7 @@
 
 import { sanitizeMoment, MAX_MOMENTS } from './moments.js';
 import { sanitizeRound, MAX_ROUNDS } from './rounds.js';
+import { sanitizeLadder } from './ladder.js';
 import { ASSIST_MODES, BOT_SPEEDS, sanitizeGameSettings } from './game_settings.js';
 import { sanitizePlayer } from './player.js';
 import { sanitizeSoundMode } from './sound_plan.js';
@@ -112,7 +113,7 @@ export function sanitizeStats(raw) {
 // ----- Списки: очередь повторов, история партий, ключевые моменты -----
 
 /** Режимы ситуаций в очереди повторов тренажёра. */
-export const QUEUE_MODES = Object.freeze(['classic', 'nowild', 'endgame', 'solo', 'big']);
+export const QUEUE_MODES = Object.freeze(['classic', 'nowild', 'endgame', 'solo', 'big', 'ladder']);
 /** Сколько ситуаций хранится в очереди повторов. */
 export const MAX_QUEUE = 200;
 /** Сколько сыгранных партий хранится в истории. */
@@ -121,7 +122,11 @@ const MAX_DICE = 100;
 const isInt = (v) => Number.isInteger(v);
 const isFace = (v) => isInt(v) && v >= 1 && v <= 6;
 
-/** Ситуация очереди повторов или null: { mode, n, h, f, q, streak }. */
+/**
+ * Ситуация очереди повторов или null: { mode, n, h, f, q, streak }.
+ * Режим «ladder» (лестница ставок) дополнительно хранит wild, ks (кубики соперников) и bids (история торгов);
+ * у остальных режимов эти поля не переносятся.
+ */
 export function sanitizeQueueItem(raw) {
   if (!isPlainObject(raw)) return null;
   if (!QUEUE_MODES.includes(raw.mode)) return null;
@@ -130,6 +135,11 @@ export function sanitizeQueueItem(raw) {
   if (!isFace(raw.f)) return null;
   if (!isInt(raw.q) || raw.q < 1 || raw.q > MAX_DICE) return null;
   const streak = isInt(raw.streak) && raw.streak >= 0 && raw.streak <= 10 ? raw.streak : 0;
+  if (raw.mode === 'ladder') {
+    const l = sanitizeLadder({ wild: raw.wild, n: raw.n, h: raw.h, ks: raw.ks, bids: raw.bids, q: raw.q, f: raw.f });
+    if (!l) return null;
+    return { mode: 'ladder', n: l.n, h: l.h, f: l.f, q: l.q, streak, wild: l.wild, ks: l.ks, bids: l.bids };
+  }
   return { mode: raw.mode, n: raw.n, h: raw.h.slice(), f: raw.f, q: raw.q, streak };
 }
 

@@ -110,11 +110,47 @@ import {
   sanitizeTrainingQueue, sanitizeQueueItem, sanitizeGames, sanitizeGameRecord, sanitizeReviews, MAX_QUEUE, MAX_GAMES,
 } from '../src/data_schema.js';
 
+const ladderItem = (o = {}) => ({
+  mode: 'ladder', n: 14, h: [5, 1, 2, 3], f: 5, q: 5, streak: 1, wild: true, ks: [3, 4, 3],
+  bids: [{ s: 0, q: 3, f: 5 }, { s: 1, q: 4, f: 5 }, { s: 2, q: 5, f: 5 }], ...o,
+});
 const item = (o = {}) => ({ mode: 'classic', n: 10, h: [1, 2, 3], f: 4, q: 5, streak: 0, ...o });
 const game = (o = {}) => ({ ts: 1000, players: 4, startDice: 5, rounds: 7, won: true, decisions: 9, assistMode: 'training', calza: false, palifico: true, ...o });
 const moment = (o = {}) => ({
   id: 'g-1', ts: 5, round: 2, kind: 'dudo', n: 12, h: [1, 3], myDice: 2, bid: { q: 4, f: 3 }, played: null,
   wild: true, p: 0.4, code: 'bad', lostDie: false, tags: ['dudo'], ...o,
+});
+
+describe('очередь повторов: режим «ladder»', () => {
+  it('ситуация с историей торгов проходит без изменений вместе со старыми записями', () => {
+    const list = [item(), ladderItem(), item({ mode: 'big', n: 30 })];
+    assert.deepStrictEqual(sanitizeTrainingQueue(list), { value: list, dropped: 0 });
+  });
+  it('испорченная история отбрасывает запись целиком', () => {
+    for (const bad of [
+      { ks: [3] }, { ks: [3, 4, 9, 9, 9] }, { bids: [] }, { bids: ladderItem().bids.slice(0, 2) },
+      { bids: [...ladderItem().bids.slice(0, 2), { s: 5, q: 5, f: 5 }] }, { q: 9 }, { n: 99 }, { wild: 'да' },
+      { ks: undefined }, { bids: undefined },
+    ]) {
+      assert.equal(sanitizeQueueItem(ladderItem(bad)), null, JSON.stringify(bad));
+    }
+  });
+  it('у остальных режимов лишние ks, bids и wild не переносятся', () => {
+    const r = sanitizeQueueItem({ ...item(), ks: [3, 4], bids: ladderItem().bids, wild: true });
+    assert.deepStrictEqual(r, item());
+  });
+  it('исходная запись не меняется, копия независима', () => {
+    const src = ladderItem();
+    const out = sanitizeQueueItem(src);
+    out.bids[0].q = 99; out.ks[0] = 9; out.h[0] = 1;
+    assert.equal(src.bids[0].q, 3);
+    assert.equal(src.ks[0], 3);
+  });
+  it('круг через резервную копию не меняет запись', () => {
+    const q = sanitizeTrainingQueue([ladderItem()]).value;
+    const back = JSON.parse(JSON.stringify({ data: { 'perudo.trainingQueue': q } })).data['perudo.trainingQueue'];
+    assert.deepStrictEqual(sanitizeTrainingQueue(back), { value: q, dropped: 0 });
+  });
 });
 
 describe('sanitizeTrainingQueue', () => {

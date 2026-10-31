@@ -11,7 +11,11 @@ export const REPEAT_CHANCE = 0.4;
 
 /** Ключ ситуации: одинаков у записей очереди, перечитанных из хранилища. */
 export function situationKey(item) {
-  return `${item.mode}|${item.n}|${item.q}|${item.f}|${item.h.join('')}`;
+  const base = `${item.mode}|${item.n}|${item.q}|${item.f}|${item.h.join('')}`;
+  if (item.mode !== 'ladder') return base;
+  // лестница ставок: ту же последнюю ставку с другой историей торгов считаем другой ситуацией
+  const bids = Array.isArray(item.bids) ? item.bids.map((b) => `${b.s}.${b.q}.${b.f}`).join(',') : '';
+  return `${base}|${item.wild ? 'w' : 'p'}|${Array.isArray(item.ks) ? item.ks.join(',') : ''}|${bids}`;
 }
 
 /**
