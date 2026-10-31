@@ -260,17 +260,28 @@ test.describe('Учебные вкладки', () => {
         bids: [{ s: 2, q: 1, f: 4 }, { s: 0, q: 2, f: 4 }, { s: 1, q: 3, f: 5 }],
         end: { kind: 'dudo', by: 0, bidder: 1, actual: 4, ok: true },
       };
+      // пять раундов: этого хватает, чтобы учебные раунды не подмешивались (REAL_ENOUGH)
+      const FIVE = [3, 4, 5, 6, 7].map((n) => ({ ...ROUND, id: `g1-r${n}`, round: n }));
       const seed = async (page) => {
-        await page.evaluate((r) => localStorage.setItem('perudo.rounds', JSON.stringify([r])), ROUND);
+        await page.evaluate((rs) => localStorage.setItem('perudo.rounds', JSON.stringify(rs)), FIVE);
         await page.reload();
       };
 
-      test('без сохранённых раундов: подсказка вместо задания, «Проверить» недоступна', async ({ page }) => {
+      test('без сохранённых раундов: учебный раунд от ботов, в статистику не идёт', async ({ page }) => {
         await open(page, 'drill');
         await page.locator('.drill-tab[data-drill="C"]').click();
-        await expect(page.locator('#dCEmpty')).toBeVisible();
-        await expect(page.locator('#dCBody')).toBeHidden();
+        await expect(page.locator('#dCBody')).toBeVisible();
+        await expect(page.locator('#dCEmpty')).toBeHidden();
+        await expect(page.locator('#dCq')).toContainText('Учебный раунд');
+        const n = await page.locator('#dCAsk .read-q').count();
+        expect(n).toBeGreaterThanOrEqual(1);
         await expect(page.locator('#dCCheck')).toBeDisabled();
+        for (const q of await page.locator('#dCAsk .read-q').all()) await q.locator('input[value="has"]').check();
+        await page.locator('#dCCheck').click();
+        await expect(page.locator('#dCfb')).toContainText('Верно');
+        await expect(page.locator('#dCfb .read-hand-row').first()).toBeVisible();
+        const tag = await page.evaluate(() => (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.byTag || {}).read || null);
+        expect(tag).toBeNull();
       });
 
       test('задание по сохранённому раунду: чужих рук нет до проверки, затем разбор по рукам', async ({ page }) => {
@@ -279,6 +290,7 @@ test.describe('Учебные вкладки', () => {
         await page.locator('.drill-tab[data-drill="C"]').click();
         await expect(page.locator('#dCBody')).toBeVisible();
         await expect(page.locator('#dCBids li')).toHaveCount(3);
+        await expect(page.locator('#dCq')).not.toContainText('Учебный раунд');
         await expect(page.locator('#dCAsk .read-q')).toHaveCount(2);
         await expect(page.locator('.read-hands')).toHaveCount(0);
         // кнопка ждёт ответов на оба вопроса

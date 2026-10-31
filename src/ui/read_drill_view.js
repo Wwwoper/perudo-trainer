@@ -6,7 +6,8 @@
 import { getRounds, updateStats } from '../storage.js';
 import { renderBid, renderHand } from '../table.js';
 import { $ } from './common.js';
-import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel, addReadResult } from '../read_drill.js';
+import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel, addReadResult, canRead } from '../read_drill.js';
+import { makeSimRound, chooseSource, isSimRound } from '../read_sim.js';
 
 const OPTIONS = [['has', 'Цифра в руке есть'], ['none', 'Цифры в руке нет']];
 
@@ -35,7 +36,10 @@ export function setupReadDrill() {
 
   /** Новое задание: раунд из сохранённых, ещё не показанные идут первыми. */
   function next() {
-    round = pickReadRound(getRounds(), seen);
+    const real = getRounds();
+    const useSim = chooseSource(real.filter(canRead).length) === 'sim';
+    round = useSim ? makeSimRound(Math.floor(Math.random() * 2 ** 31)) : pickReadRound(real, seen);
+    if (!round) round = useSim ? pickReadRound(real, seen) : null;
     task = round ? buildReadTask(round) : null;
     done = false;
     fb.innerHTML = '';
@@ -44,7 +48,8 @@ export function setupReadDrill() {
     show(true);
     const sizes = task.dice.map((d, i) => `${seatLabel(round, i)} — ${d}`).join(' · ');
     head.innerHTML = `Ваши кубики: ${renderHand(task.hand, task.wild)}<br>` +
-      `Кубиков в руках: <b>${sizes}</b>. ${task.wild ? 'Единицы — джокеры.' : 'Единицы обычные (Палифико).'}`;
+      `Кубиков в руках: <b>${sizes}</b>. ${task.wild ? 'Единицы — джокеры.' : 'Единицы обычные (Палифико).'}` +
+      (isSimRound(round) ? '<br><span class="read-sim muted">Учебный раунд: его сыграли боты программы. В статистику он не идёт.</span>' : '');
     bidsEl.innerHTML = task.bids.map((b) =>
       `<li class="read-bid${b.isMe ? ' is-me' : ''}"><span class="read-bid-n">${b.n}</span>` +
       `<span class="read-bid-who">${seatLabel(round, b.seat)}</span>${renderBid(b.q, b.f)}</li>`).join('');
@@ -65,7 +70,7 @@ export function setupReadDrill() {
     const res = checkReadAnswers(round, task, answers);
     if (!res) return;
     done = true;
-    updateStats((S) => { S.byTag = addReadResult(S.byTag, res); });
+    if (!isSimRound(round)) updateStats((S) => { S.byTag = addReadResult(S.byTag, res); });
     for (const it of res.items) {
       const box = ask.querySelector(`.read-q[data-n="${it.n}"]`);
       box?.classList.add(it.ok ? 'is-ok' : 'is-bad');

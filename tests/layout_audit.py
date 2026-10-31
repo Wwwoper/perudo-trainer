@@ -67,11 +67,11 @@ WEAK_SEED = """() => {
 
 
 # Сохранённый раунд для упражнения «Читай вскрытие»: четыре игрока по пять кубиков, три вопроса.
-READ_SEED = """() => localStorage.setItem('perudo.rounds', JSON.stringify([{
-  id: 'layout-r1', ts: 1, round: 1, wild: true, me: 0, dice: [5, 5, 5, 5], styles: [null, null, null, null],
+READ_SEED = """() => localStorage.setItem('perudo.rounds', JSON.stringify([1, 2, 3, 4, 5].map((n) => ({
+  id: 'layout-r' + n, ts: 1, round: n, wild: true, me: 0, dice: [5, 5, 5, 5], styles: [null, null, null, null],
   hands: [[2, 3, 5, 6, 4], [5, 5, 1, 3, 2], [4, 6, 2, 2, 3], [6, 6, 3, 1, 4]],
   bids: [{ s: 2, q: 2, f: 4 }, { s: 3, q: 3, f: 6 }, { s: 0, q: 3, f: 4 }, { s: 1, q: 3, f: 5 }],
-  end: { kind: 'dudo', by: 0, bidder: 1, actual: 5, ok: true } }]))"""
+  end: { kind: 'dudo', by: 0, bidder: 1, actual: 5, ok: true } }))))"""
 
 
 # Постоянный игрок уже выбрал режим: окно «Как вы будете играть?» не открывается.
@@ -170,7 +170,7 @@ def measure_all(base_url, browser):
 
         # «Читай вскрытие»: без раундов — подсказка, с раундом — задание и разбор после проверки
         page.click('.drill-tab[data-drill="C"]')
-        snap("drill C: empty", "#dCEmpty")
+        snap("drill C: simulated", "#dCCheck")
         page.evaluate(READ_SEED)
         page.click("#dNew")
         snap("drill C", "#dCCheck")

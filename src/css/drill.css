@@ -294,3 +294,7 @@
   min-width: 64px;
   color: var(--mut);
 }
+
+.read-sim {
+  font-size: 13px;
+}
