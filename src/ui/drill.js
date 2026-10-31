@@ -1,4 +1,4 @@
-// src/ui/drill.js — Упражнения: две тренировки (подсчёт и «верить / не верить»).
+// src/ui/drill.js — Упражнения: три тренировки (подсчёт, правило единиц, чтение вскрытия).
 
 import { updateStats } from '../storage.js';
 import { renderDie, renderHand, renderBid } from '../table.js';
@@ -6,6 +6,7 @@ import { P, $, $$, pct, flash } from './common.js';
 import { noSafeText, riskNote } from '../drill_note.js';
 import { validateAnswerA, validateAnswerB } from '../drill_input.js';
 import { safeByRule, isHalfway } from '../drill_rule.js';
+import { setupReadDrill } from './read_drill_view.js';
 
 let drillState = { A: null, B: null };
 
@@ -142,19 +143,18 @@ export function setupDrill() {
    панелью). Теперь одна кнопка #dNew + переключатель.
    ============================================================ */
   let activeDrill = 'A';
+  const readDrill = setupReadDrill();
 
   document.querySelectorAll('.drill-tab').forEach((btn) => {
     btn.onclick = () => {
-      activeDrill = btn.dataset.drill;   // 'A' или 'B'
+      activeDrill = btn.dataset.drill;   // 'A', 'B' или 'C'
       document.querySelectorAll('.drill-tab').forEach((b) => {
         const on = b === btn;
         b.classList.toggle('on', on);
         b.setAttribute('aria-pressed', String(on));
       });
-      const panelA = $('#dPanelA');
-      const panelB = $('#dPanelB');
-      if (panelA) panelA.classList.toggle('hide', activeDrill !== 'A');
-      if (panelB) panelB.classList.toggle('hide', activeDrill !== 'B');
+      for (const k of ['A', 'B', 'C']) $(`#dPanel${k}`)?.classList.toggle('hide', activeDrill !== k);
+      if (activeDrill === 'C') readDrill?.next();   // раунды могли появиться после партии
       $$('[data-drill-for]').forEach((el) => el.classList.toggle('hide', el.dataset.drillFor !== activeDrill));
     };
   });
@@ -201,7 +201,8 @@ export function setupDrill() {
   if (newBtn) {
     newBtn.onclick = () => {
       if (activeDrill === 'A') newA();
-      else newB();
+      else if (activeDrill === 'B') newB();
+      else readDrill?.next();
     };
   }
 

@@ -243,6 +243,9 @@
               <button class="drill-tab" data-drill="B" role="tab" aria-pressed="false">
                 Правило единиц
               </button>
+              <button class="drill-tab" data-drill="C" role="tab" aria-pressed="false">
+                Читай вскрытие
+              </button>
             </div>
           </div>
 
@@ -290,6 +293,17 @@
               </div>
             </details>
           </div>
+
+          <!-- Упражнение C: «Читай вскрытие» -->
+          <div class="card drill-board hide" id="dPanelC" role="tabpanel">
+            <p id="dCEmpty" class="read-empty muted hide">Пока нет сохранённых раундов. Сыграйте партию: после каждого вскрытия раунд сохраняется, и здесь появятся задания по вашим раундам.</p>
+            <div id="dCBody">
+              <p class="read-intro muted">По ставкам раунда оцените, была ли у автора в руке нужная цифра. Единицы-джокеры учитываются. Ответ проверяется по рукам при вскрытии.</p>
+              <div id="dCq" class="drill-question"></div>
+              <ol id="dCBids" class="read-bids" aria-label="Ставки раунда по порядку"></ol>
+              <div id="dCAsk" class="read-ask"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Проверка и разбор: внизу экрана на телефоне, справа на широком -->
@@ -301,10 +315,14 @@
             <div data-drill-for="B" class="hide">
               <div id="dBfb" class="drill-feedback" role="status" aria-live="polite"></div>
             </div>
+            <div data-drill-for="C" class="hide">
+              <div id="dCfb" class="drill-feedback" role="status" aria-live="polite"></div>
+            </div>
           </div>
           <div class="dock-buttons">
             <button id="dACheck" class="btn-primary" data-drill-for="A"><span class="btn-main">Проверить</span></button>
             <button id="dBCheck" class="btn-primary hide" data-drill-for="B"><span class="btn-main">Проверить</span></button>
+            <button id="dCCheck" class="btn-primary hide" data-drill-for="C" disabled><span class="btn-main">Проверить</span></button>
             <button id="dNew"><span class="btn-main">🔄 Новое</span></button>
           </div>
         </div>

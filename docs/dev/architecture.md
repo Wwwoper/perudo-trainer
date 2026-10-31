@@ -21,7 +21,7 @@ docs/dev/            описание устройства кода (эта па
 docs/guide/          руководство для новичков (HTML для GitHub Pages)
 src/
 ├── app_v2.js        точка входа: запуск вкладок и ядро партии (ход игры, стол, ход бота)
-├── ui/              части интерфейса: common.js (помощники), modes.js (режимы тренажёра), tabs.js (разделы и ☰), calculator.js, trainer.js, drill.js, duel.js, sim.js, stats.js (вкладки), side_panel.js (панель партии), bot_styles.js и bot_mind.js (настройки ботов), reveal_dialog.js и result_dialog.js (окна партии), decisions.js (запись решений), rounds_log.js (запись завершённых раундов), key_moments.js (итог: ключевые моменты), options_view.js (список вариантов хода), weak_spots.js (блок «Над чем поработать»), player_card.js (блок «Игрок»), stats_tabs.js (подвкладки статистики), cloud_card.js (блок «Копия на Яндекс Диске»), backup_reminder.js (напоминание о копии в итоге партии)
+├── ui/              части интерфейса: common.js (помощники), modes.js (режимы тренажёра), tabs.js (разделы и ☰), calculator.js, trainer.js, drill.js, read_drill_view.js (экран «Читай вскрытие»), duel.js, sim.js, stats.js (вкладки), side_panel.js (панель партии), bot_styles.js и bot_mind.js (настройки ботов), reveal_dialog.js и result_dialog.js (окна партии), decisions.js (запись решений), rounds_log.js (запись завершённых раундов), key_moments.js (итог: ключевые моменты), options_view.js (список вариантов хода), weak_spots.js (блок «Над чем поработать»), player_card.js (блок «Игрок»), stats_tabs.js (подвкладки статистики), cloud_card.js (блок «Копия на Яндекс Диске»), backup_reminder.js (напоминание о копии в итоге партии)
 ├── core.js          вероятности, симуляция, решатель CFR (классический скрипт, глобальный Perudo)
 ├── rules.js         правила ставок: legal(), minLegal()          ← чистая логика
 ├── engine.js        игровой движок без привязки к интерфейсу     ← чистая логика
@@ -49,6 +49,7 @@ src/
 ├── drill_rule.js    правило «ожидание → безопасная ставка»           ← чистая логика
 ├── drill_input.js   разбор ответов в упражнениях                    ← чистая логика
 ├── drill_note.js    пояснения к ответу в «Оценке в уме»             ← чистая логика
+├── read_drill.js    упражнение «Читай вскрытие»: задание по раунду и проверка ← чистая логика
 ├── table_read.js    шанс с учётом ставок за столом для «Разбора»     ← чистая логика
 ├── backup.js        формат и проверка резервной копии              ← чистая логика
 ├── cloud_sync.js    запись и восстановление копии в облаке        ← чистая логика (fetch передаётся)

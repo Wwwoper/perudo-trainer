@@ -18,6 +18,11 @@ const plural = (n, one, few, many) => {
   return many;
 };
 
+/** Подпись места за столом: «Вы» или «Игрок N» (имена ботов в раунде не хранятся). */
+export function seatLabel(round, seat) {
+  return seat === round.me ? 'Вы' : `Игрок ${seat + 1}`;
+}
+
 /** Годится ли раунд для упражнения: вы были за столом и кто-то другой назвал хотя бы одну ставку. */
 export function canRead(round) {
   return !!round && Number.isInteger(round.me) && round.me >= 0
@@ -90,7 +95,7 @@ export function buildReadTask(round, { rnd = Math.random, max = MAX_QUESTIONS } 
  * @param {object} round тот же раунд, из которого собрано задание
  * @param {object} task результат buildReadTask
  * @param {Object<number,string>} answers номер ставки → 'has' | 'none'
- * @returns {{items: object[], good: number, total: number, lines: string[]}|null} null, если ответы неполные или неверные
+ * @returns {{items: object[], good: number, total: number, lines: string[], outcome: string}|null} null, если ответы неполные или неверные
  */
 export function checkReadAnswers(round, task, answers) {
   if (!round || !task || task.id !== round.id || !answers || typeof answers !== 'object') return null;
@@ -113,5 +118,10 @@ export function checkReadAnswers(round, task, answers) {
   if (items.some((i) => i.truth === 'none')) {
     lines.push('Если нужной цифры в руке автора не было, это ещё не блеф: ставка могла опираться на кубики других игроков.');
   }
-  return { items, good, total: items.length, lines };
+  const last = round.bids[round.bids.length - 1];
+  const e = round.end;
+  const head = e.kind === 'calza' ? `Calza на ${last.q}×${last.f}` : `Проверка ставки ${last.q}×${last.f}`;
+  const verdict = e.kind === 'calza' ? (e.ok ? 'точно' : 'мимо') : (e.ok ? 'ставка верна' : 'ставка ложна');
+  const outcome = `${head}: на столе ${e.actual}, ${verdict}.`;
+  return { items, good, total: items.length, lines, outcome };
 }

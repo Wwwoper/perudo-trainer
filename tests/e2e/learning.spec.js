@@ -253,6 +253,71 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dAfb .calc-hint-body')).toBeVisible();
     });
 
+    test.describe('«Читай вскрытие»', () => {
+      const ROUND = {
+        id: 'g1-r3', ts: 1, round: 3, wild: true, me: 0, dice: [3, 3, 3], styles: [null, null, null],
+        hands: [[2, 3, 5], [5, 5, 1], [4, 6, 2]],
+        bids: [{ s: 2, q: 1, f: 4 }, { s: 0, q: 2, f: 4 }, { s: 1, q: 3, f: 5 }],
+        end: { kind: 'dudo', by: 0, bidder: 1, actual: 4, ok: true },
+      };
+      const seed = async (page) => {
+        await page.evaluate((r) => localStorage.setItem('perudo.rounds', JSON.stringify([r])), ROUND);
+        await page.reload();
+      };
+
+      test('без сохранённых раундов: подсказка вместо задания, «Проверить» недоступна', async ({ page }) => {
+        await open(page, 'drill');
+        await page.locator('.drill-tab[data-drill="C"]').click();
+        await expect(page.locator('#dCEmpty')).toBeVisible();
+        await expect(page.locator('#dCBody')).toBeHidden();
+        await expect(page.locator('#dCCheck')).toBeDisabled();
+      });
+
+      test('задание по сохранённому раунду: чужих рук нет до проверки, затем разбор по рукам', async ({ page }) => {
+        await seed(page);
+        await open(page, 'drill');
+        await page.locator('.drill-tab[data-drill="C"]').click();
+        await expect(page.locator('#dCBody')).toBeVisible();
+        await expect(page.locator('#dCBids li')).toHaveCount(3);
+        await expect(page.locator('#dCAsk .read-q')).toHaveCount(2);
+        await expect(page.locator('.read-hands')).toHaveCount(0);
+        // кнопка ждёт ответов на оба вопроса
+        await expect(page.locator('#dCCheck')).toBeDisabled();
+        await page.locator('input[name="rd1"][value="has"]').check();
+        await expect(page.locator('#dCCheck')).toBeDisabled();
+        await page.locator('input[name="rd3"][value="none"]').check();
+        await expect(page.locator('#dCCheck')).toBeEnabled();
+        await page.locator('#dCCheck').click();
+        await expect(page.locator('#dCfb')).toContainText('Верно 1 из 2');
+        await expect(page.locator('#dCfb')).toContainText('Проверка ставки 3×5: на столе 4, ставка верна');
+        await expect(page.locator('#dCfb')).toContainText('в руке 3 из 3');
+        await expect(page.locator('#dCfb .read-hand-row')).toHaveCount(3);
+        await expect(page.locator('.read-q.is-ok')).toHaveCount(1);
+        await expect(page.locator('.read-q.is-bad')).toHaveCount(1);
+        await expect(page.locator('#dCAsk input').first()).toBeDisabled();
+        await expect(page.locator('#dCCheck')).toBeDisabled();
+        expect(await page.locator('#dCfb').textContent()).not.toMatch(/обманщик|врёт/i);
+        // «Новое» даёт чистое задание
+        await page.click('#dNew');
+        await expect(page.locator('#dCfb')).toBeEmpty();
+        await expect(page.locator('#dCAsk input:checked')).toHaveCount(0);
+        await expect(page.locator('#dCCheck')).toBeDisabled();
+      });
+
+      test('переключение между упражнениями не ломает остальные', async ({ page }) => {
+        await seed(page);
+        await open(page, 'drill');
+        await page.locator('.drill-tab[data-drill="C"]').click();
+        await expect(page.locator('#dPanelA')).toBeHidden();
+        await expect(page.locator('#dCCheck')).toBeVisible();
+        await expect(page.locator('#dACheck')).toBeHidden();
+        await page.locator('.drill-tab[data-drill="A"]').click();
+        await expect(page.locator('#dPanelA')).toBeVisible();
+        await expect(page.locator('#dPanelC')).toBeHidden();
+        await expect(page.locator('#dACheck')).toBeVisible();
+      });
+    });
+
     test.describe('учёт попыток', () => {
       const drillStat = (page, k) => page.evaluate((key) =>
         (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.drill || {})[key] || { n: 0, good: 0 }, k);

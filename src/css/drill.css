@@ -190,3 +190,107 @@
     overflow-y: auto;
   }
 }
+
+/* ===== «Читай вскрытие» ===== */
+.read-intro,
+.read-empty {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.read-bids {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.read-bid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--surface-1);
+  font-size: 14px;
+}
+
+.read-bid.is-me {
+  border-left: 3px solid var(--acc);
+}
+
+.read-bid-n {
+  min-width: 18px;
+  color: var(--mut);
+  font-variant-numeric: tabular-nums;
+}
+
+.read-bid-who {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.read-q {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.read-q legend {
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.read-q.is-ok {
+  border-color: var(--ok);
+}
+
+.read-q.is-bad {
+  border-color: var(--bad);
+}
+
+.read-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.read-opt input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.read-lines {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.read-hands {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.read-hand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.read-hand-who {
+  min-width: 64px;
+  color: var(--mut);
+}

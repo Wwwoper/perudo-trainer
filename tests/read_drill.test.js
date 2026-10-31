@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { canRead, priorHas, pickReadRound, buildReadTask, checkReadAnswers, MAX_QUESTIONS } from '../src/read_drill.js';
+import { canRead, seatLabel, priorHas, pickReadRound, buildReadTask, checkReadAnswers, MAX_QUESTIONS } from '../src/read_drill.js';
 import { sanitizeRound } from '../src/rounds.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -129,5 +129,23 @@ describe('checkReadAnswers', () => {
     const res = checkReadAnswers(round, task, { 1: 'has', 3: 'none' });
     for (const l of res.lines) for (const re of BANNED) assert.ok(!re.test(l), `${re}: ${l}`);
     assert.ok(!/обманщик|врёт/i.test(res.lines.join(' ')));
+  });
+});
+
+describe('seatLabel и итог раунда', () => {
+  test('«Вы» для вашего места, «Игрок N» для остальных', () => {
+    const r = mk();
+    assert.equal(seatLabel(r, 0), 'Вы');
+    assert.equal(seatLabel(r, 2), 'Игрок 3');
+  });
+  test('итог: проверка ставки и Calza', () => {
+    const r = mk();
+    const t = buildReadTask(r, { rnd: () => 0 });
+    const ans = { 1: 'has', 3: 'has' };
+    assert.equal(checkReadAnswers(r, t, ans).outcome, 'Проверка ставки 3×5: на столе 4, ставка верна.');
+    const c = sanitizeRound({ ...r, bids: [{ s: 2, q: 1, f: 4 }, { s: 0, q: 2, f: 4 }, { s: 1, q: 4, f: 5 }], end: { kind: 'calza', by: 0, bidder: 1, actual: 4, ok: true } });
+    assert.equal(checkReadAnswers(c, buildReadTask(c, { rnd: () => 0 }), ans).outcome, 'Calza на 4×5: на столе 4, точно.');
+    const m = sanitizeRound({ ...c, end: { kind: 'calza', by: 0, bidder: 1, actual: 4, ok: false }, bids: [{ s: 2, q: 1, f: 4 }, { s: 0, q: 2, f: 4 }, { s: 1, q: 3, f: 5 }] });
+    assert.equal(checkReadAnswers(m, buildReadTask(m, { rnd: () => 0 }), ans).outcome, 'Calza на 3×5: на столе 4, мимо.');
   });
 });

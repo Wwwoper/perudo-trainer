@@ -66,6 +66,14 @@ WEAK_SEED = """() => {
 }"""
 
 
+# Сохранённый раунд для упражнения «Читай вскрытие»: четыре игрока по пять кубиков, три вопроса.
+READ_SEED = """() => localStorage.setItem('perudo.rounds', JSON.stringify([{
+  id: 'layout-r1', ts: 1, round: 1, wild: true, me: 0, dice: [5, 5, 5, 5], styles: [null, null, null, null],
+  hands: [[2, 3, 5, 6, 4], [5, 5, 1, 3, 2], [4, 6, 2, 2, 3], [6, 6, 3, 1, 4]],
+  bids: [{ s: 2, q: 2, f: 4 }, { s: 3, q: 3, f: 6 }, { s: 0, q: 3, f: 4 }, { s: 1, q: 3, f: 5 }],
+  end: { kind: 'dudo', by: 0, bidder: 1, actual: 5, ok: true } }]))"""
+
+
 # Постоянный игрок уже выбрал режим: окно «Как вы будете играть?» не открывается.
 # Тема для замеров: PERUDO_THEME=dark|light (по умолчанию — как в приложении). Нужна, чтобы проверить вёрстку в тёмной теме.
 THEME = os.environ.get("PERUDO_THEME", "")
@@ -159,6 +167,18 @@ def measure_all(base_url, browser):
         page.click("#dNew")
         page.click("#dPanelA .drill-hint summary")
         snap("drill A: memo (hint open)", "#dACheck")
+
+        # «Читай вскрытие»: без раундов — подсказка, с раундом — задание и разбор после проверки
+        page.click('.drill-tab[data-drill="C"]')
+        snap("drill C: empty", "#dCEmpty")
+        page.evaluate(READ_SEED)
+        page.click("#dNew")
+        snap("drill C", "#dCCheck")
+        for n in (1, 2, 4):
+            page.check(f'input[name="rd{n}"][value="has"]')
+        page.click("#dCCheck")
+        # длинный разбор прокручивается внутри панели (.dock-scroll): на экране должна остаться кнопка
+        snap("drill C: after check", "#dCCheck")
 
         _tab(page, "duel")
         snap("duel", "#dStart")
