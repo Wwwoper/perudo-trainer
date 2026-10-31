@@ -74,8 +74,13 @@ function askPersistenceIfNeeded() {
   requestPersistence(globalThis.navigator?.storage).then(() => renderStats());
 }
 
-/** «Тренировать» в статистике: открыть тренажёр в нужном режиме. */
+/** «Тренировать» в статистике: открыть тренажёр в нужном режиме (или упражнение «Читай вскрытие»). */
 function trainInMode(mode) {
+  if (mode === 'read') {   // тема «чтение ставок» тренируется в упражнении, а не в тренажёре
+    $('.tab-btn[data-t="drill"]')?.click();
+    $('.drill-tab[data-drill="C"]')?.click();
+    return;
+  }
   $('.tab-btn[data-t="train"]')?.click();
   trainerApi?.setMode(mode);
 }

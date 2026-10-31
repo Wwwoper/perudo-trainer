@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { canRead, seatLabel, priorHas, pickReadRound, buildReadTask, checkReadAnswers, MAX_QUESTIONS } from '../src/read_drill.js';
+import { addReadResult, canRead, seatLabel, priorHas, pickReadRound, buildReadTask, checkReadAnswers, MAX_QUESTIONS } from '../src/read_drill.js';
 import { sanitizeRound } from '../src/rounds.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -147,5 +147,22 @@ describe('seatLabel и итог раунда', () => {
     assert.equal(checkReadAnswers(c, buildReadTask(c, { rnd: () => 0 }), ans).outcome, 'Calza на 4×5: на столе 4, точно.');
     const m = sanitizeRound({ ...c, end: { kind: 'calza', by: 0, bidder: 1, actual: 4, ok: false }, bids: [{ s: 2, q: 1, f: 4 }, { s: 0, q: 2, f: 4 }, { s: 1, q: 3, f: 5 }] });
     assert.equal(checkReadAnswers(m, buildReadTask(m, { rnd: () => 0 }), ans).outcome, 'Calza на 3×5: на столе 4, мимо.');
+  });
+});
+
+describe('addReadResult', () => {
+  test('добавляет ответы к теме read, остальные темы не трогает и не меняет исходный объект', () => {
+    const src = { dudo: { n: 5, good: 3 } };
+    const out = addReadResult(src, { good: 2, total: 3 });
+    assert.deepEqual(out, { dudo: { n: 5, good: 3 }, read: { n: 3, good: 2 } });
+    assert.deepEqual(src, { dudo: { n: 5, good: 3 } });
+    assert.deepEqual(addReadResult(out, { good: 1, total: 3 }).read, { n: 6, good: 3 });
+  });
+  test('мусор: пустой результат и испорченные счётчики', () => {
+    assert.deepEqual(addReadResult(null, { good: 1, total: 0 }), {});
+    assert.deepEqual(addReadResult([], null), {});
+    assert.deepEqual(addReadResult({ read: { n: 'x' } }, { good: 1, total: 2 }).read, { n: 2, good: 1 });
+    assert.deepEqual(addReadResult({}, { good: 9, total: 2 }).read, { n: 2, good: 2 });
+    assert.deepEqual(addReadResult({}, { good: -4, total: 2 }).read, { n: 2, good: 0 });
   });
 });

@@ -6,6 +6,11 @@
 
 import { MOMENT_TAGS, TAG_LABELS } from './moments.js';
 
+/** Тема «чтение ставок»: копится из упражнения «Читай вскрытие», в метки решений партии не входит. */
+export const READ_TAG = 'read';
+const WEAK_TAGS = [...MOMENT_TAGS, READ_TAG];
+const WEAK_LABELS = { ...TAG_LABELS, [READ_TAG]: 'чтение ставок по вскрытию' };
+
 /** Минимум решений по теме, чтобы делать вывод. */
 export const MIN_DECISIONS = 8;
 /** Сколько слабых тем показывать. */
@@ -17,6 +22,7 @@ export const TRAIN_MODE = {
   lastDie: 'solo',
   palifico: 'nowild',
   bigTable: 'big',
+  [READ_TAG]: 'read',   // не режим тренажёра, а упражнение «Читай вскрытие»
 };
 
 const isCount = (v) => Number.isInteger(v) && v >= 0;
@@ -32,10 +38,10 @@ export function weakSpots(byTag, { minN = MIN_DECISIONS, limit = MAX_WEAK } = {}
   const weak = [];
   const pending = [];
   const src = byTag && typeof byTag === 'object' && !Array.isArray(byTag) ? byTag : {};
-  for (const tag of MOMENT_TAGS) {
+  for (const tag of WEAK_TAGS) {
     const s = src[tag];
     if (!s || !isCount(s.n) || !isCount(s.good) || s.good > s.n || s.n === 0) continue;
-    const label = TAG_LABELS[tag];
+    const label = WEAK_LABELS[tag];
     if (s.n < minN) { pending.push({ tag, label, n: s.n }); continue; }
     if (s.good === s.n) continue;
     weak.push({ tag, label, n: s.n, good: s.good, share: s.good / s.n, mode: TRAIN_MODE[tag] || null });

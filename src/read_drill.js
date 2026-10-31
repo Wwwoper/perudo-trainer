@@ -125,3 +125,17 @@ export function checkReadAnswers(round, task, answers) {
   const outcome = `${head}: на столе ${e.actual}, ${verdict}.`;
   return { items, good, total: items.length, lines, outcome };
 }
+
+/**
+ * Копия счётчиков по темам с учтённым результатом упражнения (тема «read»: n — ответов, good — верных).
+ * @param {object} byTag текущие счётчики (мусор заменяется пустым объектом)
+ * @param {{good: number, total: number}} res результат checkReadAnswers
+ */
+export function addReadResult(byTag, res) {
+  const src = byTag && typeof byTag === 'object' && !Array.isArray(byTag) ? byTag : {};
+  const total = Number.isInteger(res?.total) && res.total > 0 ? res.total : 0;
+  const good = Number.isInteger(res?.good) ? Math.max(0, Math.min(res.good, total)) : 0;
+  if (!total) return { ...src };
+  const old = src.read && Number.isInteger(src.read.n) && Number.isInteger(src.read.good) ? src.read : { n: 0, good: 0 };
+  return { ...src, read: { n: old.n + total, good: old.good + good } };
+}

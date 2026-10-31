@@ -3,10 +3,10 @@
 // Логика задания и проверки — в read_drill.js. Здесь только экран: чужие руки в страницу попадают
 // не раньше, чем нажата «Проверить».
 
-import { getRounds } from '../storage.js';
+import { getRounds, updateStats } from '../storage.js';
 import { renderBid, renderHand } from '../table.js';
 import { $ } from './common.js';
-import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel } from '../read_drill.js';
+import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel, addReadResult } from '../read_drill.js';
 
 const OPTIONS = [['has', 'Цифра в руке есть'], ['none', 'Цифры в руке нет']];
 
@@ -65,6 +65,7 @@ export function setupReadDrill() {
     const res = checkReadAnswers(round, task, answers);
     if (!res) return;
     done = true;
+    updateStats((S) => { S.byTag = addReadResult(S.byTag, res); });
     for (const it of res.items) {
       const box = ask.querySelector(`.read-q[data-n="${it.n}"]`);
       box?.classList.add(it.ok ? 'is-ok' : 'is-bad');

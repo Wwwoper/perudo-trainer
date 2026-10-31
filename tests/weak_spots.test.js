@@ -1,7 +1,7 @@
 // weak_spots.test.js — выбор слабых тем по счётчикам решений.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { weakSpots, TRAIN_MODE, MIN_DECISIONS, MAX_WEAK } from '../src/weak_spots.js';
+import { weakSpots, TRAIN_MODE, MIN_DECISIONS, MAX_WEAK, READ_TAG } from '../src/weak_spots.js';
 import { MOMENT_TAGS } from '../src/moments.js';
 
 globalThis.Perudo = { pct: (x) => `${Math.round(x * 100)}%` };
@@ -48,6 +48,23 @@ describe('weakSpots', () => {
       bigTable: { n: 0, good: 0 }, чужая: { n: 10, good: 0 },
     });
     assert.deepEqual(r, { weak: [], pending: [] });
+  });
+});
+
+describe('тема «чтение ставок»', () => {
+  it('слабая тема с кнопкой «read», с малой выборкой — в «пока мало данных»', () => {
+    const r = weakSpots({ [READ_TAG]: { n: 10, good: 3 } });
+    assert.equal(r.weak.length, 1);
+    assert.equal(r.weak[0].tag, 'read');
+    assert.equal(r.weak[0].mode, 'read');
+    assert.match(r.weak[0].label, /чтение ставок/);
+    assert.deepEqual(weakSpots({ [READ_TAG]: { n: 3, good: 1 } }).pending.map((p) => p.tag), ['read']);
+    assert.deepEqual(weakSpots({ [READ_TAG]: { n: 10, good: 10 } }).weak, []);
+  });
+  it('в HTML единица — «отв.», кнопка ведёт в упражнение', () => {
+    const h = weakSpotsHtml({ [READ_TAG]: { n: 10, good: 3 } });
+    assert.match(h, /30(\.0)?\s?% · 10 отв\./);
+    assert.match(h, /data-train="read"/);
   });
 });
 

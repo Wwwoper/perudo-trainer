@@ -304,6 +304,42 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dCCheck')).toBeDisabled();
       });
 
+      const readTag = (page) => page.evaluate(() =>
+        (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.byTag || {}).read || { n: 0, good: 0 });
+
+      test('проверка пишет ответы в статистику один раз на задание', async ({ page }) => {
+        await seed(page);
+        await open(page, 'drill');
+        await page.locator('.drill-tab[data-drill="C"]').click();
+        expect(await readTag(page)).toEqual({ n: 0, good: 0 });
+        await page.locator('input[name="rd1"][value="has"]').check();
+        await page.locator('input[name="rd3"][value="none"]').check();
+        await page.locator('#dCCheck').click();
+        expect(await readTag(page)).toEqual({ n: 2, good: 1 });
+        await page.locator('#dCCheck').dispatchEvent('click');
+        expect(await readTag(page)).toEqual({ n: 2, good: 1 });
+        await page.click('#dNew');
+        await page.locator('input[name="rd1"][value="has"]').check();
+        await page.locator('input[name="rd3"][value="has"]').check();
+        await page.locator('#dCCheck').click();
+        expect(await readTag(page)).toEqual({ n: 4, good: 3 });
+      });
+
+      test('«Над чем поработать»: слабое чтение ставок ведёт кнопкой в упражнение', async ({ page }) => {
+        await page.evaluate((r) => {
+          localStorage.setItem('perudo.rounds', JSON.stringify([r]));
+          localStorage.setItem('perudo.userProfile', JSON.stringify({ byTag: { read: { n: 10, good: 3 } } }));
+        }, ROUND);
+        await page.reload();
+        await open(page, 'stats');
+        const item = page.locator('#stWeak .weak-item', { hasText: 'Чтение ставок' });
+        await expect(item).toContainText('30.0%');
+        await expect(item).toContainText('отв.');
+        await item.locator('.weak-train').click();
+        await expect(page.locator('#dPanelC')).toBeVisible();
+        await expect(page.locator('#dCBody')).toBeVisible();
+      });
+
       test('переключение между упражнениями не ломает остальные', async ({ page }) => {
         await seed(page);
         await open(page, 'drill');
