@@ -226,6 +226,8 @@ function cleanReview(raw) {
     },
   };
   if (v.softened === true) out.v.softened = true;
+  const note = cleanText(raw.note, 400);
+  if (note) out.note = note;
   if (isProb(raw.probRead)) out.probRead = raw.probRead;
   if (isInt(raw.handSize) && raw.handSize >= 0 && raw.handSize <= MAX_DICE) out.handSize = raw.handSize;
   if (isInt(raw.ownMatch) && raw.ownMatch >= 0 && raw.ownMatch <= MAX_DICE) out.ownMatch = raw.ownMatch;

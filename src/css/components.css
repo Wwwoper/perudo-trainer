@@ -317,3 +317,12 @@
     gap: 2px;
   }
 }
+
+/* Комментарий к ходу в «Разборе» (explainAction) */
+.review-note {
+  margin-top: 2px;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}

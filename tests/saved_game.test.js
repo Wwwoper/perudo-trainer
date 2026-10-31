@@ -45,7 +45,7 @@ const snapOf = (game, extra = {}) => makeSnapshot({
   game,
   log: [{ type: 'info', html: 'Партия началась', round: 1 },
     { type: '', html: '<span class="player-name c0">Вы</span> <span class="chip ">3<em>×</em><span class="die s " title="2"><i class="on"></i></span></span>', round: 1 }],
-  reviews: [{ kind: 'raise', prob: 0.6, text: 'вы поставили ставку', v: { code: 'good', label: 'Надёжная ставка', score: 1 }, round: 1, outcome: '', probRead: 0.7, handSize: 5, ownMatch: 2, trust: 0.2 }],
+  reviews: [{ kind: 'raise', prob: 0.6, text: 'вы поставили ставку', v: { code: 'good', label: 'Надёжная ставка', score: 1 }, round: 1, outcome: '', probRead: 0.7, handSize: 5, ownMatch: 2, trust: 0.2, note: 'Вы поставили 4×3.' }],
   moments: [],
   mind: { level: 'hard', memory: false },
   now: NOW,
@@ -89,6 +89,7 @@ describe('снимок и восстановление', () => {
     assert.strictEqual(back.log.length, 2);
     assert.strictEqual(back.reviews.length, 1);
     assert.strictEqual(back.reviews[0].probRead, 0.7);
+    assert.strictEqual(back.reviews[0].note, 'Вы поставили 4×3.');
     assert.strictEqual(back.reviews[0].v.code, 'good');
   });
   it('снимок не зависит от дальнейших ходов (копия)', () => {

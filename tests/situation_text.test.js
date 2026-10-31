@@ -7,7 +7,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { describeSituation } from '../src/situation.js';
 import {
-  situationLines, planLines, beforeMoveLines, canExplain, BANNED, EVIDENCE, LINE_TYPES, OBS_MIN, GAP_NEAR,
+  situationLines, planLines, explainAction, beforeMoveLines, canExplain, BANNED, EVIDENCE, LINE_TYPES, OBS_MIN, GAP_NEAR,
 } from '../src/situation_text.js';
 import { AssistMode } from '../src/assist.js';
 
@@ -283,6 +283,75 @@ describe('«Подсказка плана»', () => {
       for (const l of planLines(sit({ log: bids(['b2', q, f]) }), { threshold: [0.3, 0.5, 0.7][i % 3] })) {
         for (const re of BANNED) assert.ok(!re.test(l.text), `${l.id}: «${l.text}» совпало с ${re}`);
         assert.ok(LINE_TYPES.includes(l.type));
+      }
+    }
+  });
+});
+
+describe('комментарий к ходу (explainAction)', () => {
+  const after = () => sit({ log: bids(['b2', 6, 2]) });         // у вас [1,2,2,4,6]: двоек с джокером три
+  const texts = (l) => l.map((x) => x.text).join(' ');
+
+  it('повышение с поддержкой руки', () => {
+    const t = texts(explainAction(after(), { type: 'raise', q: 7, f: 2 }, { p: 0.4 }));
+    assert.match(t, /Вы поставили 7×2: в вашей руке подходит 3, ещё нужно найти 4/);
+    assert.match(t, /шанс 40 %/);
+    assert.match(t, /проверка в этот момент срабатывала бы с шансом/);
+  });
+  it('повышение без поддержки', () => {
+    const noWild = sit({ hand: [2, 2, 4, 4, 6], log: bids(['b2', 6, 2]) });         // единиц нет: джокеров нет
+    const t = texts(explainAction(noWild, { type: 'raise', q: 7, f: 5 }, { p: 0.2 }));
+    assert.match(t, /подходящих кубиков нет/);
+    assert.match(t, /нужно 7/);
+  });
+  it('единицы и Палифико: джокеры не считаются', () => {
+    const pal = sit({ dice: [2, 2, 2, 2], hand: [1, 2], palifico: true, log: bids(['b1', 2, 3]) });
+    assert.match(texts(explainAction(pal, { type: 'raise', q: 3, f: 2 })), /подходит 1, ещё нужно найти 2/);
+    const ones = sit({ hand: [1, 1, 3, 4, 6], log: bids(['b1', 2, 3]) });
+    assert.match(texts(explainAction(ones, { type: 'raise', q: 4, f: 1 })), /подходит 2/);
+  });
+  it('проверка: чего не хватало и шансы, без слов про блеф', () => {
+    const l = explainAction(after(), { type: 'dudo' }, { p: 0.35 });
+    const t = texts(l);
+    assert.match(t, /Вы не поверили 6×2: по вашим кубикам не хватало ещё 3/);
+    assert.match(t, /Ставка верна с шансом \d+ %, проверка сработает с шансом \d+ %/);
+    assert.ok(!/блеф|обман|лж/i.test(t));
+  });
+  it('подробный вид добавляет альтернативу и среднее', () => {
+    const short = explainAction(after(), { type: 'dudo' });
+    const det = explainAction(after(), { type: 'dudo' }, { depth: 'detailed' });
+    assert.ok(det.length > short.length);
+    assert.ok(det.some((l) => l.id === 'act_alt'));
+    const r = explainAction(after(), { type: 'raise', q: 7, f: 2 }, { depth: 'detailed', p: 0.4 });
+    assert.ok(r.some((l) => l.id === 'act_expect'));
+  });
+  it('Calza: шанс точного совпадения и пояснение, что это узкое событие', () => {
+    const t = texts(explainAction(after(), { type: 'calza' }, { p: 0.12 }));
+    assert.match(t, /Calza на 6×2/);
+    assert.match(t, /12 %/);
+    assert.match(t, /узкое событие/);
+  });
+  it('мусор — пустой список', () => {
+    for (const bad of [null, undefined, {}, { type: 'шаг' }, { type: 'raise' }, { type: 'raise', q: 'x', f: 2 }]) {
+      assert.deepEqual(explainAction(after(), bad), []);
+    }
+    assert.deepEqual(explainAction(null, { type: 'dudo' }), []);
+  });
+  it('без запрещённого и без утверждений об итоге на сотнях позиций', () => {
+    let seed = 21;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    for (let i = 0; i < 300; i++) {
+      const q = 1 + Math.floor(rnd() * 10);
+      const f = 1 + Math.floor(rnd() * 6);
+      const s = sit({ log: bids(['b1', q, f]), palifico: rnd() < 0.2, dice: [5, 5, 5, 5] });
+      for (const a of [{ type: 'raise', q: q + 1, f }, { type: 'dudo' }, { type: 'calza' }]) {
+        for (const depth of ['short', 'detailed']) {
+          for (const l of explainAction(s, a, { p: rnd(), depth })) {
+            assert.ok(LINE_TYPES.includes(l.type));
+            for (const re of BANNED) assert.ok(!re.test(l.text), `${l.id}: «${l.text}» ~ ${re}`);
+            assert.ok(!/блеф|обман|ложн|верна оказалась|потерял/i.test(l.text), l.text);
+          }
+        }
       }
     }
   });

@@ -197,3 +197,56 @@ export function planLines(sit, { threshold = 0.5 } = {}) {
   if (out.length) out.push(line('plan_note', 'fact', 'Это расчёт по вашим кубикам: чужие кубики он не знает, а соперники могут ходить по-своему.'));
   return out;
 }
+
+const ACTION_TYPES = ['raise', 'dudo', 'calza'];
+
+/**
+ * Комментарий к вашему ходу, написанный до вскрытия: смысл выбора и ближайшая альтернатива.
+ * Ничего не говорит о том, блефовал ли соперник: итог ещё неизвестен, а чужие кубики описание не знает.
+ * @param {object} sit описание ситуации ДО хода (describeSituation)
+ * @param {{type: 'raise'|'dudo'|'calza', q?: number, f?: number}} action выбранное действие
+ * @param {{p?: number, depth?: 'short'|'detailed'}} [opts] p — шанс выбранного хода (как в оценке «Разбора»)
+ * @returns {{id:string, type:string, text:string}[]}
+ */
+export function explainAction(sit, action, { p, depth = 'short' } = {}) {
+  if (!sit || !action || !ACTION_TYPES.includes(action.type)) return [];
+  const d = DEPTHS.includes(depth) ? depth : 'short';
+  const out = [];
+  const hand = sit.facts.find((f) => f.kind === 'hand');
+  const exp = sit.facts.find((f) => f.kind === 'expectation');
+  const wild = sit.phase !== 'palifico';
+  const chance = Number.isFinite(p) ? ` По расчёту шанс ${pct(p)}.` : '';
+  const dudo = sit.options.find((o) => o.type === 'dudo');
+  const min = sit.options.find((o) => o.type === 'minRaise');
+
+  if (action.type === 'raise') {
+    if (!Number.isInteger(action.q) || !Number.isInteger(action.f) || !hand) return [];
+    const own = hand.counts[action.f] + (wild && action.f !== 1 ? hand.counts[1] : 0);
+    const hidden = sit.balance.total - hand.size;
+    const share = action.f !== 1 && wild ? 1 / 3 : 1 / 6;
+    const need = Math.max(0, action.q - own);
+    out.push(line('act_summary', 'fact', own > 0
+      ? `Вы поставили ${action.q}×${action.f}: в вашей руке подходит ${own}, ещё нужно найти ${need} у соперников.`
+      : `Вы поставили ${action.q}×${action.f}: в вашей руке подходящих кубиков нет, ставка держится на кубиках соперников (нужно ${need}).`));
+    if (d === 'detailed') {
+      out.push(line('act_expect', 'estimate', `Среди ${hidden} чужих кубиков в среднем ${num1(hidden * share)} нужной цифры.${chance}`));
+    } else if (chance) {
+      out.push(line('act_chance', 'estimate', chance.trim()));
+    }
+    if (dudo) out.push(line('act_alt', 'estimate', `Для сравнения: проверка в этот момент срабатывала бы с шансом ${pct(dudo.success)}.`));
+  } else if (action.type === 'dudo') {
+    const bid = exp ? `${exp.q}×${exp.face}` : 'ставке';
+    out.push(line('act_summary', 'fact', exp
+      ? `Вы не поверили ${bid}: по вашим кубикам не хватало ещё ${exp.need}, среди ${exp.hidden} чужих кубиков в среднем ${num1(exp.expected)} нужной цифры.`
+      : 'Вы не поверили ставке.'));
+    if (dudo) out.push(line('act_chance', 'estimate', `Ставка верна с шансом ${pct(dudo.p)}, проверка сработает с шансом ${pct(dudo.success)}.`));
+    if (min && d === 'detailed') out.push(line('act_alt', 'estimate', `Для сравнения: минимальное повышение ${min.q}×${min.f} верно с шансом ${pct(min.p)}.`));
+  } else {
+    out.push(line('act_summary', 'fact', exp
+      ? `Вы сказали Calza на ${exp.q}×${exp.face}: ставка должна оказаться точной.`
+      : 'Вы сказали Calza.'));
+    if (Number.isFinite(p)) out.push(line('act_chance', 'estimate', `Шанс точного совпадения по расчёту ${pct(p)}: это узкое событие, оно бывает заметно реже, чем «ставка верна».`));
+    if (dudo && d === 'detailed') out.push(line('act_alt', 'estimate', `Для сравнения: проверка сработала бы с шансом ${pct(dudo.success)}.`));
+  }
+  return out;
+}

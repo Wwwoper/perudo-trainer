@@ -4,7 +4,7 @@
 import { createGame, startGame, applyAction, canCalza as engineCanCalza }
   from './engine.js';
 import { legal, minLegal } from './rules.js';
-import { createAssistConfig, getClassification } from './assist.js';
+import { createAssistConfig, getClassification, effectiveExplain } from './assist.js';
 import { readInfo, readNote } from './table_read.js';
 import { describeRoundEvents } from './game_log.js';
 import { updateStats, addGame, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
@@ -25,7 +25,7 @@ import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/resu
 import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
 import { buildCtx } from './moments.js';
 import { describeSituation } from './situation.js';
-import { situationLines, planLines } from './situation_text.js';
+import { situationLines, planLines, explainAction } from './situation_text.js';
 import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/situation_card.js';
 import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
@@ -377,6 +377,7 @@ function renderReview() {
       <div>
         <b>Раунд ${e.round}.</b> ${e.text}
         ${readNote(e, pct)}
+        ${e.note ? `<div class="review-note">${escapeHtml(e.note)}</div>` : ''}
         ${e.outcome ? `<div class="muted">${e.outcome}</div>` : ''}
       </div>
     </div>
@@ -456,6 +457,44 @@ function renderAdvice() {
 /* Практический расчёт в уме — какие числа складывать, чтобы
    получить безопасную ставку. Показывается в Новичке и Тренировке,
    полностью скрыт в режиме «Игра». */
+/** Описание ситуации для вашего хода: только публичные данные и ваша рука (чужих рук здесь нет). */
+function buildSituation() {
+  const me = game?.players?.[0];
+  if (!game || !me) return null;
+  return describeSituation({
+    publicState: {
+      players: game.players.map((p) => ({ id: p.id, dice: p.dice, alive: p.alive, style: p.style })),
+      bid: game.bid ? { playerId: game.bid.playerId, q: game.bid.q, f: game.bid.f } : null,
+      palifico: !!game.palifico,
+    },
+    myHand: me.hand.slice(),
+    bidLog: game.bidHistory.map((b) => ({ playerId: b.playerId, q: b.q, f: b.f })),
+    meSeat: 0,
+    rules: { startDice: game.config.startDice },
+    settings: { hideStyles: stylesHidden },
+    probBid: P.probBid,
+    probBidRead: P.probBidRead,
+  });
+}
+
+/**
+ * Комментарий к вашему ходу для «Разбора»: смысл выбора и альтернатива, без итога вскрытия.
+ * Нужно вызывать до applyAction. В режиме «Игра» и при «Объяснениях: выключены» — пустая строка.
+ */
+function explainNote(action, p) {
+  const mode = game?.config?.assistMode;
+  if (!game || mode === 'game') return '';
+  if (effectiveExplain(mode, $('#gExplain')?.value || 'auto') === 'off') return '';
+  try {
+    const sit = buildSituation();
+    if (!sit) return '';
+    return explainAction(sit, action, { p, depth: $('#gExplainDepth')?.value || 'short' }).map((l) => l.text).join(' ');
+  } catch (e) {
+    console.warn('explain note failed:', e);
+    return '';
+  }
+}
+
 /**
  * Карточка «Картина стола»: на вашем ходу при объяснениях «до и после хода», не в режиме «Игра».
  * В описание передаются только публичные данные (кубики, ставки раунда) и ваша рука — чужих рук там нет.
@@ -472,20 +511,7 @@ function renderSituation() {
   });
   if (!show) { renderSituationCard(el, null); return; }
   try {
-    const sit = describeSituation({
-      publicState: {
-        players: game.players.map((p) => ({ id: p.id, dice: p.dice, alive: p.alive, style: p.style })),
-        bid: game.bid ? { playerId: game.bid.playerId, q: game.bid.q, f: game.bid.f } : null,
-        palifico: !!game.palifico,
-      },
-      myHand: me.hand.slice(),
-      bidLog: game.bidHistory.map((b) => ({ playerId: b.playerId, q: b.q, f: b.f })),
-      meSeat: 0,
-      rules: { startDice: game.config.startDice },
-      settings: { hideStyles: stylesHidden },
-      probBid: P.probBid,
-      probBidRead: P.probBidRead,
-    });
+    const sit = buildSituation();
     const names = Object.fromEntries(game.players.map((p) => [p.id, p.name]));
     renderSituationCard(el, {
       lines: situationLines(sit, { depth: $('#gExplainDepth')?.value || 'short', names }),
@@ -771,6 +797,7 @@ function onPlayerRaise() {
 
   const p = P.probBid(q, f, total, me.hand, !game.palifico);
   const entry = addReview('raise', p, `вы поставили ${renderBid(q, f)} — шанс ${pct(p)}.`, tableRead(q, f, me));
+  entry.note = explainNote({ type: 'raise', q, f }, p);
   const before = decisionContext(total, me);
 
   const res = applyAction(game, 'human', { type: 'raise', quantity: q, face: f });
@@ -800,6 +827,7 @@ function onPlayerDudo() {
   const p = P.probBid(q, f, total, me.hand, !game.palifico);
   const entry = addReview('dudo', p,
     `вы не поверили ${renderBid(q, f)} — шанс, что ставка верна: ${pct(p)}.`, tableRead(q, f, me));
+  entry.note = explainNote({ type: 'dudo' }, p);
   const before = decisionContext(total, me);
   const roundSnap = snapRound(game);
 
@@ -842,6 +870,7 @@ function onPlayerCalza() {
   const pe = P.exactProb(q, f, total, me.hand, !game.palifico);
   const entry = addReview('calza', pe,
     `вы сказали Calza на ${renderBid(q, f)} — шанс точного совпадения ${pct(pe)}.`);
+  entry.note = explainNote({ type: 'calza' }, pe);
   const before = decisionContext(total, me);
   const roundSnap = snapRound(game);
 

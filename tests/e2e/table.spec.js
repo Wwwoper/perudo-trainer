@@ -580,6 +580,38 @@ test.describe('Покерный стол в партии', () => {
     });
   }
 
+  for (const c of [
+    { assist: 'training', explain: undefined, want: 1, name: 'Тренировка, авто (после хода)' },
+    { assist: 'novice', explain: undefined, want: 1, name: 'Новичок, авто' },
+    { assist: 'novice', explain: 'off', want: 0, name: 'Новичок, объяснения выключены' },
+    { assist: 'game', explain: 'full', want: 0, name: 'Игра, даже при «до и после»' },
+  ]) {
+    test(`комментарий к ходу в «Разборе»: ${c.name} → ${c.want ? 'есть' : 'нет'}`, async ({ page }) => {
+      await startGame(page, { bots: 2, dice: 3, assist: c.assist, explain: c.explain });
+      await waitMyTurn(page);
+      await page.evaluate(() => document.querySelector('#gRaise').click());
+      await expect(page.locator('#gReview .review-row')).toHaveCount(1);
+      await expect(page.locator('#gReview .review-note')).toHaveCount(c.want);
+      if (c.want) {
+        const text = await page.locator('#gReview .review-note').textContent();
+        expect(text).toMatch(/Вы поставили \d+×\d/);
+        expect(text).not.toMatch(/блеф|обман/i);
+      }
+    });
+  }
+
+  test('комментарий к ходу сохраняется вместе с партией и возвращается после перезагрузки', async ({ page }) => {
+    await startGame(page, { bots: 2, dice: 3, assist: 'novice', explainDepth: 'detailed' });
+    await waitMyTurn(page);
+    await page.evaluate(() => document.querySelector('#gRaise').click());
+    await expect(page.locator('#gReview .review-note')).toHaveCount(1);
+    const note = await page.locator('#gReview .review-note').textContent();
+    await expect.poll(async () => (await activeSaved(page))?.reviews?.[0]?.note ?? '').toBe(note);
+    await reloadToSetup(page);
+    await page.locator('#gResumeBtn').click();
+    await expect(page.locator('#gReview .review-note')).toHaveText(note);
+  });
+
   test('карточка «Картина стола» не зависит от чужих кубиков', async ({ page }) => {
     await startGame(page, { bots: 3, dice: 4, assist: 'novice', explainDepth: 'detailed' });
     await waitMyTurn(page);
