@@ -510,6 +510,52 @@ test.describe('Покерный стол в партии', () => {
     await expect(dlg).toBeHidden();
   });
 
+  /** Вскрытие после вашего «Не верю»: у бота [2,2], вы ставите 1×2, он отвечает, вы проверяете. */
+  async function revealAfterDudo(page, opts) {
+    await startGame(page, { bots: 1, dice: 2, reveal: true, ...opts });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2]);
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
+    await page.locator('#gRaise').click();
+    await waitBotBid(page);
+    await page.locator('#gDudo').click();
+    await expect(page.locator('#gReveal')).toBeVisible();
+  }
+
+  test('вскрытие: «Кто что называл» и «Решение и результат» свёрнуты, раскрываются и останавливают таймер', async ({ page }) => {
+    await revealAfterDudo(page, { assist: 'novice' });
+    const said = page.locator('#gRevealSaid');
+    const decision = page.locator('#gRevealDecision');
+    await expect(said).toBeVisible();
+    await expect(decision).toBeVisible();
+    expect(await said.evaluate((d) => d.open)).toBe(false);
+    await said.locator('summary').click();
+    expect(await page.locator('#gRevealSaidList li').count()).toBeGreaterThanOrEqual(2);
+    await expect(page.locator('#gRevealSaidList')).toContainText('в руке');
+    await expect(page.locator('#gRevealSaidNote')).toContainText('ещё не блеф');
+    await decision.locator('summary').click();
+    await expect(page.locator('#gRevealDecisionBody')).toContainText('Вы проверили ставку');
+    await expect(page.locator('#gRevealDecisionBody')).toContainText('На столе оказалось');
+    // окно не закрывается само, пока читаешь разбор
+    await expect(page.locator('#gRevealBar')).not.toHaveClass(/run/);
+    await page.waitForTimeout(400);
+    await expect(page.locator('#gReveal')).toBeVisible();
+    expect(await page.locator('#gReveal').textContent()).not.toMatch(/обманщик|врёт/i);
+  });
+
+  test('вскрытие: в «Игре» и при выключенных объяснениях блоков разбора нет', async ({ page }) => {
+    await revealAfterDudo(page, { assist: 'game', explain: 'full' });
+    await expect(page.locator('#gRevealSaid')).toBeHidden();
+    await expect(page.locator('#gRevealDecision')).toBeHidden();
+  });
+
+  test('вскрытие: объяснения «Выключены» убирают блоки разбора', async ({ page }) => {
+    await revealAfterDudo(page, { assist: 'novice', explain: 'off' });
+    await expect(page.locator('#gRevealSaid')).toBeHidden();
+    await expect(page.locator('#gRevealDecision')).toBeHidden();
+  });
+
   test('режим «Игра» не показывает проценты на столе', async ({ page }) => {
     await startGame(page, { bots: 2, dice: 2, assist: 'game' });
     await waitMyTurn(page);

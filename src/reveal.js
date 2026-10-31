@@ -87,3 +87,68 @@ export function buildReveal(events, players) {
     eliminatedIds: eliminated,
   };
 }
+
+// ----- Разбор вскрытия: «Кто что называл» и «Решение и результат» -----
+// Работают по записанному раунду (rounds.js): после вскрытия все руки известны, так что это факты, а не догадки.
+
+/** Подпись под списком «Кто что называл»: что показано и чего это не доказывает. */
+export const SAID_NOTE = 'Показано, сколько нужных кубиков было в руке автора ставки. Если их там не было, это ещё не блеф: ставка могла опираться на кубики других игроков. Единицы-джокеры учтены.';
+
+/**
+ * Что называл каждый игрок и сколько нужных кубиков было в его руке.
+ * kind: 'none' — в руке нет нужной цифры, 'part' — часть кубиков, 'all' — вся рука подходит.
+ * @param {object} round раунд из rounds.js (sanitizeRound)
+ * @param {string[]} names имена по местам раунда
+ * @returns {{items: object[], wild: boolean}|null}
+ */
+export function buildSaid(round, names = []) {
+  if (!round || !Array.isArray(round.bids) || !Array.isArray(round.hands)) return null;
+  const items = round.bids.map((b, i) => {
+    const hand = round.hands[b.s] || [];
+    const matches = hand.filter((d) => dieMatches(d, b.f, round.wild)).length;
+    const size = hand.length;
+    return {
+      n: i + 1, seat: b.s, name: String(names[b.s] ?? ''), isMe: b.s === round.me,
+      q: b.q, f: b.f, matches, size,
+      kind: matches === 0 ? 'none' : matches === size ? 'all' : 'part',
+    };
+  });
+  return items.length ? { items, wild: round.wild } : null;
+}
+
+/** Текст одной строки: «4×3 — в руке 2 из 3». */
+export function saidText(item) {
+  return `${item.q}×${item.f} — ${item.matches === 0 ? 'в руке нет этой цифры' : `в руке ${item.matches} из ${item.size}`}`;
+}
+
+/**
+ * «Решение и результат»: шанс до вскрытия и что вышло, без путаницы между решением и исходом.
+ * Берётся ваше последнее решение раунда; для повышения — только если проверили именно вашу ставку.
+ * @param {{round: object, entry: {kind:string, prob:number, v:{code:string}}|null, lostMe: boolean}} s
+ * @returns {string[]|null}
+ */
+export function buildDecision({ round, entry, lostMe }) {
+  if (!round || !entry || !['raise', 'dudo', 'calza'].includes(entry.kind) || !Number.isFinite(entry.prob)) return null;
+  if (entry.kind === 'raise' && round.end.bidder !== round.me) return null;
+  const last = round.bids[round.bids.length - 1];
+  const pct = `${Math.round(entry.prob * 100)} %`;
+  const lines = [];
+  if (entry.kind === 'dudo') {
+    lines.push(`Вы проверили ставку: по расчёту она была верна с шансом ${pct}. На столе оказалось ${round.end.actual} из ${last.q} — ставка ${round.end.ok ? 'верна' : 'ложна'}.`);
+  } else if (entry.kind === 'raise') {
+    lines.push(`Ваша ставка ${last.q}×${last.f}: по расчёту верна с шансом ${pct}. На столе оказалось ${round.end.actual} — ставка ${round.end.ok ? 'верна' : 'ложна'}.`);
+  } else {
+    lines.push(`Calza на ${last.q}×${last.f}: шанс точного совпадения был ${pct}. На столе оказалось ${round.end.actual} — ${round.end.ok ? 'точно' : 'мимо'}.`);
+  }
+  const code = entry.v && entry.v.code;
+  if (code === 'good' && lostMe) {
+    lines.push('Решение было разумным по расчёту: потеря кубика здесь — результат случайности, а не ошибка.');
+  } else if (code === 'bad' && !lostMe) {
+    lines.push('Исход в вашу пользу, но шанс был невысоким: хороший результат не делает решение верным.');
+  } else if (code === 'good' && !lostMe) {
+    lines.push('Расчёт и результат совпали.');
+  } else if (code === 'bad' && lostMe) {
+    lines.push('Шанс был невысоким, и результат это подтвердил: такие решения стоит разбирать.');
+  }
+  return lines;
+}

@@ -1594,6 +1594,42 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(page.locator("#gRevealRows li.is-loser").count(), 1)
         self.assertEqual(page.evaluate("document.activeElement.id"), "gRevealNext")
 
+    def test_reveal_analysis_blocks_fit_on_every_screen(self):
+        """«Кто что называл» и «Решение и результат»: окно помещается в экран, блоки раскрываются, кнопка «Дальше» достижима."""
+        for w, h in ((360, 640), (390, 844), (844, 390), (768, 1024), (1366, 768)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 3, reveal=True)
+                page.evaluate("document.querySelector('#gSpeed').value = 'step'")
+                self.scenario(page, [[2, 3, 5], [5, 5, 1], [4, 6, 2], [3, 3, 3]], {"by": 1, "q": 3, "f": 5},
+                              dice=[3, 3, 3, 3])
+                # разбор строится по истории ставок и только вне режима «Игра»
+                page.evaluate(
+                    "() => { const g = window.__perudo_v2.game; g.config.assistMode = 'novice';"
+                    " g.bidHistory = [{ playerId: g.players[2].id, q: 2, f: 3 }, { playerId: g.players[1].id, q: 3, f: 5 }]; }")
+                page.locator("#gDudo").click()
+                page.wait_for_selector("#gReveal[open]")
+                self.assertFalse(page.locator("#gRevealSaid").evaluate("d => d.hidden"))
+                for sel in ("#gRevealSaid summary", "#gRevealDecision summary"):
+                    page.locator(sel).scroll_into_view_if_needed()
+                    self.assertGreaterEqual(page.locator(sel).bounding_box()["height"], 44, sel)
+                page.locator("#gRevealSaid summary").click()
+                page.locator("#gRevealDecision summary").click()
+                self.assertGreaterEqual(page.locator("#gRevealSaidList li").count(), 2)
+                box = page.locator("#gReveal").bounding_box()
+                self.assertLessEqual(box["y"] + box["height"], h + 1, "окно вскрытия выше экрана")
+                self.assertGreaterEqual(box["x"], -1)
+                self.assertLessEqual(box["x"] + box["width"], w + 1)
+                self.assertTrue(page.evaluate(
+                    "(() => { const d = document.querySelector('#gReveal'); return d.scrollWidth <= d.clientWidth + 1; })()"),
+                    "окно прокручивается вбок")
+                for sel in (".said-row >> nth=0", "#gRevealDecisionBody p >> nth=0"):
+                    b = page.locator(sel).bounding_box()
+                    self.assertLessEqual(b["x"] + b["width"], box["x"] + box["width"] + 1, sel)
+                page.locator("#gRevealNext").scroll_into_view_if_needed()
+                self.assertGreaterEqual(page.locator("#gRevealNext").bounding_box()["height"], 44)
+                page.locator("#gRevealNext").click()
+                self.assertFalse(page.locator("#gReveal").evaluate("d => d.open"))
+
     def test_reveal_pauses_bots_until_next(self):
         page = self.open_game(1366, 768, 2, reveal=True)
         page.evaluate("document.querySelector('#gSpeed').value = 'fast'")

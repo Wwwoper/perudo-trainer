@@ -980,6 +980,80 @@
   }
 }
 
+/* Разбор вскрытия: «Кто что называл» и «Решение и результат» */
+.reveal-more {
+  margin-top: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-1);
+}
+
+.reveal-more > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--acc);
+}
+
+.reveal-said {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px;
+}
+
+.said-row {
+  display: grid;
+  grid-template-columns: minmax(4.5em, auto) 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.said-who {
+  font-weight: 700;
+}
+
+.said-what {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.said-tag {
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--info-bg-2);
+  color: var(--info-fg);
+}
+
+.said-none .said-tag {
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+
+.said-all .said-tag {
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+}
+
+.reveal-note,
+.reveal-decision {
+  margin: 0;
+  padding: 6px 12px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.reveal-decision p {
+  margin: 0 0 6px;
+}
+
 @media (max-width: 719px) {
   .reveal-body {
     padding: var(--space-3);

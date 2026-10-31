@@ -25,6 +25,7 @@ import { setupResultDialog, hideResultUi, scheduleResultDialog } from './ui/resu
 import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog, saveKeyMoments, currentDecisions } from './ui/decisions.js';
 import { buildCtx } from './moments.js';
 import { describeSituation } from './situation.js';
+import { buildSaid, buildDecision } from './reveal.js';
 import { situationLines, planLines, explainAction } from './situation_text.js';
 import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/situation_card.js';
 import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
@@ -478,6 +479,21 @@ function buildSituation() {
 }
 
 /**
+ * Блоки окна вскрытия: «Кто что называл» и «Решение и результат». Только после вскрытия, когда руки уже открыты;
+ * в режиме «Игра» и при выключенных объяснениях — нет.
+ */
+function revealExtras(snap, rec, events) {
+  const mode = game?.config?.assistMode;
+  if (!rec || !snap || mode === 'game') return null;
+  if (effectiveExplain(mode, $('#gExplain')?.value || 'auto') === 'off') return null;
+  const nameOf = (id) => (id === 'human' ? 'Вы' : (game.players.find((p) => p.id === id)?.name ?? id));
+  const said = buildSaid(rec, snap.seats.map((s) => nameOf(s.id)));
+  const entry = [...reviewEntries].reverse().find((e) => e.round === rec.round) ?? null;
+  const lostMe = (events || []).some((e) => e.type === 'PLAYER_LOST_DIE' && e.playerId === 'human');
+  return { said, decision: buildDecision({ round: rec, entry, lostMe }) };
+}
+
+/**
  * Комментарий к вашему ходу для «Разбора»: смысл выбора и альтернатива, без итога вскрытия.
  * Нужно вызывать до applyAction. В режиме «Игра» и при «Объяснениях: выключены» — пустая строка.
  */
@@ -833,7 +849,7 @@ function onPlayerDudo() {
 
   const res = applyAction(game, 'human', { type: 'dudo' });
   if (!res.success) { reviewEntries.pop(); return; }
-  recordRound(roundSnap, res.events);
+  const roundRec = recordRound(roundSnap, res.events);
   cueResolution('dudo', res.events);
   recordDecision({ ...before, kind: 'dudo', p, code: entry.v.code });
   markRoundOutcome(res.events, before.round);
@@ -855,7 +871,7 @@ function onPlayerDudo() {
 
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
-  presentReveal(game, res.events);
+  presentReveal(game, res.events, revealExtras(roundSnap, roundRec, res.events));
   continueFlow();
 }
 
@@ -876,7 +892,7 @@ function onPlayerCalza() {
 
   const res = applyAction(game, 'human', { type: 'calza' });
   if (!res.success) { reviewEntries.pop(); return; }
-  recordRound(roundSnap, res.events);
+  const roundRec = recordRound(roundSnap, res.events);
   cueResolution('calza', res.events);
   recordDecision({ ...before, kind: 'calza', p: pe, code: entry.v.code });
   markRoundOutcome(res.events, before.round);
@@ -891,7 +907,7 @@ function onPlayerCalza() {
   logRoundEffects(res.events);
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
-  presentReveal(game, res.events);
+  presentReveal(game, res.events, revealExtras(roundSnap, roundRec, res.events));
   continueFlow();
 }
 
@@ -973,7 +989,8 @@ function runBotTurn() {
     action = fallback;
     res = res2;     // дальше нужны события сработавшего хода, а не отклонённого
   }
-  if (action.type !== 'raise') { markRoundOutcome(res.events, roundBefore); recordRound(roundSnap, res.events); }
+  let roundRec = null;
+  if (action.type !== 'raise') { markRoundOutcome(res.events, roundBefore); roundRec = recordRound(roundSnap, res.events); }
   if (action.type === 'raise') playCue('bidBot'); else cueResolution(action.type, res.events);
 
   let desc;
@@ -996,7 +1013,7 @@ function runBotTurn() {
 
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
-  if (action.type !== 'raise') presentReveal(game, res.events);
+  if (action.type !== 'raise') presentReveal(game, res.events, revealExtras(roundSnap, roundRec, res.events));
   continueFlow();
 }
 
