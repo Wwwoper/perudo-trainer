@@ -312,3 +312,17 @@
 .trainer-option-mark {
   color: var(--acc);
 }
+
+/* «Лестница ставок»: вместо одной ставки — список торгов */
+.trainer-bid-row.is-ladder {
+  align-items: flex-start;
+}
+
+.trainer-bid-row.is-ladder #tBid {
+  flex: 1;
+  min-width: 0;
+}
+
+.trainer-bid-row.is-ladder .read-bids {
+  margin: 0;
+}

@@ -31,6 +31,12 @@ test('MODES: у каждого режима есть название, диап�
   }
 });
 
+test('MODES: «Лестница ставок» — единственный режим с историей торгов', async () => {
+  const { MODES } = await load();
+  assert.deepStrictEqual(Object.keys(MODES).filter((k) => MODES[k].ladder), ['ladder']);
+  assert.equal(MODES.ladder.wild, true);
+});
+
 test('bestSafeRaise: возвращает легальную ставку с вероятностью не ниже порога', async () => {
   const { bestSafeRaise } = await load();
   const { legal } = await import(pathToFileURL(path.join(__dirname, '../src/rules.js')).href);

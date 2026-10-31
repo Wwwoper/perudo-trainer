@@ -8,6 +8,8 @@ import { compareOptions, markChosen } from '../compare.js';
 import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
+import { TABLE_TRUST } from '../table_read.js';
+import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise } from '../ladder.js';
 
 export function setupTrainer() {
   if (!P) return null;
@@ -108,10 +110,16 @@ export function setupTrainer() {
 
     shownCount++;
     const repeat = forced ? null : pickRepeat(pool, seenAt, shownCount);
-    if (forced) {
-      cur = { m, n: forced.n, h: forced.h.slice(), f: forced.f, q: forced.q, item: forced };
-    } else if (repeat) {
-      cur = { m, n: repeat.n, h: repeat.h.slice(), f: repeat.f, q: repeat.q, item: repeat };
+    const picked = forced || repeat;
+    if (m.ladder) {
+      // лестница ставок: ситуация с историей торгов (из очереди или новая)
+      const stored = picked ? sanitizeLadder(picked) : null;
+      let sit = stored;
+      for (let i = 0; !sit && i < 30; i++) sit = buildLadder({ wild: m.wild });
+      if (!sit) throw new Error('Не удалось составить ситуацию «Лестницы ставок»');
+      cur = { m: { ...m, wild: sit.wild }, n: sit.n, h: sit.h.slice(), f: sit.f, q: sit.q, item: stored ? picked : null, ladder: sit };
+    } else if (picked) {
+      cur = { m, n: picked.n, h: picked.h.slice(), f: picked.f, q: picked.q, item: picked };
     } else {
       const n = P.ri(m.n[0], m.n[1]);
       const k = Math.min(m.k(n), n - 1) || 1;
@@ -131,12 +139,15 @@ export function setupTrainer() {
         `<span class="trainer-chip">🎲 всего <b>${cur.n}</b></span>` +
         `<span class="trainer-chip">👤 у вас <b>${cur.h.length}</b></span>` +
         `<span class="trainer-chip">❓ чужих <b>${cur.n - cur.h.length}</b></span>` +
+        (cur.ladder ? `<span class="trainer-chip">👥 соперников <b>${cur.ladder.ks.length}</b></span>` : '') +
         `<span class="trainer-chip ${m.wild ? 'trainer-wild' : ''}">` +
         (m.wild ? '✨ единицы — джокеры' : '⚪ единицы обычные') +
         `</span>`;
     }
     if ($('#tHand')) $('#tHand').innerHTML = renderHand(cur.h, m.wild);
-    if ($('#tBid')) $('#tBid').innerHTML = renderBid(cur.q, cur.f);
+    $('#tBid')?.closest('.trainer-bid-row')?.classList.toggle('is-ladder', !!cur.ladder);
+    if ($('#tBidLabel')) $('#tBidLabel').textContent = cur.ladder ? 'Торги:' : 'Соперник:';
+    if ($('#tBid')) $('#tBid').innerHTML = cur.ladder ? ladderBidsHtml(cur.ladder) : renderBid(cur.q, cur.f);
     const start = defaultRaise(cur);
     if ($('#tQ')) $('#tQ').value = start ? start.q : cur.q;
     if ($('#tF')) $('#tF').value = start ? start.f : cur.f;
@@ -146,6 +157,12 @@ export function setupTrainer() {
     if ($('#tFb')) $('#tFb').innerHTML = '';
     updateSettingsHint();
     updateStat();
+  }
+  /** История торгов: номер, кто назвал, ставка; последняя отмечена. */
+  function ladderBidsHtml(sit) {
+    return '<ol class="read-bids" aria-label="Ставки по порядку">' + sit.bids.map((b, i) =>
+      `<li class="read-bid${i === sit.bids.length - 1 ? ' is-me' : ''}"><span class="read-bid-n">${i + 1}</span>` +
+      `<span class="read-bid-who">Соперник ${b.s + 1}${i === sit.bids.length - 1 ? ' (последняя)' : ''}</span>${renderBid(b.q, b.f)}</li>`).join('') + '</ol>';
   }
   function updateSettingsHint() {
     const el = $('#tSettingsHint');
@@ -187,6 +204,7 @@ export function setupTrainer() {
       }
     } else if (!good) {
       const entry = { mode: mk, n: cur.n, h: cur.h.slice(), f: cur.f, q: cur.q, streak: 0 };
+      if (cur.ladder) Object.assign(entry, { wild: cur.ladder.wild, ks: cur.ladder.ks.slice(), bids: cur.ladder.bids.map((b) => ({ ...b })) });
       queue.push(entry);
       seenAt.set(situationKey(entry), shownCount);   // только что показана: повтор не раньше чем через паузу
     }
@@ -200,11 +218,24 @@ export function setupTrainer() {
     $('#tNext')?.focus();
   }
 
+  /** Разбор лестницы: шансы последней ставки по вашим кубикам и с учётом стола. */
+  function ladderHtml(sit, ch) {
+    return '<ul class="read-lines">' + ladderLines(sit, ch).map((l) => `<li>${l}</li>`).join('') + '</ul>';
+  }
+
   const dudoBtn = $('#tDudo');
   if (dudoBtn) dudoBtn.onclick = () => {
     if (answered || !cur) return;
     const { m, n, h, f, q } = cur;
     const t = +$('#tT').value;
+    if (cur.ladder) {
+      const ch = ladderChances(cur.ladder, P);
+      const ok = gradeDudo(ch, t);
+      const msg = ok ? 'С учётом стола ставка верна реже порога: «Не верю» оправдано.'
+        : 'С учётом стола ставка верна не реже порога: проверка здесь рискованна.';
+      answer(ok, `<p>${msg} Порог ${pct(t)}.</p>${ladderHtml(cur.ladder, ch)}`);
+      return;
+    }
     const p = P.probBid(q, f, n, h, m.wild);
     const msg = p < t ? 'Ставка слишком смелая — «Не верю» оправдано.'
       : 'Ставка вероятна — лучше было верить и повышать.';
@@ -221,6 +252,14 @@ export function setupTrainer() {
 
     const check = checkRaise(Q, F, cur);
     if (!check.ok) { flash($('#tFb'), check.message); return; }
+
+    if (cur.ladder) {
+      const ch = ladderChances(cur.ladder, P);
+      const pr = P.probBidRead(Q, F, h, cur.ladder.ks.map((k, i) => ({ k, faces: [...new Set(cur.ladder.bids.filter((b) => b.s === i).map((b) => b.f))] })), m.wild, TABLE_TRUST);
+      const ok = gradeRaise(cur.ladder, Q, F, t, P);
+      answer(ok, `<p>Ваша ставка ${renderBid(Q, F)} с учётом стола верна с шансом <b>${pct(pr)}</b> (порог ${pct(t)}).</p>${ladderHtml(cur.ladder, ch)}`);
+      return;
+    }
 
     const p = P.probBid(Q, F, n, h, m.wild);
     const po = P.probBid(q, f, n, h, m.wild);

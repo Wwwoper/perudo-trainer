@@ -74,6 +74,12 @@ READ_SEED = """() => localStorage.setItem('perudo.rounds', JSON.stringify([1, 2,
   end: { kind: 'dudo', by: 0, bidder: 1, actual: 5, ok: true } }))))"""
 
 
+# Самая длинная лестница ставок (пять ставок, четыре соперника) в очереди повторов тренажёра.
+LADDER_SEED = """() => localStorage.setItem('perudo.trainingQueue', JSON.stringify([{
+  mode: 'ladder', n: 22, h: [5, 1, 2, 3, 6], f: 5, q: 8, streak: 0, wild: true, ks: [4, 4, 5, 4],
+  bids: [{ s: 0, q: 3, f: 5 }, { s: 1, q: 4, f: 5 }, { s: 2, q: 5, f: 6 }, { s: 3, q: 7, f: 5 }, { s: 0, q: 8, f: 5 }] }]))"""
+
+
 # Постоянный игрок уже выбрал режим: окно «Как вы будете играть?» не открывается.
 # Тема для замеров: PERUDO_THEME=dark|light (по умолчанию — как в приложении). Нужна, чтобы проверить вёрстку в тёмной теме.
 THEME = os.environ.get("PERUDO_THEME", "")
@@ -154,6 +160,20 @@ def measure_all(base_url, browser):
         snap("train", "#tDudo")
         page.click("#tDudo")
         snap("train: after answer", "#tFb")
+
+        # «Лестница ставок»: самая длинная история торгов (повтор из очереди), затем разбор
+        page.evaluate(LADDER_SEED)
+        page.evaluate("window.__rnd = Math.random; Math.random = () => 0")
+        _tab(page, "calc")
+        _tab(page, "train")
+        page.click(".trainer-settings-more summary")
+        page.click('#tModePick [data-mode="ladder"]')
+        page.click(".trainer-settings-more summary")
+        page.wait_for_function("document.querySelectorAll('#tBid .read-bid').length === 5")
+        page.evaluate("Math.random = window.__rnd")
+        snap("train: ladder", "#tDudo")
+        page.click("#tDudo")
+        snap("train: ladder after answer", "#tFb")
 
         _tab(page, "drill")
         snap("drill A", "#dACheck")

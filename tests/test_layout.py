@@ -1301,7 +1301,7 @@ class LayoutTest(unittest.TestCase):
                 self.goto_tab(page, "train")
                 page.locator(".trainer-settings-more summary").click()
                 tiles = page.locator("#tModePick .mode-btn")
-                self.assertEqual(tiles.count(), 6)
+                self.assertEqual(tiles.count(), 7)
                 card = page.locator(".trainer-top").bounding_box()
                 for i in range(tiles.count()):
                     b = tiles.nth(i).bounding_box()

@@ -803,6 +803,87 @@ test.describe('Учебные вкладки', () => {
     });
   });
 
+  test.describe('«Лестница ставок» в «Тренажёре»', () => {
+    const LADDER = {
+      mode: 'ladder', n: 14, h: [5, 1, 2, 3], f: 5, q: 5, streak: 0, wild: true, ks: [3, 4, 3],
+      bids: [{ s: 0, q: 3, f: 5 }, { s: 1, q: 4, f: 5 }, { s: 2, q: 5, f: 5 }],
+    };
+    const pickLadder = async (page) => {
+      await open(page, 'train');
+      await page.click('.trainer-settings-more summary');
+      await page.locator('#tModePick [data-mode="ladder"]').click();
+      await expect(page.locator('#tMode')).toHaveValue('ladder');
+    };
+    const queue = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('perudo.trainingQueue') || '[]'));
+
+    test('показана история торгов, подпись «Торги», описание режима', async ({ page }) => {
+      await pickLadder(page);
+      await expect(page.locator('#tBidLabel')).toHaveText('Торги:');
+      const n = await page.locator('#tBid .read-bid').count();
+      expect(n).toBeGreaterThanOrEqual(3);
+      expect(n).toBeLessThanOrEqual(5);
+      await expect(page.locator('#tBid .read-bid').last()).toContainText('последняя');
+      await expect(page.locator('#tInfo')).toContainText('соперников');
+      await expect(page.locator('#tDesc')).toContainText('Несколько соперников');
+    });
+
+    test('«Не верю» даёт разбор с двумя шансами без списка вариантов хода', async ({ page }) => {
+      await pickLadder(page);
+      await page.click('#tDudo');
+      await expect(page.locator('#tFb')).toContainText('По вашим кубикам');
+      await expect(page.locator('#tFb')).toContainText('с учётом стола');
+      await expect(page.locator('#tFb')).toContainText('приблизительная');
+      await expect(page.locator('#tFb .trainer-option')).toHaveCount(0);
+      expect(await page.locator('#tFb').textContent()).not.toMatch(/обманщик|врёт/i);
+      await page.click('#tNext');
+      await expect(page.locator('#tFb')).toBeEmpty();
+      await expect(page.locator('#tBid .read-bid').first()).toBeVisible();
+    });
+
+    test('«Ставлю» оценивает новую ставку с учётом стола', async ({ page }) => {
+      await pickLadder(page);
+      await page.click('#tRaise');
+      await expect(page.locator('#tFb')).toContainText('с учётом стола верна с шансом');
+      await expect(page.locator('#tFb')).toContainText('По вашим кубикам');
+    });
+
+    test('ошибка уходит в очередь вместе с историей торгов', async ({ page }) => {
+      await pickLadder(page);
+      await page.evaluate(() => { document.querySelector('#tT').value = '0'; });   // порог 0: «Не верю» всегда ошибка
+      await page.click('#tDudo');
+      await expect(page.locator('#tFb')).toContainText('Сомнительное решение');
+      const q = await queue(page);
+      expect(q).toHaveLength(1);
+      expect(q[0].mode).toBe('ladder');
+      expect(q[0].bids.length).toBeGreaterThanOrEqual(3);
+      expect(q[0].ks.length).toBeGreaterThanOrEqual(2);
+      expect(q[0].q).toBe(q[0].bids.at(-1).q);
+    });
+
+    test('повтор из очереди показывает ту же историю и помечен «повтор»', async ({ page }) => {
+      await page.evaluate((it) => localStorage.setItem('perudo.trainingQueue', JSON.stringify([it])), LADDER);
+      await page.addInitScript(() => { Math.random = () => 0; });
+      await page.reload();
+      await pickLadder(page);
+      await expect(page.locator('#tInfo .trainer-repeat')).toBeVisible();
+      await expect(page.locator('#tBid .read-bid')).toHaveCount(3);
+      await expect(page.locator('#tBid .read-bid').last()).toContainText('Соперник 3');
+      // порог 0.95: шанс этой ставки ниже, поэтому «Не верю» здесь верное решение
+      await page.evaluate(() => { document.querySelector('#tT').value = '0.95'; });
+      await page.click('#tDudo');
+      await expect(page.locator('#tFb')).toContainText('Хорошее решение');
+    });
+
+    test('испорченная запись лестницы в очереди не ломает тренажёр', async ({ page }) => {
+      await page.evaluate(() => localStorage.setItem('perudo.trainingQueue', JSON.stringify([
+        { mode: 'ladder', n: 14, h: [5], f: 5, q: 5, streak: 0, ks: [3], bids: [] }])));
+      await page.reload();
+      await pickLadder(page);
+      await expect(page.locator('#tBid .read-bid').first()).toBeVisible();
+      await expect(page.locator('#tInfo .trainer-repeat')).toHaveCount(0);
+    });
+  });
+
   test.describe('Пауза между повторами в «Тренажёре»', () => {
     const repeatVisible = (page) => page.locator('#tInfo .trainer-repeat').isVisible();
     // Случайные числа выключены: повтор берётся всякий раз, когда он разрешён.
