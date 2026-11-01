@@ -30,6 +30,8 @@ import { situationLines, planLines, explainAction } from './situation_text.js';
 import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/situation_card.js';
 import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
 import { opponentProfiles, roundsOfGame } from './opponents.js';
+import { gameRounds, diceByRound, pictureLines } from './game_picture.js';
+import { diceChartSvg } from './dice_chart.js';
 import { profileLines, TABLE_EMPTY, TABLE_NOTE } from './opponents_text.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
@@ -423,6 +425,39 @@ function renderTableProfile() {
       (def ? ` <span class="opp-style">${def.icon} ${escapeHtml(def.name)}</span>` : '') + '</div>' +
       `<ul class="opp-lines">${profileLines(p).lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul></div>`;
   }).join('');
+}
+
+/**
+ * «Картина партии» для итога: график кубиков по раундам и факты, которые считаются по вскрытым раундам.
+ * Раскрытие стилей ботов — отдельно: если стили были скрыты, их показывают в конце в любом режиме.
+ */
+function gamePictureHtml() {
+  let inner = '';
+  let title = 'Стили ботов в этой партии';
+  const explain = effectiveExplain(game.config?.assistMode, $('#gExplain')?.value || 'auto');
+  if (explain !== 'off') {
+    const rs = gameRounds(getRounds(), game.id);
+    const finalDice = Object.fromEntries(game.players.map((p) => [p.id, p.dice]));
+    const names = Object.fromEntries(game.players.map((p) => [p.id, p.name]));
+    const data = diceByRound(rs, finalDice);
+    if (data) {
+      const lines = pictureLines({
+        rounds: rs, finalDice, names,
+        entryFor: (n) => reviewEntries.filter((e) => e.round === n).at(-1) ?? null,
+      });
+      title = 'Картина партии';
+      inner += `<div class="dice-chart-box">${diceChartSvg(data, { names })}</div>` +
+        `<ul class="picture-lines">${lines.map((l) => `<li>${escapeHtml(l.text)}</li>`).join('')}</ul>` +
+        '<p class="muted">Только то, что считается по вскрытым раундам этой партии.</p>';
+    }
+  }
+  if (stylesHidden) {
+    const rows = game.players.filter((p) => p.isBot && BOT_STYLES[p.style])
+      .map((p) => `<li>${escapeHtml(p.name)} — ${BOT_STYLES[p.style].icon} ${escapeHtml(BOT_STYLES[p.style].name)}</li>`).join('');
+    if (rows) inner += `<div class="styles-reveal"><b>Стили ботов в этой партии</b><ul class="picture-lines">${rows}</ul></div>`;
+  }
+  // свёрнуто, как «Ключевые моменты»: итог остаётся компактным и помещается в экран
+  return inner ? `<details class="game-picture"><summary>${title}</summary>${inner}</details>` : '';
 }
 
 /** Имя и аватар из профиля — человеку за столом. Вызывается при старте партии и при смене профиля. */
@@ -1125,7 +1160,7 @@ function finalizeGame() {
       <table>
         <tr><th></th><th>✓ верно</th><th>~ спорно</th><th>✗ ошибка</th></tr>
         <tr><td>Решения</td><td>${good}</td><td>${meh}</td><td>${bad}</td></tr>
-      </table>` + keyMomentsHtml(currentDecisions(), lastKeyMoments) + backupReminderHtml(cloudConnected());
+      </table>` + gamePictureHtml() + keyMomentsHtml(currentDecisions(), lastKeyMoments) + backupReminderHtml(cloudConnected());
     card.hidden = false;
     sideApi.select('tabReview');
     // select() прокручивает «Разбор» вниз, а итог лежит выше вкладок: возвращаем его на виду

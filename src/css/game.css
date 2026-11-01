@@ -1421,3 +1421,88 @@
   margin-top: 8px;
   color: var(--mut);
 }
+
+/* ===== «Картина партии» в итоге ===== */
+.game-picture,
+.styles-reveal {
+  margin-top: var(--space-3);
+}
+
+.game-picture > summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dice-chart-box {
+  max-width: 440px;
+}
+
+.dice-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.picture-lines {
+  margin: 6px 0;
+  padding-left: 18px;
+  line-height: 1.45;
+}
+
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-tick {
+  fill: var(--mut);
+  font-size: 10px;
+}
+
+.chart-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.chart-dot {
+  stroke: none;
+}
+
+.chart-name {
+  font-size: 11px;
+  stroke: none;
+}
+
+.chart-me.chart-line {
+  stroke: var(--acc);
+  stroke-width: 3;
+}
+
+.chart-me.chart-dot,
+.chart-me.chart-name {
+  fill: var(--acc);
+}
+
+.chart-s1 { --chart-c: var(--warn); }
+.chart-s2 { --chart-c: var(--hue-pink); }
+.chart-s3 { --chart-c: var(--hue-violet); }
+.chart-s4 { --chart-c: var(--hue-orange); }
+.chart-s5 { --chart-c: var(--ok); }
+
+.chart-other.chart-line {
+  stroke: var(--chart-c);
+}
+
+.chart-other.chart-dot,
+.chart-other.chart-name {
+  fill: var(--chart-c);
+}
+
+.chart-s2.chart-line { stroke-dasharray: 6 3; }
+.chart-s3.chart-line { stroke-dasharray: 2 3; }
+.chart-s4.chart-line { stroke-dasharray: 8 3 2 3; }
+.chart-s5.chart-line { stroke-dasharray: 1 4; }

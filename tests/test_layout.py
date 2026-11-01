@@ -1550,6 +1550,32 @@ class LayoutTest(unittest.TestCase):
         box = page.locator("#gResultCard").bounding_box()
         self.assertLessEqual(box["y"] + box["height"], 844 + 1)
 
+    def test_game_picture_fits_on_every_screen(self):
+        """«Картина партии» в раскрытом виде: график и строки не вылезают по ширине ни на одном экране."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 1, dice=1)
+                self.finish(page)
+                page.keyboard.press("Escape")
+                if w < 700:
+                    page.locator('.hud-tab-btn[data-open-tab="tabLog"]').click()
+                    page.wait_for_timeout(450)
+                page.evaluate("() => { const d = document.querySelector('#gResultCard .game-picture');"
+                              " if (d) d.open = true; }")
+                self.assertEqual(page.locator("#gResultCard .game-picture").count(), 1)
+                page.wait_for_timeout(150)
+                svg = page.locator("#gResultCard .dice-chart").bounding_box()
+                card = page.locator("#gResultCard").bounding_box()
+                self.assertIsNotNone(svg)
+                self.assertGreaterEqual(svg["x"], card["x"] - 1)
+                self.assertLessEqual(svg["x"] + svg["width"], card["x"] + card["width"] + 1)
+                over = page.evaluate("() => { const c = document.querySelector('#gResultCard');"
+                                     " return c.scrollWidth - c.clientWidth; }")
+                self.assertLessEqual(over, 1, f"горизонтальная прокрутка в итоге: {over}px")
+                for li in page.locator("#gResultCard .picture-lines li").all():
+                    b = li.bounding_box()
+                    self.assertLessEqual(b["x"] + b["width"], card["x"] + card["width"] + 1)
+
     def test_dialog_animation_respects_reduced_motion(self):
         for reduced, expect_none in (("reduce", True), ("no-preference", False)):
             with self.subTest(reduced=reduced):

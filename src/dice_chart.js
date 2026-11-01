@@ -6,6 +6,8 @@ const fx = (n) => Math.round(n * 10) / 10;
 
 const PAD = { l: 24, r: 78, t: 10, b: 22 };
 const LABEL_GAP = 12;
+// классы линий чужих игроков (литералы: так их видит проверка CSS)
+const OTHER_CLASS = ['chart-s1', 'chart-s2', 'chart-s3', 'chart-s4', 'chart-s5'];
 
 /**
  * @param {{labels: string[], series: {id: string, isMe: boolean, values: number[]}[], max: number}} data результат diceByRound
@@ -41,7 +43,7 @@ export function diceChartSvg(data, { names = {}, width = 340, height = 160 } = {
   const ends = [];
   for (const k of order) {
     const s = data.series[k];
-    const cls = s.isMe ? 'chart-me' : `chart-other chart-s${(k % 5) + 1}`;
+    const cls = s.isMe ? 'chart-me' : `chart-other ${OTHER_CLASS[k % OTHER_CLASS.length]}`;
     const pts = s.values.map((v, i) => `${fx(x(i))},${fx(y(v))}`);
     parts.push(`<polyline class="chart-line ${cls}" points="${pts.join(' ')}"/>`);
     s.values.forEach((v, i) => parts.push(`<circle class="chart-dot ${cls}" cx="${fx(x(i))}" cy="${fx(y(v))}" r="2.5"/>`));

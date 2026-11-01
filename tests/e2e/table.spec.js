@@ -605,6 +605,58 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gOpp .opp-row')).toHaveCount(0);
   });
 
+  /** Партия из одного кубика у каждого: вы ставите, бот отвечает, вы проверяете, партия заканчивается. */
+  async function finishQuickGame(page, opts) {
+    await startGame(page, { bots: 1, dice: 1, reveal: false, ...opts });
+    await waitMyTurn(page);
+    await rigBots(page, [2]);
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
+    await page.locator('#gRaise').click();
+    await waitBotBid(page);
+    await page.locator('#gDudo').click();
+    // на телефоне карточка лежит в закрытой шторке: ждём, пока партия её заполнит
+    await page.waitForFunction(() => document.querySelector('#gResultCard') && !document.querySelector('#gResultCard').hidden, null, { timeout: 10_000 });
+  }
+
+  test('итог партии: «Картина партии» с графиком, фактами и раскрытием стилей', async ({ page }) => {
+    await finishQuickGame(page, { assist: 'novice' });
+    const pic = page.locator('#gResultCard .game-picture');
+    await expect(pic).toHaveCount(1);
+    expect(await pic.evaluate((d) => d.open)).toBe(false);                       // свёрнуто: итог остаётся компактным
+    await expect(pic.locator('summary')).toHaveText('Картина партии');
+    await expect(pic.locator('svg.dice-chart')).toHaveCount(1);
+    await expect(pic.locator('svg.dice-chart polyline')).toHaveCount(2);        // вы и один бот
+    await expect(pic.locator('svg.dice-chart .chart-name')).toHaveCount(2);
+    await expect(pic.locator('.picture-lines li').first()).toContainText('Вскрытий в партии: 1');
+    const text = await page.locator('#gResultCard').textContent();
+    expect(text).not.toMatch(/undefined|NaN|обманщик|врёт/i);
+    // стили были скрыты — в итоге раскрыты
+    await expect(page.locator('#gResultCard .styles-reveal li')).toHaveCount(1);
+    expect(text).toMatch(/Стили ботов в этой партии/);
+  });
+
+  test('итог партии: если стили показывались всё время, раскрытия нет', async ({ page }) => {
+    await finishQuickGame(page, { assist: 'novice', showStyles: true });
+    await expect(page.locator('#gResultCard .game-picture')).toHaveCount(1);
+    await expect(page.locator('#gResultCard .dice-chart')).toHaveCount(1);
+    await expect(page.locator('#gResultCard .styles-reveal')).toHaveCount(0);
+  });
+
+  test('итог партии: объяснения «Выключены» убирают картину, но стили раскрываются', async ({ page }) => {
+    await finishQuickGame(page, { assist: 'novice', explain: 'off' });
+    await expect(page.locator('#gResultCard .game-picture')).toHaveCount(1);
+    await expect(page.locator('#gResultCard .game-picture summary')).toHaveText('Стили ботов в этой партии');
+    await expect(page.locator('#gResultCard .dice-chart')).toHaveCount(0);
+    await expect(page.locator('#gResultCard .styles-reveal li')).toHaveCount(1);
+  });
+
+  test('итог партии: «Игра» без объяснений не показывает картину, стили раскрываются', async ({ page }) => {
+    await finishQuickGame(page, { assist: 'game' });
+    await expect(page.locator('#gResultCard .dice-chart')).toHaveCount(0);
+    await expect(page.locator('#gResultCard .styles-reveal li')).toHaveCount(1);
+  });
+
   test('режим «Игра» не показывает проценты на столе', async ({ page }) => {
     await startGame(page, { bots: 2, dice: 2, assist: 'game' });
     await waitMyTurn(page);
