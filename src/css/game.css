@@ -481,6 +481,19 @@
   font-weight: 600;
 }
 
+/* Пять вкладок: «шестерёнка» узкая и не сжимается, текстовые делят остальное */
+.side-tabs #tabSettings {
+  flex: 0 0 44px;
+  padding: 0;
+}
+
+@media (max-width: 420px) {
+  .side-tabs [role="tab"] {
+    padding: 0 4px;
+    font-size: 13px;
+  }
+}
+
 .side-tabs [role="tab"][aria-selected="true"] {
   background: var(--acc);
   color: var(--on-accent);
@@ -1373,3 +1386,38 @@
   font-size: 16px;
 }
 
+
+/* ===== Вкладка «Стол»: наблюдения за соперниками ===== */
+.opp-row {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.opp-row:last-child {
+  border-bottom: 0;
+}
+
+.opp-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.opp-style {
+  color: var(--mut);
+  font-size: 13px;
+}
+
+.opp-lines {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+#gOppNote {
+  display: block;
+  margin-top: 8px;
+  color: var(--mut);
+}

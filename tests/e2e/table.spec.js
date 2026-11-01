@@ -556,6 +556,55 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gRevealDecision')).toBeHidden();
   });
 
+  /** Вкладка «Стол»: на телефоне шторку открывает любая кнопка HUD, дальше вкладка выбирается внутри неё. */
+  async function openOpp(page) {
+    await openTab(page, 'tabLog');
+    await page.locator('#tabOpp').click();
+    await expect(page.locator('#panOpp')).toBeVisible();
+  }
+
+  test('вкладка «Стол»: до вскрытия пусто, после вскрытия — профиль соперника без стиля', async ({ page }) => {
+    await revealAfterDudo(page, { assist: 'novice' });
+    await page.locator('#gRevealNext').click();
+    await expect(page.locator('#gReveal')).toBeHidden();
+    expect(await page.locator('#tabOpp').evaluate((e) => e.hidden)).toBe(false);   // на телефоне вкладка внутри закрытой шторки
+    await openOpp(page);
+    const text = await page.locator('#panOpp').textContent();
+    await expect(page.locator('#gOpp .opp-name b')).toHaveCount(1);
+    expect(text).toMatch(/Раундов вместе: 1\. Вскрыто ставок: \d/);
+    expect(text).toMatch(/Пока мало данных/);
+    expect(text).toContain('ещё не блеф');
+    expect(text).not.toMatch(/Осторожный|Блефующий|Умный|Агрессор|Скептик/);   // стили скрыты до конца партии
+    expect(text).not.toMatch(/обманщик|врёт|undefined|NaN/i);
+  });
+
+  test('вкладка «Стол»: со включённым показом стилей виден стиль соперника', async ({ page }) => {
+    await revealAfterDudo(page, { assist: 'novice', showStyles: true });
+    await page.locator('#gRevealNext').click();
+    await openOpp(page);
+    await expect(page.locator('#gOpp .opp-style')).toHaveCount(1);
+  });
+
+  test('вкладка «Стол»: в «Игре» и при выключенных объяснениях её нет', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 2, assist: 'game', explain: 'full' });
+    await waitMyTurn(page);
+    await expect(page.locator('#tabOpp')).toBeHidden();
+    await startGame(page, { bots: 1, dice: 2, assist: 'novice', explain: 'off' });
+    await waitMyTurn(page);
+    await expect(page.locator('#tabOpp')).toBeHidden();
+    await startGame(page, { bots: 1, dice: 2, assist: 'novice', explain: 'auto' });
+    await waitMyTurn(page);
+    await expect(page.locator('#tabOpp')).toBeVisible();
+  });
+
+  test('вкладка «Стол»: до первого вскрытия подсказка вместо профиля', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 2, assist: 'novice' });
+    await waitMyTurn(page);
+    await openOpp(page);
+    await expect(page.locator('#gOpp')).toContainText('появится после первого вскрытия');
+    await expect(page.locator('#gOpp .opp-row')).toHaveCount(0);
+  });
+
   test('режим «Игра» не показывает проценты на столе', async ({ page }) => {
     await startGame(page, { bots: 2, dice: 2, assist: 'game' });
     await waitMyTurn(page);

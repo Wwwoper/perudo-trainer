@@ -7,7 +7,7 @@ import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification, effectiveExplain } from './assist.js';
 import { readInfo, readNote } from './table_read.js';
 import { describeRoundEvents } from './game_log.js';
-import { updateStats, addGame, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
+import { getRounds, updateStats, addGame, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
 import { describeSnapshot } from './saved_game.js';
 import { BOT_STYLES, generateCharacters, botDecide } from './bots.js';
 import { visibleStyle, renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
@@ -29,6 +29,8 @@ import { buildSaid, buildDecision } from './reveal.js';
 import { situationLines, planLines, explainAction } from './situation_text.js';
 import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/situation_card.js';
 import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
+import { opponentProfiles, roundsOfGame } from './opponents.js';
+import { profileLines, TABLE_EMPTY, TABLE_NOTE } from './opponents_text.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
@@ -391,6 +393,38 @@ function renderReview() {
   sideApi.keepAtEnd('panReview');
 }
 
+/**
+ * Вкладка «Стол»: наблюдения за соперниками по вскрытым ставкам этой партии.
+ * Нет в режиме «Игра» и при выключенных объяснениях; стиль бота показывается так же, как за столом (скрыт до конца партии).
+ */
+function renderTableProfile() {
+  const tab = $('#tabOpp');
+  const box = $('#gOpp');
+  if (!tab || !box || !game) return;
+  const mode = game.config?.assistMode;
+  const allowed = mode !== 'game' && effectiveExplain(mode, $('#gExplain')?.value || 'auto') !== 'off';
+  tab.hidden = !allowed;
+  if (!allowed) {
+    box.innerHTML = '';
+    $('#gOppNote').textContent = '';
+    if (tab.getAttribute('aria-selected') === 'true') sideApi.pick();
+    return;
+  }
+  if ($('#panOpp')?.hidden) return;   // читаем раунды только когда вкладка открыта (см. sideApi.onSelect)
+  const { profiles, rounds } = opponentProfiles(roundsOfGame(getRounds(), game.id));
+  $('#gOppNote').textContent = TABLE_NOTE;
+  if (!rounds) { box.innerHTML = `<p class="muted">${escapeHtml(TABLE_EMPTY)}</p>`; return; }
+  const finished = game.state === 'finished';
+  box.innerHTML = profiles.map((p) => {
+    const pl = game.players.find((x) => x.id === p.id);
+    const st = visibleStyle(p.style, stylesHidden, finished);
+    const def = st ? BOT_STYLES[st] : null;
+    return `<div class="opp-row"><div class="opp-name"><b>${escapeHtml(pl?.name ?? p.id)}</b>` +
+      (def ? ` <span class="opp-style">${def.icon} ${escapeHtml(def.name)}</span>` : '') + '</div>' +
+      `<ul class="opp-lines">${profileLines(p).lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul></div>`;
+  }).join('');
+}
+
 /** Имя и аватар из профиля — человеку за столом. Вызывается при старте партии и при смене профиля. */
 function applyPlayerToGame() {
   const me = game?.players?.[0];
@@ -708,6 +742,7 @@ function renderGame() {
   renderSituation();
   renderPractical();
   renderReview();
+  renderTableProfile();
 
   if (game.state === 'finished') finalizeGame();
   cueMyTurn();
@@ -1114,6 +1149,7 @@ function bootstrap() {
   trainerApi = setupTrainer();
   setupDrill();
   setupSidePanel(() => assistConfig.showFutureBidOdds);
+  sideApi.onSelect = (id) => { if (id === 'tabOpp') renderTableProfile(); };
   setupGame();
   setupDuel();
   setupStats({

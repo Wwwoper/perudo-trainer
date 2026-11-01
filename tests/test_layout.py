@@ -395,7 +395,7 @@ class LayoutTest(unittest.TestCase):
         stage = page.locator("#gameTable").bounding_box()
         side = page.locator("#gSide").bounding_box()
         self.assertGreaterEqual(side["x"], stage["x"] + stage["width"] - 1)
-        self.assertEqual(page.locator("#gSide [role=tab]").count(), 4)
+        self.assertEqual(page.locator("#gSide [role=tab]:visible").count(), 5)   # Расчёт, Журнал, Разбор, Стол, Настройки
         self.assertTrue(page.locator("#panCalc").is_visible())
         self.assertFalse(page.locator(".sheet-close").is_visible())
         self.assertFalse(page.locator("#gBackdrop").is_visible())
@@ -1629,6 +1629,47 @@ class LayoutTest(unittest.TestCase):
                 self.assertGreaterEqual(page.locator("#gRevealNext").bounding_box()["height"], 44)
                 page.locator("#gRevealNext").click()
                 self.assertFalse(page.locator("#gReveal").evaluate("d => d.open"))
+
+    def test_table_profile_tab_fits_on_every_screen(self):
+        """Вкладка «Стол»: пять вкладок панели помещаются, текст профиля не вылезает за панель, горизонтальной прокрутки нет."""
+        for w, h in ((360, 640), (390, 844), (844, 390), (768, 1024), (1366, 768)):
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 3, reveal=True)
+                page.evaluate("document.querySelector('#gSpeed').value = 'step'")
+                self.scenario(page, [[2, 3, 5], [5, 5, 1], [4, 6, 2], [3, 3, 3]], {"by": 1, "q": 3, "f": 5},
+                              dice=[3, 3, 3, 3])
+                page.evaluate(
+                    "() => { const g = window.__perudo_v2.game; g.config.assistMode = 'novice';"
+                    " g.bidHistory = [{ playerId: g.players[2].id, q: 2, f: 3 }, { playerId: g.players[1].id, q: 3, f: 5 }]; }")
+                page.locator("#gDudo").click()
+                page.wait_for_selector("#gReveal[open]")
+                page.locator("#gRevealNext").click()
+                page.evaluate("window.__perudo_v2.renderGame()")
+                hud = page.locator('.hud-tab-btn[data-open-tab="tabLog"]')
+                if hud.is_visible():
+                    hud.click()
+                page.locator("#tabLog").click()
+                self.assertFalse(page.locator("#tabOpp").evaluate("e => e.hidden"))
+                bar = page.locator(".side-tabs").bounding_box()
+                tabs = page.locator(".side-tabs [role=tab]:visible")
+                self.assertEqual(tabs.count(), 5)
+                for i in range(tabs.count()):
+                    b = tabs.nth(i).bounding_box()
+                    self.assertGreaterEqual(b["x"], bar["x"] - 1, f"вкладка {i} левее панели")
+                    self.assertLessEqual(b["x"] + b["width"], bar["x"] + bar["width"] + 1, f"вкладка {i} правее панели")
+                    self.assertGreaterEqual(b["width"], 40, f"вкладка {i} уже 40px")
+                    self.assertTrue(tabs.nth(i).evaluate("e => e.scrollWidth <= e.clientWidth + 1"), f"текст вкладки {i} обрезан")
+                page.locator("#tabOpp").click()
+                self.assertTrue(page.locator("#panOpp").is_visible())
+                self.assertGreaterEqual(page.locator("#gOpp .opp-row").count(), 1)
+                body = page.locator("#gSide .side-body").bounding_box()
+                for sel in ("#gOpp .opp-row >> nth=0", "#gOpp .opp-lines >> nth=0", "#gOppNote"):
+                    b = page.locator(sel).bounding_box()
+                    self.assertGreaterEqual(b["x"], body["x"] - 1, sel)
+                    self.assertLessEqual(b["x"] + b["width"], body["x"] + body["width"] + 1, sel)
+                self.assertTrue(page.evaluate("(() => { const d = document.querySelector('#gSide .side-body'); return d.scrollWidth <= d.clientWidth + 1; })()"),
+                                "панель прокручивается вбок")
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "страница прокручивается вбок")
 
     def test_reveal_pauses_bots_until_next(self):
         page = self.open_game(1366, 768, 2, reveal=True)

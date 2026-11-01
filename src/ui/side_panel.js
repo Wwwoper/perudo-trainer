@@ -5,7 +5,7 @@ import { $, $$ } from './common.js';
 
 // Заполняется в setupSidePanel(): закрыть шторку, выбрать вкладку по режиму помощи,
 // удержать журнал внизу. До инициализации — безопасные заглушки.
-export const sideApi = { close() {}, pick() {}, select() {}, show() {}, keepAtEnd() {} };
+export const sideApi = { close() {}, pick() {}, select() {}, show() {}, keepAtEnd() {}, onSelect: null };
 
 /** showOdds() — есть ли в текущем режиме помощи вкладка «Расчёт» (иначе по умолчанию журнал). */
 export function setupSidePanel(showOdds) {
@@ -27,6 +27,7 @@ export function setupSidePanel(showOdds) {
       panelOf(t).hidden = !on;
     });
     if (tab.id === 'tabLog' || tab.id === 'tabReview') body.scrollTop = body.scrollHeight;
+    sideApi.onSelect?.(tab.id);
   }
 
   const selected = () => tabs.find((t) => t.getAttribute('aria-selected') === 'true');
@@ -55,10 +56,11 @@ export function setupSidePanel(showOdds) {
 
   // Стрелки ←/→ между вкладками
   side.querySelector('[role="tablist"]').addEventListener('keydown', (e) => {
-    const i = tabs.indexOf(document.activeElement);
+    const shown = tabs.filter((t) => !t.hidden);   // вкладка «Стол» бывает скрыта
+    const i = shown.indexOf(document.activeElement);
     if (i < 0 || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
     e.preventDefault();
-    const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+    const next = shown[(i + (e.key === 'ArrowRight' ? 1 : shown.length - 1)) % shown.length];
     next.focus();
     select(next);
   });
