@@ -1135,7 +1135,7 @@ test.describe('Покерный стол в партии', () => {
     expect(profile.byTag.endgame).toEqual({ n: 1, good: 0 });
   });
 
-  test('окно итогов: «Перейти к расчёту» закрывает окно и показывает вкладку «Расчёт» с карточкой итога', async ({ page }) => {
+  test('окно итогов: «Разобрать партию» закрывает окно и показывает вкладку «Расчёт» с карточкой итога', async ({ page }) => {
     await page.evaluate(() => localStorage.clear());
     await loseWithBluff(page);
     await expect(page.locator('#gResultDialog')).toHaveJSProperty('open', true, { timeout: 10_000 });

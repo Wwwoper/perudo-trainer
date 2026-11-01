@@ -7,7 +7,7 @@ import { revealIsOpen } from './reveal_dialog.js';
 
 let resultTimer = null;
 let resultOpener = null;
-let skipFocusRestore = false;     // «Перейти к расчёту» сам ставит фокус на карточку итога
+let skipFocusRestore = false;     // «Разобрать партию» сам ставит фокус на карточку итога
 
 export function hideResultUi() {
   clearTimeout(resultTimer);
@@ -44,7 +44,7 @@ function showResultDialog(game) {
 
 /**
  * @param {() => object} getGame
- * @param {{onOpenCalc?: () => void}} [hooks] onOpenCalc — «Перейти к расчёту»: окно закрыто, показать панель с итогом и ключевыми моментами
+ * @param {{onOpenCalc?: () => void}} [hooks] onOpenCalc — «Разобрать партию»: окно закрыто, показать панель с итогом и ключевыми моментами
  */
 export function setupResultDialog(getGame, { onOpenCalc } = {}) {
   const dlg = $('#gResultDialog');
