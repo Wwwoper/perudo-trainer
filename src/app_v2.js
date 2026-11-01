@@ -454,7 +454,9 @@ function gamePictureHtml() {
   if (stylesHidden) {
     const rows = game.players.filter((p) => p.isBot && BOT_STYLES[p.style])
       .map((p) => `<li>${escapeHtml(p.name)} — ${BOT_STYLES[p.style].icon} ${escapeHtml(BOT_STYLES[p.style].name)}</li>`).join('');
-    if (rows) inner += `<div class="styles-reveal"><b>Стили ботов в этой партии</b><ul class="picture-lines">${rows}</ul></div>`;
+    // если блок состоит только из стилей, заголовок уже стоит в summary
+    const head = inner ? '<b>Стили ботов в этой партии</b>' : '';
+    if (rows) inner += `<div class="styles-reveal">${head}<ul class="picture-lines">${rows}</ul></div>`;
   }
   // свёрнуто, как «Ключевые моменты»: итог остаётся компактным и помещается в экран
   return inner ? `<details class="game-picture"><summary>${title}</summary>${inner}</details>` : '';

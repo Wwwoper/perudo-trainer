@@ -291,6 +291,62 @@ def scene_key_moments(page, phone):
     page.wait_for_timeout(500)
 
 
+def play_rounds(page, rounds):
+    """Играет до `rounds` раундов или до конца партии: боты с двойкой, у игрока тройка, ставка 1×2, затем «Не верю!»."""
+    for _ in range(rounds):
+        if page.evaluate("document.querySelector('#gResultDialog[open]') !== null || window.__perudo_v2.game.over === true"):
+            break
+        wait_my_turn(page)
+        # руки по числу кубиков: раунд с рукой другой длины не записывается
+        page.evaluate("() => { const g = window.__perudo_v2.game;"
+                      " g.players.forEach((p, i) => { p.hand = Array(p.hand.length).fill(i === 0 ? 3 : 2); }); }")
+        if page.evaluate("window.__perudo_v2.game.bid === null"):
+            raise_bid(page, 1, 2)
+            page.wait_for_function(
+                "(() => { const g = window.__perudo_v2.game; const s = document.querySelector('#gStatus')?.textContent || '';"
+                " return (s.includes('Ваш ход') && g?.bid && g.bid.playerId !== 'human')"
+                " || document.querySelector('#gResultDialog[open]') !== null; })()", timeout=15000)
+        if page.evaluate("document.querySelector('#gResultDialog[open]') !== null"):
+            break
+        page.locator("#gDudo").click()
+        page.wait_for_timeout(900)
+        if page.locator("#gResultDialog[open]").count():
+            break
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(300)
+
+
+def new_explained_game(page, bots, dice):
+    """Партия с объяснениями «До и после хода» и скрытыми стилями."""
+    open_tab(page, "game")
+    page.evaluate(
+        "([b, d]) => { document.querySelector('#gBots').value = b; document.querySelector('#gDice').value = d;"
+        " document.querySelector('#gRevealOpt').checked = false; document.querySelector('#gShowStylesOpt').checked = false;"
+        " const a = document.querySelector('#gAssist'); if (a) { a.value = 'novice'; a.dispatchEvent(new Event('change', {bubbles: true})); }"
+        " window.__perudo_v2.startNewGame(); }", [str(bots), str(dice)])
+    page.wait_for_selector(".seat")
+    wait_my_turn(page)
+
+
+def scene_table_tab(page, phone):
+    new_explained_game(page, 2, 6)
+    play_rounds(page, 6)
+    page.locator("#tabOpp").click()
+    page.wait_for_timeout(500)
+
+
+def scene_game_picture(page, phone):
+    new_explained_game(page, 1, 2)
+    play_rounds(page, 6)
+    page.wait_for_function("document.querySelector('#gResultCard') && !document.querySelector('#gResultCard').hidden", timeout=15000)
+    if page.locator("#gResultDialog[open]").count():
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(400)
+    page.evaluate("document.querySelector('#gResultCard .game-picture').open = true")
+    page.evaluate("document.querySelector('#gResultCard .game-picture').scrollIntoView({block: 'start'})")
+    page.wait_for_timeout(500)
+
+
 def scene_reveal(page, phone):
     new_game(page, 3, 5, reveal=True)
     rig_bots(page, [2, 2, 2, 2, 2])
@@ -336,6 +392,8 @@ SHOTS = [
     ("key-moments-desktop", DESKTOP, 1, scene_key_moments),
     ("key-moments-phone", PHONE, 2, scene_key_moments),
     ("reveal-phone", PHONE, 2, scene_reveal),
+    ("table-tab-desktop", DESKTOP, 1, scene_table_tab),
+    ("game-picture-desktop", DESKTOP, 1, scene_game_picture),
     ("phone-calc", PHONE, 2, scene_phone_calc),
     ("settings-dark-desktop", None, 1, scene_settings_desktop_tall, "dark"),
     ("game-dark-phone", PHONE, 2, scene_game, "dark"),

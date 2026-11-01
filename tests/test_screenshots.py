@@ -54,7 +54,7 @@ class ScreenshotsTest(unittest.TestCase):
 
     def test_new_scenes_are_reproducible(self):
         """Сцены с игрой, Дуэлью и данными Статистики: два запуска дают одинаковые картинки."""
-        names = "stats-desktop,duel-phone,key-moments-desktop,reveal-phone,trainer-feedback"
+        names = "stats-desktop,duel-phone,key-moments-desktop,reveal-phone,trainer-feedback,table-tab-desktop,game-picture-desktop"
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
             for out in (a, b):
                 self.assertEqual(shots.main(["--only", names, "--out", out]), 0)

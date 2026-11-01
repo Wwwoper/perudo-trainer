@@ -647,6 +647,7 @@ test.describe('Покерный стол в партии', () => {
     await finishQuickGame(page, { assist: 'novice', explain: 'off' });
     await expect(page.locator('#gResultCard .game-picture')).toHaveCount(1);
     await expect(page.locator('#gResultCard .game-picture summary')).toHaveText('Стили ботов в этой партии');
+    await expect(page.locator('#gResultCard .styles-reveal b')).toHaveCount(0);   // заголовок уже в summary, без повтора
     await expect(page.locator('#gResultCard .dice-chart')).toHaveCount(0);
     await expect(page.locator('#gResultCard .styles-reveal li')).toHaveCount(1);
   });
