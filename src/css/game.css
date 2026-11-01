@@ -309,6 +309,19 @@
   pointer-events: none;
 }
 
+/* «Пошагово»: вместо трёх кнопок одна «Ход бота →» на всю ширину, высота ряда не меняется */
+#gDock.is-step #gDudo,
+#gDock.is-step #gCalza,
+#gDock.is-step #gRaise {
+  display: none;
+}
+
+#gDock.is-step .dock-buttons {
+  grid-template-columns: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* ===== Телефон: панель прижата к низу, в зоне большого пальца ===== */
 @media (max-width: 719px) {
   /* 56 — шапка с отступами, 8 — нижний padding у main */

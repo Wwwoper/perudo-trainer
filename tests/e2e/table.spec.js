@@ -35,7 +35,7 @@ async function setQuantity(page, n) {
  * Вскрытие кубиков по умолчанию выключаем: модальное окно блокирует клики
  * и ставит ботов на паузу (его проверяет отдельный тест).
  */
-async function startGame(page, { bots, dice, assist, calza, reveal = false, styles, level, memory, showStyles, explain, explainDepth } = {}) {
+async function startGame(page, { bots, dice, assist, calza, reveal = false, styles, level, memory, showStyles, explain, explainDepth, speed } = {}) {
   await openSettings(page);
   if (bots !== undefined) await page.locator('#gBots').fill(String(bots));
   // Стили ботов: массив id по порядку ботов ('skeptic', 'random', 'auto' …).
@@ -48,6 +48,7 @@ async function startGame(page, { bots, dice, assist, calza, reveal = false, styl
   if (memory !== undefined) await page.locator('#gMemoryOpt').setChecked(memory);
   if (showStyles !== undefined) await page.locator('#gShowStylesOpt').setChecked(showStyles);
   if (explain) await page.selectOption('#gExplain', explain);
+  if (speed) await page.selectOption('#gSpeed', speed);
   if (explainDepth) await page.selectOption('#gExplainDepth', explainDepth);
   if (calza !== undefined) await page.locator('#gCalzaOpt').setChecked(calza);
   await page.locator('#gRevealOpt').setChecked(reveal);
@@ -607,6 +608,81 @@ test.describe('Покерный стол в партии', () => {
       await waitBotBid(page);
       await expect(page.locator('#gSituation .sit-guess')).toHaveCount(0);
     }
+  });
+
+  // ---- Темп «Пошагово»: боты ходят только по кнопке «Ход бота →» ----
+  const gstate = (page) => page.evaluate(() => {
+    const g = window.__perudo_v2.game;
+    return { round: g.round, cur: g.currentPlayer, hist: g.bidHistory.length, state: g.state };
+  });
+
+  async function myFirstBid(page) {
+    await waitMyTurn(page);
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
+    await page.locator('#gRaise').click();
+  }
+
+  test('«Пошагово»: после вашего хода бот ждёт кнопку, остальные кнопки действий скрыты', async ({ page }) => {
+    await startGame(page, { bots: 2, dice: 3, speed: 'step', assist: 'training' });
+    await myFirstBid(page);
+    const step = page.locator('#gStepBot');
+    await expect(step).toBeVisible();
+    await expect(step).toContainText('Ход бота');
+    await expect(page.locator('#gStepWho')).not.toBeEmpty();
+    for (const id of ['#gDudo', '#gRaise']) await expect(page.locator(id)).toBeHidden();
+    expect((await step.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    const before = await gstate(page);
+    await page.waitForTimeout(2200);                       // дольше любой автозадержки «Нормально»
+    expect(await gstate(page)).toEqual(before);            // бот не ходил сам
+    await step.click();
+    await expect.poll(async () => (await gstate(page)).hist + (await gstate(page)).round * 100).toBeGreaterThan(before.hist + before.round * 100);
+  });
+
+  test('«Пошагово»: по кнопке бот ходит ровно один раз, к вам возвращаются кнопки действий', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 3, speed: 'step', assist: 'training' });
+    await myFirstBid(page);
+    await expect(page.locator('#gStepBot')).toBeVisible();
+    await page.locator('#gStepBot').click();
+    await waitMyTurn(page);
+    await expect(page.locator('#gStepBot')).toBeHidden();
+    await expect(page.locator('#gRaise')).toBeVisible();
+    await expect(page.locator('#gStepWho')).toBeHidden();
+  });
+
+  test('«Пошагово»: двойной щелчок не пропускает ход следующего бота', async ({ page }) => {
+    await startGame(page, { bots: 3, dice: 5, speed: 'step', assist: 'training' });
+    await myFirstBid(page);
+    const before = await gstate(page);
+    await page.locator('#gStepBot').dblclick();
+    await page.waitForTimeout(500);
+    const after = await gstate(page);
+    if (after.round === before.round) expect(after.hist - before.hist).toBeLessThanOrEqual(1);
+  });
+
+  test('«Пошагово»: смена темпа посреди ожидания запускает ход бота сама', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 3, speed: 'step', assist: 'training' });
+    await myFirstBid(page);
+    await expect(page.locator('#gStepBot')).toBeVisible();
+    await openSettings(page);
+    await page.selectOption('#gSpeed', 'fast');
+    await waitMyTurn(page);                                // бот сходил без кнопки
+    await expect(page.locator('#gStepBot')).toBeHidden();
+  });
+
+  test('другие темпы: кнопки «Ход бота» нет, бот ходит сам', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 3, speed: 'fast', assist: 'training' });
+    await myFirstBid(page);
+    await expect(page.locator('#gStepBot')).toBeHidden();
+    await waitMyTurn(page);
+  });
+
+  test('«Пошагово»: через клавиатуру — Enter на кнопке делает ход', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 3, speed: 'step', assist: 'training' });
+    await myFirstBid(page);
+    await expect(page.locator('#gStepBot')).toBeFocused();   // фокус не потерян вместе с кнопками действий
+    await page.keyboard.press('Enter');
+    await waitMyTurn(page);
   });
 
   test('вскрытие: в «Игре» и при выключенных объяснениях блоков разбора нет', async ({ page }) => {

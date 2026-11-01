@@ -586,6 +586,34 @@ class LayoutTest(unittest.TestCase):
                     "(() => { const b = document.querySelector('.side-body'); return b.scrollWidth <= b.clientWidth + 1; })()"),
                     "панель прокручивается вбок")
 
+    def test_step_button_replaces_actions_without_changing_dock_height(self):
+        """«Пошагово»: кнопка «Ход бота» вместо трёх кнопок, высота панели та же, ≥44 px, ничего не выходит за экран."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                self.addCleanup(ctx.close)
+                page = ctx.new_page()
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                page.evaluate(
+                    "() => { document.querySelector('#gBots').value = 2; document.querySelector('#gRevealOpt').checked = false;"
+                    " document.querySelector('#gSpeed').value = 'step'; window.__perudo_v2.startNewGame(); }")
+                page.wait_for_function("document.querySelector('#gStatus')?.textContent?.includes('Ваш ход')", timeout=10000)
+                dock = page.locator("#gDock")
+                row = page.locator("#gDock .dock-buttons")
+                own = row.bounding_box()["height"]
+                dock_h = dock.bounding_box()["height"]
+                page.locator("#gRaise").click()
+                page.wait_for_selector("#gStepBot", state="visible", timeout=5000)
+                btn = page.locator("#gStepBot").bounding_box()
+                self.assertGreaterEqual(btn["height"], 44)
+                self.assertAlmostEqual(row.bounding_box()["height"], own, delta=2, msg="высота ряда кнопок изменилась")
+                self.assertAlmostEqual(dock.bounding_box()["height"], dock_h, delta=2, msg="высота панели действий изменилась")
+                self.assertGreaterEqual(btn["x"], 0)
+                self.assertLessEqual(btn["x"] + btn["width"], w + 1)
+                self.assertLessEqual(btn["y"] + btn["height"], h + 1, "кнопка ушла за нижний край экрана")
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "горизонтальная прокрутка")
+
     def test_resizing_to_wide_closes_open_sheet(self):
         page = self.open_game(390, 844, 3)
         page.locator('.hud-tab-btn[data-open-tab="tabLog"]').click()

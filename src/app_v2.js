@@ -26,6 +26,7 @@ import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog,
 import { buildCtx } from './moments.js';
 import { describeSituation } from './situation.js';
 import { buildSaid, buildDecision } from './reveal.js';
+import { botDelayMs, needsStepButton } from './bot_pace.js';
 import { canGuess, makeGuess, guessMatchesBid, checkGuess, guessLine, addGuessToTally, tallyText, addGuessToStats } from './guess.js';
 import { situationLines, planLines, explainAction } from './situation_text.js';
 import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/situation_card.js';
@@ -98,6 +99,12 @@ function setupGame() {
     if (e.target.closest('[data-action="new-game"]')) startNewGame();
   });
   if ($('#gDudo')) $('#gDudo').onclick = onPlayerDudo;
+  if ($('#gStepBot')) $('#gStepBot').onclick = onStepBot;
+  $('#gSpeed')?.addEventListener('change', () => {   // темп сменили посреди партии: ожидание не должно зависнуть
+    if (!game) return;
+    renderStepButton();
+    if (!revealIsOpen() && game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
+  });
   if ($('#gCalza')) $('#gCalza').onclick = onPlayerCalza;
   if ($('#gRaise')) $('#gRaise').onclick = onPlayerRaise;
   if ($('#gMinus')) $('#gMinus').onclick = () => {
@@ -781,6 +788,7 @@ function renderGame() {
     if (el) el.disabled = dis;
   });
   $('#gDock')?.classList.toggle('is-waiting', dis);
+  renderStepButton();
   $('.game-main')?.classList.toggle('is-finished', game.state === 'finished');
 
   // Новый раунд: сначала выбираем минимальную легальную ставку,
@@ -1037,14 +1045,38 @@ function continueFlow() {
 
 // ----- Ход бота -----
 
+/** «Пошагово»: кнопка «Ход бота →» вместо кнопок действий, пока очередь бота. */
+let stepLockUntil = 0;
+function renderStepButton() {
+  const btn = $('#gStepBot');
+  if (!btn || !game) return;
+  const wait = needsStepButton({ speed: $('#gSpeed')?.value || 'normal', state: game.state, currentPlayer: game.currentPlayer });
+  const was = !btn.classList.contains('hide');
+  btn.classList.toggle('hide', !wait);
+  $('#gDock')?.classList.toggle('is-step', wait);
+  if (!wait) return;
+  const who = $('#gStepWho');
+  if (who) who.textContent = game.players[game.currentPlayer]?.name ?? '';
+  // фокус не теряется, когда кнопки действий пропали: клавиатурный игрок жмёт Enter / пробел
+  const a = document.activeElement;
+  if (!was && (!a || a === document.body || $('#gDock')?.contains(a))) btn.focus({ preventScroll: true });
+}
+
+function onStepBot() {
+  if (!game || Date.now() < stepLockUntil) return;
+  if (!needsStepButton({ speed: $('#gSpeed')?.value || 'normal', state: game.state, currentPlayer: game.currentPlayer })) return;
+  stepLockUntil = Date.now() + 250;       // двойной щелчок не пропускает ход следующего бота
+  clearTimeout(botTimer);
+  runBotTurn();
+}
+
 function scheduleBotTurn() {
   clearTimeout(botTimer);
   if (!game || game.state !== 'active') return;
   if (game.currentPlayer === 0) return;
 
-  const speed = $('#gSpeed')?.value || 'normal';
-  const delays = { step: 700, slow: 2600, normal: 1100, fast: 320 };
-  const delay = delays[speed] ?? 1100;
+  const delay = botDelayMs($('#gSpeed')?.value || 'normal');
+  if (delay === null) return;             // «Пошагово»: ход бота делает кнопка #gStepBot
   const snapshot = game;
   botTimer = setTimeout(() => {
     if (game === snapshot) runBotTurn();
