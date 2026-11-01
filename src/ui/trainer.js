@@ -9,7 +9,7 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise } from '../ladder.js';
+import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
 
 export function setupTrainer() {
   if (!P) return null;
@@ -193,6 +193,7 @@ export function setupTrainer() {
       S.byMode[mk] = S.byMode[mk] || { n: 0, good: 0 };
       S.byMode[mk].n++;
       if (good) { S.good++; S.byMode[mk].good++; }
+      if (cur.ladder) S.byTag = addLadderResult(S.byTag, good);   // тема «торги с несколькими соперниками»
     });
 
     if (cur.item) {

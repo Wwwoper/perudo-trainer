@@ -847,6 +847,31 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tFb')).toContainText('По вашим кубикам');
     });
 
+    test('ответ записывается в тему «торги с несколькими соперниками» (по одному на ответ)', async ({ page }) => {
+      const tag = () => page.evaluate(() => (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.byTag || {}).ladder || null);
+      await pickLadder(page);
+      await page.click('#tDudo');
+      await expect(page.locator('#tFb')).toContainText('По вашим кубикам');
+      const t = await tag();
+      expect(t.n).toBe(1);
+      expect([0, 1]).toContain(t.good);
+      await page.click('#tNext');
+      await page.click('#tRaise');
+      await expect(page.locator('#tFb')).toContainText('с учётом стола верна с шансом');
+      expect((await tag()).n).toBe(2);
+    });
+
+    test('«Над чем поработать»: слабая тема торгов ведёт кнопкой в режим «Лестница»', async ({ page }) => {
+      await page.evaluate(() => localStorage.setItem('perudo.userProfile', JSON.stringify({ byTag: { ladder: { n: 10, good: 4 } } })));
+      await page.reload();
+      await open(page, 'stats');
+      const item = page.locator('#stWeak .weak-item', { hasText: 'Торги с несколькими соперниками' });
+      await expect(item).toContainText('40.0%');
+      await item.locator('.weak-train').click();
+      await expect(page.locator('#tMode')).toHaveValue('ladder');
+      await expect(page.locator('#tBidLabel')).toHaveText('Торги:');
+    });
+
     test('ошибка уходит в очередь вместе с историей торгов', async ({ page }) => {
       await pickLadder(page);
       await page.evaluate(() => { document.querySelector('#tT').value = '0'; });   // порог 0: «Не верю» всегда ошибка

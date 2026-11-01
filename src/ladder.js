@@ -129,3 +129,16 @@ export function sanitizeLadder(raw) {
   if (raw.q !== last.q || raw.f !== last.f) return null;
   return { wild: raw.wild, n, h: h.slice(), ks: ks.slice(), bids: clean, q: last.q, f: last.f };
 }
+
+/**
+ * Записать один ответ в режиме «Лестница ставок» в счётчики тем (byTag.ladder).
+ * Исходный объект не меняется; мусор вместо счётчиков считается нулями.
+ * @param {object} byTag счётчики по меткам
+ * @param {boolean} good ответ верен
+ */
+export function addLadderResult(byTag, good) {
+  const src = byTag && typeof byTag === 'object' && !Array.isArray(byTag) ? byTag : {};
+  const old = src.ladder && Number.isInteger(src.ladder.n) && Number.isInteger(src.ladder.good) && src.ladder.n >= 0 &&
+    src.ladder.good >= 0 && src.ladder.good <= src.ladder.n ? src.ladder : { n: 0, good: 0 };
+  return { ...src, ladder: { n: old.n + 1, good: old.good + (good ? 1 : 0) } };
+}

@@ -1,7 +1,7 @@
 // weak_spots.test.js — выбор слабых тем по счётчикам решений.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { weakSpots, TRAIN_MODE, MIN_DECISIONS, MAX_WEAK, READ_TAG } from '../src/weak_spots.js';
+import { weakSpots, TRAIN_MODE, MIN_DECISIONS, MAX_WEAK, READ_TAG, LADDER_TAG } from '../src/weak_spots.js';
 import { MOMENT_TAGS } from '../src/moments.js';
 
 globalThis.Perudo = { pct: (x) => `${Math.round(x * 100)}%` };
@@ -65,6 +65,21 @@ describe('тема «чтение ставок»', () => {
     const h = weakSpotsHtml({ [READ_TAG]: { n: 10, good: 3 } });
     assert.match(h, /30(\.0)?\s?% · 10 отв\./);
     assert.match(h, /data-train="read"/);
+  });
+});
+
+describe('тема «торги с несколькими соперниками»', () => {
+  it('слабая тема ведёт в режим «ladder», малая выборка — в «пока мало данных»', () => {
+    const r = weakSpots({ [LADDER_TAG]: { n: 10, good: 4 } });
+    assert.equal(r.weak.length, 1);
+    assert.equal(r.weak[0].mode, 'ladder');
+    assert.match(r.weak[0].label, /торги с несколькими соперниками/);
+    assert.deepEqual(weakSpots({ [LADDER_TAG]: { n: 3, good: 1 } }).pending.map((p) => p.tag), ['ladder']);
+  });
+  it('в HTML кнопка «Тренировать» ведёт в режим, единица — «реш.»', () => {
+    const h = weakSpotsHtml({ [LADDER_TAG]: { n: 10, good: 4 } });
+    assert.match(h, /data-train="ladder"/);
+    assert.match(h, /40(\.0)?\s?% · 10 реш\./);
   });
 });
 

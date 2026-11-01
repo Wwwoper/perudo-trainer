@@ -6,7 +6,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import {
   buildLadder, ladderChances, ladderLines, ladderOpponents, gradeDudo, gradeRaise, sanitizeLadder,
-  LADDER_MIN_BIDS, LADDER_MAX_BIDS,
+  LADDER_MIN_BIDS, LADDER_MAX_BIDS, addLadderResult,
 } from '../src/ladder.js';
 import { legal } from '../src/rules.js';
 import { seededRng } from '../src/read_sim.js';
@@ -115,5 +115,22 @@ describe('sanitizeLadder', () => {
     assert.ok(!('junk' in out));
     out.bids[0].q = 99;
     assert.equal(src.bids[0].q, 3);
+  });
+});
+
+describe('addLadderResult', () => {
+  it('прибавляет ответ, не трогая остальные темы и исходный объект', () => {
+    const src = { endgame: { n: 2, good: 1 } };
+    const a = addLadderResult(src, true);
+    assert.deepEqual(a.ladder, { n: 1, good: 1 });
+    assert.deepEqual(a.endgame, { n: 2, good: 1 });
+    assert.ok(!('ladder' in src));
+    assert.deepEqual(addLadderResult(a, false).ladder, { n: 2, good: 1 });
+  });
+  it('мусор вместо byTag и счётчиков считается нулями', () => {
+    for (const bad of [null, undefined, 5, 'x', [], { ladder: null }, { ladder: { n: 'a', good: 1 } },
+      { ladder: { n: 1, good: 5 } }, { ladder: { n: -1, good: -2 } }]) {
+      assert.deepEqual(addLadderResult(bad, true).ladder, { n: 1, good: 1 }, JSON.stringify(bad));
+    }
   });
 });

@@ -8,8 +8,10 @@ import { MOMENT_TAGS, TAG_LABELS } from './moments.js';
 
 /** Тема «чтение ставок»: копится из упражнения «Читай вскрытие», в метки решений партии не входит. */
 export const READ_TAG = 'read';
-const WEAK_TAGS = [...MOMENT_TAGS, READ_TAG];
-const WEAK_LABELS = { ...TAG_LABELS, [READ_TAG]: 'чтение ставок по вскрытию' };
+/** Тема «торги с несколькими соперниками»: копится из режима «Лестница ставок», в метки решений партии не входит. */
+export const LADDER_TAG = 'ladder';
+const WEAK_TAGS = [...MOMENT_TAGS, READ_TAG, LADDER_TAG];
+const WEAK_LABELS = { ...TAG_LABELS, [READ_TAG]: 'чтение ставок по вскрытию', [LADDER_TAG]: 'торги с несколькими соперниками' };
 
 /** Минимум решений по теме, чтобы делать вывод. */
 export const MIN_DECISIONS = 8;
@@ -23,6 +25,7 @@ export const TRAIN_MODE = {
   palifico: 'nowild',
   bigTable: 'big',
   [READ_TAG]: 'read',   // не режим тренажёра, а упражнение «Читай вскрытие»
+  [LADDER_TAG]: 'ladder',
 };
 
 const isCount = (v) => Number.isInteger(v) && v >= 0;
