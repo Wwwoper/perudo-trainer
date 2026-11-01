@@ -6,6 +6,7 @@
 // Состояние раскрытия хранится здесь; разметку строит чистая функция situationCardHtml.
 
 import { effectiveExplain } from '../assist.js';
+import { GUESS_ANSWERS, GUESS_LABELS } from '../guess.js';
 
 /** Подписи типов строк: тип виден словом, а не только цветом. */
 export const TYPE_LABELS = Object.freeze({
@@ -38,10 +39,24 @@ function linesHtml(lines) {
 }
 
 /**
+ * Необязательная догадка: была ли у автора ставки нужная цифра в руке. Ответ можно сменить до вашего хода.
+ * @param {{who: string, q: number, f: number, chosen: string|null}|null} g
+ */
+function guessBlock(g) {
+  if (!g) return '';
+  const btns = GUESS_ANSWERS.map((a) =>
+    `<button type="button" class="sit-guess-btn" data-guess="${a}" aria-pressed="${g.chosen === a ? 'true' : 'false'}">${GUESS_LABELS[a]}</button>`).join('');
+  return `<div class="sit-guess" role="group" aria-label="Ваша догадка">
+    <div class="sit-guess-q">Ваша догадка (необязательно): ставка ${esc(g.q)}×${esc(g.f)}, автор — ${esc(g.who)}.</div>
+    <div class="sit-guess-btns">${btns}</div>
+  </div>`;
+}
+
+/**
  * Разметка карточки.
  * @param {{lines: object[], plan: object[], open: boolean, planOpen: boolean}} v
  */
-export function situationCardHtml({ lines, plan = [], open = false, planOpen = false }) {
+export function situationCardHtml({ lines, plan = [], open = false, planOpen = false, guess = null }) {
   const planBlock = plan.length
     ? `<div class="sit-plan-wrap">
         <button type="button" class="sit-plan-btn" id="gPlanBtn" aria-expanded="${planOpen ? 'true' : 'false'}"${planOpen ? ' aria-controls="gPlanBody"' : ''}>${planOpen ? 'Скрыть подсказку плана' : 'Подсказка плана'}</button>
@@ -51,7 +66,7 @@ export function situationCardHtml({ lines, plan = [], open = false, planOpen = f
   return `<details class="sit-card" id="gSitCard"${open ? ' open' : ''}>
     <summary class="sit-summary"><span aria-hidden="true">🧭</span> Картина стола</summary>
     <div class="sit-body">${linesHtml(lines)}${planBlock}</div>
-  </details>`;
+  </details>${guessBlock(guess)}`;
 }
 
 let open = false;
@@ -61,7 +76,7 @@ let wired = null;
 /**
  * Рисует карточку в контейнер el или очищает его.
  * @param {HTMLElement} el контейнер
- * @param {{lines: object[], plan: object[], key: string}|null} view null — карточку не показываем
+ * @param {{lines: object[], plan: object[], key: string, guess?: object|null}|null} view null — карточку не показываем
  */
 export function renderSituationCard(el, view) {
   if (!el) return;
@@ -69,6 +84,11 @@ export function renderSituationCard(el, view) {
     wired = el;
     el.addEventListener('toggle', (e) => { if (e.target.id === 'gSitCard') open = e.target.open; }, true);
     el.addEventListener('click', (e) => {
+      const gbtn = e.target.closest?.('[data-guess]');
+      if (gbtn) {
+        el.dispatchEvent(new CustomEvent('sit-guess', { bubbles: true, detail: { answer: gbtn.dataset.guess } }));
+        return;
+      }
       const btn = e.target.closest?.('#gPlanBtn');
       if (!btn) return;
       planKey = planKey === el.dataset.key ? null : el.dataset.key;
@@ -77,7 +97,7 @@ export function renderSituationCard(el, view) {
   }
   if (!view) { el.innerHTML = ''; el.dataset.key = ''; return; }
   el.dataset.key = view.key;
-  el.innerHTML = situationCardHtml({ lines: view.lines, plan: view.plan, open, planOpen: planKey === view.key });
+  el.innerHTML = situationCardHtml({ lines: view.lines, plan: view.plan, open, planOpen: planKey === view.key, guess: view.guess || null });
 }
 
 /** Для тестов и смены партии: карточка снова свёрнута, подсказка скрыта. */

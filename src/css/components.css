@@ -291,6 +291,37 @@
   margin-top: 8px;
 }
 
+.sit-guess {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: var(--info-bg-3);
+  border-radius: 6px;
+}
+
+.sit-guess-q {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.sit-guess-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.sit-guess-btn {
+  flex: 1 1 140px;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.sit-guess-btn[aria-pressed="true"] {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--on-accent);
+}
+
 .sit-plan-btn {
   min-height: 44px;
   padding: 0 14px;

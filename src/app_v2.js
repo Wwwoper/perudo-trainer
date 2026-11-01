@@ -26,6 +26,7 @@ import { recordDecision, markRoundOutcome, startDecisionLog, restoreDecisionLog,
 import { buildCtx } from './moments.js';
 import { describeSituation } from './situation.js';
 import { buildSaid, buildDecision } from './reveal.js';
+import { canGuess, makeGuess, guessMatchesBid, checkGuess, guessLine, addGuessToTally, tallyText, addGuessToStats } from './guess.js';
 import { situationLines, planLines, explainAction } from './situation_text.js';
 import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/situation_card.js';
 import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
@@ -59,6 +60,9 @@ let lastKeyMoments = [];        // ключевые моменты послед�
 // ================= Партия (движок + стол) =================
 
 let game = null;
+/** Необязательная догадка по текущей ставке и счёт догадок за партию (только в памяти). */
+let guess = null;
+let guessTally = { n: 0, good: 0 };
 /** Стили ботов скрыты в текущей партии (запоминается при её начале). */
 let stylesHidden = true;
 let gameLogEntries = [];
@@ -107,6 +111,12 @@ function setupGame() {
   };
   if ($('#gQ')) $('#gQ').oninput = () => { renderPick(); renderPractical(); };
   $('#gSituation')?.addEventListener('sit-plan-toggle', () => renderSituation());
+  $('#gSituation')?.addEventListener('sit-guess', (e) => {
+    const g = game && makeGuess({ round: game.round, bid: game.bid, answer: e.detail?.answer });
+    if (!g) return;
+    guess = g;
+    renderSituation();
+  });
   for (const id of ['#gExplain', '#gExplainDepth']) $(id)?.addEventListener('change', () => { if (game) renderSituation(); });
   // На телефоне количество меняется кнопками «−/+»: системная клавиатура
   // закрыла бы панель действий.
@@ -264,6 +274,8 @@ function startNewGame() {
   if (!P) return;
   stylesHidden = !$('#gShowStylesOpt')?.checked;   // решение на всю партию: переключатель посреди партии стили не раскроет
   resetSituationCard();
+  guess = null;
+  guessTally = { n: 0, good: 0 };
 
   const botCount = botCountSetting();
   const startDice = Math.max(1, Math.min(10, +($('#gDice')?.value || 5)));
@@ -566,7 +578,9 @@ function revealExtras(snap, rec, events) {
   const said = buildSaid(rec, snap.seats.map((s) => nameOf(s.id)));
   const entry = [...reviewEntries].reverse().find((e) => e.round === rec.round) ?? null;
   const lostMe = (events || []).some((e) => e.type === 'PLAYER_LOST_DIE' && e.playerId === 'human');
-  return { said, decision: buildDecision({ round: rec, entry, lostMe }) };
+  const decision = buildDecision({ round: rec, entry, lostMe });
+  const guessLines = settleGuess(snap, rec);
+  return { said, decision: guessLines.length ? [...(decision || []), ...guessLines] : decision };
 }
 
 /**
@@ -585,6 +599,30 @@ function explainNote(action, p) {
     console.warn('explain note failed:', e);
     return '';
   }
+}
+
+/** Данные для блока догадки: есть чужая ставка, на которую вы ещё не ответили. */
+function guessView(names) {
+  if (!game || !canGuess(game.bid)) return null;
+  const chosen = guessMatchesBid(guess, game.round, game.bid) ? guess.answer : null;
+  return { who: names[game.bid.playerId] ?? game.bid.playerId, q: game.bid.q, f: game.bid.f, chosen };
+}
+
+/**
+ * Итог догадки после вскрытия: строки для окна, запись в статистику и счёт за партию.
+ * Догадка засчитывается только если вскрыта именно та ставка, на которую она сделана.
+ */
+function settleGuess(snap, rec) {
+  const g = guess;
+  guess = null;
+  if (!g || !rec || !snap || g.round !== rec.round) return [];
+  const ids = snap.seats.map((s) => s.id);
+  const res = checkGuess(g, rec, ids);
+  if (!res) return [];
+  guessTally = addGuessToTally(guessTally, res.ok);
+  updateStats((S) => { S.byTag = addGuessToStats(S.byTag, res.ok); });
+  const name = game.players.find((p) => p.id === g.id)?.name ?? g.id;
+  return [guessLine(res, name), tallyText(guessTally)].filter(Boolean);
 }
 
 /**
@@ -608,6 +646,7 @@ function renderSituation() {
     renderSituationCard(el, {
       lines: situationLines(sit, { depth: $('#gExplainDepth')?.value || 'short', names }),
       plan: planLines(sit),
+      guess: guessView(names),
       key: `${game.id}:${game.round}:${game.bidHistory.length}`,
     });
   } catch (e) {

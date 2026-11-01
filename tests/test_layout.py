@@ -542,6 +542,50 @@ class LayoutTest(unittest.TestCase):
                     "панель прокручивается вбок")
                 self.assertEqual(errors, [])
 
+    def test_guess_block_fits_and_is_tappable(self):
+        """Блок догадки в «Расчёте»: кнопки не меньше 44 px, не шире панели, страница не ползёт вбок, выбор виден."""
+        for w, h in ((360, 640), (390, 844), (844, 390), (768, 1024), (1366, 768)):
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                self.addCleanup(ctx.close)
+                page = ctx.new_page()
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                page.evaluate(
+                    "() => { document.querySelector('#gBots').value = 1; document.querySelector('#gDice').value = 5;"
+                    " document.querySelector('#gRevealOpt').checked = false; document.querySelector('#gAssist').value = 'novice';"
+                    " window.__perudo_v2.startNewGame(); }")
+                for _ in range(6):
+                    page.wait_for_function("document.querySelector('#gStatus')?.textContent?.includes('Ваш ход')", timeout=10000)
+                    if page.evaluate("window.__perudo_v2.game.bid && window.__perudo_v2.game.bid.playerId !== 'human'"):
+                        break
+                    page.locator("#gRaise").click()
+                    page.wait_for_timeout(300)
+                self.assertTrue(page.evaluate("window.__perudo_v2.game.bid && window.__perudo_v2.game.bid.playerId !== 'human'"),
+                                "не удалось дойти до чужой ставки")
+                calc = page.locator('.hud-tab-btn[data-open-tab="tabCalc"]')
+                if calc.is_visible():
+                    calc.click()
+                    page.wait_for_timeout(450)
+                guess = page.locator("#gSituation .sit-guess")
+                self.assertEqual(guess.count(), 1)
+                btns = page.locator(".sit-guess-btn")
+                self.assertEqual(btns.count(), 2)
+                for i in range(2):
+                    btns.nth(i).scroll_into_view_if_needed()
+                    self.assertGreaterEqual(btns.nth(i).bounding_box()["height"], 44)
+                btns.nth(0).click()
+                self.assertEqual(btns.nth(0).get_attribute("aria-pressed"), "true")
+                body = page.locator(".side-body").bounding_box()
+                for sel in (".sit-guess", ".sit-guess-btn >> nth=0", ".sit-guess-btn >> nth=1"):
+                    box = page.locator(sel).bounding_box()
+                    self.assertGreaterEqual(box["x"], body["x"] - 1, sel)
+                    self.assertLessEqual(box["x"] + box["width"], body["x"] + body["width"] + 1, f"{sel}: шире панели")
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "горизонтальная прокрутка")
+                self.assertTrue(page.evaluate(
+                    "(() => { const b = document.querySelector('.side-body'); return b.scrollWidth <= b.clientWidth + 1; })()"),
+                    "панель прокручивается вбок")
+
     def test_resizing_to_wide_closes_open_sheet(self):
         page = self.open_game(390, 844, 3)
         page.locator('.hud-tab-btn[data-open-tab="tabLog"]').click()

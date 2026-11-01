@@ -544,6 +544,71 @@ test.describe('Покерный стол в партии', () => {
     expect(await page.locator('#gReveal').textContent()).not.toMatch(/обманщик|врёт/i);
   });
 
+  /** Ставка бота на столе, ваш ход: у бота [2,2]; возвращает, есть ли нужная цифра у автора ставки. */
+  async function botHasDigit(page) {
+    return page.evaluate(() => {
+      const g = window.__perudo_v2.game;
+      const bot = g.players[1];
+      return bot.hand.some((d) => d === g.bid.f || (!g.palifico && d === 1 && g.bid.f !== 1));
+    });
+  }
+  const readTag = (page) => page.evaluate(() => (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.byTag || {}).read || null);
+
+  test('догадка: кнопки на ходу, ответ меняется, после вскрытия — строка и запись в статистику', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 2, reveal: true, assist: 'novice' });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2]);
+    // первая ставка раунда: догадывать не о чем
+    await expect(page.locator('#gSituation .sit-guess')).toHaveCount(0);
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
+    await page.locator('#gRaise').click();
+    await waitBotBid(page);
+    await openTab(page, 'tabCalc');                              // на телефоне карточка лежит в шторке
+    const guess = page.locator('#gSituation .sit-guess');
+    await expect(guess).toBeVisible();
+    await expect(guess).toContainText('необязательно');
+    const has = await botHasDigit(page);
+    const btnHas = guess.locator('[data-guess="has"]');
+    const btnNone = guess.locator('[data-guess="none"]');
+    await expect(btnHas).toHaveAttribute('aria-pressed', 'false');
+    await btnNone.click();
+    await expect(btnNone).toHaveAttribute('aria-pressed', 'true');
+    await btnHas.click();                                         // можно передумать
+    await expect(btnHas).toHaveAttribute('aria-pressed', 'true');
+    await expect(btnNone).toHaveAttribute('aria-pressed', 'false');
+    for (const b of [btnHas, btnNone]) expect((await b.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    const close = page.locator('.sheet-close');
+    if (await close.isVisible()) await close.click();
+    await page.locator('#gDudo').click();
+    await expect(page.locator('#gReveal')).toBeVisible();
+    await page.locator('#gRevealDecision summary').click();
+    const body = page.locator('#gRevealDecisionBody');
+    await expect(body).toContainText(`Ваша догадка: ${has ? 'верно' : 'неверно'}.`);
+    await expect(body).toContainText('Догадок в этой партии: ' + (has ? '1' : '0') + ' из 1.');
+    expect(await body.textContent()).not.toMatch(/обманщик|врёт|блеф|undefined|NaN/i);
+    expect(await readTag(page)).toEqual({ n: 1, good: has ? 1 : 0 });
+  });
+
+  test('догадка: без ответа в окне вскрытия строки нет и статистика не меняется', async ({ page }) => {
+    await revealAfterDudo(page, { assist: 'novice' });
+    await expect(page.locator('#gRevealDecisionBody')).not.toContainText('Ваша догадка');
+    expect(await readTag(page)).toBeNull();
+  });
+
+  test('догадка: в «Тренировке» (объяснения после хода) и в «Игре» кнопок нет', async ({ page }) => {
+    for (const assist of ['training', 'game']) {
+      await startGame(page, { bots: 1, dice: 2, reveal: false, assist });
+      await waitMyTurn(page);
+      await rigBots(page, [2, 2]);
+      await setQuantity(page, 1);
+      await page.locator('#gPick button').nth(1).click();
+      await page.locator('#gRaise').click();
+      await waitBotBid(page);
+      await expect(page.locator('#gSituation .sit-guess')).toHaveCount(0);
+    }
+  });
+
   test('вскрытие: в «Игре» и при выключенных объяснениях блоков разбора нет', async ({ page }) => {
     await revealAfterDudo(page, { assist: 'game', explain: 'full' });
     await expect(page.locator('#gRevealSaid')).toBeHidden();
