@@ -81,6 +81,35 @@ describe('sanitizeRound', () => {
   });
 });
 
+describe('ids игроков по местам', () => {
+  it('верный список переносится копией, раунды без него остаются валидными', () => {
+    const r = sanitizeRound(mk('g-r1', { ids: ['human', 'bot_0'] }));
+    assert.deepEqual(r.ids, ['human', 'bot_0']);
+    assert.ok(!('ids' in sanitizeRound(mk())));
+  });
+  it('негодный список просто не переносится, раунд при этом принимается', () => {
+    for (const ids of [['human'], ['human', 'human'], ['human', 5], ['human', 'bot 0'], ['human', ''], ['human', 'я'], 'human', [], null,
+      ['human', 'x'.repeat(25)]]) {
+      const r = sanitizeRound(mk('g-r1', { ids }));
+      assert.ok(r, JSON.stringify(ids));
+      assert.ok(!('ids' in r), JSON.stringify(ids));
+    }
+  });
+  it('исходный список не меняется, копия независима', () => {
+    const src = mk('g-r1', { ids: ['human', 'bot_0'] });
+    const r = sanitizeRound(src);
+    r.ids[0] = 'x';
+    assert.equal(src.ids[0], 'human');
+    const c = cloneRound(r);
+    c.ids[1] = 'y';
+    assert.equal(r.ids[1], 'bot_0');
+  });
+  it('круг через проверку данных сохраняет ids', () => {
+    const r = sanitizeRound(mk('g-r1', { ids: ['human', 'bot_0'] }));
+    assert.deepEqual(sanitizeRounds([r]).value, [r]);
+  });
+});
+
 describe('normalizeRounds / appendRounds', () => {
   it('не массив — пустой список; мусор отбрасывается', () => {
     assert.deepEqual(normalizeRounds(null), []);
@@ -175,6 +204,7 @@ describe('snapshotRound / buildRound на настоящем движке', () =
     assert.deepEqual(r.hands, [[2, 2, 1], [3, 4, 5], [6, 6, 4]]);
     assert.deepEqual(r.bids.map((b) => [b.s, b.q, b.f]), [[0, 2, 2], [1, 4, 2]]);
     assert.deepEqual(r.end, { kind: 'dudo', by: 2, bidder: 1, actual: 3, ok: false });
+    assert.deepEqual(r.ids, ['human', 'bot_0', 'bot_1']);
   });
 
   it('Calza на точной ставке', () => {

@@ -8,6 +8,7 @@
 //     me: ваше место среди игроков раунда (0…) или -1, если вас за столом нет,
 //     dice: кубики каждого игрока в начале раунда по местам,
 //     styles: стили по местам (null у вас и у тех, чей стиль неизвестен),
+//     ids: (необязательно) id игроков по местам: по ним соперник узнаётся в разных раундах партии,
 //     hands: кубики каждого игрока при вскрытии по местам,
 //     bids: ставки раунда по порядку { s: место автора, q, f },
 //     end: { kind: 'dudo'|'calza', by: кто проверил, bidder: автор последней ставки,
@@ -69,6 +70,7 @@ export function buildRound({ id, ts, snap, reveal, meId = 'human' }) {
   return sanitizeRound({
     id, ts, round: snap.round, wild: snap.wild,
     me,
+    ids: snap.seats.map((p) => p.id),
     dice: snap.seats.map((p) => p.dice),
     styles: snap.seats.map((p) => p.style),
     hands,
@@ -105,6 +107,9 @@ export function sanitizeRound(raw) {
     if (!Array.isArray(h) || h.length !== dice[i] || !h.every(isFace)) return null;
   }
   if (!Array.isArray(styles) || styles.length !== n) return null;
+  // ids необязательны (старые раунды их не имеют): негодный список просто не переносится
+  const ids = Array.isArray(raw.ids) && raw.ids.length === n && new Set(raw.ids).size === n
+    && raw.ids.every((v) => typeof v === 'string' && /^[A-Za-z0-9_-]{1,24}$/.test(v)) ? raw.ids.slice() : null;
   const cleanStyles = styles.map((s, i) => (i !== raw.me && typeof s === 'string' && /^[a-z]{1,20}$/.test(s) ? s : null));
 
   if (!Array.isArray(bids) || bids.length < 1 || bids.length > MAX_ROUND_BIDS) return null;
@@ -127,6 +132,7 @@ export function sanitizeRound(raw) {
 
   return {
     id, ts: raw.ts, round: raw.round, wild: raw.wild, me: raw.me,
+    ...(ids ? { ids } : {}),
     dice: dice.slice(), styles: cleanStyles, hands: hands.map((h) => h.slice()), bids: cleanBids,
     end: { kind: end.kind, by: end.by, bidder: end.bidder, actual: end.actual, ok: end.ok },
   };
@@ -156,7 +162,7 @@ export function appendRounds(existing, added, limit = MAX_ROUNDS) {
 /** Глубокая копия раунда. */
 export function cloneRound(r) {
   return {
-    ...r, dice: r.dice.slice(), styles: r.styles.slice(), hands: r.hands.map((h) => h.slice()),
+    ...r, ...(r.ids ? { ids: r.ids.slice() } : {}), dice: r.dice.slice(), styles: r.styles.slice(), hands: r.hands.map((h) => h.slice()),
     bids: r.bids.map((b) => ({ ...b })), end: { ...r.end },
   };
 }
