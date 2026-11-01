@@ -603,6 +603,20 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gPlanBody')).toHaveCount(0);
   });
 
+  test('карточка «Картина стола»: строка о ставке называет цифру, служебных значений в тексте нет', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 2, assist: 'novice', explain: 'full' });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2]);
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
+    await page.locator('#gRaise').click();
+    await waitBotBid(page);
+    await waitMyTurn(page);
+    const text = await page.locator('#gSitCard').textContent();
+    expect(text).toMatch(/Ставка \d+×[1-6]: у вас подходит/);
+    expect(text).not.toMatch(/undefined|NaN|\bnull\b|\[object/);
+  });
+
   test('карточка «Картина стола»: раскрытие переживает перерисовку, а новая партия сворачивает её', async ({ page }) => {
     await startGame(page, { bots: 2, dice: 3, assist: 'novice' });
     await waitMyTurn(page);

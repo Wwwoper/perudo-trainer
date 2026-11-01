@@ -98,7 +98,7 @@ export function situationLines(sit, { depth = 'short', names = {} } = {}) {
   const e = sit.facts.find((f) => f.kind === 'expectation');
   if (e) {
     out.push(line('expectation', 'fact',
-      `Ставка ${e.q}×${e.f}: у вас подходит ${e.own}, ещё не хватает ${e.need}. Среди ${e.hidden} чужих кубиков в среднем ${num1(e.expected)} нужной цифры (шанс одного кубика ${frac(e.p)}).`));
+      `Ставка ${e.q}×${e.face}: у вас подходит ${e.own}, ещё не хватает ${e.need}. Среди ${e.hidden} чужих кубиков в среднем ${num1(e.expected)} нужной цифры (шанс одного кубика ${frac(e.p)}).`));
     const verdict = Math.abs(e.gap) <= GAP_NEAR ? 'около среднего'
       : e.gap > 0 ? 'выше среднего' : 'ниже среднего';
     out.push(line('gap', 'estimate', `По расчёту нужное число кубиков у соперников ${verdict} (разница ${num1(Math.abs(e.gap))}).`));

@@ -10,6 +10,7 @@ import {
   situationLines, planLines, explainAction, beforeMoveLines, canExplain, BANNED, EVIDENCE, LINE_TYPES, OBS_MIN, GAP_NEAR,
 } from '../src/situation_text.js';
 import { AssistMode } from '../src/assist.js';
+import { seededRng } from '../src/read_sim.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sandbox = { self: {} };
@@ -354,5 +355,41 @@ describe('комментарий к ходу (explainAction)', () => {
         }
       }
     }
+  });
+});
+
+describe('тексты не содержат служебных значений', () => {
+  const JUNK = /undefined|NaN|\bnull\b|\[object|Infinity/;
+  it('в строках ситуации, плана и разбора хода на случайных столах нет undefined, NaN и подобного', () => {
+    const rnd = seededRng(2026);
+    const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+    let checked = 0;
+    for (let t = 0; t < 300; t++) {
+      const n = ri(2, 5);
+      const dice = Array.from({ length: n }, () => ri(1, 5));
+      const hand = Array.from({ length: dice[0] }, () => ri(1, 6));
+      const log = [];
+      const nb = ri(0, 5);
+      for (let i = 0; i < nb; i++) log.push(['b' + ri(1, n - 1), i + 1 + ri(0, 2), ri(1, 6)]);
+      const s = sit({ dice, hand, log: bids(...log), palifico: rnd() < 0.2 });
+      const all = [];
+      for (const depth of ['short', 'detailed']) {
+        all.push(...situationLines(s, { depth }));
+        all.push(...planLines(s));
+        for (const a of [{ type: 'raise', q: ri(1, 8), f: ri(1, 6) }, { type: 'dudo' }, { type: 'calza' }]) {
+          all.push(...explainAction(s, a, { p: rnd(), depth }));
+        }
+      }
+      for (const l of all) {
+        assert.ok(!JUNK.test(l.text), `стол ${t}, строка ${l.id}: ${l.text}`);
+        checked++;
+      }
+    }
+    assert.ok(checked > 1000, `проверено строк: ${checked}`);
+  });
+  it('строка про ставку называет цифру', () => {
+    const lines = situationLines(sit({ log: bids(['b1', 2, 3]) }), { depth: 'short' });
+    const l = lines.find((x) => x.id === 'expectation');
+    assert.match(l.text, /^Ставка 2×3: у вас подходит/);
   });
 });
