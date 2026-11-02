@@ -33,6 +33,21 @@ test.describe('Учебные вкладки', () => {
       await expect(res).toContainText('НЕ ВЕРЮ');
     });
 
+    test('под процентом две строки: шанс ставки и шанс проверки «Не верю!», вместе 100 %', async ({ page }) => {
+      await open(page, 'calc');
+      const lines = page.locator('#cRes .calc-explain span');
+      await expect(lines).toHaveCount(2);
+      await expect(lines.nth(0)).toHaveText('Ставка верна с шансом 44.1%.');          // рука 1,3,5,5,6; ставка 7×5
+      await expect(lines.nth(1)).toHaveText('«Не верю!» сработает с шансом 55.9%.');
+      // сумма остаётся 100 % при любой ставке; слов о блефе нет
+      for (const q of ['1', '3', '12', '15']) {
+        await page.fill('#cQ', q);
+        const [a, b] = (await lines.allTextContents()).map((t) => Number(t.match(/(\d+(?:\.\d)?)%/)[1]));
+        expect(Math.abs(a + b - 100)).toBeLessThan(0.11);
+      }
+      expect(await page.locator('#cRes').textContent()).not.toMatch(/блеф|обман|undefined|NaN/i);
+    });
+
     test('вердикт меняется вместе со ставкой', async ({ page }) => {
       await open(page, 'calc');
       await page.fill('#cQ', '3');

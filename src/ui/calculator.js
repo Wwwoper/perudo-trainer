@@ -2,6 +2,7 @@
 
 import { renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct } from './common.js';
+import { calcExplainLines } from '../calc_text.js';
 
 export function setupCalculator() {
   if (!P) return;
@@ -87,7 +88,8 @@ export function setupCalculator() {
     if ($('#cRes')) {
       const verdict = p >= t ? 'ВЕРЮ / можно повышать осторожно' : 'НЕ ВЕРЮ';
       $('#cRes').innerHTML =
-        `${renderBid(q, f)} <b>${pct(p)}</b> → <span class="${p >= t ? 'text-ok' : 'text-bad'}">${verdict}</span>`;
+        `${renderBid(q, f)} <b>${pct(p)}</b> → <span class="${p >= t ? 'text-ok' : 'text-bad'}">${verdict}</span>` +
+        `<div class="calc-explain">${calcExplainLines(p, pct).map((l) => `<span>${l}</span>`).join('')}</div>`;
     }
 
     const unk = n - hand.length;
