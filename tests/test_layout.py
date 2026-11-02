@@ -614,6 +614,27 @@ class LayoutTest(unittest.TestCase):
                 self.assertLessEqual(btn["y"] + btn["height"], h + 1, "кнопка ушла за нижний край экрана")
                 self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "горизонтальная прокрутка")
 
+    def test_calc_read_hint_fits_inside_dock(self):
+        """Поле чтения ставок с подсказкой: внутри панели ставки, не шире неё, страница не ползёт вбок."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                self.addCleanup(ctx.close)
+                page = ctx.new_page()
+                page.goto(self.url)
+                self.goto_tab(page, "calc")
+                box = page.locator("#cReadBox")
+                if not box.evaluate("el => el.open"):
+                    box.locator("summary").click()
+                hint = page.locator("#cKHint")
+                hint.scroll_into_view_if_needed()
+                hb, dock = hint.bounding_box(), page.locator("#cDock").bounding_box()
+                self.assertGreaterEqual(hb["x"], dock["x"] - 1)
+                self.assertLessEqual(hb["x"] + hb["width"], dock["x"] + dock["width"] + 1, "подсказка шире панели")
+                self.assertLessEqual(dock["y"] + dock["height"], h + 1, "панель ставки ушла за край экрана")
+                self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "горизонтальная прокрутка")
+                self.assertGreaterEqual(page.locator("#cK").bounding_box()["height"], 44)
+
     def test_resizing_to_wide_closes_open_sheet(self):
         page = self.open_game(390, 844, 3)
         page.locator('.hud-tab-btn[data-open-tab="tabLog"]').click()

@@ -99,6 +99,20 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#cRead')).not.toHaveText(before);
     });
 
+    test('поле чтения ставок: подпись про размер рук, пример «10» и связь подсказки с полем', async ({ page }) => {
+      await open(page, 'calc');
+      const box = page.locator('#cReadBox');
+      if (!(await box.evaluate((el) => el.open))) await box.locator('summary').click();
+      await expect(page.locator('#cReadBox label.field').first()).toContainText('Всего кубиков у игроков, называвших эту цифру');
+      const hint = page.locator('#cKHint');
+      await expect(hint).toBeVisible();
+      await expect(hint).toContainText('введите 10');
+      await expect(hint).toContainText('Угадывать совпадения не нужно');
+      await expect(page.locator('#cK')).toHaveAttribute('aria-describedby', 'cKHint');
+      // пока поле пустое, под ним короткая просьба ввести число (подробности — в подсказке к полю)
+      await expect(page.locator('#cRead')).toContainText('введите число в поле выше');
+    });
+
     test('рука собирается кнопками «+», «Убрать последний» и «Очистить»', async ({ page }) => {
       await open(page, 'calc');
       const dice = page.locator('#cHand .die');

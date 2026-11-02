@@ -99,8 +99,8 @@ export function setupCalculator() {
 
     if ($('#cRead')) {
       $('#cRead').innerHTML = kF > 0
-        ? `С учётом чтения ставок (${kF} куб. у ставивших на эту цифру, доверие ${tr.toFixed(2)}): <b class="${pr >= t ? 'text-ok' : 'text-bad'}">${pct(pr)}</b>`
-        : '<span class="muted">Чтобы учесть чужие ставки, укажите, сколько кубиков у игроков, поставивших на эту цифру.</span>';
+        ? `С учётом чтения ставок (${kF} куб. в руках у называвших эту цифру, доверие ${tr.toFixed(2)}): <b class="${pr >= t ? 'text-ok' : 'text-bad'}">${pct(pr)}</b>`
+        : '<span class="muted">Чтобы учесть чужие ставки, введите число в поле выше.</span>';
     }
 
     if ($('#cTbl')) {

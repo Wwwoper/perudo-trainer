@@ -114,8 +114,9 @@
             <details class="dock-more" id="cReadBox">
               <summary>Чтение чужих ставок</summary>
               <div class="field-row">
-                <label class="field">Кубиков у игроков, ставивших на эту цифру
-                  <input id="cK" type="number" min="0" max="60" value="0" inputmode="numeric">
+                <label class="field">Всего кубиков у игроков, называвших эту цифру
+                  <input id="cK" type="number" min="0" max="60" value="0" inputmode="numeric" aria-describedby="cKHint">
+                  <small id="cKHint" class="field-hint">Сложите кубики в руках всех, кто называл эту цифру. Например, у двух игроков по пять кубиков: введите 10. Угадывать совпадения не нужно.</small>
                 </label>
                 <label class="field">Доверие к ставкам
                   <span class="range-line">
