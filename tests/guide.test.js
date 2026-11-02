@@ -134,3 +134,12 @@ test('кнопки из руководства совпадают с подпи�
   const app = read(join(root, 'index.html')) + read(join(root, 'src', 'app_v2.js'));   // часть подписей ставит app_v2.js
   for (const label of ['Не верю!', 'Ставлю', 'Начать партию', 'Дальше', 'Сыграть ещё']) assert.ok(app.includes(label), `в приложении нет подписи «${label}»`);
 });
+
+test('страница «Упражнения» описывает каждую вкладку упражнений приложения', () => {
+  const app = read(join(root, 'index.html'));
+  const labels = [...app.matchAll(/<button class="drill-tab[^"]*" data-drill="[A-Z]"[^>]*>\s*([^<]+?)\s*<\/button>/g)].map((m) => m[1]);
+  assert.ok(labels.length >= 3, 'в приложении найдено меньше трёх упражнений');
+  const page = stripTags(html['drill.html']);
+  for (const label of labels) assert.ok(page.includes(label), `на странице «Упражнения» нет упражнения «${label}»`);
+  assert.ok(html['drill.html'].includes('href="table-reading.html"'), 'нет ссылки на страницу про чтение стола');
+});
