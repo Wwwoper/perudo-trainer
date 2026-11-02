@@ -215,7 +215,7 @@ BOT_RU = {**{k: v["name"] for k, v in BOT_STYLES.items()},
           "random_legal": "Случайный (легальные ходы)",
           "random_any": "Случайный (любые ходы)",
           "safe_max_ignore_rules": "Макс. безопасная (без учёта правил)"}
-VERDICT_RU = {"good": "Хорошее решение", "bad": "Сомнительное решение"}
+VERDICT_RU = {"good": "Хорошее решение по шансу", "bad": "Сомнительное решение по шансу"}
 
 def bot_move(kind, cur, level, rng, thr):
     n, h, wild = cur["n"], cur["h"], cur["m"]["wild"]; bid = {"q": cur["q"], "f": cur["f"]}

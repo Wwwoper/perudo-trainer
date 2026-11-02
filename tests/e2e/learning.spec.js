@@ -217,6 +217,15 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tFb')).toContainText('Ваша ставка');
     });
 
+    test('вердикт назван «по шансу», под ним оговорка: оценка не про выигрыш партии', async ({ page }) => {
+      await open(page, 'train');
+      await page.click('#tDudo');
+      const big = page.locator('#tFb .big');
+      await expect(big).toHaveText(/(Хорошее|Сомнительное) решение по шансу$/);
+      await expect(page.locator('#tFb .trainer-model-note')).toHaveText(/по шансу ставки и порогу, а не по выигрышу партии/);
+      expect(await page.locator('#tFb').textContent()).not.toMatch(/undefined|NaN|блеф|обман/i);
+    });
+
     test('недопустимая ставка отклоняется и не попадает в статистику', async ({ page }) => {
       await open(page, 'train');
       const before = await page.locator('#tStat').textContent();
@@ -226,6 +235,7 @@ test.describe('Учебные вкладки', () => {
       await page.click('#tRaise');
       await expect(page.locator('#tFb')).toContainText(/не меньше|нельзя/);
       await expect(page.locator('#tFb')).not.toContainText('Хорошее решение');
+      await expect(page.locator('#tFb')).not.toContainText('не по выигрышу партии');   // оговорка только у оценки
       await expect(page.locator('#tLayout')).not.toHaveClass(/is-answered/);
       expect(await page.locator('#tStat').textContent()).toBe(before);
     });

@@ -9,6 +9,7 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
+import { verdictText, MODEL_NOTE } from '../trainer_text.js';
 import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
 
 export function setupTrainer() {
@@ -213,7 +214,8 @@ export function setupTrainer() {
     persist();
     if ($('#tFb')) {
       $('#tFb').innerHTML =
-        `<div class="big ${good ? 'text-ok' : 'text-bad'}">${good ? '✓ Хорошее решение' : '✗ Сомнительное решение'}</div>${html}`;
+        `<div class="big ${good ? 'text-ok' : 'text-bad'}">${verdictText(good)}</div>` +
+        `<p class="trainer-model-note">${MODEL_NOTE}</p>${html}`;
     }
     setAnswered(true);
     $('#tNext')?.focus();
