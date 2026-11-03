@@ -79,7 +79,7 @@ main {
 
 .app-header nav button {
   flex: none;
-  min-height: 40px;
+  min-height: 44px;
   white-space: nowrap;
   scroll-snap-align: center;
 }

@@ -664,6 +664,19 @@ class LayoutTest(unittest.TestCase):
                     self.assertLessEqual(page.locator(".app-header").bounding_box()["height"], 56)
                     self.assertFalse(page.locator("#navToggle").is_visible())
 
+    def test_top_tabs_are_44px_tall_and_header_stays_one_row(self):
+        """UX-14: верхние вкладки не ниже 44 px там, где они видны, шапка остаётся в одну строку."""
+        for w, h in [(768, 1024), (1366, 768), (1920, 1080)]:
+            with self.subTest(w=w, h=h):
+                page = self.open_game(w, h, 3)
+                boxes = self.boxes(page, ".app-header nav button")
+                self.assertEqual(len(boxes), 7)
+                for b in boxes:
+                    self.assertGreaterEqual(b["height"], 44)
+                ys = [round(b["y"]) for b in boxes]
+                self.assertLessEqual(max(ys) - min(ys), 1, "вкладки перенеслись на вторую строку")
+                self.assertLessEqual(page.locator(".app-header").bounding_box()["height"], 56)
+
     def test_every_tab_uses_menu_button_on_phone(self):
         for w, h in [(360, 640), (390, 844), (844, 390)]:
             for tab in ("calc", "train", "drill", "duel", "stats", "sim"):
