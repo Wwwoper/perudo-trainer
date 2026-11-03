@@ -2,6 +2,7 @@
 
 import { getDuelStats, setDuelStats } from '../storage.js';
 import { renderDie, renderBid } from '../table.js';
+import { deviationLabel, duelSessionText } from '../mode_notes.js';
 import { P, $ } from './common.js';
 
 let duelTree = null;
@@ -135,8 +136,7 @@ function renderDuel() {
   }
 
   html += `<div class="muted duel-fb">${D.fb || ''}</div>` +
-    `<p class="muted">Сессия: партий ${duelStats.games}, побед ${duelStats.wins}; ` +
-    `редких отклонений от оптимума: ${duelStats.dev} из ${duelStats.moves}.</p>`;
+    `<p class="muted">${duelSessionText(duelStats)}</p>`;
 
   el.innerHTML = html;
 
@@ -158,7 +158,7 @@ export function moveDuel(i) {
   setDuelStats(duelStats);
 
   D.fb = `Ваш ход ${act === 'D' ? '«Не верю»' : act.q + '×' + act.f}: оптимальная частота ` +
-    `${(pr * 100).toFixed(0)}% ${pr < 0.05 ? '<b class="text-bad">— редкое отклонение</b>' : '<b class="text-ok">— в рамках</b>'}.`;
+    `${(pr * 100).toFixed(0)}% ${pr < 0.05 ? `<b class="text-bad">— ${deviationLabel(pr)}</b>` : `<b class="text-ok">— ${deviationLabel(pr)}</b>`}.`;
 
   if (act === 'D') {
     D.log.push(`<div class="log-row"><span class="player-name c0">Вы</span> <b class="text-bad">не верю!</b></div>`);
