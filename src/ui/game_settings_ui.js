@@ -5,7 +5,7 @@
 
 import { $ } from './common.js';
 import {
-  sanitizeGameSettings, defaultGameSettings, isDefaultGameSettings,
+  sanitizeGameSettings, defaultGameSettings, isDefaultGameSettings, firstGamePreset,
 } from '../game_settings.js';
 import { getLastGameSettings, setLastGameSettings, clearLastGameSettings } from '../storage.js';
 
@@ -93,6 +93,13 @@ export function setupGameSettings() {
     btn.addEventListener('click', () => {
       applyGameSettings(defaultGameSettings());
       clearLastGameSettings();
+      refreshResetButton();
+    });
+  }
+  const preset = $('#gFirstPreset');
+  if (preset) {
+    preset.addEventListener('click', () => {
+      applyGameSettings(firstGamePreset());
       refreshResetButton();
     });
   }

@@ -359,6 +359,25 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gBots')).toHaveValue('3');
   });
 
+  test('«Первая учебная партия» одним нажатием выставляет настройки новичка, но не начинает партию', async ({ page }) => {
+    await page.locator('#gBots').fill('4');
+    await page.locator('#gCalzaOpt').check();
+    await page.locator('#gFirstPreset').click();
+    await expect(page.locator('#gBots')).toHaveValue('1');
+    await expect(page.locator('#gBotStyles select').first()).toHaveValue('careful');
+    await expect(page.locator('#gAssist')).toHaveValue('novice');
+    await expect(page.locator('#gSpeed')).toHaveValue('slow');
+    await expect(page.locator('#gCalzaOpt')).not.toBeChecked();
+    await expect(page.locator('#gPalificoOpt')).not.toBeChecked();
+    await expect(page.locator('#gShowStylesOpt')).toBeChecked();
+    await expect(page.locator('#gSetup')).toBeVisible();
+    expect(await lastGame(page)).toBeNull();
+    await page.locator('#gSetup .side-start').click();
+    expect(await lastGame(page)).toMatchObject({
+      bots: 1, botStyles: ['careful'], assist: 'novice', speed: 'slow', calza: false, palifico: false, hideStyles: false,
+    });
+  });
+
   test('«Объяснения»: выбор запоминается после партии и перезагрузки, пояснение меняется с режимом помощи', async ({ page }) => {
     await expect(page.locator('#gExplain')).toHaveValue('auto');
     await expect(page.locator('#gExplainDepth')).toHaveValue('short');

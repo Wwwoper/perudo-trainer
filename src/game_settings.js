@@ -102,3 +102,28 @@ export function describeGameSettings(s) {
   const explain = { off: 'без объяснений', after: 'объяснения после хода', full: 'объяснения до и после' }[v.explain];
   return [dice, bots, assist, ...(explain ? [explain] : []), speed].join(' · ');
 }
+
+/** Название кнопки-пресета на экране «Новая партия» (одно слово для приложения и руководства). */
+export const FIRST_GAME_LABEL = 'Первая учебная партия';
+/** Что делает пресет — одна строка для подсказки под кнопкой. */
+export const FIRST_GAME_HINT =
+  'Один бот «Осторожный», режим «Новичок», темп «Медленно», стили ботов показаны, без Calza и Палифико.';
+
+/** Настройки для самой первой партии: спокойный соперник, подсказки и время подумать. */
+export function firstGamePreset() {
+  return sanitizeGameSettings({
+    ...defaultGameSettings(),
+    bots: 1,
+    botStyles: ['careful'],
+    assist: 'novice',
+    speed: 'slow',
+    calza: false,
+    palifico: false,
+    hideStyles: false,
+  });
+}
+
+/** Совпадают ли настройки с пресетом «Первая учебная партия». */
+export function isFirstGamePreset(s) {
+  return JSON.stringify(sanitizeGameSettings(s)) === JSON.stringify(firstGamePreset());
+}

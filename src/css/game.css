@@ -42,6 +42,18 @@
   margin: 0;
 }
 
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+.preset-row button {
+  min-height: 44px;
+}
+
 #game.is-prestart #gDock,
 #game.is-prestart #gameTable,
 #game.is-prestart .game-side,

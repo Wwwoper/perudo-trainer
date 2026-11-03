@@ -12,6 +12,7 @@ global.localStorage = {
 const {
   defaultGameSettings, sanitizeGameSettings, isDefaultGameSettings, describeGameSettings,
   GAME_SETTINGS_VERSION, EXPLAIN_MODES, EXPLAIN_DEPTHS,
+  firstGamePreset, isFirstGamePreset, FIRST_GAME_LABEL, FIRST_GAME_HINT,
 } = await import('../src/game_settings.js');
 const {
   getLastGameSettings, setLastGameSettings, clearLastGameSettings, getSettings, setSettings,
@@ -179,5 +180,49 @@ describe('настройки версии 2: объяснения и стили'
     assert.deepStrictEqual(sanitizeGameSettings(s), s);
     setLastGameSettings(s);
     assert.deepStrictEqual(getLastGameSettings(), s);
+  });
+});
+
+describe('пресет «Первая учебная партия»', () => {
+  it('один бот «Осторожный», «Новичок», «Медленно», стили показаны, без Calza и Палифико', () => {
+    const p = firstGamePreset();
+    assert.strictEqual(p.bots, 1);
+    assert.deepStrictEqual(p.botStyles, ['careful']);
+    assert.strictEqual(p.assist, 'novice');
+    assert.strictEqual(p.speed, 'slow');
+    assert.strictEqual(p.hideStyles, false);
+    assert.strictEqual(p.calza, false);
+    assert.strictEqual(p.palifico, false);
+  });
+  it('проходит проверку данных без изменений и каждый раз возвращает новый объект', () => {
+    const p = firstGamePreset();
+    assert.deepStrictEqual(sanitizeGameSettings(p), p);
+    p.bots = 5;
+    assert.strictEqual(firstGamePreset().bots, 1);
+  });
+  it('isFirstGamePreset узнаёт пресет и не путает его со стандартными настройками', () => {
+    assert.ok(isFirstGamePreset(firstGamePreset()));
+    assert.ok(!isFirstGamePreset(defaultGameSettings()));
+    assert.ok(!isFirstGamePreset({ ...firstGamePreset(), speed: 'fast' }));
+    assert.ok(!isDefaultGameSettings(firstGamePreset()));
+  });
+  it('подпись и подсказка называют все условия пресета', () => {
+    assert.strictEqual(FIRST_GAME_LABEL, 'Первая учебная партия');
+    for (const w of ['Осторожный', 'Новичок', 'Медленно', 'стили', 'Calza', 'Палифико']) {
+      assert.ok(FIRST_GAME_HINT.includes(w), w);
+    }
+  });
+  it('кнопка и подсказка в index.html совпадают с модулем', async () => {
+    const { readFileSync } = await import('node:fs');
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    assert.ok(html.includes(`<button type="button" id="gFirstPreset">${FIRST_GAME_LABEL}</button>`));
+    assert.ok(html.includes(FIRST_GAME_HINT));
+  });
+  it('быстрый старт и страница настроек называют кнопку теми же словами', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const f of ['quick-start', 'game-settings']) {
+      const t = readFileSync(new URL(`../docs/guide/${f}.html`, import.meta.url), 'utf8').replace(/<[^>]+>/g, ' ');
+      assert.ok(t.includes(`«${FIRST_GAME_LABEL}»`), f);
+    }
   });
 });
