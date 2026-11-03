@@ -25,7 +25,7 @@ export function markBackupExported() {
 
 /**
  * Кнопки напоминания внутри итога партии.
- * @param {() => void} save скачивает копию (та же, что «Экспорт JSON»)
+ * @param {() => void} save скачивает копию (та же, что «Скачать резервную копию»)
  */
 export function setupBackupReminder(save) {
   $('#gResultCard')?.addEventListener('click', (e) => {

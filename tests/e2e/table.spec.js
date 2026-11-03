@@ -1416,7 +1416,7 @@ test.describe('Покерный стол в партии', () => {
       await page.reload();
       await goTab(page, 'stats');
       await openStatsTab(page, 'data');
-      await expect(page.locator('#stPersist')).toContainText('Экспорт JSON');
+      await expect(page.locator('#stPersist')).toContainText('Скачать резервную копию');
     });
   });
 

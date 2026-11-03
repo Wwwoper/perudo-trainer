@@ -36,13 +36,13 @@ describe('requestPersistence', () => {
 describe('describePersistence: совет зависит от входа в Яндекс', () => {
   it('без входа: файл или вход через Яндекс', () => {
     const t = describePersistence(false);
-    assert.match(t, /Экспорт JSON/);
+    assert.match(t, /Скачать резервную копию/);
     assert.match(t, /войдите через Яндекс/);
   });
   it('со входом: вернуть данные можно из облака, про файл не настаивает', () => {
     const t = describePersistence(false, { cloud: true });
     assert.match(t, /Яндекс Диске/);
-    assert.doesNotMatch(t, /Экспорт JSON/);
+    assert.doesNotMatch(t, /Скачать резервную копию/);
   });
   it('защищённое хранилище и неизвестное состояние от входа не зависят', () => {
     assert.equal(describePersistence(true, { cloud: true }), describePersistence(true));
@@ -60,7 +60,7 @@ describe('readPersisted / describePersistence', () => {
   });
   it('тексты для показа', () => {
     assert.match(describePersistence(true), /защищено/);
-    assert.match(describePersistence(false), /Экспорт JSON/);
+    assert.match(describePersistence(false), /Скачать резервную копию/);
     assert.equal(describePersistence(null), null);
     assert.equal(describePersistence(undefined), null);
   });

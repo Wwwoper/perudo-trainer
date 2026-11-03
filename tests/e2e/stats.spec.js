@@ -176,7 +176,7 @@ test.describe('«Данные»: единый блок «Сохранность 
     await page.goto('/');
     await goTab(page, 'stats');
     await openStatsTab(page, 'data');
-    await expect(page.locator('#stPersist')).toContainText('Экспорт JSON');
+    await expect(page.locator('#stPersist')).toContainText('Скачать резервную копию');
     await expect(page.locator('#stPersist')).toContainText('войдите через Яндекс');
   });
 
@@ -188,7 +188,7 @@ test.describe('«Данные»: единый блок «Сохранность 
     await goTab(page, 'stats');
     await openStatsTab(page, 'data');
     await expect(page.locator('#stPersist')).toContainText('Яндекс Диске');
-    await expect(page.locator('#stPersist')).not.toContainText('Экспорт JSON');
+    await expect(page.locator('#stPersist')).not.toContainText('Скачать резервную копию');
     page.once('dialog', (d) => d.accept());
     await page.locator('#clLogout').click();
     await expect(page.locator('#stPersist')).toContainText('войдите через Яндекс');

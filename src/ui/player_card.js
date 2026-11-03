@@ -102,7 +102,7 @@ export function setupPlayerCard({ onChange } = {}) {
 
   host.innerHTML =
     '<b>Игрок</b>' +
-    '<p class="muted">Имя и аватар видны за столом и в итогах партии. Хранятся на этом устройстве и входят в «Экспорт JSON».</p>' +
+    '<p class="muted">Имя и аватар видны за столом и в итогах партии. Хранятся на этом устройстве и входят в резервную копию.</p>' +
     '<div class="player-head">' +
     '<span id="plAvatar" class="player-avatar" aria-hidden="true"></span>' +
     '<label class="player-name-field" for="plName">Имя' +
