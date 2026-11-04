@@ -12,13 +12,15 @@ describe('sanitizeDeviceState', () => {
   });
   it('первое напоминание — после пяти партий', () => assert.equal(defaultDeviceState().nextAt, 5));
   it('корректное значение сохраняется', () => {
-    assert.deepEqual(sanitizeDeviceState({ nextAt: 25, persistTries: 1, account: 'yandex' }), { nextAt: 25, persistTries: 1, account: 'yandex' });
+    assert.deepEqual(sanitizeDeviceState({ nextAt: 25, persistTries: 1, account: 'yandex' }), { nextAt: 25, persistTries: 1, account: 'yandex', firstRunHidden: false });
   });
   it('неверные поля заменяются, лишние отбрасываются', () => {
-    assert.deepEqual(sanitizeDeviceState({ nextAt: -1, persistTries: 'да', extra: 1 }), { nextAt: REMIND_FIRST, persistTries: 0, account: null });
+    assert.deepEqual(sanitizeDeviceState({ nextAt: -1, persistTries: 'да', extra: 1 }), { nextAt: REMIND_FIRST, persistTries: 0, account: null, firstRunHidden: false });
     for (const account of ['admin', 5, {}, '']) assert.equal(sanitizeDeviceState({ account }).account, null);
     assert.equal(sanitizeDeviceState({ account: 'guest' }).account, 'guest');
     assert.deepEqual(sanitizeDeviceState({ nextAt: 1.5 }).nextAt, REMIND_FIRST);
+    assert.equal(sanitizeDeviceState({ firstRunHidden: true }).firstRunHidden, true);
+    for (const v of ['да', 1, {}, null]) assert.equal(sanitizeDeviceState({ firstRunHidden: v }).firstRunHidden, false);
     assert.deepEqual(sanitizeDeviceState({ nextAt: 1e9 }).nextAt, REMIND_FIRST);
   });
 });

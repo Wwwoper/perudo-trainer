@@ -21,6 +21,35 @@ test.describe('Учебные вкладки', () => {
     await page.reload();
   });
 
+  test('«Впервые здесь?»: на чистом профиле три шага, «Скрыть» запоминается, шаги ведут в разделы', async ({ page }) => {
+    const card = page.locator('#firstRun');
+    await expect(card).toBeVisible();
+    await expect(card).toContainText('Впервые здесь?');
+    await expect(card.locator('.first-run-step')).toHaveCount(3);
+    await expect(card.locator('a.first-run-act')).toHaveAttribute('href', 'docs/guide/rules.html');
+    // шаг 3 открывает Тренажёр
+    await card.locator('[data-first-run="train"]').click();
+    await expect(page.locator('#train')).toBeVisible();
+    await open(page, 'calc');
+    // шаг 2 открывает «Партию» с настройками первой партии
+    await card.locator('[data-first-run="game"]').click();
+    await expect(page.locator('#game')).toBeVisible();
+    await expect(page.locator('#gBots')).toHaveValue('1');
+    await expect(page.locator('#gAssist')).toHaveValue('novice');
+    await open(page, 'calc');
+    // «Скрыть» убирает карточку и после перезагрузки
+    await card.locator('[data-first-run-hide]').click();
+    await expect(card).toBeHidden();
+    await page.reload();
+    await expect(page.locator('#firstRun')).toBeHidden();
+  });
+
+  test('«Впервые здесь?» не показывается, если у профиля уже есть данные', async ({ page }) => {
+    await page.evaluate(() => localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 3, ok: 2, totalGames: 1 })));
+    await page.reload();
+    await expect(page.locator('#firstRun')).toBeHidden();
+  });
+
   test('«?» в каждом разделе ведёт на свою страницу руководства и открывается в новой вкладке', async ({ page }) => {
     const pages = {
       calc: 'calculator.html', train: 'trainer.html', drill: 'drill.html', game: 'game.html',

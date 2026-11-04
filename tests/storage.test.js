@@ -253,17 +253,17 @@ describe('Игрок (имя и аватар)', () => {
 describe('Состояние устройства', () => {
   it('нет записи — значения по умолчанию', () => {
     delete mockStorage['perudo.device'];
-    assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0, account: null });
+    assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0, account: null, firstRunHidden: false });
   });
   it('записанное читается, лишнее отбрасывается', () => {
     setDeviceState({ nextAt: 25, persistTries: 1, extra: true });
-    assert.deepStrictEqual(JSON.parse(mockStorage['perudo.device']), { nextAt: 25, persistTries: 1, account: null });
-    assert.deepStrictEqual(getDeviceState(), { nextAt: 25, persistTries: 1, account: null });
+    assert.deepStrictEqual(JSON.parse(mockStorage['perudo.device']), { nextAt: 25, persistTries: 1, account: null, firstRunHidden: false });
+    assert.deepStrictEqual(getDeviceState(), { nextAt: 25, persistTries: 1, account: null, firstRunHidden: false });
   });
   it('мусор в хранилище не ломает чтение', () => {
     for (const bad of ['{не json', '7', '"x"', '[1]']) {
       mockStorage['perudo.device'] = bad;
-      assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0, account: null }, bad);
+      assert.deepStrictEqual(getDeviceState(), { nextAt: 5, persistTries: 0, account: null, firstRunHidden: false }, bad);
     }
   });
 });

@@ -1059,3 +1059,67 @@
     font-weight: 400;
   }
 }
+
+/* ===== Карточка «Впервые здесь?» ===== */
+.first-run[hidden] {
+  display: none;
+}
+
+.first-run-title {
+  margin: 0 0 var(--space-1);
+  font-size: 18px;
+}
+
+.first-run-lead {
+  margin: 0 0 var(--space-2);
+}
+
+.first-run-steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.first-run-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.first-run-num {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--info-bg);
+  color: var(--info-fg);
+  font-weight: 700;
+}
+
+.first-run-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.first-run-act {
+  grid-column: 2;
+  justify-self: start;
+  display: inline-grid;
+  place-items: center;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.first-run .link-btn {
+  min-height: var(--tap);
+}

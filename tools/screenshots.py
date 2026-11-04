@@ -29,7 +29,7 @@ DESKTOP = {"width": 1280, "height": 720}
 PHONE = {"width": 390, "height": 844}
 
 # Игрок уже выбрал «гость»: иначе при первом запуске поверх страницы открывается окно выбора.
-GUEST = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\"}');"
+GUEST = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\",\"firstRunHidden\":true}');"
 
 # mulberry32: тот же поток чисел при каждом запуске.
 SEED = """(() => {
