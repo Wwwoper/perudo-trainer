@@ -1,8 +1,9 @@
 // cloud_policy.test.js — правила облачной копии (src/cloud_policy.js)
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
-  MIN_SAVE_INTERVAL_MS, hashText, summarizeBackupData, defaultCloudState, sanitizeCloudState, hasValidToken, isLocalDataEmpty, planSync, canSaveNow,
+  MIN_SAVE_INTERVAL_MS, hashText, summarizeBackupData, defaultCloudState, sanitizeCloudState, hasValidToken, isLocalDataEmpty, planSync, canSaveNow, shouldOfferAccountChoice,
 } from '../src/cloud_policy.js';
 
 const TOKEN = 'y0__abcDEF123-_.xyz';
@@ -139,5 +140,32 @@ describe('summarizeBackupData', () => {
   });
   it('число партий — большее из счётчика и длины истории', () => {
     assert.equal(summarizeBackupData({ 'perudo.userProfile': { totalGames: 1 }, 'perudo.games': [{ ts: 1 }, { ts: 2 }] }).games, 2);
+  });
+});
+
+describe('shouldOfferAccountChoice: облако предлагается после первого результата', () => {
+  it('чистый профиль — не предлагаем', () => {
+    assert.equal(shouldOfferAccountChoice({ account: null, hasToken: false, hasResults: false }), false);
+  });
+  it('есть результат, режим не выбран, входа нет — предлагаем', () => {
+    assert.equal(shouldOfferAccountChoice({ account: null, hasToken: false, hasResults: true }), true);
+  });
+  it('режим уже выбран или вход выполнен — не предлагаем', () => {
+    assert.equal(shouldOfferAccountChoice({ account: 'guest', hasToken: false, hasResults: true }), false);
+    assert.equal(shouldOfferAccountChoice({ account: 'yandex', hasToken: true, hasResults: true }), false);
+    assert.equal(shouldOfferAccountChoice({ account: null, hasToken: true, hasResults: true }), false);
+  });
+  it('неполные или странные данные — не предлагаем', () => {
+    assert.equal(shouldOfferAccountChoice(), false);
+    assert.equal(shouldOfferAccountChoice({ account: null }), false);
+    assert.equal(shouldOfferAccountChoice({ account: null, hasToken: false, hasResults: 'да' }), false);
+  });
+});
+
+describe('руководство описывает, когда предлагается облако', () => {
+  it('страница «Ваши данные» говорит про первый результат, а не про первый запуск', () => {
+    const t = readFileSync(new URL('../docs/guide/data.html', import.meta.url), 'utf8').replace(/<[^>]+>/g, ' ');
+    assert.match(t, /После первого результата/);
+    assert.doesNotMatch(t, /При первом запуске приложение спрашивает/);
   });
 });

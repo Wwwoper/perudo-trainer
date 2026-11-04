@@ -139,6 +139,8 @@ def measure_all(base_url, browser):
         ctx.add_init_script(SEED)
         # Новичок: окно выбора «гость / Яндекс» поверх страницы
         fresh = ctx.new_page()
+        # Окно выбора открывается после первого результата: у «новичка» в замере уже есть одна партия
+        fresh.add_init_script("if (!localStorage.getItem('perudo.userProfile')) localStorage.setItem('perudo.userProfile', JSON.stringify({ totalGames: 1 }));")
         fresh.goto(base_url)
         fresh.wait_for_selector("#clWelcome[open]")
         m = fresh.evaluate(MEASURE, "#clGuest")

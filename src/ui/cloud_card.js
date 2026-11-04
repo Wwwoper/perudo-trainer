@@ -7,7 +7,8 @@ import { get, set, getStats, getGames, getTrainingQueue, getCloudState, setCloud
 import { buildBackup, serializeBackup, parseBackup, applyBackup } from '../backup.js';
 import { createClient, buildAuthUrl, parseAuthHash, redirectUriFor, createState, CloudError } from '../cloud_yandex.js';
 import { runDiagnostics } from '../cloud_diag.js';
-import { isLocalDataEmpty, hasValidToken, hashText, summarizeBackupData } from '../cloud_policy.js';
+import { isLocalDataEmpty, hasValidToken, hashText, summarizeBackupData, shouldOfferAccountChoice } from '../cloud_policy.js';
+import { isEmptyStats } from '../stats_summary.js';
 import { createCloudSync, errorText } from '../cloud_sync.js';
 import { escapeHtml } from '../table.js';
 import { $ } from './common.js';
@@ -187,11 +188,17 @@ function pendingHtml(p) {
     '<button type="button" data-cl="later">Решить позже</button></div>';
 }
 
-/** Окно выбора на старте: открыто, пока игрок не выбрал «гость» или «Яндекс» (Esc откладывает выбор до следующего запуска). */
-function renderWelcome() {
+/**
+ * Окно выбора: открыто, пока игрок не выбрал «гость» или «Яндекс» (Esc откладывает выбор до следующего запуска).
+ * Появляется только после первого результата (партия, задача тренажёра или упражнения), не на чистом профиле.
+ */
+let welcomePostponed = false;   // Esc: до следующего запуска не открываем снова, даже при смене раздела
+
+function renderWelcome({ fromTab = false } = {}) {
   const dlg = $('#clWelcome');
-  if (!dlg) return;
-  const need = getDeviceState().account === null && !getCloudState().token;
+  if (!dlg || (fromTab && welcomePostponed)) return;
+  const hasResults = !isEmptyStats({ stats: getStats(), games: getGames(), queue: getTrainingQueue() });
+  const need = shouldOfferAccountChoice({ account: getDeviceState().account, hasToken: !!getCloudState().token, hasResults });
   if (need && !dlg.open && typeof dlg.showModal === 'function') dlg.showModal();
   else if (!need && dlg.open) dlg.close();
 }
@@ -402,6 +409,7 @@ export function setupCloudCard({ downloadBackup } = {}) {
       renderCloudCard();
     }
   });
+  $('#clWelcome')?.addEventListener('cancel', () => { welcomePostponed = true; });
   $('#clDialog')?.addEventListener('click', (e) => { if (e.target === $('#clDialog')) closeDialog(); });
 
   if (back?.ok) {
@@ -416,6 +424,8 @@ export function setupCloudCard({ downloadBackup } = {}) {
   if (sync.status().connected) runCheck({ justLoggedIn: !!back?.ok });
 
   return {
+    /** Сменился раздел: если уже есть первый результат, а режим не выбран, предлагаем выбор. */
+    offerIfReady() { renderWelcome({ fromTab: true }); },
     /** Партия закончилась: сверяемся с облаком и обновляем копию. Ошибка видна в блоке «Игрок» и уведомлением. */
     async afterGame() {
       if (!sync.status().connected) return;

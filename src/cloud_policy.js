@@ -114,3 +114,12 @@ export function canSaveNow({ now, lastSaveAt, minInterval = MIN_SAVE_INTERVAL_MS
   if (!isTime(now)) return false;
   return !isTime(lastSaveAt) || now - lastSaveAt >= minInterval;
 }
+
+/**
+ * Предлагать ли выбор «гость / Яндекс». Не раньше первого результата: пока игрок ничего не сыграл
+ * и не решил ни одной задачи, облако ему не нужно и окно только мешает знакомству с приложением.
+ * @param {{account: 'guest'|'yandex'|null, hasToken: boolean, hasResults: boolean}} s
+ */
+export function shouldOfferAccountChoice({ account, hasToken, hasResults } = {}) {
+  return account === null && hasToken !== true && hasResults === true;
+}

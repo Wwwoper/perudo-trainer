@@ -1,5 +1,5 @@
 // tests/e2e/welcome.spec.js
-// Окно «Как вы будете играть?» при первом запуске и режим «гость / Яндекс». Яндекс подменён заглушкой.
+// Окно «Как вы будете играть?» после первого результата и режим «гость / Яндекс». Яндекс подменён заглушкой.
 import { test, expect } from './fixtures.js';
 import { openTab as goTab, openStatsTab } from './helpers.js';
 import { stubYandex, seed, cloudFile, progress, OLD } from './yandex_stub.js';
@@ -8,16 +8,33 @@ const readJson = (page, key) => page.evaluate((k) => {
   try { return JSON.parse(localStorage.getItem(k)); } catch { return null; }
 }, key);
 
-test.describe('Выбор «гость или Яндекс» при первом запуске', () => {
+test.describe('Выбор «гость или Яндекс» после первого результата', () => {
   test.use({ seedGuest: false });
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');                                   // нужен адрес страницы, чтобы работало хранилище
   });
 
-  test('первый запуск: окно выбора; «Играть как гость» запоминается и закрывает окно', async ({ page }) => {
+  test('чистый профиль: окна выбора нет ни при запуске, ни при смене раздела; после первого результата оно открывается', async ({ page }) => {
     await stubYandex(page);
     await seed(page, { signedIn: false, account: null });
+    const card = page.locator('#clWelcome');
+    await expect(card).toBeHidden();
+    await goTab(page, 'train');
+    await goTab(page, 'calc');
+    await expect(card, 'до первого результата облако не предлагается').toBeHidden();
+    // первый результат: решение в тренажёре попало в профиль
+    await page.evaluate(() => localStorage.setItem('perudo.userProfile', JSON.stringify({
+      n: 1, good: 1, totalGames: 0, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } },
+    })));
+    await goTab(page, 'train');
+    await expect(card).toBeVisible();
+    await expect(card.locator('#clGuest')).toBeVisible();
+  });
+
+  test('первый запуск с данными: окно выбора; «Играть как гость» запоминается и закрывает окно', async ({ page }) => {
+    await stubYandex(page);
+    await seed(page, { games: 1, signedIn: false, account: null });
     const card = page.locator('#clWelcome');
     await expect(card).toBeVisible();
     await expect(card.locator('#clGuest')).toBeVisible();
@@ -70,12 +87,15 @@ test.describe('Выбор «гость или Яндекс» при первом
     expect((await readJson(page, 'perudo.device')).account).toBe('yandex');
   });
 
-  test('Esc откладывает выбор: окно откроется снова при следующем запуске, режим не записан', async ({ page }) => {
+  test('Esc откладывает выбор: при смене раздела окно не возвращается, откроется при следующем запуске, режим не записан', async ({ page }) => {
     await stubYandex(page);
-    await seed(page, { signedIn: false, account: null });
+    await seed(page, { games: 1, signedIn: false, account: null });
     await expect(page.locator('#clWelcome')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('#clWelcome')).toBeHidden();
+    await goTab(page, 'train');
+    await goTab(page, 'calc');
+    await expect(page.locator('#clWelcome'), 'в этом сеансе окно больше не открывается').toBeHidden();
     expect((await readJson(page, 'perudo.device'))?.account ?? null).toBeNull();
     await page.reload();
     await page.waitForFunction(() => Boolean(window.__perudo_v2));

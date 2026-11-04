@@ -1254,6 +1254,7 @@ function bootstrap() {
     if (tab === 'train') trainerApi?.reloadQueue();
     if (tab === 'game') showPrestart();
     if (tab === 'calc') refreshFirstRun();
+    cloudApi?.offerIfReady();
   });
   setupCalculator();
   setupFirstRun();
