@@ -1,6 +1,7 @@
 // src/ui/tabs.js — переключение разделов, ☰-меню и лента вкладок.
 
 import { $, $$ } from './common.js';
+import { guideHref, guideLabel } from '../guide_links.js';
 
 export const TABS = ['calc', 'train', 'drill', 'game', 'duel', 'sim', 'stats'];
 
@@ -53,6 +54,10 @@ export function setupTabs(onShow) {
   const setTab = (tab) => {
     document.body.dataset.tab = tab;
     document.body.toggleAttribute('data-compact-nav', COMPACT_TABS.includes(tab));
+    for (const help of $$('#helpLink, #helpLinkMenu')) {
+      help.setAttribute('href', guideHref(tab));
+      if (help.id === 'helpLink') help.setAttribute('aria-label', guideLabel(tab));
+    }
   };
   setTab($('.tab-btn.on')?.dataset.t || 'calc');
 

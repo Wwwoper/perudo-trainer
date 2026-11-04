@@ -1009,3 +1009,53 @@
   color: var(--info-fg);
   background: var(--info-bg);
 }
+
+/* ===== «?» — справка по разделу: страница руководства открывается в новой вкладке ===== */
+.help-link {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--fg);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.help-link:hover {
+  border-color: var(--acc);
+}
+
+/* «?» в шапке приложения есть только на широком экране; в самой шапке раздела он стоит на телефоне.
+   В партии на телефоне места в HUD нет: ссылка лежит в меню ☰ («Справка по разделу»). */
+.help-link-header,
+.help-link-menu {
+  display: none;
+}
+
+@media (min-width: 720px) and (min-height: 501px), (min-width: 1100px) {
+  .help-link-header {
+    display: inline-grid;
+  }
+
+  .learn-hud .help-link {
+    display: none;
+  }
+}
+
+.learn-hud .help-link {
+  margin-left: auto;
+}
+
+@media (max-width: 719px), (max-height: 500px) and (max-width: 1099px) {
+  body[data-compact-nav] .app-header.nav-open nav .help-link-menu {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 12px;
+    font-weight: 400;
+  }
+}

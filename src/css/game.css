@@ -1336,6 +1336,14 @@
   }
 }
 
+/* Низкий экран (телефон в ландшафте): пунктов меню восемь, в один столбец они не помещаются */
+@media (max-height: 500px) and (max-width: 1099px) {
+  body[data-compact-nav] .app-header.nav-open nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* 8 + 8 — отступы main, шапки в потоке больше нет */
 @media (max-width: 719px) {
   body[data-tab="game"] .game-main {

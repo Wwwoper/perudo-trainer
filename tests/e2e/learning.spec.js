@@ -21,6 +21,30 @@ test.describe('Учебные вкладки', () => {
     await page.reload();
   });
 
+  test('«?» в каждом разделе ведёт на свою страницу руководства и открывается в новой вкладке', async ({ page }) => {
+    const pages = {
+      calc: 'calculator.html', train: 'trainer.html', drill: 'drill.html', game: 'game.html',
+      duel: 'duel-sim.html', sim: 'duel-sim.html', stats: 'stats.html',
+    };
+    for (const [tab, file] of Object.entries(pages)) {
+      await open(page, tab);
+      // Широкий экран: «?» в шапке приложения. Телефон: «?» в шапке учебного раздела, а в партии (в HUD нет места) в меню ☰
+      const menuBtn = page.locator('.hud-menu:visible');
+      const inMenu = tab === 'game' && (await menuBtn.count()) > 0;
+      if (inMenu) await menuBtn.click();
+      const link = inMenu ? page.locator('#helpLinkMenu') : page.locator('.help-link:visible');
+      await expect(link).toHaveCount(1);
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute('href', `docs/guide/${file}`);
+      await expect(link).toHaveAttribute('target', '_blank');
+      if (!inMenu) await expect(link).toHaveAttribute('aria-label', /^Справка по разделу «/);
+      const box = await link.boundingBox();
+      expect(box.width, `${tab}: ширина`).toBeGreaterThanOrEqual(44);
+      expect(box.height, `${tab}: высота`).toBeGreaterThanOrEqual(44);
+      if (inMenu) await page.keyboard.press('Escape');
+    }
+  });
+
   test.afterEach(() => {
     expect(errors, 'на странице нет ошибок JavaScript и сетевых ошибок').toEqual([]);
   });
