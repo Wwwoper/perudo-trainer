@@ -991,6 +991,39 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tFb')).toContainText('Хорошее решение');
     });
 
+    test('повтор показывает причину и «N из 2 успешных повторов»; верный ответ засчитывается и убирает ситуацию из очереди', async ({ page }) => {
+      await page.evaluate((it) => localStorage.setItem('perudo.trainingQueue', JSON.stringify([{ ...it, streak: 1 }])), LADDER);
+      await page.addInitScript(() => { Math.random = () => 0; });
+      await page.reload();
+      await pickLadder(page);
+      await expect(page.locator('#tInfo .trainer-repeat')).toContainText('1 из 2 успешных повторов');
+      await expect(page.locator('#tRepeatNote')).toBeVisible();
+      await expect(page.locator('#tRepeatNote')).toContainText('раньше решение в ней было неудачным');
+      await page.evaluate(() => { document.querySelector('#tT').value = '0.95'; });
+      await page.click('#tDudo');
+      await expect(page.locator('#tFb .trainer-repeat-note')).toContainText('убрана из очереди повторов');
+      const q = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.trainingQueue') || '[]'));
+      expect(q).toHaveLength(0);
+    });
+
+    test('ошибка на повторе сбрасывает счёт и сообщает об этом', async ({ page }) => {
+      await page.evaluate((it) => localStorage.setItem('perudo.trainingQueue', JSON.stringify([{ ...it, streak: 1 }])), LADDER);
+      await page.addInitScript(() => { Math.random = () => 0; });
+      await page.reload();
+      await pickLadder(page);
+      await page.evaluate(() => { document.querySelector('#tT').value = '0.95'; });
+      await page.click('#tRaise');   // при пороге 0.95 повышение заведомо неверно
+      await expect(page.locator('#tFb .trainer-repeat-note')).toContainText('Счёт повторов сброшен: 0 из 2');
+      const q = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.trainingQueue') || '[]'));
+      expect(q).toHaveLength(1);
+      expect(q[0].streak).toBe(0);
+    });
+
+    test('на новой ситуации (не повторе) пояснения о повторе нет', async ({ page }) => {
+      await pickLadder(page);
+      await expect(page.locator('#tRepeatNote')).toBeHidden();
+    });
+
     test('испорченная запись лестницы в очереди не ломает тренажёр', async ({ page }) => {
       await page.evaluate(() => localStorage.setItem('perudo.trainingQueue', JSON.stringify([
         { mode: 'ladder', n: 14, h: [5], f: 5, q: 5, streak: 0, ks: [3], bids: [] }])));

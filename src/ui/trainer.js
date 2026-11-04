@@ -10,6 +10,7 @@ import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
 import { verdictText, MODEL_NOTE } from '../trainer_text.js';
+import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
 import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
 
 export function setupTrainer() {
@@ -136,7 +137,7 @@ export function setupTrainer() {
     if ($('#tDesc')) $('#tDesc').textContent = m.d;
     if ($('#tInfo')) {
       $('#tInfo').innerHTML =
-        (cur.item ? `<span class="trainer-chip trainer-repeat">🔁 повтор</span>` : '') +
+        (cur.item ? `<span class="trainer-chip trainer-repeat">${repeatChipText(cur.item)}</span>` : '') +
         `<span class="trainer-chip">🎲 всего <b>${cur.n}</b></span>` +
         `<span class="trainer-chip">👤 у вас <b>${cur.h.length}</b></span>` +
         `<span class="trainer-chip">❓ чужих <b>${cur.n - cur.h.length}</b></span>` +
@@ -144,6 +145,11 @@ export function setupTrainer() {
         `<span class="trainer-chip ${m.wild ? 'trainer-wild' : ''}">` +
         (m.wild ? '✨ единицы — джокеры' : '⚪ единицы обычные') +
         `</span>`;
+    }
+    const note = $('#tRepeatNote');
+    if (note) {
+      note.hidden = !cur.item;
+      note.textContent = cur.item ? repeatReason() : '';
     }
     if ($('#tHand')) $('#tHand').innerHTML = renderHand(cur.h, m.wild);
     $('#tBid')?.closest('.trainer-bid-row')?.classList.toggle('is-ladder', !!cur.ladder);
@@ -200,7 +206,7 @@ export function setupTrainer() {
     if (cur.item) {
       if (good) {
         cur.item.streak = (cur.item.streak || 0) + 1;
-        if (cur.item.streak >= 2) queue = queue.filter((x) => x !== cur.item);
+        if (cur.item.streak >= REPEAT_GOAL) queue = queue.filter((x) => x !== cur.item);
       } else {
         cur.item.streak = 0;
       }
@@ -215,7 +221,8 @@ export function setupTrainer() {
     if ($('#tFb')) {
       $('#tFb').innerHTML =
         `<div class="big ${good ? 'text-ok' : 'text-bad'}">${verdictText(good)}</div>` +
-        `<p class="trainer-model-note">${MODEL_NOTE}</p>${html}`;
+        `<p class="trainer-model-note">${MODEL_NOTE}</p>` +
+        (cur.item ? `<p class="trainer-repeat-note">${repeatAfterText(cur.item, good)}</p>` : '') + html;
     }
     setAnswered(true);
     $('#tNext')?.focus();

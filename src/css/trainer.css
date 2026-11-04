@@ -182,6 +182,15 @@
   color: var(--bad-fg);
 }
 
+.trainer-repeat-note {
+  margin: var(--space-1) 0;
+  font-size: 14px;
+}
+
+.trainer-repeat-note[hidden] {
+  display: none;
+}
+
 /* Рука */
 .trainer-hand-label {
   color: var(--mut);
