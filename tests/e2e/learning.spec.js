@@ -21,6 +21,54 @@ test.describe('Учебные вкладки', () => {
     await page.reload();
   });
 
+  test('«Упражнения»: первая задача с раскрытой памяткой, затем подставленное первое число, затем самостоятельно', async ({ page }) => {
+    await open(page, 'drill');
+    const hint = page.locator('#dPanelA .drill-hint');
+    const note = page.locator('#dAScaffold');
+    // ступень 1: пример — памятка раскрыта, поле пустое
+    await expect(hint).toHaveJSProperty('open', true);
+    await expect(note).toContainText('разберите пример');
+    await expect(page.locator('#dA1')).toHaveValue('');
+    await page.fill('#dA1', '5');
+    await page.fill('#dA2', '5');
+    await page.click('#dACheck');
+    await page.click('#dNew');
+    // ступени 2 и 3: первое число подставлено и его можно исправить
+    for (let i = 0; i < 2; i++) {
+      await expect(note).toContainText('Первое число уже подставлено');
+      await expect(page.locator('#dA1')).toHaveValue(/^\d+\.\d$/);
+      await page.fill('#dA1', '5');
+      await page.fill('#dA2', '5');
+      await page.click('#dACheck');
+      await page.click('#dNew');
+    }
+    // ступень 4: самостоятельно — пояснения и подстановки нет
+    await expect(note).toBeHidden();
+    await expect(page.locator('#dA1')).toHaveValue('');
+    // «Правило единиц»: памятка раскрыта только в первой задаче
+    await page.click('.drill-tab[data-drill="B"]');
+    await expect(page.locator('#dPanelB .drill-hint')).toHaveJSProperty('open', true);
+    await expect(page.locator('#dBScaffold')).toContainText('Первая задача');
+    await page.fill('#dB1', '3');
+    await page.click('#dBCheck');
+    await page.click('#dNew');
+    await expect(page.locator('#dBScaffold')).toBeHidden();
+  });
+
+  test('«Упражнения»: у игрока с историей подсказок нет, памятка свёрнута', async ({ page }) => {
+    await page.evaluate(() => localStorage.setItem('perudo.userProfile', JSON.stringify({
+      n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, drill: { A: { n: 9, good: 5 }, B: { n: 4, good: 2 } },
+    })));
+    await page.reload();
+    await open(page, 'drill');
+    await expect(page.locator('#dPanelA .drill-hint')).toHaveJSProperty('open', false);
+    await expect(page.locator('#dAScaffold')).toBeHidden();
+    await expect(page.locator('#dA1')).toHaveValue('');
+    await page.click('.drill-tab[data-drill="B"]');
+    await expect(page.locator('#dPanelB .drill-hint')).toHaveJSProperty('open', false);
+    await expect(page.locator('#dBScaffold')).toBeHidden();
+  });
+
   test('«Впервые здесь?»: на чистом профиле три шага, «Скрыть» запоминается, шаги ведут в разделы', async ({ page }) => {
     const card = page.locator('#firstRun');
     await expect(card).toBeVisible();
@@ -543,7 +591,11 @@ test.describe('Учебные вкладки', () => {
       });
     });
 
-    test('«Оценка в уме»: свёрнутая памятка «Как прикинуть в уме» с правилом и примером', async ({ page }) => {
+    test('«Оценка в уме»: памятка «Как прикинуть в уме» с правилом и примером (у опытного игрока свёрнута)', async ({ page }) => {
+      await page.evaluate(() => localStorage.setItem('perudo.userProfile', JSON.stringify({
+        n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, drill: { A: { n: 9, good: 5 }, B: { n: 4, good: 2 } },
+      })));
+      await page.reload();
       await open(page, 'drill');
       const memo = page.locator('#dPanelA .drill-hint');
       await expect(memo.locator('summary')).toHaveText('Как прикинуть в уме');

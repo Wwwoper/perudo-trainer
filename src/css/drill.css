@@ -298,3 +298,13 @@
 .read-sim {
   font-size: 13px;
 }
+
+/* Ступени упражнений: подсказка над полями ответа, пока у игрока мало попыток */
+.drill-scaffold {
+  margin: var(--space-1) 0 var(--space-2);
+  font-size: 14px;
+}
+
+.drill-scaffold[hidden] {
+  display: none;
+}

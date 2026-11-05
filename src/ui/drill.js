@@ -1,12 +1,13 @@
 // src/ui/drill.js — Упражнения: три тренировки (подсчёт, правило единиц, чтение вскрытия).
 
-import { updateStats } from '../storage.js';
+import { updateStats, getStats } from '../storage.js';
 import { renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct, flash } from './common.js';
 import { noSafeText, riskNote } from '../drill_note.js';
 import { validateAnswerA, validateAnswerB } from '../drill_input.js';
 import { safeByRule, isHalfway } from '../drill_rule.js';
 import { setupReadDrill } from './read_drill_view.js';
+import { drillStep, hintOpenFor, stepNote, prefillExpected, STEP_PARTIAL } from '../drill_steps.js';
 
 let drillState = { A: null, B: null };
 
@@ -28,6 +29,19 @@ export function setupDrill() {
     });
   }
 
+  /** Ступень упражнения по числу записанных попыток; пояснение над полями и памятка. */
+  function applyStep(k) {
+    const step = drillStep(k, getStats().drill?.[k]?.n);
+    const note = $(`#d${k}Scaffold`);
+    if (note) {
+      const text = stepNote(k, step);
+      note.textContent = text;
+      note.hidden = !text;
+    }
+    if (hintOpenFor(step)) $(`#dPanel${k} .drill-hint`)?.setAttribute('open', '');
+    return step;
+  }
+
   function newA() {
     const n = P.ri(8, 30);
     const k = P.ri(1, 5);
@@ -38,7 +52,9 @@ export function setupDrill() {
       $('#dAq').innerHTML =
         `Всего кубиков: <b>${n}</b>, единицы — джокеры. Ваши: ${renderHand(h, true)} Цифра: ${renderDie(f, 's')}`;
     }
-    if ($('#dA1')) $('#dA1').value = '';
+    const step = applyStep('A');
+    // Ступень «частично»: первое число подставлено, его можно исправить
+    if ($('#dA1')) $('#dA1').value = step === STEP_PARTIAL ? prefillExpected(P.own(h, f, true), n - h.length, f) : '';
     if ($('#dA2')) $('#dA2').value = '';
     if ($('#dAfb')) $('#dAfb').innerHTML = '';
     setAnswered('A', false);
@@ -54,6 +70,7 @@ export function setupDrill() {
         ? `Текущая ставка ${renderBid(q, f)}. Какое <b>минимальное</b> количество единиц можно назвать?`
         : `Текущая ставка ${renderBid(q, 1)} (единицы). Какое <b>минимальное</b> количество обычной цифры можно назвать?`;
     }
+    applyStep('B');
     if ($('#dB1')) $('#dB1').value = '';
     if ($('#dBfb')) $('#dBfb').innerHTML = '';
     setAnswered('B', false);
