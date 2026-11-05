@@ -324,3 +324,47 @@ test.describe('«Результаты»: список партий', () => {
     expect(b.height).toBeGreaterThanOrEqual(44);
   });
 });
+
+test.describe('Статистика: «Что дальше»', () => {
+  const setProfile = (page, p, queue) => page.evaluate(([prof, q]) => {
+    localStorage.setItem('perudo.userProfile', JSON.stringify(prof));
+    if (q) localStorage.setItem('perudo.trainingQueue', JSON.stringify(q));
+  }, [p, queue]);
+  const base = { n: 0, good: 0, totalGames: 2, totalWins: 1, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } };
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+  });
+
+  test('мало партий: рекомендация сыграть, кнопка ведёт в «Партию»', async ({ page }) => {
+    await setProfile(page, base);
+    await page.reload();
+    await goTab(page, 'stats');
+    const card = page.locator('#stNext');
+    await expect(card).toContainText('Что дальше');
+    await expect(card).toContainText('Сыграйте ещё партий: 3');
+    await expect(card.locator('button')).toHaveCount(1);
+    await card.locator('button').click();
+    await expect(page.locator('#game')).toBeVisible();
+  });
+
+  test('очередь повторов: рекомендация решить её, кнопка открывает Тренажёр', async ({ page }) => {
+    await setProfile(page, base, [{ mode: 'classic', n: 12, h: [1, 3], f: 3, q: 5, streak: 0 }]);
+    await page.reload();
+    await goTab(page, 'stats');
+    await expect(page.locator('#stNext')).toContainText('В очереди повторов ситуаций: 1');
+    await page.locator('#stNext button').click();
+    await expect(page.locator('#train')).toBeVisible();
+  });
+
+  test('слабая тема: рекомендация и «Тренировать» открывают режим темы', async ({ page }) => {
+    await setProfile(page, { ...base, totalGames: 9, byTag: { endgame: { n: 10, good: 2 } } });
+    await page.reload();
+    await goTab(page, 'stats');
+    await expect(page.locator('#stNext')).toContainText('Больше всего ошибок в теме');
+    await page.locator('#stNext button').click();
+    await expect(page.locator('#train')).toBeVisible();
+    await expect(page.locator('#tMode')).toHaveValue('endgame');
+  });
+});

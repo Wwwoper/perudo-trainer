@@ -13,6 +13,7 @@ import { setupStatsTabs, showStatsTab } from './stats_tabs.js';
 import { visibleGames, formatGameWhen, formatGameMeta, GAMES_SHOWN } from '../games_list.js';
 import { summarize, rateOf, isEmptyStats, MIN_DECISIONS_FOR_RATE, MIN_GAMES_FOR_RATE } from '../stats_summary.js';
 import { markBackupExported } from './backup_reminder.js';
+import { renderNextStep, setupNextStep } from './next_step.js';
 import { readPersisted, describePersistence } from '../persistence.js';
 import { REMIND_FIRST } from '../backup_reminder.js';
 
@@ -85,6 +86,7 @@ export function renderStats() {
   if ($('#stFilled')) $('#stFilled').hidden = empty;
   renderTiles(summarize({ stats, games: history, queue }));
 
+  renderNextStep({ stats, games: history, queue });
   renderWeakSpots(stats.byTag);
   renderPlayerCard();
   renderCloudCard();
@@ -128,6 +130,7 @@ export function setupStats({ onReset, onTrain, onPlayerChange } = {}) {
   });
   document.addEventListener('perudo:cloud-render', renderPersistence);   // вход и выход меняют совет про сохранность
   setupWeakSpots(onTrain);
+  setupNextStep(onTrain);
   setupPlayerCard({ onChange: onPlayerChange });
   const msg = (text, cls = 'muted') => {
     const el = $('#stBackupMsg');

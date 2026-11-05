@@ -654,6 +654,20 @@
   padding: 6px 4px;
 }
 
+/* Статистика: «Что дальше» */
+.next-card {
+  margin-bottom: var(--space-3);
+}
+
+.next-text {
+  margin: var(--space-1) 0 var(--space-2);
+}
+
+.next-act {
+  min-height: var(--tap);
+  font-size: 16px;
+}
+
 /* Статистика: «Над чем поработать» */
 .weak-card {
   margin-bottom: var(--space-3);
