@@ -793,6 +793,12 @@ test.describe('Покерный стол в партии', () => {
     await expect(pic.locator('.picture-lines li').first()).toContainText('Вскрытий в партии: 1');
     const text = await page.locator('#gResultCard').textContent();
     expect(text).not.toMatch(/undefined|NaN|обманщик|врёт/i);
+    // ваш ответ (проверка) на ставку бота учтён в разборе по стилю
+    const mu = pic.locator('.style-matchup');
+    await expect(mu).toHaveCount(1);
+    await expect(mu).toContainText('Как вы отвечали разным стилям');
+    await expect(mu.locator('.opp-row')).toHaveCount(1);
+    await expect(mu).toContainText('проверок: 1');
     // стили были скрыты — в итоге раскрыты
     await expect(page.locator('#gResultCard .styles-reveal li')).toHaveCount(1);
     expect(text).toMatch(/Стили ботов в этой партии/);

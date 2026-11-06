@@ -34,6 +34,7 @@ import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/si
 import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
 import { opponentProfiles, myBidProfile, roundsOfGame } from './opponents.js';
 import { gameRounds, diceByRound, pictureLines } from './game_picture.js';
+import { styleMatchups, matchupLines, compareLine, MATCHUP_TITLE, MATCHUP_NOTE } from './style_matchup.js';
 import { diceChartSvg } from './dice_chart.js';
 import { profileLines, meLines, ME_TITLE, ME_NOTE, TABLE_EMPTY, TABLE_NOTE } from './opponents_text.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
@@ -450,6 +451,19 @@ function renderTableProfile() {
   }).join('') + mine;
 }
 
+/** «Как вы отвечали разным стилям»: ваши ответы на ставки ботов по стилям; пусто, если стилей в раундах нет. */
+function matchupHtml(rs) {
+  const { styles } = styleMatchups(rs);
+  const known = styles.filter((m) => BOT_STYLES[m.style]);
+  if (!known.length) return '';
+  const nameOf = (st) => BOT_STYLES[st].name;
+  const cmp = compareLine(known, nameOf);
+  const rows = known.map((m) => `<div class="opp-row"><div class="opp-name"><b>${BOT_STYLES[m.style].icon} ${escapeHtml(nameOf(m.style))}</b></div>` +
+    `<ul class="opp-lines">${matchupLines(m).map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul></div>`).join('');
+  return `<div class="style-matchup"><b>${escapeHtml(MATCHUP_TITLE)}</b>${rows}` +
+    (cmp ? `<p>${escapeHtml(cmp)}</p>` : '') + `<p class="muted">${escapeHtml(MATCHUP_NOTE)}</p></div>`;
+}
+
 /**
  * «Картина партии» для итога: график кубиков по раундам и факты, которые считаются по вскрытым раундам.
  * Раскрытие стилей ботов — отдельно: если стили были скрыты, их показывают в конце в любом режиме.
@@ -471,6 +485,7 @@ function gamePictureHtml() {
       title = 'Картина партии';
       inner += `<div class="dice-chart-box">${diceChartSvg(data, { names })}</div>` +
         `<ul class="picture-lines">${lines.map((l) => `<li>${escapeHtml(l.text)}</li>`).join('')}</ul>` +
+        matchupHtml(rs) +
         '<p class="muted">Только то, что считается по вскрытым раундам этой партии.</p>';
     }
   }
