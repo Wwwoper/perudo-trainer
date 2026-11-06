@@ -197,7 +197,7 @@ def measure_all(base_url, browser):
         page.click("#dNew")
         snap("drill C", "#dCCheck")
         for n in (1, 2, 4):
-            page.check(f'input[name="rd{n}"][value="has"]')
+            page.eval_on_selector(f'input[name="rd{n}"]', "(el) => { el.value = '80'; el.dispatchEvent(new Event('input', { bubbles: true })); }")
         page.click("#dCCheck")
         # длинный разбор прокручивается внутри панели (.dock-scroll): на экране должна остаться кнопка
         snap("drill C: after check", "#dCCheck")

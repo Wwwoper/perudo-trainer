@@ -256,19 +256,27 @@
   border-color: var(--bad);
 }
 
-.read-opt {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: var(--tap);
-  cursor: pointer;
+.read-conf {
+  display: grid;
+  gap: 4px;
   font-size: 15px;
 }
 
-.read-opt input {
-  width: 20px;
-  height: 20px;
-  flex: none;
+.read-conf-out {
+  font-weight: 700;
+}
+
+.read-range {
+  width: 100%;
+  min-height: var(--tap);
+  margin: 0;
+  font-size: 16px;
+}
+
+.read-series {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
 }
 
 .read-lines {

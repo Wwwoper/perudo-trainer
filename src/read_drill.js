@@ -5,11 +5,11 @@
 // в интерфейс уходит только то, что видел бы игрок до вскрытия.
 
 import { saidText, dieMatches } from './reveal.js';
+import { toProbability, brierItem, sideCorrect, itemLine } from './calibration.js';
 
 /** Сколько вопросов в одном задании. */
 export const MAX_QUESTIONS = 3;
-/** Допустимые ответы: «в руке есть нужная цифра» и «в руке её нет». */
-export const ANSWERS = ['has', 'none'];
+/** Ответ — уверенность 0–100 %, что в руке автора есть нужная цифра (калибровка: calibration.js). */
 
 const plural = (n, one, few, many) => {
   const m10 = n % 10; const m100 = n % 100;
@@ -94,26 +94,31 @@ export function buildReadTask(round, { rnd = Math.random, max = MAX_QUESTIONS } 
  * Проверка ответов по рукам вскрытия.
  * @param {object} round тот же раунд, из которого собрано задание
  * @param {object} task результат buildReadTask
- * @param {Object<number,string>} answers номер ставки → 'has' | 'none'
+ * @param {Object<number,number|string>} answers номер ставки → уверенность 0–100 % («в руке есть нужная цифра»)
  * @returns {{items: object[], good: number, total: number, lines: string[], outcome: string}|null} null, если ответы неполные или неверные
+ *   item.ok — оценка по правильную сторону от 50 %; item.p, item.brier и item.base — для оценки серии
  */
 export function checkReadAnswers(round, task, answers) {
   if (!round || !task || task.id !== round.id || !answers || typeof answers !== 'object') return null;
   const items = [];
   for (const qn of task.questions) {
-    const a = answers[qn.n];
-    if (!ANSWERS.includes(a)) return null;
+    const p = toProbability(answers[qn.n]);
+    if (p === null) return null;
     const hand = round.hands[qn.seat] || [];
     const matches = hand.filter((d) => dieMatches(d, qn.f, round.wild)).length;
-    const truth = matches > 0 ? 'has' : 'none';
+    const has = matches > 0;
     const text = saidText({ q: qn.q, f: qn.f, matches, size: hand.length });
-    items.push({ n: qn.n, seat: qn.seat, q: qn.q, f: qn.f, answer: a, truth, ok: a === truth, matches, size: hand.length, prior: qn.prior, text });
+    items.push({
+      n: qn.n, seat: qn.seat, q: qn.q, f: qn.f, p, truth: has ? 'has' : 'none', has, ok: sideCorrect(p, has),
+      brier: brierItem(p, has), base: brierItem(qn.prior, has), matches, size: hand.length, prior: qn.prior, text,
+    });
   }
   const good = items.filter((i) => i.ok).length;
   const lines = [];
   for (const it of items) {
     const chance = `${Math.round(it.prior * 100)} %`;
-    lines.push(`Ставка ${it.n}: ${it.text}. Без других сведений шанс, что среди ${it.size} ${plural(it.size, 'кубика', 'кубиков', 'кубиков')} есть нужная цифра, около ${chance}.`);
+    lines.push(`Ставка ${it.n}: ${it.text}. ${itemLine({ p: it.p, truth: it.has })} ` +
+      `Без других сведений шанс, что среди ${it.size} ${plural(it.size, 'кубика', 'кубиков', 'кубиков')} есть нужная цифра, около ${chance}.`);
   }
   if (items.some((i) => i.truth === 'none')) {
     lines.push('Если нужной цифры в руке автора не было, это ещё не блеф: ставка могла опираться на кубики других игроков.');

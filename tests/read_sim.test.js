@@ -49,7 +49,7 @@ describe('makeSimRound', () => {
       assert.equal(canRead(r), true);
       const t = buildReadTask(r);
       assert.ok(t && t.questions.length >= 1);
-      const ans = Object.fromEntries(t.questions.map((q) => [q.n, 'has']));
+      const ans = Object.fromEntries(t.questions.map((q) => [q.n, 80]));
       assert.ok(checkReadAnswers(r, t, ans));
     }
   });

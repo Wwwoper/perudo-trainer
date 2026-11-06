@@ -9,6 +9,12 @@ async function open(page, tab) {
   await openTab(page, tab);
 }
 
+/** Ползунок уверенности в «Читай вскрытие»: задаёт значение так, как это делает пользователь (событие input). */
+const setConf = (page, name, value) => page.locator(`input[name="${name}"]`).evaluate((el, v) => {
+  el.value = String(v);
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}, value);
+
 test.describe('Учебные вкладки', () => {
   let errors;
 
@@ -416,9 +422,9 @@ test.describe('Учебные вкладки', () => {
         const n = await page.locator('#dCAsk .read-q').count();
         expect(n).toBeGreaterThanOrEqual(1);
         await expect(page.locator('#dCCheck')).toBeDisabled();
-        for (const q of await page.locator('#dCAsk .read-q').all()) await q.locator('input[value="has"]').check();
+        for (const q of await page.locator('#dCAsk .read-q').all()) await q.locator('.read-range').evaluate((el) => { el.value = '80'; el.dispatchEvent(new Event('input', { bubbles: true })); });
         await page.locator('#dCCheck').click();
-        await expect(page.locator('#dCfb')).toContainText('Верно');
+        await expect(page.locator('#dCfb')).toContainText('С правильной стороны от 50 %');
         await expect(page.locator('#dCfb .read-hand-row').first()).toBeVisible();
         const tag = await page.evaluate(() => (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.byTag || {}).read || null);
         expect(tag).toBeNull();
@@ -435,12 +441,12 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('.read-hands')).toHaveCount(0);
         // кнопка ждёт ответов на оба вопроса
         await expect(page.locator('#dCCheck')).toBeDisabled();
-        await page.locator('input[name="rd1"][value="has"]').check();
+        await setConf(page, 'rd1', 80);
         await expect(page.locator('#dCCheck')).toBeDisabled();
-        await page.locator('input[name="rd3"][value="none"]').check();
+        await setConf(page, 'rd3', 20);
         await expect(page.locator('#dCCheck')).toBeEnabled();
         await page.locator('#dCCheck').click();
-        await expect(page.locator('#dCfb')).toContainText('Верно 1 из 2');
+        await expect(page.locator('#dCfb')).toContainText('С правильной стороны от 50 %: 1 из 2');
         await expect(page.locator('#dCfb')).toContainText('Проверка ставки 3×5: на столе 4, ставка верна');
         await expect(page.locator('#dCfb')).toContainText('в руке 3 из 3');
         await expect(page.locator('#dCfb .read-hand-row')).toHaveCount(3);
@@ -452,7 +458,7 @@ test.describe('Учебные вкладки', () => {
         // «Новое» даёт чистое задание
         await page.click('#dNew');
         await expect(page.locator('#dCfb')).toBeEmpty();
-        await expect(page.locator('#dCAsk input:checked')).toHaveCount(0);
+        await expect(page.locator('#dCAsk .read-range[data-set="1"]')).toHaveCount(0);
         await expect(page.locator('#dCCheck')).toBeDisabled();
       });
 
@@ -464,15 +470,15 @@ test.describe('Учебные вкладки', () => {
         await open(page, 'drill');
         await page.locator('.drill-tab[data-drill="C"]').click();
         expect(await readTag(page)).toEqual({ n: 0, good: 0 });
-        await page.locator('input[name="rd1"][value="has"]').check();
-        await page.locator('input[name="rd3"][value="none"]').check();
+        await setConf(page, 'rd1', 80);
+        await setConf(page, 'rd3', 20);
         await page.locator('#dCCheck').click();
         expect(await readTag(page)).toEqual({ n: 2, good: 1 });
         await page.locator('#dCCheck').dispatchEvent('click');
         expect(await readTag(page)).toEqual({ n: 2, good: 1 });
         await page.click('#dNew');
-        await page.locator('input[name="rd1"][value="has"]').check();
-        await page.locator('input[name="rd3"][value="has"]').check();
+        await setConf(page, 'rd1', 80);
+        await setConf(page, 'rd3', 80);
         await page.locator('#dCCheck').click();
         expect(await readTag(page)).toEqual({ n: 4, good: 3 });
       });
