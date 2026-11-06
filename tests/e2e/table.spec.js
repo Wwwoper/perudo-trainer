@@ -730,7 +730,9 @@ test.describe('Покерный стол в партии', () => {
     expect(await page.locator('#tabOpp').evaluate((e) => e.hidden)).toBe(false);   // на телефоне вкладка внутри закрытой шторки
     await openOpp(page);
     const text = await page.locator('#panOpp').textContent();
-    await expect(page.locator('#gOpp .opp-name b')).toHaveCount(1);
+    await expect(page.locator('#gOpp .opp-row:not(.opp-me) .opp-name b')).toHaveCount(1);
+    await expect(page.locator('#gOpp .opp-me')).toContainText('Как читают вас');
+    await expect(page.locator('#gOpp .opp-me')).toContainText(/Ваших вскрытых ставок: \d/);
     expect(text).toMatch(/Раундов вместе: 1\. Вскрыто ставок: \d/);
     expect(text).toMatch(/Пока мало данных/);
     expect(text).toContain('ещё не блеф');

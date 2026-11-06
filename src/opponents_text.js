@@ -41,3 +41,28 @@ export function profileLines(p) {
   if (p.calzas > 0) lines.push(`Calza: ${p.calzas} ${plural(p.calzas, 'раз', 'раза', 'раз')}.`);
   return { enough: p.enough, lines };
 }
+
+export const ME_TITLE = 'Как читают вас';
+export const ME_NOTE = 'Так ваши вскрытые ставки выглядят со стороны: соперники видят только ставки, а не ваши кубики. Это наблюдения за этой партией, а не оценка вашей игры.';
+
+/**
+ * Строки блока «Как читают вас» по профилю из myBidProfile.
+ * @returns {{enough: boolean, lines: string[]}}
+ */
+export function meLines(m) {
+  const lines = [`Раундов: ${m.rounds}. Ваших вскрытых ставок: ${m.bids}.`];
+  if (!m.bids) {
+    lines.push(`Пока мало данных: нужно хотя бы ${OBS_MIN} вскрытых ${plural(OBS_MIN, 'ставка', 'ставки', 'ставок')}.`);
+  } else if (!m.enough) {
+    lines.push(`Пока мало данных: вскрыто ${m.bids} из ${OBS_MIN}. Нужная цифра в вашей руке: целиком ${m.all}, частично ${m.part}, не было ${m.none}.`);
+  } else {
+    lines.push(`Нужная цифра в вашей руке: целиком в ${pc(m.all / m.bids)}, частично в ${pc(m.part / m.bids)}, ни одного кубика в ${pc(m.none / m.bids)}.`);
+    if (m.raises > 0 && m.avgJump !== null) {
+      lines.push(`Ваш средний шаг повышения: ${m.avgJump >= 0 ? '+' : '−'}${num1(Math.abs(m.avgJump))} (повышений: ${m.raises}).`);
+    }
+  }
+  if (m.challenged > 0) {
+    lines.push(`Вашу ставку проверяли ${m.challenged} ${plural(m.challenged, 'раз', 'раза', 'раз')}, ставка оказывалась ложной ${m.challengedFalse} ${plural(m.challengedFalse, 'раз', 'раза', 'раз')}.`);
+  }
+  return { enough: m.enough, lines };
+}

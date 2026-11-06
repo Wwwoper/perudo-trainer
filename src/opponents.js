@@ -63,6 +63,36 @@ export function opponentProfiles(rounds) {
   return { profiles, rounds: used, skipped };
 }
 
+/**
+ * Наблюдения о ваших ставках — то, что видно за столом о вас, по вскрытым раундам.
+ * @param {object[]} rounds раунды из хранилища
+ * @returns {{rounds: number, bids: number, all: number, part: number, none: number, raises: number,
+ *   avgJump: number|null, challenged: number, challengedFalse: number, enough: boolean}}
+ *   challenged — сколько раз проверяли вашу последнюю ставку, challengedFalse — сколько из них оказались ложными
+ */
+export function myBidProfile(rounds) {
+  const m = { rounds: 0, bids: 0, all: 0, part: 0, none: 0, raises: 0, jumpSum: 0, challenged: 0, challengedFalse: 0 };
+  for (const raw of Array.isArray(rounds) ? rounds : []) {
+    const r = sanitizeRound(raw);
+    if (!r || !r.ids || r.me < 0) continue;
+    m.rounds++;
+    const hand = r.hands[r.me];
+    r.bids.forEach((b, i) => {
+      if (b.s !== r.me) return;
+      const have = hand.filter((d) => dieMatches(d, b.f, r.wild)).length;
+      m.bids++;
+      if (have === 0) m.none++; else if (have === hand.length) m.all++; else m.part++;
+      if (i > 0) { m.raises++; m.jumpSum += b.q - r.bids[i - 1].q; }
+    });
+    if (r.end.kind === 'dudo' && r.end.bidder === r.me && r.end.by !== r.me) {
+      m.challenged++;
+      if (!r.end.ok) m.challengedFalse++;
+    }
+  }
+  const { jumpSum, ...out } = m;
+  return { ...out, avgJump: m.raises ? jumpSum / m.raises : null, enough: m.bids >= OBS_MIN };
+}
+
 /** Раунды одной партии: id раунда имеет вид «партия-rN». */
 export function roundsOfGame(rounds, gameId) {
   const prefix = `${String(gameId ?? '')}-r`;

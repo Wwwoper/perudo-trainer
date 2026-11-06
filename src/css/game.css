@@ -1430,6 +1430,12 @@
   border-bottom: 0;
 }
 
+/* Блок «Как читают вас» стоит последним и отделён от соперников */
+.opp-me {
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
 .opp-name {
   display: flex;
   flex-wrap: wrap;

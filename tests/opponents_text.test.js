@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { profileLines, TABLE_NOTE, TABLE_EMPTY } from '../src/opponents_text.js';
+import { profileLines, meLines, ME_TITLE, ME_NOTE, TABLE_NOTE, TABLE_EMPTY } from '../src/opponents_text.js';
 import { opponentProfiles, OBS_MIN } from '../src/opponents.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -53,5 +53,26 @@ describe('profileLines', () => {
     const t = profileLines(profiles[0]).lines.join(' ');
     assert.match(t, /Вскрыто ставок: 1/);
     assert.match(t, new RegExp(`из ${OBS_MIN}`));
+  });
+});
+
+describe('meLines', () => {
+  const m0 = { rounds: 2, bids: 0, all: 0, part: 0, none: 0, raises: 0, avgJump: null, challenged: 0, challengedFalse: 0, enough: false };
+  it('нет ставок и мало данных', () => {
+    assert.match(meLines(m0).lines[1], /нужно хотя бы 5/);
+    const t = meLines({ ...m0, bids: 3, all: 1, part: 1, none: 1 }).lines.join(' ');
+    assert.match(t, /вскрыто 3 из 5/);
+    assert.ok(!/%/.test(t));
+  });
+  it('достаточно данных: доли, шаг, проверки со склонением', () => {
+    const t = meLines({ ...m0, bids: 6, all: 3, part: 1, none: 2, raises: 4, avgJump: 1.25, challenged: 2, challengedFalse: 1, enough: true }).lines.join(' ');
+    assert.match(t, /целиком в 50 %, частично в 17 %, ни одного кубика в 33 %/);
+    assert.match(t, /Ваш средний шаг повышения: \+1,3 \(повышений: 4\)/);
+    assert.match(t, /проверяли 2 раза, ставка оказывалась ложной 1 раз/);
+  });
+  it('без оценочных слов', () => {
+    const t = [ME_TITLE, ME_NOTE, ...meLines({ ...m0, bids: 9, none: 9, enough: true, challenged: 4, challengedFalse: 4 }).lines].join(' ');
+    assert.doesNotMatch(t, /обманщик|врёт|блефует|блеф\b/i);
+    for (const re of BANNED) assert.ok(!re.test(t), `${re}`);
   });
 });

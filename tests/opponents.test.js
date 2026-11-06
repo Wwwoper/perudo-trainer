@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { opponentProfiles, roundsOfGame, OBS_MIN } from '../src/opponents.js';
+import { opponentProfiles, myBidProfile, roundsOfGame, OBS_MIN } from '../src/opponents.js';
 
 /**
  * Раунд 1: вы (место 0, [2,3,5]), bot_0 ([5,5,1]), bot_1 ([4,6,2]); wild.
@@ -102,5 +102,35 @@ describe('roundsOfGame', () => {
     assert.deepEqual(roundsOfGame(rs, 'nope'), []);
     assert.deepEqual(roundsOfGame(null, 'g1'), []);
     assert.deepEqual(roundsOfGame([null, {}, { id: 5 }], 'g1'), []);
+  });
+});
+
+describe('myBidProfile', () => {
+  it('считает ваши вскрытые ставки, шаг и проверки', () => {
+    // R1: ваша ставка 2×4 при руке [2,3,5] (нужной цифры нет; единицы-джокеры тоже нет), повышение с 1 до 2.
+    // R2: ваших ставок нет. Вашу последнюю ставку в R1 не проверяли (проверял bot_0 ставку bot_1).
+    const m = myBidProfile([R1, R2]);
+    assert.equal(m.rounds, 2);
+    assert.equal(m.bids, 1);
+    assert.equal(m.none, 1);
+    assert.equal(m.raises, 1);
+    assert.equal(m.avgJump, 1);
+    assert.equal(m.challenged, 0);
+    assert.equal(m.enough, false);
+  });
+  it('проверку вашей ставки учитывает', () => {
+    const R3 = {
+      id: 'g1-r3', ts: 3, round: 3, wild: true, me: 0, ids: ['human', 'bot_0'], dice: [2, 2], styles: [null, 'smart'],
+      hands: [[2, 2], [3, 4]], bids: [{ s: 0, q: 2, f: 2 }], end: { kind: 'dudo', by: 1, bidder: 0, actual: 2, ok: true },
+    };
+    const m = myBidProfile([R3, { ...R3, id: 'g1-r4', bids: [{ s: 0, q: 3, f: 2 }], end: { kind: 'dudo', by: 1, bidder: 0, actual: 2, ok: false } }]);
+    assert.equal(m.all, 2);
+    assert.equal(m.challenged, 2);
+    assert.equal(m.challengedFalse, 1);
+  });
+  it('старые раунды без ids, мусор и пусто не ломают', () => {
+    assert.equal(myBidProfile([OLD, null, 5]).rounds, 0);
+    assert.equal(myBidProfile(undefined).bids, 0);
+    assert.equal(myBidProfile([]).avgJump, null);
   });
 });

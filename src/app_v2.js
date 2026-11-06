@@ -32,10 +32,10 @@ import { canGuess, makeGuess, guessMatchesBid, checkGuess, guessLine, addGuessTo
 import { situationLines, planLines, explainAction } from './situation_text.js';
 import { renderSituationCard, shouldShowCard, resetSituationCard } from './ui/situation_card.js';
 import { startRoundsLog, snapRound, recordRound } from './ui/rounds_log.js';
-import { opponentProfiles, roundsOfGame } from './opponents.js';
+import { opponentProfiles, myBidProfile, roundsOfGame } from './opponents.js';
 import { gameRounds, diceByRound, pictureLines } from './game_picture.js';
 import { diceChartSvg } from './dice_chart.js';
-import { profileLines, TABLE_EMPTY, TABLE_NOTE } from './opponents_text.js';
+import { profileLines, meLines, ME_TITLE, ME_NOTE, TABLE_EMPTY, TABLE_NOTE } from './opponents_text.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
@@ -433,10 +433,13 @@ function renderTableProfile() {
     return;
   }
   if ($('#panOpp')?.hidden) return;   // читаем раунды только когда вкладка открыта (см. sideApi.onSelect)
-  const { profiles, rounds } = opponentProfiles(roundsOfGame(getRounds(), game.id));
-  $('#gOppNote').textContent = TABLE_NOTE;
+  const gameRounds = roundsOfGame(getRounds(), game.id);
+  const { profiles, rounds } = opponentProfiles(gameRounds);
+  $('#gOppNote').textContent = `${TABLE_NOTE} ${ME_NOTE}`;
   if (!rounds) { box.innerHTML = `<p class="muted">${escapeHtml(TABLE_EMPTY)}</p>`; return; }
   const finished = game.state === 'finished';
+  const mine = `<div class="opp-row opp-me"><div class="opp-name"><b>${escapeHtml(ME_TITLE)}</b></div>` +
+    `<ul class="opp-lines">${meLines(myBidProfile(gameRounds)).lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul></div>`;
   box.innerHTML = profiles.map((p) => {
     const pl = game.players.find((x) => x.id === p.id);
     const st = visibleStyle(p.style, stylesHidden, finished);
@@ -444,7 +447,7 @@ function renderTableProfile() {
     return `<div class="opp-row"><div class="opp-name"><b>${escapeHtml(pl?.name ?? p.id)}</b>` +
       (def ? ` <span class="opp-style">${def.icon} ${escapeHtml(def.name)}</span>` : '') + '</div>' +
       `<ul class="opp-lines">${profileLines(p).lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul></div>`;
-  }).join('');
+  }).join('') + mine;
 }
 
 /**
