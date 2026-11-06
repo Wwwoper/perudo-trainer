@@ -151,6 +151,8 @@
           <div class="card trainer-top">
             <div class="trainer-top-row">
               <button id="tNew" class="trainer-new">🔄 Новая ситуация</button>
+              <label class="timer-opt" title="Время нигде не учитывается"><input type="checkbox" id="tTimerOn"> Показывать время</label>
+              <output id="tTimerOut" class="timer-out" hidden>0:00</output>
               <details class="trainer-settings-more">
                 <summary>
                   <span aria-hidden="true">⚙️</span> <span id="tSettingsHint">Классика · порог 0.50</span>
@@ -334,6 +336,10 @@
             <button id="dBCheck" class="btn-primary hide" data-drill-for="B"><span class="btn-main">Проверить</span></button>
             <button id="dCCheck" class="btn-primary hide" data-drill-for="C" disabled><span class="btn-main">Проверить</span></button>
             <button id="dNew"><span class="btn-main">🔄 Новое</span></button>
+            <span id="dTimer" class="timer-wrap">
+              <label class="timer-opt" title="Время нигде не учитывается"><input type="checkbox" id="dTimerOn"> Показывать время</label>
+              <output id="dTimerOut" class="timer-out" hidden>0:00</output>
+            </span>
           </div>
         </div>
       </div>

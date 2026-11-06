@@ -316,3 +316,27 @@
 .drill-scaffold[hidden] {
   display: none;
 }
+
+/* Необязательный таймер: счёт вверх, без лимита; время нигде не учитывается */
+.timer-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer-wrap.hide {
+  display: none;
+}
+
+.timer-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  color: var(--mut);
+}
+
+.timer-out {
+  font-variant-numeric: tabular-nums;
+  color: var(--mut);
+}

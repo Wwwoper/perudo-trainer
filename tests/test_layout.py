@@ -827,7 +827,7 @@ class LayoutTest(unittest.TestCase):
                         .map(e => e.id || e.className || e.textContent.trim())""")
                     self.assertEqual(small, [])
                     fonts = page.evaluate("""() => [...document.querySelectorAll('#drill input')]
-                        .filter(e => e.offsetParent !== null)
+                        .filter(e => e.offsetParent !== null && e.type !== 'checkbox')
                         .filter(e => parseFloat(getComputedStyle(e).fontSize) < 16).map(e => e.id)""")
                     self.assertEqual(fonts, [])
 

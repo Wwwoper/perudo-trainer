@@ -10,6 +10,7 @@ import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
 import { verdictText, MODEL_NOTE } from '../trainer_text.js';
+import { setupPracticeTimer } from './practice_timer.js';
 import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
 import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
 
@@ -17,6 +18,7 @@ export function setupTrainer() {
   if (!P) return null;
 
   // Статистику не держим в переменной: её пишут и другие разделы (см. updateStats).
+  const timer = setupPracticeTimer({ toggle: '#tTimerOn', out: '#tTimerOut' });
   let queue = getTrainingQueue();
   let cur = null;
   let answered = false;
@@ -134,6 +136,7 @@ export function setupTrainer() {
 
     if (cur.item) seenAt.set(situationKey(cur.item), shownCount);
     answered = false;
+    timer.start();
     if ($('#tDesc')) $('#tDesc').textContent = m.d;
     if ($('#tInfo')) {
       $('#tInfo').innerHTML =
@@ -193,6 +196,7 @@ export function setupTrainer() {
   function answer(good, html) {
     if (answered || !cur) return;
     answered = true;
+    timer.stop();
 
     const mk = $('#tMode').value;
     updateStats((S) => {

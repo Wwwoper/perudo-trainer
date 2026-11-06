@@ -6,6 +6,7 @@ import { P, $, $$, pct, flash } from './common.js';
 import { noSafeText, riskNote } from '../drill_note.js';
 import { validateAnswerA, validateAnswerB } from '../drill_input.js';
 import { safeByRule, isHalfway } from '../drill_rule.js';
+import { setupPracticeTimer } from './practice_timer.js';
 import { setupReadDrill } from './read_drill_view.js';
 import { drillStep, hintOpenFor, stepNote, prefillExpected, STEP_PARTIAL } from '../drill_steps.js';
 
@@ -16,8 +17,11 @@ export function setupDrill() {
 
   // Одна задача — одна запись в статистике: после проверки кнопка недоступна до «Новое».
   const answered = { A: false, B: false };
+  const timer = setupPracticeTimer({ toggle: '#dTimerOn', out: '#dTimerOut' });
+  let timerFor = 'A';   // упражнение, для которого идёт время (A или B)
   const setAnswered = (k, on) => {
     answered[k] = on;
+    if (k === timerFor) { if (on) timer.stop(); else timer.start(); }
     const btn = $(`#d${k}Check`);
     if (btn) btn.disabled = on;
   };
@@ -172,6 +176,11 @@ export function setupDrill() {
       });
       for (const k of ['A', 'B', 'C']) $(`#dPanel${k}`)?.classList.toggle('hide', activeDrill !== k);
       if (activeDrill === 'C') readDrill?.next();   // раунды могли появиться после партии
+      $('#dTimer')?.classList.toggle('hide', activeDrill === 'C');
+      if (activeDrill !== 'C') {
+        timerFor = activeDrill;
+        if (answered[activeDrill]) timer.stop(); else timer.start();
+      }
       $$('[data-drill-for]').forEach((el) => el.classList.toggle('hide', el.dataset.drillFor !== activeDrill));
     };
   });

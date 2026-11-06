@@ -61,6 +61,23 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dBScaffold')).toBeHidden();
   });
 
+  test('«Упражнения»: таймер есть у A и B, у «Читай вскрытие» его нет, время не мешает проверке', async ({ page }) => {
+    await open(page, 'drill');
+    await page.check('#dTimerOn');
+    await expect(page.locator('#dTimerOut')).toBeVisible();
+    await page.fill('#dA1', '5');
+    await page.fill('#dA2', '5');
+    await page.click('#dACheck');
+    await expect(page.locator('#dAfb')).not.toBeEmpty();
+    await expect(page.locator('#dAfb')).not.toContainText(/врем/i);
+    await page.click('.drill-tab[data-drill="B"]');
+    await expect(page.locator('#dTimer')).toBeVisible();
+    await page.click('.drill-tab[data-drill="C"]');
+    await expect(page.locator('#dTimer')).toBeHidden();
+    await page.click('.drill-tab[data-drill="A"]');
+    await expect(page.locator('#dTimer')).toBeVisible();
+  });
+
   test('«Упражнения»: у игрока с историей подсказок нет, памятка свёрнута', async ({ page }) => {
     await page.evaluate(() => localStorage.setItem('perudo.userProfile', JSON.stringify({
       n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, drill: { A: { n: 9, good: 5 }, B: { n: 4, good: 2 } },
@@ -252,6 +269,28 @@ test.describe('Учебные вкладки', () => {
 
       await page.click('#tNext');
       await expect(page.locator('#tFb')).toBeEmpty();
+    });
+
+    test('необязательный таймер: по умолчанию выключен, включается и запоминается, статистику не меняет', async ({ page }) => {
+      await open(page, 'train');
+      await expect(page.locator('#tTimerOn')).not.toBeChecked();
+      await expect(page.locator('#tTimerOut')).toBeHidden();
+      await page.check('#tTimerOn');
+      await expect(page.locator('#tTimerOut')).toBeVisible();
+      await expect(page.locator('#tTimerOut')).toHaveText(/^\d+:\d\d$/);
+      await expect.poll(() => page.locator('#tTimerOut').textContent(), { timeout: 4000 }).not.toBe('0:00');
+      await page.click('#tDudo');
+      const stopped = await page.locator('#tTimerOut').textContent();
+      await page.waitForTimeout(1300);
+      expect(await page.locator('#tTimerOut').textContent()).toBe(stopped);   // после ответа время стоит
+      await expect(page.locator('#tFb')).not.toContainText(/врем/i);          // на разбор время не влияет
+      await page.click('#tNext');
+      await expect(page.locator('#tTimerOut')).toHaveText('0:00');             // новая ситуация — отсчёт заново
+      await page.reload();
+      await open(page, 'train');
+      await expect(page.locator('#tTimerOn')).toBeChecked();
+      await page.uncheck('#tTimerOn');
+      await expect(page.locator('#tTimerOut')).toBeHidden();
     });
 
     test('после ответа разбор и «Новая ситуация» видны без прокрутки', async ({ page }) => {
