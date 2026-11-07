@@ -1161,13 +1161,13 @@ class LayoutTest(unittest.TestCase):
         page.click("#navToggle")
         self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "game")
         page.keyboard.press("ArrowDown")
-        self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "duel")
+        self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "train")
         page.keyboard.press("ArrowUp")
         page.keyboard.press("ArrowUp")
-        self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "drill")
-        for _ in range(3):
+        self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "stats")  # с первого пункта вверх — по кругу в конец
+        for _ in range(7):
             page.keyboard.press("ArrowUp")
-        self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "stats")  # по кругу
+        self.assertEqual(page.evaluate("document.activeElement.dataset.t"), "stats")  # семь разделов — полный круг
 
     def test_widening_window_closes_menu(self):
         page = self.open_game(844, 390, 3)

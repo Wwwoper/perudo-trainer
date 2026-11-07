@@ -21,7 +21,7 @@ describe('roadmap.md', () => {
     const ids = items.map((x) => x.m[2]);
     assert.equal(new Set(ids).size, ids.length, 'есть повторяющиеся ID');
     let section = '';
-    const want = { 'Волна 0': 'W0', 'Волна 1': 'W1', 'Волна 2': 'W2', 'Волна 3': 'W3', 'Релизы': 'R' };
+    const want = { 'Волна 0': 'W0', 'Волна 1': 'W1', 'Волна 2': 'W2', 'Волна 3': 'W3', 'Волна 4': 'W4', 'Релизы': 'R' };
     for (const l of lines) {
       const h = l.match(/^## (Волна \d|Релизы)/);
       if (h) { section = h[1]; continue; }

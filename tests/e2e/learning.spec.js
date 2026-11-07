@@ -786,7 +786,7 @@ test.describe('Учебные вкладки', () => {
     test('«Статистика» — последняя вкладка в ленте разделов', async ({ page }) => {
       const names = await page.locator('#mainNav .tab-btn').evaluateAll((b) => b.map((x) => x.dataset.t));
       expect(names.at(-1)).toBe('stats');
-      expect(names).toEqual(['calc', 'train', 'drill', 'game', 'duel', 'sim', 'stats']);
+      expect(names).toEqual(['game', 'train', 'drill', 'calc', 'duel', 'sim', 'stats']);
     });
 
     test('таблица партий помещается в карточку, кнопки доступны', async ({ page }) => {
