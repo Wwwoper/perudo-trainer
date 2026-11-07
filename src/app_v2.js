@@ -1274,7 +1274,7 @@ function bootstrap() {
     cloudApi?.offerIfReady();
   });
   setupCalculator();
-  setupWelcome();
+  setupWelcome({ startGame: startNewGame });
   trainerApi = setupTrainer();
   setupDrill();
   setupSidePanel(() => assistConfig.showFutureBidOdds);

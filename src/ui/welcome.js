@@ -47,7 +47,8 @@ export function refreshWelcome() {
   setShown(true);
 }
 
-export function setupWelcome() {
+/** @param {{startGame?: () => void}} [opts] startGame — запуск партии с текущими настройками (из app_v2.js) */
+export function setupWelcome({ startGame: launch } = {}) {
   const box = $('#welcome');
   if (!box) return;
   box.addEventListener('click', (e) => {
@@ -63,7 +64,8 @@ export function setupWelcome() {
       saveOnboarding(startGame(state));
       applyGameSettings(firstGamePreset());
       refreshWelcome();
-      $('.tab-btn[data-t="game"]')?.click();
+      $('.tab-btn[data-t="game"]')?.click();   // открывает «Партию»: до этого экран подготовки
+      launch?.();                              // партия стартует сразу с настройками первой партии, без выбора параметров
     }
   });
   refreshWelcome();

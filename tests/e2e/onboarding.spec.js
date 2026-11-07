@@ -40,12 +40,21 @@ test.describe('Экран приветствия', () => {
     await expect(page.locator('#calc')).toBeVisible();
   });
 
-  test('«Начать первую партию»: открывается «Партия» с настройками первой партии', async ({ page }) => {
+  test('«Начать первую партию»: партия стартует сразу с настройками первой партии, без экрана подготовки', async ({ page }) => {
     await page.locator('[data-welcome="start"]').click();
     await expect(page.locator('#welcome')).toBeHidden();
     await expect(page.locator('#game')).toBeVisible();
-    await expect(page.locator('#gBots')).toHaveValue('1');
-    await expect(page.locator('#gAssist')).toHaveValue('novice');
+    await expect(page.locator('#game')).not.toHaveClass(/is-prestart/);
+    await expect(page.locator('#gSetup')).toBeHidden();
+    const g = await page.evaluate(() => ({
+      players: window.__perudo_v2.game.players.length,
+      assist: window.__perudo_v2.game.assistMode,
+      speed: window.__perudo_v2.game.botSpeed,
+      calza: window.__perudo_v2.game.calzaEnabled,
+      palifico: window.__perudo_v2.game.palificoEnabled,
+      style: window.__perudo_v2.game.players[1].style,
+    }));
+    expect(g).toEqual({ players: 2, assist: 'novice', speed: 'slow', calza: false, palifico: false, style: 'careful' });
     expect((await device(page)).onboarding).toMatchObject({ step: 'game', done: false });
     // после перезагрузки приветствие не возвращается: игрок уже начал
     await page.reload();
