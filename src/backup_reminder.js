@@ -5,7 +5,10 @@
 //   nextAt        — сколько партий нужно сыграть, чтобы напоминание показалось (счёт идёт по всем партиям);
 //   persistTries  — сколько раз просили у браузера постоянное хранилище (не больше MAX_PERSIST_TRIES);
 //   account       — как играет игрок: null (ещё не выбирал), 'guest' (данные только здесь) или 'yandex';
-//   firstRunHidden — игрок скрыл карточку «Впервые здесь?».
+//   firstRunHidden — игрок скрыл карточку «Впервые здесь?»;
+//   onboarding    — шаг и счётчик задач онбординга новичка (onboarding.js).
+
+import { defaultOnboarding, sanitizeOnboarding } from './onboarding.js';
 
 export const REMIND_FIRST = 5;        // первое напоминание — после стольких партий
 export const SNOOZE_GAMES = 20;       // «Позже»: ещё столько партий тишины
@@ -15,7 +18,7 @@ export const MAX_PERSIST_TRIES = 2;   // Chrome часто отказывает 
 const isCount = (v) => Number.isInteger(v) && v >= 0 && v <= 1_000_000;
 
 export function defaultDeviceState() {
-  return { nextAt: REMIND_FIRST, persistTries: 0, account: null, firstRunHidden: false };
+  return { nextAt: REMIND_FIRST, persistTries: 0, account: null, firstRunHidden: false, onboarding: defaultOnboarding() };
 }
 
 /** Приводит что угодно к состоянию устройства. */
@@ -26,6 +29,7 @@ export function sanitizeDeviceState(raw) {
   const account = raw.account === 'guest' || raw.account === 'yandex' ? raw.account : null;
   return {
     nextAt: isCount(raw.nextAt) ? raw.nextAt : d.nextAt, persistTries: tries, account, firstRunHidden: raw.firstRunHidden === true,
+    onboarding: sanitizeOnboarding(raw.onboarding),
   };
 }
 

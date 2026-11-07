@@ -12,10 +12,10 @@ describe('sanitizeDeviceState', () => {
   });
   it('первое напоминание — после пяти партий', () => assert.equal(defaultDeviceState().nextAt, 5));
   it('корректное значение сохраняется', () => {
-    assert.deepEqual(sanitizeDeviceState({ nextAt: 25, persistTries: 1, account: 'yandex' }), { nextAt: 25, persistTries: 1, account: 'yandex', firstRunHidden: false });
+    assert.deepEqual(sanitizeDeviceState({ nextAt: 25, persistTries: 1, account: 'yandex' }), { nextAt: 25, persistTries: 1, account: 'yandex', firstRunHidden: false, onboarding: { step: 'welcome', tasks: 0, done: false, skipped: false } });
   });
   it('неверные поля заменяются, лишние отбрасываются', () => {
-    assert.deepEqual(sanitizeDeviceState({ nextAt: -1, persistTries: 'да', extra: 1 }), { nextAt: REMIND_FIRST, persistTries: 0, account: null, firstRunHidden: false });
+    assert.deepEqual(sanitizeDeviceState({ nextAt: -1, persistTries: 'да', extra: 1 }), { nextAt: REMIND_FIRST, persistTries: 0, account: null, firstRunHidden: false, onboarding: { step: 'welcome', tasks: 0, done: false, skipped: false } });
     for (const account of ['admin', 5, {}, '']) assert.equal(sanitizeDeviceState({ account }).account, null);
     assert.equal(sanitizeDeviceState({ account: 'guest' }).account, 'guest');
     assert.deepEqual(sanitizeDeviceState({ nextAt: 1.5 }).nextAt, REMIND_FIRST);
@@ -78,5 +78,16 @@ describe('shouldAskPersistence', () => {
   });
   it('счётчик попыток ограничен при чтении', () => {
     assert.equal(sanitizeDeviceState({ persistTries: 50 }).persistTries, MAX_PERSIST_TRIES);
+  });
+});
+
+describe('onboarding в состоянии устройства', () => {
+  it('по умолчанию — приветствие, мусор приводится к умолчанию', () => {
+    assert.deepEqual(sanitizeDeviceState({}).onboarding, { step: 'welcome', tasks: 0, done: false, skipped: false });
+    assert.deepEqual(sanitizeDeviceState({ onboarding: 'x' }).onboarding, { step: 'welcome', tasks: 0, done: false, skipped: false });
+  });
+  it('корректное состояние сохраняется', () => {
+    const ob = { step: 'tasks', tasks: 2, done: false, skipped: false };
+    assert.deepEqual(sanitizeDeviceState({ onboarding: ob }).onboarding, ob);
   });
 });

@@ -1391,7 +1391,7 @@ test.describe('Покерный стол в партии', () => {
       await openStatsTab(page, 'data');
       page.once('dialog', (d) => d.accept());
       await page.locator('#stClear').click();
-      expect(await device(page)).toEqual({ nextAt: 5, persistTries: 2, account: 'guest', firstRunHidden: false });
+      expect(await device(page)).toEqual({ nextAt: 5, persistTries: 2, account: 'guest', firstRunHidden: false, onboarding: { step: 'welcome', tasks: 0, done: false, skipped: false } });
     });
 
     const stubStorage = (page, persisted) => page.addInitScript((p) => {
