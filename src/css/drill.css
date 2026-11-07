@@ -340,3 +340,35 @@
   font-variant-numeric: tabular-nums;
   color: var(--mut);
 }
+
+/* Упражнение «Серия»: выбор шанса, решения и итог серии */
+.series-pick,
+.series-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.series-chance,
+.series-buttons button,
+.series-new {
+  min-height: var(--tap);
+  min-width: var(--tap);
+}
+
+.series-chance[aria-pressed="true"] {
+  background: var(--acc);
+  color: var(--on-accent);
+}
+
+.series-summary {
+  margin-top: 8px;
+}
+
+/* У «Серии» своя панель: нижний блок «Проверить / Новое» скрыт */
+.learn-layout > .action-dock.hide,
+#dDock.hide,
+.action-dock.hide {
+  display: none;
+}

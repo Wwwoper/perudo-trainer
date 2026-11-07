@@ -256,6 +256,9 @@
               <button class="drill-tab" data-drill="C" role="tab" aria-pressed="false">
                 Читай вскрытие
               </button>
+              <button class="drill-tab" data-drill="D" role="tab" aria-pressed="false">
+                Серия
+              </button>
             </div>
           </div>
 
@@ -315,6 +318,20 @@
               <ol id="dCBids" class="read-bids" aria-label="Ставки раунда по порядку"></ol>
               <div id="dCAsk" class="read-ask"></div>
             </div>
+          </div>
+
+          <!-- Упражнение D: «Серия» -->
+          <div class="card drill-board hide" id="dPanelD" role="tabpanel">
+            <p class="read-intro muted">Десять однотипных ситуаций с одним и тем же шансом ставки. Выбирайте «Верю» или «Не верю!»: исход каждой ситуации разыгрывается по шансу, а оценивается вся серия, а не один исход. В статистику серия не идёт.</p>
+            <div id="dDPick" class="series-pick" role="group" aria-label="Шанс ставки в серии"></div>
+            <div id="dDq" class="drill-question"></div>
+            <p id="dDProgress" class="muted"></p>
+            <div class="series-buttons">
+              <button id="dDBelieve" type="button" class="btn-primary"><span class="btn-main">Верю</span></button>
+              <button id="dDDudo" type="button" class="bad"><span class="btn-main">Не верю!</span></button>
+            </div>
+            <div id="dDfb" class="drill-feedback" role="status" aria-live="polite"></div>
+            <button id="dDNew" type="button" class="series-new">🔄 Новая серия</button>
           </div>
         </div>
 

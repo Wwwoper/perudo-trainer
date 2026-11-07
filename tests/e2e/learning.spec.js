@@ -78,6 +78,37 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dTimer')).toBeVisible();
   });
 
+  test('«Упражнения»: «Серия» — десять ситуаций, итог только в конце, шанс можно сменить', async ({ page }) => {
+    await open(page, 'drill');
+    await page.click('.drill-tab[data-drill="D"]');
+    await expect(page.locator('#dPanelD')).toBeVisible();
+    await expect(page.locator('#dDock')).toBeHidden();
+    await expect(page.locator('#dDq')).toContainText('шансом 30 %');
+    await expect(page.locator('#dDProgress')).toHaveText('Ситуация 1 из 10.');
+    for (let i = 0; i < 9; i++) {
+      await page.click(i % 2 ? '#dDBelieve' : '#dDDudo');
+      await expect(page.locator('#dDfb')).toContainText('Один исход не оценивает решение');
+      await expect(page.locator('#dDfb .series-summary')).toHaveCount(0);        // итога до конца серии нет
+    }
+    await expect(page.locator('#dDProgress')).toHaveText('Ситуация 10 из 10.');
+    await page.click('#dDDudo');
+    await expect(page.locator('#dDfb .series-summary')).toContainText('Совпало с исходом');
+    await expect(page.locator('#dDBelieve')).toBeDisabled();
+    await expect(page.locator('#dDDudo')).toBeDisabled();
+    const text = await page.locator('#dDfb').textContent();
+    expect(text).not.toMatch(/undefined|NaN|обманщик|врёт/i);
+    // смена шанса начинает новую серию
+    await page.click('.series-chance[data-chance="0.7"]');
+    await expect(page.locator('#dDq')).toContainText('шансом 70 %');
+    await expect(page.locator('#dDProgress')).toHaveText('Ситуация 1 из 10.');
+    await expect(page.locator('#dDfb')).toBeEmpty();
+    await expect(page.locator('#dDBelieve')).toBeEnabled();
+    // возврат к другому упражнению возвращает нижний блок
+    await page.click('.drill-tab[data-drill="A"]');
+    await expect(page.locator('#dDock')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
   test('«Упражнения»: у игрока с историей подсказок нет, памятка свёрнута', async ({ page }) => {
     await page.evaluate(() => localStorage.setItem('perudo.userProfile', JSON.stringify({
       n: 0, good: 0, totalGames: 0, totalWins: 0, byMode: {}, drill: { A: { n: 9, good: 5 }, B: { n: 4, good: 2 } },
