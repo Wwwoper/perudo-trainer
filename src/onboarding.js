@@ -86,3 +86,30 @@ export function tasksProgress(state) {
   const done = st.step === 'finish' && !st.skipped ? TASKS_TOTAL : st.tasks;
   return { done, total: TASKS_TOTAL, fraction: done / TASKS_TOTAL, text: `Задач выполнено: ${done} из ${TASKS_TOTAL}` };
 }
+
+/**
+ * Показывать ли экран приветствия: онбординг идёт и стоит на приветствии, профиль совсем чистый
+ * (нет ни партий, ни решений) и игрок не скрывал прежнюю карточку «Впервые здесь?» (legacyHidden).
+ * @param {{state: object, games: number, empty: boolean, legacyHidden?: boolean}} s
+ */
+export function shouldShowWelcome({ state, games, empty, legacyHidden } = {}) {
+  return empty === true && legacyHidden !== true
+    && sanitizeOnboarding(state).step === 'welcome'
+    && isOnboardingActive({ state, games });
+}
+
+/** Тексты экрана приветствия. */
+export const WELCOME = Object.freeze({
+  title: 'Добро пожаловать в Перудо',
+  lead: 'Перудо — игра с кубиками и ставками. Здесь учатся принимать решения по шансам: сначала сыграть, потом разобрать на коротких задачах.',
+  steps: Object.freeze([
+    Object.freeze({ title: 'Первая партия', text: 'Один спокойный бот и подсказки: ничего настраивать не нужно.' }),
+    Object.freeze({ title: 'Несколько задач', text: `Короткие задачи «верить или нет» с разбором и полосой прогресса: ${TASKS_TOTAL} штуки.` }),
+    Object.freeze({ title: 'Дальше — как вам удобно', text: 'В приложение, к правилам или с сохранением данных.' }),
+  ]),
+  start: 'Начать первую партию',
+  rules: 'Прочитать правила (1 минута)',
+  rulesHref: 'docs/guide/rules.html',
+  skip: 'Я уже знаю правила',
+  note: 'Данные хранятся на этом устройстве. Пропустить приветствие можно в любой момент.',
+});

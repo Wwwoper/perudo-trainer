@@ -53,7 +53,9 @@ export async function seed(page, { games = 0, signedIn = true, synced = null, ex
     localStorage.clear();
     if (g) localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 0, good: 0, totalGames: g, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
     for (const [k, v] of Object.entries(ex)) localStorage.setItem(k, JSON.stringify(v));
-    if (acc !== null) localStorage.setItem('perudo.device', JSON.stringify({ nextAt: 5, persistTries: 2, account: acc || (tok ? 'yandex' : 'guest') }));
+    // firstRunHidden: экран приветствия на чистом профиле здесь не проверяется и страницу не закрывает
+    localStorage.setItem('perudo.device', JSON.stringify(acc === null ? { firstRunHidden: true }
+      : { nextAt: 5, persistTries: 2, account: acc || (tok ? 'yandex' : 'guest'), firstRunHidden: true }));
     if (tok) localStorage.setItem('perudo.cloud', JSON.stringify({ token: t, expiresAt: Date.now() + 86_400_000, syncedExportedAt: sy }));
   }, [games, signedIn, synced, extra, TOKEN, account === undefined ? '' : account]);
   await page.reload();

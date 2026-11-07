@@ -14,7 +14,7 @@ import { visibleStyle, renderTable, renderDie, renderHand, renderBid, escapeHtml
 import { buildGameResult, resultHeadline } from './result.js';
 import { P, $, $$, pct, flash } from './ui/common.js';
 import { setupTabs } from './ui/tabs.js';
-import { setupFirstRun, refreshFirstRun } from './ui/first_run.js';
+import { setupWelcome } from './ui/welcome.js';
 import { setupCalculator } from './ui/calculator.js';
 import { setupTrainer } from './ui/trainer.js';
 import { setupDrill } from './ui/drill.js';
@@ -1271,11 +1271,10 @@ function bootstrap() {
     if (tab === 'stats') renderStats();
     if (tab === 'train') trainerApi?.reloadQueue();
     if (tab === 'game') showPrestart();
-    if (tab === 'calc') refreshFirstRun();
     cloudApi?.offerIfReady();
   });
   setupCalculator();
-  setupFirstRun();
+  setupWelcome();
   trainerApi = setupTrainer();
   setupDrill();
   setupSidePanel(() => assistConfig.showFutureBidOdds);

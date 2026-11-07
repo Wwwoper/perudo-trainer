@@ -11,7 +11,7 @@ export const test = base.extend({
   page: async ({ page, seedGuest }, use) => {
     if (seedGuest) {
       await page.addInitScript(() => {
-        const GUEST = '{"account":"guest"}';
+        const GUEST = '{"account":"guest","firstRunHidden":true}';   // приветствие тоже уже закрыто
         try {
           if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', GUEST);
           // Тесты часто чистят хранилище: после очистки выбор «гость» возвращается

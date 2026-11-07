@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DESKTOP = {"width": 1280, "height": 720}
 PHONE = {"width": 390, "height": 844}
-GUEST = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\"}');"
+GUEST = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\",\"firstRunHidden\":true}');"
 SEED = "let s = 7; Math.random = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };"
 
 # Известные места тёмной темы ниже порога (так было до появления тем). Светлая тема исключений не имеет.

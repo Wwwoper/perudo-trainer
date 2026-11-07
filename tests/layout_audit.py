@@ -89,7 +89,7 @@ THEME_SEED = (
     if THEME in ("dark", "light") else ""
 )
 
-GUEST_SEED = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\"}');"
+GUEST_SEED = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\",\"firstRunHidden\":true}');"
 
 # Вход в облако выполнен, на устройстве есть партии, а в облаке другая копия: окно выбора и блок «Игрок» с выбором.
 CLOUD_SEED = """() => {

@@ -1,8 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import {
   TASKS_TOTAL, MIN_TASKS, MAX_TASKS, STEPS, defaultOnboarding, sanitizeOnboarding, isOnboardingActive,
   startGame, gameFinished, taskDone, finishOnboarding, skipOnboarding, stepNumber, STEP_COUNT, tasksProgress,
+  shouldShowWelcome, WELCOME,
 } from '../src/onboarding.js';
 
 const at = (step, tasks = 0, extra = {}) => ({ step, tasks, done: false, skipped: false, ...extra });
@@ -118,5 +120,35 @@ describe('stepNumber / tasksProgress', () => {
   });
   it('текст без запрещённых слов', () => {
     assert.doesNotMatch(tasksProgress(at('tasks', 2)).text, /обманщик|врёт|блефует/i);
+  });
+});
+
+describe('shouldShowWelcome', () => {
+  const base = { state: defaultOnboarding(), games: 0, empty: true, legacyHidden: false };
+  it('чистый профиль на шаге приветствия — показываем', () => {
+    assert.equal(shouldShowWelcome(base), true);
+    assert.equal(shouldShowWelcome({ ...base, legacyHidden: undefined }), true);
+  });
+  it('любая из причин не показывать', () => {
+    assert.equal(shouldShowWelcome({ ...base, games: 1 }), false);                 // есть партии в истории
+    assert.equal(shouldShowWelcome({ ...base, empty: false }), false);             // есть решения или статистика
+    assert.equal(shouldShowWelcome({ ...base, empty: undefined }), false);
+    assert.equal(shouldShowWelcome({ ...base, legacyHidden: true }), false);       // карточку прежде скрывали
+    assert.equal(shouldShowWelcome({ ...base, state: startGame(base.state) }), false);
+    assert.equal(shouldShowWelcome({ ...base, state: skipOnboarding(base.state) }), false);
+    assert.equal(shouldShowWelcome(), false);
+  });
+});
+
+describe('WELCOME', () => {
+  it('три шага, кнопки и ссылка на существующую страницу правил', () => {
+    assert.equal(WELCOME.steps.length, 3);
+    assert.equal(WELCOME.start, 'Начать первую партию');
+    assert.equal(WELCOME.skip, 'Я уже знаю правила');
+    assert.ok(existsSync(new URL(`../${WELCOME.rulesHref}`, import.meta.url)));
+  });
+  it('без запрещённых слов', () => {
+    const t = [WELCOME.title, WELCOME.lead, WELCOME.note, ...WELCOME.steps.flatMap((x) => [x.title, x.text])].join(' ');
+    assert.doesNotMatch(t, /обманщик|врёт|блефует/i);
   });
 });

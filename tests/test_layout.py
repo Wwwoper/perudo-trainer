@@ -26,7 +26,7 @@ LANDSCAPE_PHONE = (844, 390)
 
 # Окно «Как вы будете играть?» открывается только новичку. Для замеров вёрстки стола и панелей
 # каждый контекст «уже выбрал» режим гостя, как постоянный игрок.
-GUEST = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\"}');"
+GUEST = "if (!localStorage.getItem('perudo.device')) localStorage.setItem('perudo.device', '{\"account\":\"guest\",\"firstRunHidden\":true}');"
 
 
 class _GuestBrowser:
@@ -1129,6 +1129,29 @@ class LayoutTest(unittest.TestCase):
                 for b in self.boxes(page, "#mainNav .tab-btn"):
                     self.assertGreaterEqual(b["height"], 44)
                 self.assertEqual(page.locator("#mainNav .tab-btn").count(), 7)
+
+    def test_welcome_screen_fits_every_viewport(self):
+        """Экран приветствия на чистом профиле: без горизонтальной прокрутки, кнопки удобны для пальца, приложение скрыто."""
+        for w, h in [(360, 640), (390, 844), (844, 390), (768, 1024), (1280, 720)]:
+            with self.subTest(size=f"{w}x{h}"):
+                ctx = self.raw_browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                try:
+                    page.goto(self.url)
+                    page.wait_for_selector("#welcome .welcome-card")
+                    self.assertTrue(page.locator("#welcome").is_visible())
+                    self.assertFalse(page.locator(".app-header").is_visible())
+                    self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w, "горизонтальная прокрутка")
+                    for sel in (".welcome-start", ".welcome-rules", ".welcome-skip"):
+                        page.locator(sel).scroll_into_view_if_needed()
+                        b = page.locator(sel).bounding_box()
+                        self.assertGreaterEqual(b["height"], 44, sel)
+                        self.assertGreaterEqual(b["x"], 0, sel)
+                        self.assertLessEqual(b["x"] + b["width"], w, sel)
+                    card = page.locator(".welcome-card").bounding_box()
+                    self.assertLessEqual(card["width"], 520 + 1)
+                finally:
+                    ctx.close()
 
     def test_menu_closes_by_escape_scrim_and_choice(self):
         page = self.open_game(390, 844, 3)

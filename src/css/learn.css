@@ -1074,36 +1074,53 @@
   }
 }
 
-/* ===== Карточка «Впервые здесь?» ===== */
-.first-run[hidden] {
+/* ===== Экран приветствия на чистом профиле ===== */
+.welcome[hidden] {
   display: none;
 }
 
-.first-run-title {
-  margin: 0 0 var(--space-1);
-  font-size: 18px;
+/* Пока приветствие открыто, остальное приложение скрыто: оно занимает весь экран */
+body[data-welcome] .app-header,
+body[data-welcome] main > section:not(#welcome) {
+  display: none;
 }
 
-.first-run-lead {
+.welcome {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--space-3);
+}
+
+.welcome-card {
+  width: min(100%, 520px);
+}
+
+.welcome-title {
   margin: 0 0 var(--space-2);
+  font-size: 22px;
 }
 
-.first-run-steps {
+.welcome-lead {
+  margin: 0 0 var(--space-3);
+}
+
+.welcome-steps {
   display: grid;
   gap: var(--space-2);
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-3);
   padding: 0;
   list-style: none;
 }
 
-.first-run-step {
+.welcome-step {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: var(--space-2);
 }
 
-.first-run-num {
+.welcome-num {
   display: grid;
   place-items: center;
   width: 28px;
@@ -1114,19 +1131,28 @@
   font-weight: 700;
 }
 
-.first-run-body {
+.welcome-body {
   display: grid;
   gap: 2px;
   min-width: 0;
 }
 
-.first-run-act {
-  grid-column: 2;
-  justify-self: start;
-  display: inline-grid;
+.welcome-actions {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: stretch;
+  margin-bottom: var(--space-2);
+}
+
+.welcome-start,
+.welcome-skip {
+  min-height: var(--tap);
+}
+
+.welcome-rules {
+  display: grid;
   place-items: center;
   min-height: var(--tap);
-  padding: 0 12px;
   border: 1px solid var(--line-2);
   border-radius: 8px;
   background: var(--surface-2);
@@ -1134,6 +1160,6 @@
   text-decoration: none;
 }
 
-.first-run .link-btn {
-  min-height: var(--tap);
+.welcome-note {
+  margin: 0;
 }

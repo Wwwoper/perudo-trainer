@@ -43,6 +43,7 @@
 <body>
   <noscript>Для работы приложения нужен включённый JavaScript.</noscript>
   <main>
+    <section id="welcome" class="welcome" aria-labelledby="welcomeTitle" hidden></section>
     <header class="app-header">
       <h1>🎲 Перудо</h1>
 
@@ -76,7 +77,6 @@
       </header>
       <div class="learn-layout">
         <div class="learn-main">
-          <section id="firstRun" class="card first-run" aria-labelledby="firstRunTitle" hidden></section>
           <div class="card">
             <div class="field-row">
               <label class="field">Всего кубиков <input id="cN" type="number" min="1" max="60" value="15"
