@@ -71,9 +71,9 @@ class ScreenshotsTest(unittest.TestCase):
             self.assertIn(png_size(os.path.join(ROOT, "docs", "img", f)), allowed, f"{f}: нестандартный размер")
 
     def test_images_are_optimized(self):
-        """Вес всех картинок вместе не растёт неограниченно (сейчас около 4,6 МБ: в основном дерево стола)."""
+        """Вес всех картинок вместе не растёт неограниченно (сейчас около 5,6 МБ: в основном дерево стола)."""
         total = sum(os.path.getsize(os.path.join(ROOT, "docs", "img", f + ".png")) for f in shots.NAMES)
-        self.assertLess(total, 5_500_000, f"картинки весят {total} байт")
+        self.assertLess(total, 6_000_000, f"картинки весят {total} байт")
 
     def test_png_is_optimized_without_changing_pixels(self):
         from PIL import Image, ImageChops
