@@ -29,13 +29,20 @@ export function sanitizeOnboarding(raw) {
 }
 
 /**
- * Идёт ли онбординг: он не закончен, и в истории ещё нет ни одной партии.
+ * Идёт ли онбординг: он не закончен, а начинаться он может, только пока в истории нет ни одной партии.
+ * Когда игрок уже ушёл с приветствия, первая же его партия попадает в историю, но онбординг продолжается.
  * @param {{state: object, games: number}} s games — число сыгранных партий в истории
  */
 export function isOnboardingActive({ state, games } = {}) {
   const st = sanitizeOnboarding(state);
   const g = Number.isInteger(games) && games >= 0 ? games : 0;
-  return !st.done && g === 0;
+  return !st.done && (st.step !== 'welcome' || g === 0);
+}
+
+/** Режим задач онбординга: Тренажёр работает на базовых настройках, ответы не идут в статистику и очередь повторов. */
+export function isTaskMode(state) {
+  const st = sanitizeOnboarding(state);
+  return st.step === 'tasks' && !st.done;
 }
 
 /** Приветствие → первая партия (игрок нажал «Начать»). */
@@ -112,4 +119,13 @@ export const WELCOME = Object.freeze({
   rulesHref: 'docs/guide/rules.html',
   skip: 'Я уже знаю правила',
   note: 'Данные хранятся на этом устройстве. Пропустить приветствие можно в любой момент.',
+});
+
+/** Тексты блока задач онбординга в Тренажёре и кнопки после партии. */
+export const TASKS_TEXT = Object.freeze({
+  title: 'Первые задачи',
+  lead: `${TASKS_TOTAL} коротких задачи «верить или нет» на базовых настройках. Ответы здесь не попадают в статистику и очередь повторов.`,
+  done: 'Все задачи выполнены.',
+  finish: 'Готово',
+  cta: 'Перейти к задачам',
 });

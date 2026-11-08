@@ -781,6 +781,32 @@ test.describe('Покерный стол в партии', () => {
     await page.waitForFunction(() => document.querySelector('#gResultCard') && !document.querySelector('#gResultCard').hidden, null, { timeout: 10_000 });
   }
 
+  test('онбординг: после первой партии с приветствия итог ведёт к задачам Тренажёра', async ({ page }) => {
+    await page.evaluate(() => localStorage.setItem('perudo.device', JSON.stringify({
+      account: 'guest', firstRunHidden: true, onboarding: { step: 'game', tasks: 0, done: false, skipped: false },
+    })));
+    await page.reload();
+    await page.waitForFunction(() => Boolean(window.__perudo_v2));
+    await expect(async () => {
+      await goTab(page, 'game');
+      await expect(page.locator('#game')).toBeVisible({ timeout: 1_000 });
+    }).toPass({ timeout: 10_000 });
+    await finishQuickGame(page, { assist: 'novice' });
+    expect(JSON.parse(await page.evaluate(() => localStorage.getItem('perudo.device'))).onboarding).toMatchObject({ step: 'tasks', tasks: 0, done: false });
+    const cta = page.locator('#gSummary [data-action="onboarding-tasks"]');
+    await expect(cta).toHaveCount(1);
+    await expect(cta).toHaveText('Перейти к задачам');
+    await cta.evaluate((b) => b.click());                       // на телефоне баннер закреплён под шторкой итога: клик идёт напрямую
+    await expect(page.locator('#train')).toBeVisible();
+    await expect(page.locator('#obTasks')).toContainText('Задач выполнено: 0 из 4');
+  });
+
+  test('обычная партия без онбординга: кнопки «К задачам» нет', async ({ page }) => {
+    await finishQuickGame(page, { assist: 'novice' });
+    await expect(page.locator('#gSummary [data-action="onboarding-tasks"]')).toHaveCount(0);
+    await expect(page.locator('#gSummary [data-action="new-game"]')).toHaveCount(1);
+  });
+
   test('итог партии: «Картина партии» с графиком, фактами и раскрытием стилей', async ({ page }) => {
     await finishQuickGame(page, { assist: 'novice' });
     const pic = page.locator('#gResultCard .game-picture');

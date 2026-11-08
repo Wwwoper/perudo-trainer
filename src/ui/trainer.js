@@ -11,6 +11,7 @@ import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
 import { verdictText, MODEL_NOTE } from '../trainer_text.js';
 import { setupPracticeTimer } from './practice_timer.js';
+import { setupTaskBanner } from './onboarding_tasks.js';
 import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
 import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
 
@@ -19,6 +20,7 @@ export function setupTrainer() {
 
   // Статистику не держим в переменной: её пишут и другие разделы (см. updateStats).
   const timer = setupPracticeTimer({ toggle: '#tTimerOn', out: '#tTimerOut' });
+  const tasks = setupTaskBanner();
   let queue = getTrainingQueue();
   let cur = null;
   let answered = false;
@@ -110,7 +112,7 @@ export function setupTrainer() {
   function newSituation(forced) {
     const mk = $('#tMode').value;
     const m = MODES[mk];
-    const pool = queue.filter((x) => x.mode === mk);
+    const pool = tasks.active() ? [] : queue.filter((x) => x.mode === mk);   // в режиме задач повторов из очереди нет
 
     shownCount++;
     const repeat = forced ? null : pickRepeat(pool, seenAt, shownCount);
@@ -199,29 +201,33 @@ export function setupTrainer() {
     timer.stop();
 
     const mk = $('#tMode').value;
-    updateStats((S) => {
-      S.n++;
-      S.byMode[mk] = S.byMode[mk] || { n: 0, good: 0 };
-      S.byMode[mk].n++;
-      if (good) { S.good++; S.byMode[mk].good++; }
-      if (cur.ladder) S.byTag = addLadderResult(S.byTag, good);   // тема «торги с несколькими соперниками»
-    });
+    const taskMode = tasks.active();   // задачи онбординга: ни статистики, ни очереди повторов
+    if (!taskMode) {
+      updateStats((S) => {
+        S.n++;
+        S.byMode[mk] = S.byMode[mk] || { n: 0, good: 0 };
+        S.byMode[mk].n++;
+        if (good) { S.good++; S.byMode[mk].good++; }
+        if (cur.ladder) S.byTag = addLadderResult(S.byTag, good);   // тема «торги с несколькими соперниками»
+      });
 
-    if (cur.item) {
-      if (good) {
-        cur.item.streak = (cur.item.streak || 0) + 1;
-        if (cur.item.streak >= REPEAT_GOAL) queue = queue.filter((x) => x !== cur.item);
-      } else {
-        cur.item.streak = 0;
+      if (cur.item) {
+        if (good) {
+          cur.item.streak = (cur.item.streak || 0) + 1;
+          if (cur.item.streak >= REPEAT_GOAL) queue = queue.filter((x) => x !== cur.item);
+        } else {
+          cur.item.streak = 0;
+        }
+      } else if (!good) {
+        const entry = { mode: mk, n: cur.n, h: cur.h.slice(), f: cur.f, q: cur.q, streak: 0 };
+        if (cur.ladder) Object.assign(entry, { wild: cur.ladder.wild, ks: cur.ladder.ks.slice(), bids: cur.ladder.bids.map((b) => ({ ...b })) });
+        queue.push(entry);
+        seenAt.set(situationKey(entry), shownCount);   // только что показана: повтор не раньше чем через паузу
       }
-    } else if (!good) {
-      const entry = { mode: mk, n: cur.n, h: cur.h.slice(), f: cur.f, q: cur.q, streak: 0 };
-      if (cur.ladder) Object.assign(entry, { wild: cur.ladder.wild, ks: cur.ladder.ks.slice(), bids: cur.ladder.bids.map((b) => ({ ...b })) });
-      queue.push(entry);
-      seenAt.set(situationKey(entry), shownCount);   // только что показана: повтор не раньше чем через паузу
+      persist();
+    } else {
+      tasks.answered();
     }
-
-    persist();
     if ($('#tFb')) {
       $('#tFb').innerHTML =
         `<div class="big ${good ? 'text-ok' : 'text-bad'}">${verdictText(good)}</div>` +
@@ -315,12 +321,18 @@ export function setupTrainer() {
     newSituation();
   };
 
+  tasks.refresh();
   newSituation();
 
   return {
     /** Очередь дополняют из итога партии («Добавить в очередь повторов»): при заходе в тренажёр читаем её заново. */
     reloadQueue() {
       queue = getTrainingQueue();
+      if (tasks.refresh()) {   // начались задачи онбординга: базовые настройки и новая ситуация
+        $('#tMode').value = Object.keys(MODES)[0];
+        $('#tT').value = '0.5';
+        newSituation();
+      }
       updateStat();
     },
     /** Открывает тренажёр в выбранном режиме с новой ситуацией (кнопка «Тренировать» в статистике). */

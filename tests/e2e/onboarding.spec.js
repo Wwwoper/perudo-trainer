@@ -1,6 +1,7 @@
 // tests/e2e/onboarding.spec.js
 // Онбординг новичка: экран приветствия на чистом профиле (W4-03).
 import { test, expect } from './fixtures.js';
+import { openTab } from './helpers.js';
 
 const device = (page) => page.evaluate(() => { try { return JSON.parse(localStorage.getItem('perudo.device')); } catch { return null; } });
 
@@ -72,5 +73,56 @@ test.describe('Экран приветствия', () => {
     await page.evaluate(() => localStorage.setItem('perudo.device', JSON.stringify({ firstRunHidden: true })));
     await page.reload();
     await expect(page.locator('#welcome')).toBeHidden();
+  });
+});
+
+const read = (page, key) => page.evaluate((k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, key);
+
+test.describe('Задачи онбординга в Тренажёре', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.setItem('perudo.device', JSON.stringify({
+      account: 'guest', firstRunHidden: true, onboarding: { step: 'tasks', tasks: 0, done: false, skipped: false },
+    })));
+    await page.reload();
+    await openTab(page, 'train');
+  });
+
+  test('блок «Первые задачи» с прогрессом; ответы не попадают в статистику и очередь повторов', async ({ page }) => {
+    const box = page.locator('#obTasks');
+    await expect(box).toBeVisible();
+    await expect(box).toContainText('Первые задачи');
+    await expect(box).toContainText('не попадают в статистику и очередь повторов');
+    await expect(box.locator('progress')).toHaveAttribute('max', '4');
+    await expect(box.locator('progress')).toHaveJSProperty('value', 0);
+    await expect(box).toContainText('Задач выполнено: 0 из 4');
+    await page.evaluate(() => { document.querySelector('#tT').value = '0.05'; });   // при таком пороге «Не верю» почти всегда неверно: проверяем и промахи
+    for (let i = 1; i <= 3; i++) {
+      await page.locator('#tDudo').click();
+      await expect(box).toContainText(`Задач выполнено: ${i} из 4`);
+      await page.locator('#tNext').click();
+    }
+    expect((await read(page, 'perudo.trainingQueue')) ?? []).toEqual([]);          // промахи в очередь повторов не попали
+    expect((await read(page, 'perudo.userProfile'))?.n ?? 0).toBe(0);
+    await page.locator('#tDudo').click();
+    await expect(box).toContainText('Все задачи выполнены');
+    await expect(box.locator('progress')).toHaveJSProperty('value', 4);
+    expect((await read(page, 'perudo.device')).onboarding).toMatchObject({ step: 'finish', tasks: 4, done: false });
+    expect((await read(page, 'perudo.userProfile'))?.n ?? 0).toBe(0);
+  });
+
+  test('«Готово» убирает блок; дальше Тренажёр работает как обычно и считает статистику', async ({ page }) => {
+    for (let i = 0; i < 4; i++) {
+      await page.locator('#tDudo').click();
+      if (i < 3) await page.locator('#tNext').click();
+    }
+    await page.locator('[data-ob="finish"]').click();
+    await expect(page.locator('#obTasks')).toBeHidden();
+    expect((await read(page, 'perudo.device')).onboarding).toMatchObject({ done: true, skipped: false });
+    await page.locator('#tNext').click();
+    await page.locator('#tDudo').click();
+    expect((await read(page, 'perudo.userProfile')).n).toBe(1);             // обычный режим: решение учтено
+    await page.reload();
+    await expect(page.locator('#obTasks')).toBeHidden();
   });
 });

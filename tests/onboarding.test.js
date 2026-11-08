@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import {
   TASKS_TOTAL, MIN_TASKS, MAX_TASKS, STEPS, defaultOnboarding, sanitizeOnboarding, isOnboardingActive,
   startGame, gameFinished, taskDone, finishOnboarding, skipOnboarding, stepNumber, STEP_COUNT, tasksProgress,
-  shouldShowWelcome, WELCOME,
+  shouldShowWelcome, WELCOME, isTaskMode, TASKS_TEXT,
 } from '../src/onboarding.js';
 
 const at = (step, tasks = 0, extra = {}) => ({ step, tasks, done: false, skipped: false, ...extra });
@@ -46,6 +46,9 @@ describe('isOnboardingActive', () => {
   it('есть партии в истории — онбординга нет', () => {
     assert.equal(isOnboardingActive({ state: defaultOnboarding(), games: 1 }), false);
     assert.equal(isOnboardingActive({ state: defaultOnboarding(), games: 40 }), false);
+  });
+  it('начатый онбординг продолжается, хотя первая партия уже в истории', () => {
+    for (const st of [at('game'), at('tasks', 1), at('finish', TASKS_TOTAL)]) assert.equal(isOnboardingActive({ state: st, games: 1 }), true, st.step);
   });
   it('закончен или пропущен — онбординга нет', () => {
     assert.equal(isOnboardingActive({ state: skipOnboarding(defaultOnboarding()), games: 0 }), false);
@@ -150,5 +153,18 @@ describe('WELCOME', () => {
   it('без запрещённых слов', () => {
     const t = [WELCOME.title, WELCOME.lead, WELCOME.note, ...WELCOME.steps.flatMap((x) => [x.title, x.text])].join(' ');
     assert.doesNotMatch(t, /обманщик|врёт|блефует/i);
+  });
+});
+
+describe('isTaskMode и тексты задач', () => {
+  it('режим задач — только на шаге tasks и пока онбординг не закончен', () => {
+    assert.equal(isTaskMode(at('tasks', 1)), true);
+    for (const st of [defaultOnboarding(), at('game'), at('finish', TASKS_TOTAL), skipOnboarding(at('tasks', 1))]) assert.equal(isTaskMode(st), false);
+    assert.equal(isTaskMode(null), false);
+  });
+  it('тексты: про статистику и очередь повторов, без запрещённых слов', () => {
+    assert.match(TASKS_TEXT.lead, new RegExp(`${TASKS_TOTAL} коротких`));
+    assert.match(TASKS_TEXT.lead, /не попадают в статистику и очередь повторов/);
+    assert.doesNotMatch(Object.values(TASKS_TEXT).join(' '), /обманщик|врёт|блефует/i);
   });
 });

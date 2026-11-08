@@ -15,6 +15,7 @@ import { buildGameResult, resultHeadline } from './result.js';
 import { P, $, $$, pct, flash } from './ui/common.js';
 import { setupTabs } from './ui/tabs.js';
 import { setupWelcome } from './ui/welcome.js';
+import { gameFinished, isTaskMode, TASKS_TEXT } from './onboarding.js';
 import { setupCalculator } from './ui/calculator.js';
 import { setupTrainer } from './ui/trainer.js';
 import { setupDrill } from './ui/drill.js';
@@ -99,6 +100,7 @@ function trainInMode(mode) {
 function setupGame() {
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-action="new-game"]')) startNewGame();
+    if (e.target.closest('[data-action="onboarding-tasks"]')) $('.tab-btn[data-t="train"]')?.click();   // после первой партии — к задачам
   });
   if ($('#gDudo')) $('#gDudo').onclick = onPlayerDudo;
   if ($('#gStepBot')) $('#gStepBot').onclick = onStepBot;
@@ -1220,6 +1222,12 @@ function finalizeGame() {
   askPersistenceIfNeeded();
   cloudApi?.afterGame();
 
+  // Онбординг: первая начатая с приветствия партия закончена — дальше задачи в Тренажёре
+  const ob = getDeviceState().onboarding;
+  const obNext = gameFinished(ob);
+  if (obNext.step !== ob.step) setDeviceState({ ...getDeviceState(), onboarding: obNext });
+  const toTasks = isTaskMode(obNext);
+
   const result = buildGameResult(game);
   const h = resultHeadline(result);
 
@@ -1233,7 +1241,9 @@ function finalizeGame() {
           <span class="muted">${escapeHtml(h.lead)}</span>
         </div>
         <div class="result-banner-actions">
-          <button type="button" class="btn-primary" data-action="new-game">Сыграть ещё</button>
+          ${toTasks ? `<button type="button" class="btn-primary" data-action="onboarding-tasks">${TASKS_TEXT.cta}</button>
+          <button type="button" data-action="new-game">Сыграть ещё</button>`
+    : '<button type="button" class="btn-primary" data-action="new-game">Сыграть ещё</button>'}
           <button type="button" data-result-details>Итоги</button>
         </div>
       </div>`;

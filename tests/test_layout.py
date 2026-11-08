@@ -1153,6 +1153,27 @@ class LayoutTest(unittest.TestCase):
                 finally:
                     ctx.close()
 
+    def test_result_banner_with_onboarding_button_fits_phone(self):
+        """Итог первой партии новичка: три кнопки («Перейти к задачам», «Сыграть ещё», «Итоги») помещаются в баннер."""
+        for w, h in [(320, 568), (360, 640), (390, 844)]:
+            with self.subTest(size=f"{w}x{h}"):
+                page = self.open_game(w, h, 3)
+                page.evaluate("""() => {
+                    const s = document.querySelector('#gSummary'); s.hidden = false;
+                    s.innerHTML = `<div class="card result-banner is-win" role="group"><div class="result-banner-text"><b>🏆 Победа</b>
+                      <span class="muted">Вы выиграли партию против одного бота.</span></div><div class="result-banner-actions">
+                      <button type="button" class="btn-primary" data-action="onboarding-tasks">Перейти к задачам</button>
+                      <button type="button" data-action="new-game">Сыграть ещё</button>
+                      <button type="button" data-result-details>Итоги</button></div></div>`;
+                }""")
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w, "горизонтальная прокрутка")
+                for sel in ('[data-action="onboarding-tasks"]', '[data-action="new-game"]', "[data-result-details]"):
+                    b = page.locator(f"#gSummary {sel}").bounding_box()
+                    self.assertGreaterEqual(b["height"], 44, sel)
+                    self.assertGreaterEqual(b["x"], 0, sel)
+                    self.assertLessEqual(b["x"] + b["width"], w, sel)
+                    self.assertLessEqual(b["y"] + b["height"], h, sel)
+
     def test_menu_closes_by_escape_scrim_and_choice(self):
         page = self.open_game(390, 844, 3)
         tg = page.locator("#navToggle")
