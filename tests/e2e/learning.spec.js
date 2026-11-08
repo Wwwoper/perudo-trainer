@@ -477,6 +477,9 @@ test.describe('Учебные вкладки', () => {
         await page.locator('.drill-tab[data-drill="C"]').click();
         await expect(page.locator('#dCBody')).toBeVisible();
         await expect(page.locator('#dCBids li')).toHaveCount(3);
+        await expect(page.locator('#dCBids li.is-asked')).toHaveCount(2);
+        await expect(page.locator('#dCBids li').first()).toContainText('Первая ставка');
+        await expect(page.locator('#dCBids li').nth(1)).toContainText('Повышение');
         await expect(page.locator('#dCq')).not.toContainText('Учебный раунд');
         await expect(page.locator('#dCAsk .read-q')).toHaveCount(2);
         await expect(page.locator('.read-hands')).toHaveCount(0);

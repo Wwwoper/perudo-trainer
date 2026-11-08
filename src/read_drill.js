@@ -136,6 +136,20 @@ export function buildReadTask(round, { rnd = Math.random, max = MAX_QUESTIONS } 
   };
 }
 
+/**
+ * Строки ленты ставок: порядок торгов с подписью действия и пометкой тех ставок, о которых задан вопрос.
+ * Подписи без родов («Первая ставка», «Повышение»): имена в списке мужские и женские.
+ * @returns {{n:number, seat:number, q:number, f:number, isMe:boolean, asked:boolean, action:string}[]}
+ */
+export function feedRows(task) {
+  if (!task || !Array.isArray(task.bids)) return [];
+  const asked = new Set((task.questions || []).map((q) => q.n));
+  return task.bids.map((b, i) => ({
+    n: b.n, seat: b.seat, q: b.q, f: b.f, isMe: !!b.isMe, asked: asked.has(b.n),
+    action: i === 0 ? 'Первая ставка' : 'Повышение',
+  }));
+}
+
 /** Ответ на вопрос: 'yes' — в руке автора есть нужная цифра, 'no' — нет. */
 export const ANSWERS = Object.freeze(['yes', 'no']);
 const ANSWER_WORD = { yes: 'Да', no: 'Нет' };

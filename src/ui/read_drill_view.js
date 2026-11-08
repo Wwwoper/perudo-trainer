@@ -6,7 +6,7 @@
 import { getRounds, updateStats } from '../storage.js';
 import { renderBid, renderHand, renderDie, escapeHtml } from '../table.js';
 import { $ } from './common.js';
-import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead, addSeries, seriesLines } from '../read_drill.js';
+import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead, addSeries, seriesLines, feedRows } from '../read_drill.js';
 import { makeSimRound, chooseSource, isSimRound } from '../read_sim.js';
 
 const seatLabel = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
@@ -58,9 +58,11 @@ export function setupReadDrill() {
       `Кубиков в руках: <b>${sizes}</b>.<br>` +
       (task.wild ? 'Единицы — джокеры: считаются за любую цифру.' : 'Единицы обычные: за другие цифры не считаются (раунд Палифико).') +
       (isSimRound(round) ? '<br><span class="read-sim muted">Учебный раунд: его сыграли боты программы. В статистику он не идёт.</span>' : '');
-    bidsEl.innerHTML = task.bids.map((b) =>
-      `<li class="read-bid${b.isMe ? ' is-me' : ''}"><span class="read-bid-n">${b.n}</span>` +
-      `<span class="read-bid-who">${seatLabel(round, b.seat)}</span>${renderBid(b.q, b.f)}</li>`).join('');
+    bidsEl.innerHTML = feedRows(task).map((b) =>
+      `<li class="read-bid${b.isMe ? ' is-me' : ''}${b.asked ? ' is-asked' : ''}"><span class="read-bid-n">${b.n}</span>` +
+      `<span class="read-bid-who">${seatLabel(round, b.seat)}<span class="read-bid-act muted">${b.action}</span></span>` +
+      (b.asked ? '<span class="read-bid-tag">Оцените</span>' : '') +
+      `${renderBid(b.q, b.f)}</li>`).join('');
     ask.innerHTML = task.questions.map((q) =>
       `<div class="read-q" role="group" data-n="${q.n}" aria-labelledby="rdT${q.n}">` +
       `<p class="read-q-title" id="rdT${q.n}">${seatLabel(round, q.seat)}: есть ли в руке цифра ${renderDie(q.f, 's')}?</p>` +

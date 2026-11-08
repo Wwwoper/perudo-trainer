@@ -235,6 +235,26 @@
   overflow-wrap: anywhere;
 }
 
+.read-bid-act {
+  display: block;
+  font-size: 12px;
+}
+
+.read-bid.is-asked {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--acc);
+  font-weight: 600;
+}
+
+.read-bid-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--acc);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .read-q {
   margin: 0 0 10px;
   padding: 8px 10px;

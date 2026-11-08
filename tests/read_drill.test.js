@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { BOT_NAMES } from '../src/bots.js';
-import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, addSeries, seriesLines, MAX_QUESTIONS } from '../src/read_drill.js';
+import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, addSeries, seriesLines, feedRows, MAX_QUESTIONS } from '../src/read_drill.js';
 import { sanitizeRound } from '../src/rounds.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -228,5 +228,27 @@ describe('addReadResult', () => {
     assert.deepEqual(addReadResult({ read: { n: 'x' } }, { good: 1, total: 2 }).read, { n: 2, good: 1 });
     assert.deepEqual(addReadResult({}, { good: 9, total: 2 }).read, { n: 2, good: 2 });
     assert.deepEqual(addReadResult({}, { good: -4, total: 2 }).read, { n: 2, good: 0 });
+  });
+});
+
+describe('feedRows', () => {
+  const round = mk();
+  const task = buildReadTask(round, { rnd: () => 0 });
+  test('все ставки по порядку, подпись действия: первая ставка и повышения', () => {
+    const rows = feedRows(task);
+    assert.equal(rows.length, round.bids.length);
+    assert.deepEqual(rows.map((r) => r.action), ['Первая ставка', 'Повышение', 'Повышение']);
+    assert.deepEqual(rows.map((r) => r.n), [1, 2, 3]);
+  });
+  test('оцениваемые ставки помечены, ваша ставка не спрашивается', () => {
+    const rows = feedRows(task);
+    assert.deepEqual(rows.filter((r) => r.asked).map((r) => r.n), task.questions.map((q) => q.n));
+    assert.equal(rows.find((r) => r.isMe).asked, false);
+  });
+  test('подписи без родовых окончаний, мусор не ломает', () => {
+    for (const r of feedRows(task)) assert.ok(!/(л|ла)$/.test(r.action));
+    assert.deepEqual(feedRows(null), []);
+    assert.deepEqual(feedRows({}), []);
+    assert.equal(feedRows({ bids: [{ n: 1, seat: 1, q: 1, f: 2 }] })[0].asked, false);
   });
 });
