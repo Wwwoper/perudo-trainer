@@ -10,10 +10,8 @@ async function open(page, tab) {
 }
 
 /** Ползунок уверенности в «Читай вскрытие»: задаёт значение так, как это делает пользователь (событие input). */
-const setConf = (page, name, value) => page.locator(`input[name="${name}"]`).evaluate((el, v) => {
-  el.value = String(v);
-  el.dispatchEvent(new Event('input', { bubbles: true }));
-}, value);
+/** Ответ на вопрос о ставке n в «Читай вскрытие»: 'yes' или 'no'. */
+const answer = (page, n, v) => page.locator(`#dCAsk .read-yn-btn[data-n="${n}"][data-v="${v}"]`).click();
 
 test.describe('Учебные вкладки', () => {
   let errors;
@@ -463,9 +461,11 @@ test.describe('Учебные вкладки', () => {
         const n = await page.locator('#dCAsk .read-q').count();
         expect(n).toBeGreaterThanOrEqual(1);
         await expect(page.locator('#dCCheck')).toBeDisabled();
-        for (const q of await page.locator('#dCAsk .read-q').all()) await q.locator('.read-range').evaluate((el) => { el.value = '80'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+        await expect(page.locator('#dCHint')).toContainText('Осталось');
+        for (const q of await page.locator('#dCAsk .read-q').all()) await q.locator('.read-yn-btn[data-v="yes"]').click();
+        await expect(page.locator('#dCHint')).toBeEmpty();
         await page.locator('#dCCheck').click();
-        await expect(page.locator('#dCfb')).toContainText('С правильной стороны от 50 %');
+        await expect(page.locator('#dCfb')).toContainText('Угадано:');
         await expect(page.locator('#dCfb .read-hand-row').first()).toBeVisible();
         const tag = await page.evaluate(() => (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.byTag || {}).read || null);
         expect(tag).toBeNull();
@@ -482,24 +482,24 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('.read-hands')).toHaveCount(0);
         // кнопка ждёт ответов на оба вопроса
         await expect(page.locator('#dCCheck')).toBeDisabled();
-        await setConf(page, 'rd1', 80);
+        await answer(page, 1, 'yes');
         await expect(page.locator('#dCCheck')).toBeDisabled();
-        await setConf(page, 'rd3', 20);
+        await answer(page, 3, 'no');
         await expect(page.locator('#dCCheck')).toBeEnabled();
         await page.locator('#dCCheck').click();
-        await expect(page.locator('#dCfb')).toContainText('С правильной стороны от 50 %: 1 из 2');
+        await expect(page.locator('#dCfb')).toContainText('Угадано: 1 из 2');
         await expect(page.locator('#dCfb')).toContainText('Проверка ставки 3×5: на столе 4, ставка верна');
         await expect(page.locator('#dCfb')).toContainText('в руке 3 из 3');
         await expect(page.locator('#dCfb .read-hand-row')).toHaveCount(3);
         await expect(page.locator('.read-q.is-ok')).toHaveCount(1);
         await expect(page.locator('.read-q.is-bad')).toHaveCount(1);
-        await expect(page.locator('#dCAsk input').first()).toBeDisabled();
+        await expect(page.locator('#dCAsk .read-yn-btn').first()).toBeDisabled();
         await expect(page.locator('#dCCheck')).toBeDisabled();
         expect(await page.locator('#dCfb').textContent()).not.toMatch(/обманщик|врёт/i);
         // «Новое» даёт чистое задание
         await page.click('#dNew');
         await expect(page.locator('#dCfb')).toBeEmpty();
-        await expect(page.locator('#dCAsk .read-range[data-set="1"]')).toHaveCount(0);
+        await expect(page.locator('#dCAsk .read-yn-btn.on')).toHaveCount(0);
         await expect(page.locator('#dCCheck')).toBeDisabled();
       });
 
@@ -511,15 +511,15 @@ test.describe('Учебные вкладки', () => {
         await open(page, 'drill');
         await page.locator('.drill-tab[data-drill="C"]').click();
         expect(await readTag(page)).toEqual({ n: 0, good: 0 });
-        await setConf(page, 'rd1', 80);
-        await setConf(page, 'rd3', 20);
+        await answer(page, 1, 'yes');
+        await answer(page, 3, 'no');
         await page.locator('#dCCheck').click();
         expect(await readTag(page)).toEqual({ n: 2, good: 1 });
         await page.locator('#dCCheck').dispatchEvent('click');
         expect(await readTag(page)).toEqual({ n: 2, good: 1 });
         await page.click('#dNew');
-        await setConf(page, 'rd1', 80);
-        await setConf(page, 'rd3', 80);
+        await answer(page, 1, 'yes');
+        await answer(page, 3, 'yes');
         await page.locator('#dCCheck').click();
         expect(await readTag(page)).toEqual({ n: 4, good: 3 });
       });

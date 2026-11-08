@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { BOT_NAMES } from '../src/bots.js';
-import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, MAX_QUESTIONS } from '../src/read_drill.js';
+import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, addSeries, seriesLines, MAX_QUESTIONS } from '../src/read_drill.js';
 import { sanitizeRound } from '../src/rounds.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -101,35 +101,74 @@ describe('checkReadAnswers', () => {
   const task = buildReadTask(round, { rnd: () => 0 });
   test('верные и неверные ответы по рукам', () => {
     // ставка 1: место 2, цифра 4 — в руке [4,6,2] есть 4 → has; ставка 3: место 1, цифра 5 — [5,5,1] есть → has
-    const res = checkReadAnswers(round, task, { 1: 80, 3: 20 });
+    const res = checkReadAnswers(round, task, { 1: 'yes', 3: 'no' });
     assert.equal(res.total, 2);
     assert.equal(res.good, 1);
     assert.deepEqual(res.items.map((i) => [i.n, i.truth, i.ok]), [[1, 'has', true], [3, 'has', false]]);
     assert.equal(res.items[1].matches, 3);
+    assert.match(res.lines[0], /Вы ответили «Да»: верно/);
+    assert.match(res.lines[1], /Вы ответили «Нет»: неверно/);
   });
   test('джокеры считаются как у вскрытия', () => {
     const r = sanitizeRound({ ...mk(), hands: [[2, 3, 5], [1, 1, 6], [4, 6, 2]], end: { kind: 'dudo', by: 0, bidder: 1, actual: 3, ok: true } });
-    const res = checkReadAnswers(r, buildReadTask(r, { rnd: () => 0 }), { 1: 80, 3: 80 });
+    const res = checkReadAnswers(r, buildReadTask(r, { rnd: () => 0 }), { 1: 'yes', 3: 'yes' });
     assert.equal(res.items[1].matches, 2);
     assert.equal(res.good, 2);
   });
-  test('нет цифры в руке: добавляется оговорка «это ещё не блеф»', () => {
+  test('нет цифры в руке: «Нет» верно и добавляется оговорка «это ещё не блеф»', () => {
     const r = sanitizeRound({ ...mk(), hands: [[2, 3, 5], [6, 6, 3], [6, 6, 2]], end: { kind: 'dudo', by: 0, bidder: 1, actual: 1, ok: false } });
-    const res = checkReadAnswers(r, buildReadTask(r, { rnd: () => 0 }), { 1: 20, 3: 20 });
+    const res = checkReadAnswers(r, buildReadTask(r, { rnd: () => 0 }), { 1: 'no', 3: 'no' });
     assert.equal(res.good, 2);
     assert.ok(res.lines.some((l) => /ещё не блеф/.test(l)));
   });
+  test('догадка по начальному шансу: «да», если шанс цифры у такого числа кубиков не ниже половины', () => {
+    const res = checkReadAnswers(round, task, { 1: 'yes', 3: 'yes' });
+    for (const it of res.items) assert.equal(it.guess, it.prior >= 0.5 ? 'yes' : 'no');
+    assert.equal(res.guessGood, res.items.filter((i) => i.guessOk).length);
+  });
   test('неполные и неверные ответы, чужое задание — null', () => {
-    assert.equal(checkReadAnswers(round, task, { 1: 80 }), null);
-    assert.equal(checkReadAnswers(round, task, { 1: 80, 3: 'maybe' }), null);
+    assert.equal(checkReadAnswers(round, task, { 1: 'yes' }), null);
+    assert.equal(checkReadAnswers(round, task, { 1: 'yes', 3: 'maybe' }), null);
+    assert.equal(checkReadAnswers(round, task, { 1: 80, 3: 20 }), null);
     assert.equal(checkReadAnswers(round, task, null), null);
-    assert.equal(checkReadAnswers(round, { ...task, id: 'other' }, { 1: 80, 3: 80 }), null);
+    assert.equal(checkReadAnswers(round, { ...task, id: 'other' }, { 1: 'yes', 3: 'yes' }), null);
     assert.equal(checkReadAnswers(null, task, {}), null);
   });
   test('тексты без запрещённых формулировок', () => {
-    const res = checkReadAnswers(round, task, { 1: 80, 3: 20 });
+    const res = checkReadAnswers(round, task, { 1: 'yes', 3: 'no' });
     for (const l of res.lines) for (const re of BANNED) assert.ok(!re.test(l), `${re}: ${l}`);
     assert.ok(!/обманщик|врёт/i.test(res.lines.join(' ')));
+  });
+});
+
+describe('серия за сеанс', () => {
+  test('накопление: ответы и догадки по начальному шансу складываются, исходный объект не меняется', () => {
+    const a = addSeries(null, { good: 2, guessGood: 1, total: 3 });
+    assert.deepEqual(a, { n: 3, good: 2, guess: 1 });
+    const b = addSeries(a, { good: 1, guessGood: 2, total: 3 });
+    assert.deepEqual(b, { n: 6, good: 3, guess: 3 });
+    assert.deepEqual(a, { n: 3, good: 2, guess: 1 });
+  });
+  test('мусор не ломает серию', () => {
+    assert.deepEqual(addSeries('x', { good: 1, guessGood: 1, total: 1 }), { n: 1, good: 1, guess: 1 });
+    assert.deepEqual(addSeries({ n: 2, good: 1, guess: 1 }, null), { n: 2, good: 1, guess: 1 });
+    assert.deepEqual(addSeries(null, { total: 0 }), { n: 0, good: 0, guess: 0 });
+  });
+  test('строки: пустая серия — пусто, короткая — осторожный вывод', () => {
+    assert.deepEqual(seriesLines(null), []);
+    assert.deepEqual(seriesLines({ n: 0, good: 0, guess: 0 }), []);
+    const l = seriesLines({ n: 4, good: 3, guess: 2 });
+    assert.match(l[0], /Угадано за сеанс: 3 из 4/);
+    assert.match(l[1], /угадали бы 2 из 4/);
+    assert.match(l[2], /Серия короткая/);
+  });
+  test('после 10 ответов: лучше, наравне, хуже начального шанса', () => {
+    assert.match(seriesLines({ n: 10, good: 7, guess: 5 })[2], /лучше, чем начальный шанс/);
+    assert.match(seriesLines({ n: 10, good: 5, guess: 5 })[2], /наравне/);
+    assert.match(seriesLines({ n: 10, good: 4, guess: 6 })[2], /начальный шанс угадывает чаще/);
+  });
+  test('тексты без запрещённых формулировок', () => {
+    for (const g of [7, 5, 4]) for (const l of seriesLines({ n: 10, good: g, guess: 5 })) for (const re of BANNED) assert.ok(!re.test(l), `${re}: ${l}`);
   });
 });
 
@@ -166,7 +205,7 @@ describe('seatLabel и итог раунда', () => {
   test('итог: проверка ставки и Calza', () => {
     const r = mk();
     const t = buildReadTask(r, { rnd: () => 0 });
-    const ans = { 1: 80, 3: 80 };
+    const ans = { 1: 'yes', 3: 'yes' };
     assert.equal(checkReadAnswers(r, t, ans).outcome, 'Проверка ставки 3×5: на столе 4, ставка верна.');
     const c = sanitizeRound({ ...r, bids: [{ s: 2, q: 1, f: 4 }, { s: 0, q: 2, f: 4 }, { s: 1, q: 4, f: 5 }], end: { kind: 'calza', by: 0, bidder: 1, actual: 4, ok: true } });
     assert.equal(checkReadAnswers(c, buildReadTask(c, { rnd: () => 0 }), ans).outcome, 'Calza на 4×5: на столе 4, точно.');

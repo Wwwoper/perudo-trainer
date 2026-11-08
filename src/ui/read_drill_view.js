@@ -6,9 +6,8 @@
 import { getRounds, updateStats } from '../storage.js';
 import { renderBid, renderHand, renderDie, escapeHtml } from '../table.js';
 import { $ } from './common.js';
-import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead } from '../read_drill.js';
+import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead, addSeries, seriesLines } from '../read_drill.js';
 import { makeSimRound, chooseSource, isSimRound } from '../read_sim.js';
-import { makeEntry, addEntry, seriesSummary, seriesLines, STEP } from '../calibration.js';
 
 const seatLabel = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
 
@@ -26,14 +25,15 @@ export function setupReadDrill() {
   let round = null;
   let task = null;
   let done = false;
-  let series = [];   // ответы за сеанс для оценки серии; в хранилище не пишется
+  let series = null;   // ответы за сеанс для оценки серии; в хранилище не пишется
 
-  // Ответ считается данным, когда ползунок сдвинули: иначе стартовые 50 % засчитались бы как оценка
-  const picked = (n) => {
-    const el = ask.querySelector(`input[name="rd${n}"]`);
-    return el && el.dataset.set === '1' ? Number(el.value) : null;
+  const hint = $('#dCHint');
+  const answers = {};   // номер ставки → 'yes' | 'no'
+  const sync = () => {
+    const left = task ? task.questions.filter((q) => !answers[q.n]).length : 0;
+    btn.disabled = done || !task || left > 0;
+    if (hint) hint.textContent = done || !task || !left ? '' : `Чтобы проверить, ответьте на все вопросы. Осталось: ${left}.`;
   };
-  const sync = () => { btn.disabled = done || !task || task.questions.some((q) => !picked(q.n)); };
 
   function show(on) {
     body.classList.toggle('hide', !on);
@@ -48,6 +48,7 @@ export function setupReadDrill() {
     if (!round) round = useSim ? pickReadRound(real, seen) : null;
     task = round ? buildReadTask(round) : null;
     done = false;
+    for (const k of Object.keys(answers)) delete answers[k];
     fb.innerHTML = '';
     if (!round || !task) { round = null; task = null; show(false); sync(); return; }
     seen.add(round.id);
@@ -64,43 +65,47 @@ export function setupReadDrill() {
       `<div class="read-q" role="group" data-n="${q.n}" aria-labelledby="rdT${q.n}">` +
       `<p class="read-q-title" id="rdT${q.n}">${seatLabel(round, q.seat)}: есть ли в руке цифра ${renderDie(q.f, 's')}?</p>` +
       `<p class="read-q-bid muted">Ставка ${q.n}: ${renderBid(q.q, q.f)}</p>` +
-      `<label class="read-conf"><span>Ваша уверенность: <output class="read-conf-out" id="rdOut${q.n}">сдвиньте ползунок</output></span>` +
-      `<input type="range" class="read-range" name="rd${q.n}" min="0" max="100" step="${STEP}" value="50" aria-describedby="rdOut${q.n}"></label>` +
+      '<div class="read-yn" role="group" aria-label="Ваш ответ">' +
+      `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="yes" aria-pressed="false">Да, есть</button>` +
+      `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="no" aria-pressed="false">Нет, нет</button></div>` +
       '</div>').join('');
     sync();
   }
 
-  ask.addEventListener('input', (e) => {
-    const el = e.target.closest('.read-range');
-    if (!el) return;
-    el.dataset.set = '1';
-    const out = ask.querySelector(`#${el.getAttribute('aria-describedby')}`);
-    if (out) out.textContent = `${el.value} %`;
+  ask.addEventListener('click', (e) => {
+    const b = e.target.closest('.read-yn-btn');
+    if (!b || done) return;
+    const n = Number(b.dataset.n);
+    answers[n] = b.dataset.v;
+    for (const x of ask.querySelectorAll(`.read-yn-btn[data-n="${n}"]`)) {
+      const on = x === b;
+      x.classList.toggle('on', on);
+      x.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
     sync();
   });
 
   btn.onclick = () => {
     if (done || !round || !task) return;
-    const answers = {};
-    for (const q of task.questions) answers[q.n] = picked(q.n);
-    const res = checkReadAnswers(round, task, answers);
+    const res = checkReadAnswers(round, task, { ...answers });
     if (!res) return;
     done = true;
     if (!isSimRound(round)) updateStats((S) => { S.byTag = addReadResult(S.byTag, res); });
-    for (const it of res.items) series = addEntry(series, makeEntry({ p: it.p, prior: it.prior, truth: it.has }));
-    const seriesHtml = seriesLines(seriesSummary(series)).map((l) => `<li>${l}</li>`).join('');
+    series = addSeries(series, res);
+    const seriesHtml = seriesLines(series).map((l) => `<li>${l}</li>`).join('');
     for (const it of res.items) {
       const box = ask.querySelector(`.read-q[data-n="${it.n}"]`);
       box?.classList.add(it.ok ? 'is-ok' : 'is-bad');
+      box?.querySelector(`.read-yn-btn[data-v="${it.has ? 'yes' : 'no'}"]`)?.classList.add('is-right');
     }
-    ask.querySelectorAll('input').forEach((i) => { i.disabled = true; });
+    ask.querySelectorAll('.read-yn-btn').forEach((i) => { i.disabled = true; });
     const hands = round.hands.map((h, i) =>
       `<div class="read-hand-row"><span class="read-hand-who">${seatLabel(round, i)}</span>${renderHand(h, round.wild, 'sm')}</div>`).join('');
     fb.innerHTML =
-      `<p class="${res.good === res.total ? 'text-ok' : 'text-bad'}">С правильной стороны от 50 %: ${res.good} из ${res.total}.</p>` +
+      `<p class="${res.good === res.total ? 'text-ok' : 'text-bad'}">Угадано: ${res.good} из ${res.total}.</p>` +
       `<ul class="read-lines">${res.lines.map((l) => `<li>${l}</li>`).join('')}</ul>` +
       `<p>${res.outcome}</p>` +
-      `<div class="read-series"><b>Оценка серии</b><ul class="read-lines">${seriesHtml}</ul></div>` +
+      `<div class="read-series"><b>Серия за сеанс</b><ul class="read-lines">${seriesHtml}</ul></div>` +
       `<div class="read-hands" aria-label="Руки при вскрытии">${hands}</div>`;
     sync();
   };

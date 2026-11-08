@@ -6,12 +6,9 @@
 
 import { saidText, dieMatches } from './reveal.js';
 import { BOT_NAMES } from './bots.js';
-import { toProbability, brierItem, sideCorrect, itemLine } from './calibration.js';
 
 /** Сколько вопросов в одном задании. */
 export const MAX_QUESTIONS = 3;
-/** Ответ — уверенность 0–100 %, что в руке автора есть нужная цифра (калибровка: calibration.js). */
-
 const plural = (n, one, few, many) => {
   const m10 = n % 10; const m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return one;
@@ -139,34 +136,43 @@ export function buildReadTask(round, { rnd = Math.random, max = MAX_QUESTIONS } 
   };
 }
 
+/** Ответ на вопрос: 'yes' — в руке автора есть нужная цифра, 'no' — нет. */
+export const ANSWERS = Object.freeze(['yes', 'no']);
+const ANSWER_WORD = { yes: 'Да', no: 'Нет' };
+
 /**
  * Проверка ответов по рукам вскрытия.
  * @param {object} round тот же раунд, из которого собрано задание
  * @param {object} task результат buildReadTask
- * @param {Object<number,number|string>} answers номер ставки → уверенность 0–100 % («в руке есть нужная цифра»)
- * @returns {{items: object[], good: number, total: number, lines: string[], outcome: string}|null} null, если ответы неполные или неверные
- *   item.ok — оценка по правильную сторону от 50 %; item.p, item.brier и item.base — для оценки серии
+ * @param {Object<number,'yes'|'no'>} answers номер ставки → ответ на «есть ли в руке автора нужная цифра»
+ * @returns {{items: object[], good: number, guessGood: number, total: number, lines: string[], outcome: string}|null}
+ *   null, если ответы неполные или неверные.
+ *   item.ok — ответ совпал с рукой; item.guessOk — совпала бы догадка «по начальному шансу»
+ *   (да, если шанс цифры у такого числа кубиков не ниже половины)
  */
 export function checkReadAnswers(round, task, answers) {
   if (!round || !task || task.id !== round.id || !answers || typeof answers !== 'object') return null;
   const items = [];
   for (const qn of task.questions) {
-    const p = toProbability(answers[qn.n]);
-    if (p === null) return null;
+    const answer = answers[qn.n];
+    if (!ANSWERS.includes(answer)) return null;
     const hand = round.hands[qn.seat] || [];
     const matches = hand.filter((d) => dieMatches(d, qn.f, round.wild)).length;
     const has = matches > 0;
+    const guess = qn.prior >= 0.5 ? 'yes' : 'no';
     const text = saidText({ q: qn.q, f: qn.f, matches, size: hand.length });
     items.push({
-      n: qn.n, seat: qn.seat, q: qn.q, f: qn.f, p, truth: has ? 'has' : 'none', has, ok: sideCorrect(p, has),
-      brier: brierItem(p, has), base: brierItem(qn.prior, has), matches, size: hand.length, prior: qn.prior, text,
+      n: qn.n, seat: qn.seat, q: qn.q, f: qn.f, answer, truth: has ? 'has' : 'none', has,
+      ok: (answer === 'yes') === has, guess, guessOk: (guess === 'yes') === has,
+      matches, size: hand.length, prior: qn.prior, text,
     });
   }
   const good = items.filter((i) => i.ok).length;
+  const guessGood = items.filter((i) => i.guessOk).length;
   const lines = [];
   for (const it of items) {
     const chance = `${Math.round(it.prior * 100)} %`;
-    lines.push(`Ставка ${it.n}: ${it.text}. ${itemLine({ p: it.p, truth: it.has })} ` +
+    lines.push(`Ставка ${it.n}: ${it.text}. Вы ответили «${ANSWER_WORD[it.answer]}»: ${it.ok ? 'верно' : 'неверно'}. ` +
       `Без других сведений шанс, что среди ${it.size} ${plural(it.size, 'кубика', 'кубиков', 'кубиков')} есть нужная цифра, около ${chance}.`);
   }
   if (items.some((i) => i.truth === 'none')) {
@@ -177,7 +183,40 @@ export function checkReadAnswers(round, task, answers) {
   const head = e.kind === 'calza' ? `Calza на ${last.q}×${last.f}` : `Проверка ставки ${last.q}×${last.f}`;
   const verdict = e.kind === 'calza' ? (e.ok ? 'точно' : 'мимо') : (e.ok ? 'ставка верна' : 'ставка ложна');
   const outcome = `${head}: на столе ${e.actual}, ${verdict}.`;
-  return { items, good, total: items.length, lines, outcome };
+  return { items, good, guessGood, total: items.length, lines, outcome };
+}
+
+/** Минимум ответов за сеанс, после которого серия сравнивается с догадкой по начальному шансу. */
+export const MIN_SERIES = 10;
+
+/**
+ * Серия ответов за сеанс (в хранилище не пишется).
+ * @param {{n:number, good:number, guess:number}|null} series предыдущая серия
+ * @param {{good:number, guessGood:number, total:number}} res результат checkReadAnswers
+ */
+export function addSeries(series, res) {
+  const s = series && Number.isInteger(series.n) ? series : { n: 0, good: 0, guess: 0 };
+  if (!res || !Number.isInteger(res.total) || res.total < 1) return { ...s };
+  return { n: s.n + res.total, good: s.good + res.good, guess: s.guess + res.guessGood };
+}
+
+/** Строки оценки серии: сколько угадано и как это соотносится с догадкой по начальному шансу. */
+export function seriesLines(series, { min = MIN_SERIES } = {}) {
+  if (!series || !Number.isInteger(series.n) || series.n < 1) return [];
+  const lines = [
+    `Угадано за сеанс: ${series.good} из ${series.n}.`,
+    `Если отвечать только по начальному шансу цифры (без чтения ставок), угадали бы ${series.guess} из ${series.n}.`,
+  ];
+  if (series.n < min) {
+    lines.push(`Серия короткая: выводы после ${min} ответов.`);
+  } else if (series.good > series.guess) {
+    lines.push('Вы читаете ставки лучше, чем начальный шанс.');
+  } else if (series.good === series.guess) {
+    lines.push('Пока вы угадываете наравне с начальным шансом: смотрите, какие ставки на это указывают.');
+  } else {
+    lines.push('Пока начальный шанс угадывает чаще. Обратите внимание на число кубиков у автора и на то, повышал ли он цифру.');
+  }
+  return lines;
 }
 
 /**
