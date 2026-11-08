@@ -10,6 +10,7 @@ import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
 import { verdictText, MODEL_NOTE } from '../trainer_text.js';
+import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
 import { setupTaskBanner } from './onboarding_tasks.js';
 import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
@@ -128,13 +129,21 @@ export function setupTrainer({ account } = {}) {
     } else if (picked) {
       cur = { m, n: picked.n, h: picked.h.slice(), f: picked.f, q: picked.q, item: picked };
     } else {
-      const n = P.ri(m.n[0], m.n[1]);
-      const k = Math.min(m.k(n), n - 1) || 1;
-      const h = P.roll(k);
-      const f = P.ri(1, 6);
-      let q = Math.round(n * P.pFace(f, m.wild) + (Math.random() < m.bluff ? P.ri(1, 3) : P.ri(-2, 1)));
-      q = Math.max(1, Math.min(n, q));
-      cur = { m, n, h, f, q, item: null };
+      const make = () => {
+        const n = P.ri(m.n[0], m.n[1]);
+        const k = Math.min(m.k(n), n - 1) || 1;
+        const h = P.roll(k);
+        const f = P.ri(1, 6);
+        let q = Math.round(n * P.pFace(f, m.wild) + (Math.random() < m.bluff ? P.ri(1, 3) : P.ri(-2, 1)));
+        q = Math.max(1, Math.min(n, q));
+        return { n, h, f, q };
+      };
+      const thr = +($('#tT')?.value) || 0.5;
+      // расклады, где ни один ход не проходит порог, не показываем: на них нечему учиться
+      const sit = pickSolvable(make, (s) => hasGoodMove({
+        bid: { q: s.q, f: s.f }, total: s.n, hand: s.h, wild: m.wild, threshold: thr, probBid: (...a) => P.probBid(...a),
+      }));
+      cur = { m, ...sit, item: null };
     }
 
     if (cur.item) seenAt.set(situationKey(cur.item), shownCount);
