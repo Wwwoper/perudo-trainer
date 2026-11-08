@@ -2,6 +2,7 @@
 
 import { renderBid } from '../table.js';
 import { pct } from './common.js';
+import { optionsNote } from '../trainer_text.js';
 
 /**
  * @param {object[]} options варианты из compareOptions(), по желанию с отметкой chosen (markChosen)
@@ -19,8 +20,8 @@ export function optionsHtml(options, threshold) {
       `<span class="trainer-option-chance">${what} <b>${pct(o.success)}</b></span>` +
       `${o.chosen ? ' <span class="trainer-option-mark">← ваш выбор</span>' : ''}</li>`;
   }).join('');
-  const anySafe = options.some((o) => o.type !== 'dudo' && o.meetsThreshold);
+  const note = optionsNote(options);
   return `<p class="muted">Варианты по шансу · ✓ = порог ${pct(threshold)}</p>` +
     `<ul class="trainer-options">${rows}</ul>` +
-    (anySafe ? '' : '<p class="muted">Безопасных повышений выше порога нет — «Не верю» часто лучший выбор.</p>');
+    (note ? `<p class="muted">${note}</p>` : '');
 }

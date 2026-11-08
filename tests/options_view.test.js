@@ -31,10 +31,19 @@ describe('optionsHtml', () => {
   it('минимальное повышение, оно же безопасное — подпись', () => {
     assert.match(optionsHtml([{ ...min, isBestSafe: true }], 0.5), /она же самая сильная безопасная/);
   });
-  it('нет безопасных повышений — прежняя подсказка', () => {
+  it('нет безопасных повышений, но «Не верю» проходит порог — подсказка называет «Не верю»', () => {
+    const ok = { ...dudo, meetsThreshold: true };
+    const h = optionsHtml([ok, { ...min, meetsThreshold: false }], 0.5);
+    assert.match(h, /Безопасных повышений выше порога нет, зато ставка соперника верна реже порога/);
+  });
+  it('ни один ход не проходит порог — подсказка про наибольший шанс, без «Не верю часто лучший»', () => {
     const h = optionsHtml([dudo, { ...min, meetsThreshold: false }], 0.5);
-    assert.match(h, /Безопасных повышений выше порога нет/);
-    assert.ok(!optionsHtml([dudo, safe], 0.5).includes('Безопасных повышений выше порога нет'));
+    assert.match(h, /Ни один ход не проходит порог/);
+    assert.ok(!h.includes('часто лучший'));
+  });
+  it('есть безопасное повышение — подсказки нет', () => {
+    const h = optionsHtml([dudo, safe], 0.5);
+    assert.ok(!h.includes('Безопасных повышений') && !h.includes('Ни один ход'));
   });
   it('пустой список не падает', () => {
     assert.match(optionsHtml([], 0.5), /<ul class="trainer-options"><\/ul>/);

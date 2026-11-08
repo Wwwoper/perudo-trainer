@@ -9,7 +9,7 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE } from '../trainer_text.js';
+import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT } from '../trainer_text.js';
 import { gradeMove } from '../trainer_grade.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
@@ -151,6 +151,7 @@ export function setupTrainer({ account } = {}) {
     answered = false;
     timer.start();
     if ($('#tDesc')) $('#tDesc').textContent = m.d;
+    if ($('#tTask')) $('#tTask').textContent = TASK_TEXT;
     if ($('#tInfo')) {
       $('#tInfo').innerHTML =
         (cur.item ? `<span class="trainer-chip trainer-repeat">${repeatChipText(cur.item)}</span>` : '') +

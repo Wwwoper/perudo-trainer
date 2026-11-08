@@ -103,3 +103,20 @@ describe('тексты', () => {
     for (const t of [VERDICT_BEST_OF_BAD, VERDICT_WORSE, NO_GOOD_NOTE]) assert.doesNotMatch(t, /обманщик|врёт|блеф|гарантир|всегда/i);
   });
 });
+
+import { optionsNote, TASK_TEXT } from '../src/trainer_text.js';
+describe('подсказка и задача', () => {
+  const dudo = { type: 'dudo', meetsThreshold: false };
+  const raise = { type: 'minRaise', meetsThreshold: false };
+  it('согласована с оценкой во всех трёх случаях', () => {
+    assert.equal(optionsNote([dudo, { ...raise, meetsThreshold: true }]), '');
+    assert.match(optionsNote([{ ...dudo, meetsThreshold: true }, raise]), /верно «Не верю»/);
+    assert.match(optionsNote([dudo, raise]), /наибольшим шансом/);
+    assert.match(optionsNote([]), /Ни один ход/);
+  });
+  it('текст задачи называет оба хода и правило без хода по порогу', () => {
+    assert.match(TASK_TEXT, /повысить/);
+    assert.match(TASK_TEXT, /«Не верю»/);
+    assert.match(TASK_TEXT, /наибольшим шансом/);
+  });
+});
