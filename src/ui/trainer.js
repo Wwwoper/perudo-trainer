@@ -9,7 +9,8 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { verdictText, MODEL_NOTE } from '../trainer_text.js';
+import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE } from '../trainer_text.js';
+import { gradeMove } from '../trainer_grade.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
 import { setupTaskBanner } from './onboarding_tasks.js';
@@ -205,7 +206,7 @@ export function setupTrainer({ account } = {}) {
     return optionsHtml(markChosen(options, choice), thr);
   }
 
-  function answer(good, html) {
+  function answer(good, html, grade = null) {
     if (answered || !cur) return;
     answered = true;
     timer.stop();
@@ -240,8 +241,8 @@ export function setupTrainer({ account } = {}) {
     }
     if ($('#tFb')) {
       $('#tFb').innerHTML =
-        `<div class="big ${good ? 'text-ok' : 'text-bad'}">${verdictText(good)}</div>` +
-        `<p class="trainer-model-note">${MODEL_NOTE}</p>` +
+        `<div class="big ${good ? 'text-ok' : 'text-bad'}">${gradeVerdictText(good, !!grade?.noGoodMove)}</div>` +
+        `<p class="trainer-model-note">${grade?.noGoodMove ? NO_GOOD_NOTE : MODEL_NOTE}</p>` +
         (cur.item ? `<p class="trainer-repeat-note">${repeatAfterText(cur.item, good)}</p>` : '') + html;
     }
     setAnswered(true);
@@ -251,6 +252,14 @@ export function setupTrainer({ account } = {}) {
   /** Разбор лестницы: шансы последней ставки по вашим кубикам и с учётом стола. */
   function ladderHtml(sit, ch) {
     return '<ul class="read-lines">' + ladderLines(sit, ch).map((l) => `<li>${l}</li>`).join('') + '</ul>';
+  }
+
+  /** Оценка хода по единому правилу (см. trainer_grade.js). */
+  function grade(choice) {
+    return gradeMove({
+      bid: { q: cur.q, f: cur.f }, total: cur.n, hand: cur.h, wild: cur.m.wild,
+      threshold: +$('#tT').value, probBid: (...a) => P.probBid(...a), choice,
+    });
   }
 
   const dudoBtn = $('#tDudo');
@@ -267,9 +276,9 @@ export function setupTrainer({ account } = {}) {
       return;
     }
     const p = P.probBid(q, f, n, h, m.wild);
-    const msg = p < t ? 'Ставка слишком смелая — «Не верю» оправдано.'
-      : 'Ставка вероятна — лучше было верить и повышать.';
-    answer(p < t, `<p>Шанс, что ставка ${renderBid(q, f)} верна: <b>${pct(p)}</b> (порог ${pct(t)}). ${msg}</p>${hint({ type: 'dudo' })}`);
+    const g = grade({ type: 'dudo' });
+    const msg = g.good ? 'Этот ход верный.' : correctMoveText(g.best, pct, (Q, F) => renderBid(Q, F));
+    answer(g.good, `<p>Шанс, что ставка ${renderBid(q, f)} верна: <b>${pct(p)}</b> (порог ${pct(t)}). ${msg}</p>${hint({ type: 'dudo' })}`, g);
   };
 
   const raiseBtn = $('#tRaise');
@@ -293,9 +302,11 @@ export function setupTrainer({ account } = {}) {
 
     const p = P.probBid(Q, F, n, h, m.wild);
     const po = P.probBid(q, f, n, h, m.wild);
-    answer(p >= t,
+    const g = grade({ type: 'raise', q: Q, f: F });
+    answer(g.good,
       `<p>Ваша ставка ${renderBid(Q, F)} верна с шансом <b>${pct(p)}</b> (порог ${pct(t)}). ` +
-      `Ставка соперника была верна с шансом ${pct(po)}.</p>${hint({ type: 'raise', q: Q, f: F })}`
+      `Ставка соперника была верна с шансом ${pct(po)}. ` +
+      `${g.good ? 'Этот ход верный.' : correctMoveText(g.best, pct, (a, b) => renderBid(a, b))}</p>${hint({ type: 'raise', q: Q, f: F })}`, g
     );
   };
 

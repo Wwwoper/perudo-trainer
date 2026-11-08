@@ -12,3 +12,20 @@ export const MODEL_NOTE = 'Оценка по шансу ставки и поро
 export function verdictText(good) {
   return good ? VERDICT_GOOD : VERDICT_BAD;
 }
+
+// Ситуация, где ни один ход не проходит порог: верным считается ход с наибольшим шансом успеха.
+export const VERDICT_BEST_OF_BAD = '✓ Лучший из имеющихся ходов';
+export const VERDICT_WORSE = '✗ Был ход лучше';
+export const NO_GOOD_NOTE = 'В этом раскладе ни один ход не проходит порог. Верным считается ход с наибольшим шансом успеха.';
+
+/** Заголовок вердикта с учётом того, был ли в раскладе ход, проходящий порог. */
+export function gradeVerdictText(good, noGoodMove) {
+  if (!noGoodMove) return verdictText(good);
+  return good ? VERDICT_BEST_OF_BAD : VERDICT_WORSE;
+}
+
+/** Строка «верным был бы…» для неверного ответа; bid — функция, рисующая ставку (текст или html). */
+export function correctMoveText(best, pct, bid) {
+  if (best.type === 'dudo') return `Верным был бы «Не верю»: проверка сработает с шансом ${pct(best.success)}.`;
+  return `Верным было бы повышение ${bid(best.q, best.f)}: ваша ставка верна с шансом ${pct(best.success)}.`;
+}
