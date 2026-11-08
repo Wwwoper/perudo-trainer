@@ -1174,6 +1174,32 @@ class LayoutTest(unittest.TestCase):
                     self.assertLessEqual(b["x"] + b["width"], w, sel)
                     self.assertLessEqual(b["y"] + b["height"], h, sel)
 
+    def test_onboarding_finish_screen_fits_every_viewport(self):
+        """Итоговый экран онбординга с выбором «Яндекс или гость»: кнопки удобны для пальца и помещаются по ширине."""
+        for w, h in [(320, 568), (360, 640), (390, 844), (844, 390), (1280, 720)]:
+            with self.subTest(size=f"{w}x{h}"):
+                ctx = self.raw_browser.new_context(viewport={"width": w, "height": h})
+                ctx.add_init_script(
+                    "if (!localStorage.getItem('perudo.device')) {"
+                    " localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 0, good: 0, totalGames: 1, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));"
+                    " localStorage.setItem('perudo.device', JSON.stringify({ firstRunHidden: true, onboarding: { step: 'finish', tasks: 4, done: false, skipped: false } })); }")
+                page = ctx.new_page()
+                try:
+                    page.goto(self.url)
+                    # при загрузке на «Калькуляторе» открыто окно выбора (по правилам, пока игрок не на итоговом экране): уходим в Тренажёр напрямую
+                    page.evaluate("document.querySelector('.tab-btn[data-t=train]').click()")
+                    page.wait_for_selector("#obTasks [data-ob='guest']")
+                    self.assertFalse(page.locator("#clWelcome").evaluate("d => d.open"), "окно выбора мешает итоговому экрану")
+                    self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w, "горизонтальная прокрутка")
+                    for sel in ("[data-ob='login']", "[data-ob='guest']", "a.ob-rules"):
+                        page.locator(f"#obTasks {sel}").scroll_into_view_if_needed()
+                        b = page.locator(f"#obTasks {sel}").bounding_box()
+                        self.assertGreaterEqual(b["height"], 44, sel)
+                        self.assertGreaterEqual(b["x"], 0, sel)
+                        self.assertLessEqual(b["x"] + b["width"], w, sel)
+                finally:
+                    ctx.close()
+
     def test_menu_closes_by_escape_scrim_and_choice(self):
         page = self.open_game(390, 844, 3)
         tg = page.locator("#navToggle")

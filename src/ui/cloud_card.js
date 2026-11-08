@@ -7,6 +7,7 @@ import { get, set, getStats, getGames, getTrainingQueue, getCloudState, setCloud
 import { buildBackup, serializeBackup, parseBackup, applyBackup } from '../backup.js';
 import { createClient, buildAuthUrl, parseAuthHash, redirectUriFor, createState, CloudError } from '../cloud_yandex.js';
 import { runDiagnostics } from '../cloud_diag.js';
+import { blocksAccountChoice } from '../onboarding.js';
 import { isLocalDataEmpty, hasValidToken, hashText, summarizeBackupData, shouldOfferAccountChoice } from '../cloud_policy.js';
 import { isEmptyStats } from '../stats_summary.js';
 import { createCloudSync, errorText } from '../cloud_sync.js';
@@ -198,7 +199,8 @@ function renderWelcome({ fromTab = false } = {}) {
   const dlg = $('#clWelcome');
   if (!dlg || (fromTab && welcomePostponed)) return;
   const hasResults = !isEmptyStats({ stats: getStats(), games: getGames(), queue: getTrainingQueue() });
-  const need = shouldOfferAccountChoice({ account: getDeviceState().account, hasToken: !!getCloudState().token, hasResults });
+  const blocked = blocksAccountChoice({ state: getDeviceState().onboarding, tab: document.body.dataset.tab });   // выбор предлагает итоговый экран онбординга
+  const need = shouldOfferAccountChoice({ account: getDeviceState().account, hasToken: !!getCloudState().token, hasResults, blocked });
   if (need && !dlg.open && typeof dlg.showModal === 'function') dlg.showModal();
   else if (!need && dlg.open) dlg.close();
 }
@@ -426,6 +428,10 @@ export function setupCloudCard({ downloadBackup } = {}) {
   return {
     /** Сменился раздел: если уже есть первый результат, а режим не выбран, предлагаем выбор. */
     offerIfReady() { renderWelcome({ fromTab: true }); },
+    /** Итоговый экран онбординга: «Играть как гость». */
+    chooseGuest() { setAccount('guest'); renderWelcome(); renderCloudCard(); },
+    /** Итоговый экран онбординга: «Войти через Яндекс» (страница уходит на вход). */
+    login() { startLogin(); },
     /** Партия закончилась: сверяемся с облаком и обновляем копию. Ошибка видна в блоке «Игрок» и уведомлением. */
     async afterGame() {
       if (!sync.status().connected) return;

@@ -1285,7 +1285,7 @@ function bootstrap() {
   });
   setupCalculator();
   setupWelcome({ startGame: startNewGame });
-  trainerApi = setupTrainer();
+  trainerApi = setupTrainer({ account: () => cloudApi });
   setupDrill();
   setupSidePanel(() => assistConfig.showFutureBidOdds);
   sideApi.onSelect = (id) => { if (id === 'tabOpp') renderTableProfile(); };

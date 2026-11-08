@@ -118,8 +118,9 @@ export function canSaveNow({ now, lastSaveAt, minInterval = MIN_SAVE_INTERVAL_MS
 /**
  * Предлагать ли выбор «гость / Яндекс». Не раньше первого результата: пока игрок ничего не сыграл
  * и не решил ни одной задачи, облако ему не нужно и окно только мешает знакомству с приложением.
- * @param {{account: 'guest'|'yandex'|null, hasToken: boolean, hasResults: boolean}} s
+ * @param {{account: 'guest'|'yandex'|null, hasToken: boolean, hasResults: boolean, blocked?: boolean}} s
+ *   blocked — онбординг сам предлагает этот выбор на итоговом экране, окно пока не открываем
  */
-export function shouldOfferAccountChoice({ account, hasToken, hasResults } = {}) {
-  return account === null && hasToken !== true && hasResults === true;
+export function shouldOfferAccountChoice({ account, hasToken, hasResults, blocked } = {}) {
+  return account === null && hasToken !== true && hasResults === true && blocked !== true;
 }

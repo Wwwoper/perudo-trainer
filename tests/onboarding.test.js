@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import {
   TASKS_TOTAL, MIN_TASKS, MAX_TASKS, STEPS, defaultOnboarding, sanitizeOnboarding, isOnboardingActive,
   startGame, gameFinished, taskDone, finishOnboarding, skipOnboarding, stepNumber, STEP_COUNT, tasksProgress,
-  shouldShowWelcome, WELCOME, isTaskMode, TASKS_TEXT,
+  shouldShowWelcome, WELCOME, isTaskMode, TASKS_TEXT, blocksAccountChoice, FINISH_TEXT,
 } from '../src/onboarding.js';
 
 const at = (step, tasks = 0, extra = {}) => ({ step, tasks, done: false, skipped: false, ...extra });
@@ -166,5 +166,36 @@ describe('isTaskMode и тексты задач', () => {
     assert.match(TASKS_TEXT.lead, new RegExp(`${TASKS_TOTAL} коротких`));
     assert.match(TASKS_TEXT.lead, /не попадают в статистику и очередь повторов/);
     assert.doesNotMatch(Object.values(TASKS_TEXT).join(' '), /обманщик|врёт|блефует/i);
+  });
+});
+
+describe('blocksAccountChoice', () => {
+  it('в середине сценария окно выбора не мешает', () => {
+    for (const tab of ['game', 'train', 'calc']) {
+      assert.equal(blocksAccountChoice({ state: at('game'), tab }), true, `game/${tab}`);
+      assert.equal(blocksAccountChoice({ state: at('tasks', 2), tab }), true, `tasks/${tab}`);
+    }
+  });
+  it('на итоговом экране (в Тренажёре) окно не открывается, в других разделах — может', () => {
+    assert.equal(blocksAccountChoice({ state: at('finish', TASKS_TOTAL), tab: 'train' }), true);
+    assert.equal(blocksAccountChoice({ state: at('finish', TASKS_TOTAL), tab: 'calc' }), false);
+  });
+  it('приветствие, закончено и пропущено — не блокирует', () => {
+    assert.equal(blocksAccountChoice({ state: defaultOnboarding(), tab: 'train' }), false);
+    assert.equal(blocksAccountChoice({ state: finishOnboarding(at('finish', TASKS_TOTAL)), tab: 'train' }), false);
+    assert.equal(blocksAccountChoice({ state: skipOnboarding(at('tasks', 1)), tab: 'train' }), false);
+    assert.equal(blocksAccountChoice(), false);
+  });
+});
+
+describe('FINISH_TEXT', () => {
+  it('ссылка на существующую страницу правил, подписи на месте', () => {
+    assert.ok(existsSync(new URL(`../${FINISH_TEXT.rulesHref}`, import.meta.url)));
+    assert.match(FINISH_TEXT.lead, new RegExp(`${TASKS_TOTAL} задачи`));
+    assert.equal(FINISH_TEXT.login, 'Войти через Яндекс');
+    assert.equal(FINISH_TEXT.guest, 'Играть как гость');
+  });
+  it('без запрещённых слов', () => {
+    assert.doesNotMatch(Object.values(FINISH_TEXT).join(' '), /обманщик|врёт|блефует/i);
   });
 });

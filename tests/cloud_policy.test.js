@@ -162,6 +162,14 @@ describe('shouldOfferAccountChoice: облако предлагается пос
   });
 });
 
+describe('shouldOfferAccountChoice: онбординг берёт выбор на себя', () => {
+  it('blocked отключает окно, остальное без изменений', () => {
+    assert.equal(shouldOfferAccountChoice({ account: null, hasToken: false, hasResults: true, blocked: true }), false);
+    assert.equal(shouldOfferAccountChoice({ account: null, hasToken: false, hasResults: true, blocked: false }), true);
+    assert.equal(shouldOfferAccountChoice({ account: null, hasToken: false, hasResults: true }), true);
+  });
+});
+
 describe('руководство описывает, когда предлагается облако', () => {
   it('страница «Ваши данные» говорит про первый результат, а не про первый запуск', () => {
     const t = readFileSync(new URL('../docs/guide/data.html', import.meta.url), 'utf8').replace(/<[^>]+>/g, ' ');

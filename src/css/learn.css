@@ -1188,3 +1188,30 @@ body[data-welcome] main > section:not(#welcome) {
   min-height: var(--tap);
   margin-top: var(--space-2);
 }
+
+/* Итоговый экран онбординга: выбор «Яндекс или гость» и ссылка на правила */
+.ob-choice {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 var(--space-2);
+}
+
+.ob-choice button {
+  min-height: var(--tap);
+}
+
+.ob-choice p {
+  margin: var(--space-1) 0 0;
+}
+
+.ob-choice-title {
+  margin: var(--space-2) 0 0;
+}
+
+.ob-rules {
+  display: inline-grid;
+  place-items: center;
+  min-height: var(--tap);
+  padding: 0 12px;
+  color: var(--fg);
+}

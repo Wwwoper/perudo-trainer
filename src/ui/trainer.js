@@ -15,12 +15,13 @@ import { setupTaskBanner } from './onboarding_tasks.js';
 import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
 import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
 
-export function setupTrainer() {
+/** @param {{account?: () => ({chooseGuest: () => void, login: () => void}|null)}} [opts] account — получатель облачного API для итогового экрана онбординга */
+export function setupTrainer({ account } = {}) {
   if (!P) return null;
 
   // Статистику не держим в переменной: её пишут и другие разделы (см. updateStats).
   const timer = setupPracticeTimer({ toggle: '#tTimerOn', out: '#tTimerOut' });
-  const tasks = setupTaskBanner();
+  const tasks = setupTaskBanner({ account });
   let queue = getTrainingQueue();
   let cur = null;
   let answered = false;

@@ -105,7 +105,7 @@ test.describe('Задачи онбординга в Тренажёре', () => {
     expect((await read(page, 'perudo.trainingQueue')) ?? []).toEqual([]);          // промахи в очередь повторов не попали
     expect((await read(page, 'perudo.userProfile'))?.n ?? 0).toBe(0);
     await page.locator('#tDudo').click();
-    await expect(box).toContainText('Все задачи выполнены');
+    await expect(box).toContainText('Первое знакомство закончено');
     await expect(box.locator('progress')).toHaveJSProperty('value', 4);
     expect((await read(page, 'perudo.device')).onboarding).toMatchObject({ step: 'finish', tasks: 4, done: false });
     expect((await read(page, 'perudo.userProfile'))?.n ?? 0).toBe(0);
@@ -116,13 +116,83 @@ test.describe('Задачи онбординга в Тренажёре', () => {
       await page.locator('#tDudo').click();
       if (i < 3) await page.locator('#tNext').click();
     }
-    await page.locator('[data-ob="finish"]').click();
+    await expect(page.locator('#obTasks a.ob-rules')).toHaveAttribute('href', 'docs/guide/rules.html');
+    await expect(page.locator('[data-ob="login"]')).toHaveCount(0);               // выбор уже сделан (гость): только «в приложение»
+    await page.locator('[data-ob="app"]').click();
     await expect(page.locator('#obTasks')).toBeHidden();
+    await expect(page.locator('#game')).toBeVisible();                            // основное приложение начинается с «Партии»
     expect((await read(page, 'perudo.device')).onboarding).toMatchObject({ done: true, skipped: false });
+    await openTab(page, 'train');
     await page.locator('#tNext').click();
     await page.locator('#tDudo').click();
     expect((await read(page, 'perudo.userProfile')).n).toBe(1);             // обычный режим: решение учтено
     await page.reload();
     await expect(page.locator('#obTasks')).toBeHidden();
+  });
+});
+
+test.describe('Итоговый экран онбординга: выбор «Яндекс или гость»', () => {
+  test.use({ seedGuest: false });
+
+  /** Игрок прошёл партию и четыре задачи, но ещё не выбирал, как хранить данные. */
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('perudo.userProfile', JSON.stringify({ n: 0, good: 0, totalGames: 1, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } } }));
+      localStorage.setItem('perudo.device', JSON.stringify({ firstRunHidden: true, onboarding: { step: 'tasks', tasks: 3, done: false, skipped: false } }));
+    });
+    await page.reload();
+  });
+
+  test('окно «Как вы будете играть?» не перебивает сценарий: ни после партии, ни в задачах', async ({ page }) => {
+    await expect(page.locator('#clWelcome')).toBeHidden();
+    await openTab(page, 'train');
+    await openTab(page, 'calc');
+    await openTab(page, 'train');
+    await expect(page.locator('#clWelcome')).toBeHidden();
+  });
+
+  test('после последней задачи выбор предлагается на итоговом экране, окно не открывается', async ({ page }) => {
+    await openTab(page, 'train');
+    await page.locator('#tDudo').click();
+    const box = page.locator('#obTasks');
+    await expect(box).toContainText('Первое знакомство закончено');
+    await expect(box).toContainText('Перейти в приложение: где хранить данные?');
+    await expect(box.locator('[data-ob="login"]')).toHaveText('Войти через Яндекс');
+    await expect(box.locator('[data-ob="guest"]')).toHaveText('Играть как гость');
+    await expect(box.locator('a.ob-rules')).toHaveAttribute('href', 'docs/guide/rules.html');
+    await expect(page.locator('#clWelcome')).toBeHidden();
+  });
+
+  test('«Играть как гость»: выбор сохранён, сценарий закончен, открыта «Партия»', async ({ page }) => {
+    await openTab(page, 'train');
+    await page.locator('#tDudo').click();
+    await page.locator('[data-ob="guest"]').click();
+    await expect(page.locator('#game')).toBeVisible();
+    await expect(page.locator('#obTasks')).toBeHidden();
+    const dev = await read(page, 'perudo.device');
+    expect(dev.account).toBe('guest');
+    expect(dev.onboarding).toMatchObject({ done: true, skipped: false });
+    await expect(page.locator('#clWelcome')).toBeHidden();
+  });
+
+  test('«Войти через Яндекс»: сценарий закончен и начинается вход', async ({ page }) => {
+    await page.route(/oauth\.yandex\./, (r) => r.fulfill({ status: 302, headers: { location: 'http://127.0.0.1:4173/index.html' } }));   // вход «не состоялся»: назад в приложение
+    await openTab(page, 'train');
+    await page.locator('#tDudo').click();
+    const req = page.waitForRequest(/oauth\.yandex\./);
+    await page.locator('[data-ob="login"]').click();
+    await req;
+    await page.waitForFunction(() => Boolean(window.__perudo_v2));
+    expect((await read(page, 'perudo.device')).onboarding).toMatchObject({ done: true });
+  });
+
+  test('ушли с итогового экрана, не выбрав: окно выбора возвращается при смене раздела', async ({ page }) => {
+    await openTab(page, 'train');
+    await page.locator('#tDudo').click();
+    await expect(page.locator('#clWelcome')).toBeHidden();
+    await openTab(page, 'calc');
+    await expect(page.locator('#clWelcome')).toBeVisible();
   });
 });
