@@ -58,7 +58,7 @@ export function setupReadDrill() {
       `<li class="read-bid${b.isMe ? ' is-me' : ''}"><span class="read-bid-n">${b.n}</span>` +
       `<span class="read-bid-who">${seatLabel(round, b.seat)}</span>${renderBid(b.q, b.f)}</li>`).join('');
     ask.innerHTML = task.questions.map((q) =>
-      `<fieldset class="read-q" data-n="${q.n}"><legend>Ставка ${q.n}: ${seatLabel(round, q.seat)} назвал ${renderBid(q.q, q.f)}</legend>` +
+      `<fieldset class="read-q" data-n="${q.n}"><legend>Ставка ${q.n} · ${seatLabel(round, q.seat)}: ${renderBid(q.q, q.f)}</legend>` +
       `<label class="read-conf"><span>Уверенность, что в его руке есть нужная цифра: <output class="read-conf-out" id="rdOut${q.n}">сдвиньте ползунок</output></span>` +
       `<input type="range" class="read-range" name="rd${q.n}" min="0" max="100" step="${STEP}" value="50" aria-describedby="rdOut${q.n}"></label>` +
       '</fieldset>').join('');

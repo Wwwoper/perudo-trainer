@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { addReadResult, canRead, seatLabel, priorHas, pickReadRound, buildReadTask, checkReadAnswers, MAX_QUESTIONS } from '../src/read_drill.js';
+import { BOT_NAMES } from '../src/bots.js';
+import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, MAX_QUESTIONS } from '../src/read_drill.js';
 import { sanitizeRound } from '../src/rounds.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -133,10 +134,27 @@ describe('checkReadAnswers', () => {
 });
 
 describe('seatLabel и итог раунда', () => {
-  test('«Вы» для вашего места, «Игрок N» для остальных', () => {
+  test('«Вы» для вашего места, имена из списка ботов для остальных', () => {
     const r = mk();
     assert.equal(seatLabel(r, 0), 'Вы');
-    assert.equal(seatLabel(r, 2), 'Игрок 3');
+    assert.ok(BOT_NAMES.includes(seatLabel(r, 2)));
+    assert.ok(!/^Игрок \d/.test(seatLabel(r, 2)));
+  });
+  test('имена в одном раунде разные и не меняются при повторном вызове', () => {
+    const r = mk();
+    const a = seatNames(r);
+    assert.deepEqual(a, seatNames(r));
+    assert.equal(new Set(a).size, a.length);
+    assert.equal(a[r.me], 'Вы');
+  });
+  test('разные раунды получают разные наборы имён (чаще всего)', () => {
+    const sets = new Set();
+    for (let i = 0; i < 20; i++) sets.add(seatNames({ ...mk(), id: `r${i}` }).join('|'));
+    assert.ok(sets.size > 10);
+  });
+  test('нестандартный раунд не роняет: без мест — пусто, место вне раунда — запасная подпись', () => {
+    assert.deepEqual(seatNames({ id: 'x', me: 0 }), []);
+    assert.equal(seatLabel({ id: 'x', me: 0, dice: [1, 1] }, 5), 'Игрок 6');
   });
   test('итог: проверка ставки и Calza', () => {
     const r = mk();

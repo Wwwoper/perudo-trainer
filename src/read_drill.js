@@ -5,6 +5,7 @@
 // в интерфейс уходит только то, что видел бы игрок до вскрытия.
 
 import { saidText, dieMatches } from './reveal.js';
+import { BOT_NAMES } from './bots.js';
 import { toProbability, brierItem, sideCorrect, itemLine } from './calibration.js';
 
 /** Сколько вопросов в одном задании. */
@@ -18,9 +19,52 @@ const plural = (n, one, few, many) => {
   return many;
 };
 
-/** Подпись места за столом: «Вы» или «Игрок N» (имена ботов в раунде не хранятся). */
+/** Число из строки: одинаковое для одной и той же строки (FNV-1a). */
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+/** Детерминированный генератор случайных чисел по зерну (mulberry32). */
+function seeded(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Имена соперников раунда: из списка имён ботов, в одном раунде разные, для одного раунда всегда одни и те же
+ * (зерно — идентификатор раунда). Ваше место — «Вы». Настоящие имена ботов в раунде не хранятся.
+ * @returns {string[]} имя для каждого места
+ */
+export function seatNames(round) {
+  const n = Array.isArray(round?.dice) ? round.dice.length : 0;
+  const rnd = seeded(hashString(String(round?.id ?? '')));
+  const pool = BOT_NAMES.slice();
+  for (let i = pool.length - 1; i > 0; i--) {   // перемешивание Фишера — Йетса
+    const j = Math.floor(rnd() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  let k = 0;
+  const names = [];
+  for (let seat = 0; seat < n; seat++) {
+    if (seat === round.me) { names.push('Вы'); continue; }
+    names.push(k < pool.length ? pool[k] : `Игрок ${seat + 1}`);
+    k++;
+  }
+  return names;
+}
+
+/** Подпись места за столом: «Вы» или имя из списка имён ботов. */
 export function seatLabel(round, seat) {
-  return seat === round.me ? 'Вы' : `Игрок ${seat + 1}`;
+  if (seat === round.me) return 'Вы';
+  return seatNames(round)[seat] ?? `Игрок ${seat + 1}`;
 }
 
 /** Годится ли раунд для упражнения: вы были за столом и кто-то другой назвал хотя бы одну ставку. */

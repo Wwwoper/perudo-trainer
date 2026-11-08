@@ -85,6 +85,9 @@ export function pickBotStyles(count, choices = [], rng = Math.random) {
 const MALE_NAMES = ['Алексей', 'Дмитрий', 'Иван', 'Сергей', 'Николай', 'Андрей', 'Максим', 'Александр', 'Павел', 'Михаил'];
 const FEMALE_NAMES = ['Мария', 'Ольга', 'Анна', 'Елена', 'Татьяна', 'Наталья', 'Екатерина', 'Анастасия', 'Ирина', 'Юлия'];
 
+/** Все имена ботов (мужские и женские) — для подписи мест там, где настоящие имена не сохранены. */
+export const BOT_NAMES = Object.freeze([...MALE_NAMES, ...FEMALE_NAMES]);
+
 const norm = (n) => String(n ?? '').trim().toLowerCase();
 
 /**
