@@ -193,6 +193,7 @@
 
 /* ===== «Читай вскрытие» ===== */
 .read-intro,
+.read-task,
 .read-empty {
   margin: 0 0 10px;
   font-size: 13px;
@@ -242,10 +243,43 @@
   min-width: 0;
 }
 
-.read-q legend {
-  padding: 0 4px;
-  font-size: 14px;
+.read-q-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 2px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.read-q-bid {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.read-how {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.read-how summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
   font-weight: 600;
+}
+
+.read-how summary::before {
+  content: '▸';
+  margin-right: 6px;
+}
+
+.read-how[open] summary::before {
+  content: '▾';
 }
 
 .read-q.is-ok {

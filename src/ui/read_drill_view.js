@@ -4,7 +4,7 @@
 // не раньше, чем нажата «Проверить».
 
 import { getRounds, updateStats } from '../storage.js';
-import { renderBid, renderHand, escapeHtml } from '../table.js';
+import { renderBid, renderHand, renderDie, escapeHtml } from '../table.js';
 import { $ } from './common.js';
 import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead } from '../read_drill.js';
 import { makeSimRound, chooseSource, isSimRound } from '../read_sim.js';
@@ -54,16 +54,19 @@ export function setupReadDrill() {
     show(true);
     const sizes = task.dice.map((d, i) => `${seatLabel(round, i)} — ${d}`).join(' · ');
     head.innerHTML = `Ваши кубики: ${renderHand(task.hand, task.wild)}<br>` +
-      `Кубиков в руках: <b>${sizes}</b>. ${task.wild ? 'Единицы — джокеры.' : 'Единицы обычные (Палифико).'}` +
+      `Кубиков в руках: <b>${sizes}</b>.<br>` +
+      (task.wild ? 'Единицы — джокеры: считаются за любую цифру.' : 'Единицы обычные: за другие цифры не считаются (раунд Палифико).') +
       (isSimRound(round) ? '<br><span class="read-sim muted">Учебный раунд: его сыграли боты программы. В статистику он не идёт.</span>' : '');
     bidsEl.innerHTML = task.bids.map((b) =>
       `<li class="read-bid${b.isMe ? ' is-me' : ''}"><span class="read-bid-n">${b.n}</span>` +
       `<span class="read-bid-who">${seatLabel(round, b.seat)}</span>${renderBid(b.q, b.f)}</li>`).join('');
     ask.innerHTML = task.questions.map((q) =>
-      `<fieldset class="read-q" data-n="${q.n}"><legend>Ставка ${q.n} · ${seatLabel(round, q.seat)}: ${renderBid(q.q, q.f)}</legend>` +
-      `<label class="read-conf"><span>Уверенность, что в его руке есть нужная цифра: <output class="read-conf-out" id="rdOut${q.n}">сдвиньте ползунок</output></span>` +
+      `<div class="read-q" role="group" data-n="${q.n}" aria-labelledby="rdT${q.n}">` +
+      `<p class="read-q-title" id="rdT${q.n}">${seatLabel(round, q.seat)}: есть ли в руке цифра ${renderDie(q.f, 's')}?</p>` +
+      `<p class="read-q-bid muted">Ставка ${q.n}: ${renderBid(q.q, q.f)}</p>` +
+      `<label class="read-conf"><span>Ваша уверенность: <output class="read-conf-out" id="rdOut${q.n}">сдвиньте ползунок</output></span>` +
       `<input type="range" class="read-range" name="rd${q.n}" min="0" max="100" step="${STEP}" value="50" aria-describedby="rdOut${q.n}"></label>` +
-      '</fieldset>').join('');
+      '</div>').join('');
     sync();
   }
 
