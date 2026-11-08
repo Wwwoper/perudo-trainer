@@ -4,11 +4,13 @@
 // не раньше, чем нажата «Проверить».
 
 import { getRounds, updateStats } from '../storage.js';
-import { renderBid, renderHand } from '../table.js';
+import { renderBid, renderHand, escapeHtml } from '../table.js';
 import { $ } from './common.js';
-import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel, addReadResult, canRead } from '../read_drill.js';
+import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead } from '../read_drill.js';
 import { makeSimRound, chooseSource, isSimRound } from '../read_sim.js';
 import { makeEntry, addEntry, seriesSummary, seriesLines, STEP } from '../calibration.js';
+
+const seatLabel = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
 
 export function setupReadDrill() {
   const body = $('#dCBody');

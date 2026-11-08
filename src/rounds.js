@@ -46,7 +46,7 @@ export function countFace(hands, face, wild) {
 export function snapshotRound(g) {
   const seats = (Array.isArray(g?.players) ? g.players : [])
     .filter((p) => p && p.alive !== false)
-    .map((p) => ({ id: p.id, dice: p.dice, style: typeof p.style === 'string' ? p.style : null }));
+    .map((p) => ({ id: p.id, dice: p.dice, style: typeof p.style === 'string' ? p.style : null, name: typeof p.name === 'string' ? p.name : null }));
   const bids = (Array.isArray(g?.bidHistory) ? g.bidHistory : [])
     .filter((b) => b && typeof b.playerId === 'string')
     .map((b) => ({ playerId: b.playerId, q: b.q, f: b.f }));
@@ -73,6 +73,7 @@ export function buildRound({ id, ts, snap, reveal, meId = 'human' }) {
     ids: snap.seats.map((p) => p.id),
     dice: snap.seats.map((p) => p.dice),
     styles: snap.seats.map((p) => p.style),
+    names: snap.seats.map((p) => p.name ?? null),
     hands,
     bids,
     end: {
@@ -110,6 +111,11 @@ export function sanitizeRound(raw) {
   // ids необязательны (старые раунды их не имеют): негодный список просто не переносится
   const ids = Array.isArray(raw.ids) && raw.ids.length === n && new Set(raw.ids).size === n
     && raw.ids.every((v) => typeof v === 'string' && /^[A-Za-z0-9_-]{1,24}$/.test(v)) ? raw.ids.slice() : null;
+  // имена соперников необязательны (старые раунды их не имеют): ваше место и негодные имена не переносятся
+  const NAME = /^[\p{L}\p{N} .'_-]{1,24}$/u;
+  const cleanNames = Array.isArray(raw.names) && raw.names.length === n
+    ? raw.names.map((v, i) => (i !== raw.me && typeof v === 'string' && NAME.test(v.trim()) ? v.trim() : null)) : null;
+  const names = cleanNames && cleanNames.some((v) => v !== null) ? cleanNames : null;
   const cleanStyles = styles.map((s, i) => (i !== raw.me && typeof s === 'string' && /^[a-z]{1,20}$/.test(s) ? s : null));
 
   if (!Array.isArray(bids) || bids.length < 1 || bids.length > MAX_ROUND_BIDS) return null;
@@ -133,6 +139,7 @@ export function sanitizeRound(raw) {
   return {
     id, ts: raw.ts, round: raw.round, wild: raw.wild, me: raw.me,
     ...(ids ? { ids } : {}),
+    ...(names ? { names } : {}),
     dice: dice.slice(), styles: cleanStyles, hands: hands.map((h) => h.slice()), bids: cleanBids,
     end: { kind: end.kind, by: end.by, bidder: end.bidder, actual: end.actual, ok: end.ok },
   };
@@ -162,7 +169,7 @@ export function appendRounds(existing, added, limit = MAX_ROUNDS) {
 /** Глубокая копия раунда. */
 export function cloneRound(r) {
   return {
-    ...r, ...(r.ids ? { ids: r.ids.slice() } : {}), dice: r.dice.slice(), styles: r.styles.slice(), hands: r.hands.map((h) => h.slice()),
+    ...r, ...(r.ids ? { ids: r.ids.slice() } : {}), ...(r.names ? { names: r.names.slice() } : {}), dice: r.dice.slice(), styles: r.styles.slice(), hands: r.hands.map((h) => h.slice()),
     bids: r.bids.map((b) => ({ ...b })), end: { ...r.end },
   };
 }

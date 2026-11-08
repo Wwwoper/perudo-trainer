@@ -152,6 +152,13 @@ describe('seatLabel и итог раунда', () => {
     for (let i = 0; i < 20; i++) sets.add(seatNames({ ...mk(), id: `r${i}` }).join('|'));
     assert.ok(sets.size > 10);
   });
+  test('сохранённые имена берутся из раунда, запасные не повторяют их', () => {
+    const r = { ...mk(), names: [null, 'Мария', null] };
+    const a = seatNames(r);
+    assert.equal(a[1], 'Мария');
+    assert.equal(a[0], 'Вы');
+    assert.ok(a[2] !== 'Мария' && BOT_NAMES.includes(a[2]));
+  });
   test('нестандартный раунд не роняет: без мест — пусто, место вне раунда — запасная подпись', () => {
     assert.deepEqual(seatNames({ id: 'x', me: 0 }), []);
     assert.equal(seatLabel({ id: 'x', me: 0, dice: [1, 1] }, 5), 'Игрок 6');

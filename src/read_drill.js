@@ -39,14 +39,17 @@ function seeded(seed) {
 }
 
 /**
- * Имена соперников раунда: из списка имён ботов, в одном раунде разные, для одного раунда всегда одни и те же
- * (зерно — идентификатор раунда). Ваше место — «Вы». Настоящие имена ботов в раунде не хранятся.
+ * Имена соперников раунда. Если раунд хранит настоящие имена из партии (round.names), берутся они;
+ * для остальных мест — имена из списка имён ботов: в одном раунде разные, для одного раунда всегда одни и те же
+ * (зерно — идентификатор раунда). Ваше место — «Вы».
  * @returns {string[]} имя для каждого места
  */
 export function seatNames(round) {
   const n = Array.isArray(round?.dice) ? round.dice.length : 0;
+  const stored = Array.isArray(round?.names) ? round.names : [];
+  const used = new Set(stored.filter((v, i) => typeof v === 'string' && v && i !== round.me));
   const rnd = seeded(hashString(String(round?.id ?? '')));
-  const pool = BOT_NAMES.slice();
+  const pool = BOT_NAMES.filter((x) => !used.has(x));
   for (let i = pool.length - 1; i > 0; i--) {   // перемешивание Фишера — Йетса
     const j = Math.floor(rnd() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -55,6 +58,8 @@ export function seatNames(round) {
   const names = [];
   for (let seat = 0; seat < n; seat++) {
     if (seat === round.me) { names.push('Вы'); continue; }
+    const own = stored[seat];
+    if (typeof own === 'string' && own) { names.push(own); continue; }
     names.push(k < pool.length ? pool[k] : `Игрок ${seat + 1}`);
     k++;
   }

@@ -224,3 +224,31 @@ describe('snapshotRound / buildRound на настоящем движке', () =
     assert.equal(buildRound({ id: 'x', ts: 1, snap: snapshotRound(game), reveal: null }), null);
   });
 });
+
+describe('имена соперников по местам', () => {
+  it('верные имена переносятся, ваше место очищается, раунды без имён остаются валидными', () => {
+    const r = sanitizeRound(mk('g-r1', { names: ['Вы', 'Мария'] }));
+    assert.deepEqual(r.names, [null, 'Мария']);
+    assert.ok(!('names' in sanitizeRound(mk())));
+  });
+  it('негодные имена не переносятся, раунд принимается', () => {
+    for (const names of [['x'], 'Мария', null, [null, null], [null, 5], [null, ''], [null, '<b>'], [null, 'x'.repeat(25)], [null, 'a&b']]) {
+      const r = sanitizeRound(mk('g-r1', { names }));
+      assert.ok(r, JSON.stringify(names));
+      assert.ok(!('names' in r), JSON.stringify(names));
+    }
+  });
+  it('имя с пробелом, дефисом и цифрой допускается; пробелы по краям срезаются', () => {
+    assert.deepEqual(sanitizeRound(mk('g-r1', { names: [null, ' Анна-Мария 2 '] })).names, [null, 'Анна-Мария 2']);
+  });
+  it('копия раунда независима по именам', () => {
+    const r = sanitizeRound(mk('g-r1', { names: [null, 'Мария'] }));
+    const c = cloneRound(r);
+    c.names[1] = 'Иван';
+    assert.equal(r.names[1], 'Мария');
+  });
+  it('на настоящем движке имена ботов попадают в сохранённый раунд', () => {
+    const game = createGame({ botCount: 2, botNames: ['Ольга', 'Павел'] });
+    assert.deepEqual(snapshotRound(game).seats.map((x) => x.name), ['Вы', 'Ольга', 'Павел']);
+  });
+});
