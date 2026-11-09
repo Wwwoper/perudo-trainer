@@ -3,10 +3,10 @@
 // Логика задания и проверки — в read_drill.js. Здесь только экран: чужие руки в страницу попадают
 // не раньше, чем нажата «Проверить».
 
-import { getRounds, updateStats } from '../storage.js';
+import { getRounds, updateStats, getSettings, setSettings } from '../storage.js';
 import { renderBid, renderHand, renderDie, escapeHtml } from '../table.js';
 import { $ } from './common.js';
-import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead, addSeries, seriesLines, feedRows, knownFacts } from '../read_drill.js';
+import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead, addSeries, seriesLines, feedRows, knownFacts, priorHint } from '../read_drill.js';
 import { makeSimRound, chooseSource, isSimRound } from '../read_sim.js';
 
 const seatLabel = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
@@ -35,7 +35,23 @@ export function setupReadDrill() {
     return '<div class="read-know">' +
       `<p><b>Что вы знаете.</b> Кубиков у игрока: ${k.size}. Всего за столом: ${k.total}, скрыто от вас: ${k.hidden}.</p>` +
       `<p>Ваши кубики: <span class="read-mine-row">${dice}</span> Нужной цифры у вас: ${k.mine}. ` +
-      `Чтобы ставка ${q.q}×${q.f} была верна, среди скрытых нужно ещё ${k.need}.</p></div>`;
+      `Чтобы ставка ${q.q}×${q.f} была верна, среди скрытых нужно ещё ${k.need}.</p>` +
+      `<p class="read-prior">${priorHint(q, task.wild)}</p></div>`;
+  }
+
+  // «Режим новичка»: подсказка с начальным шансом; по умолчанию выключен, выбор запоминается в настройках
+  const beginner = $('#dBeginner');
+  const panel = $('#dPanelC');
+  const applyBeginner = (on) => {
+    if (panel) { if (on) panel.dataset.beginner = '1'; else delete panel.dataset.beginner; }
+  };
+  if (beginner) {
+    beginner.checked = getSettings().beginnerMode === true;
+    applyBeginner(beginner.checked);
+    beginner.addEventListener('change', () => {
+      setSettings({ beginnerMode: beginner.checked });
+      applyBeginner(beginner.checked);
+    });
   }
 
   const hint = $('#dCHint');

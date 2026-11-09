@@ -511,6 +511,24 @@ test.describe('Учебные вкладки', () => {
       const readTag = (page) => page.evaluate(() =>
         (JSON.parse(localStorage.getItem('perudo.userProfile') || 'null')?.byTag || {}).read || { n: 0, good: 0 });
 
+      test('«Режим новичка»: подсказка с начальным шансом скрыта по умолчанию, включается и запоминается', async ({ page }) => {
+        await seed(page);
+        await open(page, 'drill');
+        await page.locator('.drill-tab[data-drill="C"]').click();
+        await expect(page.locator('#dBeginner')).not.toBeChecked();
+        await expect(page.locator('#dCAsk .read-prior').first()).toBeHidden();
+        await page.locator('#dBeginner').check();
+        await expect(page.locator('#dCAsk .read-prior').first()).toBeVisible();
+        await expect(page.locator('#dCAsk .read-prior').first()).toContainText('Начальный шанс');
+        await page.reload();
+        await open(page, 'drill');
+        await page.locator('.drill-tab[data-drill="C"]').click();
+        await expect(page.locator('#dBeginner')).toBeChecked();
+        await expect(page.locator('#dCAsk .read-prior').first()).toBeVisible();
+        await page.locator('#dBeginner').uncheck();
+        await expect(page.locator('#dCAsk .read-prior').first()).toBeHidden();
+      });
+
       test('проверка пишет ответы в статистику один раз на задание', async ({ page }) => {
         await seed(page);
         await open(page, 'drill');

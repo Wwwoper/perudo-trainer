@@ -295,6 +295,7 @@ export function sanitizeSettings(raw) {
   take('calzaEnabled', (v) => typeof v === 'boolean');
   take('palificoEnabled', (v) => typeof v === 'boolean');
   take('practiceTimer', (v) => typeof v === 'boolean');
+  take('beginnerMode', (v) => typeof v === 'boolean');
   if (raw.soundMode !== undefined) {
     out.soundMode = sanitizeSoundMode(raw.soundMode);
     if (out.soundMode === 'off' && raw.soundMode !== 'off') dropped++;

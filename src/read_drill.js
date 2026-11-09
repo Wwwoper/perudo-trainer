@@ -170,6 +170,21 @@ export function knownFacts(task, q) {
   };
 }
 
+/**
+ * Подсказка «Режима новичка»: начальный шанс нужной цифры до всех рассуждений о ставках.
+ * @param {{f:number, size:number, prior:number}} q вопрос задания
+ * @param {boolean} wild единицы — джокеры
+ * @returns {string}
+ */
+export function priorHint(q, wild) {
+  const jokers = !!wild && q.f !== 1;
+  const one = jokers ? '1 из 3' : '1 из 6';
+  const pct = jokers ? 33 : 17;
+  const any = Math.round((Number.isFinite(q.prior) ? q.prior : 0) * 100);
+  return `Начальный шанс: на одном кубике нужная цифра с шансом ${one} (около ${pct} %)${jokers ? ', потому что единицы — джокеры' : ''}. ` +
+    `Хотя бы на одном из ${q.size} кубиков игрока: около ${any} %. Ставка и ход торгов могут сдвинуть эту оценку.`;
+}
+
 /** Ответ на вопрос: 'yes' — в руке автора есть нужная цифра, 'no' — нет. */
 export const ANSWERS = Object.freeze(['yes', 'no']);
 const ANSWER_WORD = { yes: 'Да', no: 'Нет' };

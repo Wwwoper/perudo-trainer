@@ -319,6 +319,24 @@
   line-height: 1.5;
 }
 
+.read-beginner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  font-size: 14px;
+}
+
+.read-prior {
+  display: none;
+  margin-top: 4px;
+  color: var(--mut);
+}
+
+#dPanelC[data-beginner] .read-prior {
+  display: block;
+}
+
 .read-know p {
   margin: 0;
 }

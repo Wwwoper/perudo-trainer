@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { BOT_NAMES } from '../src/bots.js';
-import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, addSeries, seriesLines, feedRows, knownFacts, MAX_QUESTIONS } from '../src/read_drill.js';
+import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, addSeries, seriesLines, feedRows, knownFacts, priorHint, MAX_QUESTIONS } from '../src/read_drill.js';
 import { sanitizeRound } from '../src/rounds.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -291,5 +291,21 @@ describe('knownFacts', () => {
     assert.equal(k.total, 0);
     assert.equal(k.hidden, 0);
     assert.equal(k.need, 2);
+  });
+});
+
+describe('priorHint', () => {
+  test('с джокерами на цифру кроме единицы: 1 из 3; шанс по руке берётся из вопроса', () => {
+    const t = priorHint({ f: 4, size: 3, prior: 0.7037 }, true);
+    assert.match(t, /1 из 3 \(около 33 %\), потому что единицы — джокеры/);
+    assert.match(t, /из 3 кубиков игрока: около 70 %/);
+  });
+  test('без джокеров и для единиц: 1 из 6', () => {
+    assert.match(priorHint({ f: 4, size: 2, prior: 0.31 }, false), /1 из 6 \(около 17 %\)\./);
+    assert.match(priorHint({ f: 1, size: 2, prior: 0.31 }, true), /1 из 6/);
+  });
+  test('мусор не ломает, тексты без запрещённых формулировок', () => {
+    assert.match(priorHint({ f: 2, size: 1, prior: NaN }, true), /около 0 %/);
+    for (const re of BANNED) assert.ok(!re.test(priorHint({ f: 4, size: 3, prior: 0.7 }, true)), String(re));
   });
 });
