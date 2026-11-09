@@ -167,3 +167,49 @@ export function gradeQuestion(question, value) {
   const ok = !!question && value === question.answer;
   return { ok, points: ok ? 1 : 0, max: 1 };
 }
+
+/** Виды вопросов первой версии: строители по порядку. */
+export const BUILDERS = Object.freeze({
+  [KIND_LAST_TRUE]: buildLastTrue,
+  [KIND_WEAKEST_BID]: buildWeakestBid,
+  [KIND_WHO_HOLDS_MORE]: buildWhoHoldsMore,
+  [KIND_COUNT_FACE]: buildCountFace,
+});
+/** Сколько вопросов задаётся к одному столу и сколько из них может быть одного вида. */
+export const PER_TABLE = 4;
+export const MAX_PER_KIND = 2;
+
+/**
+ * Подбирает вопросы к одному столу: случайные из подходящих видов, не больше MAX_PER_KIND одного вида,
+ * без повторов. Порядок вопросов случайный. Если раунд даёт меньше вопросов, возвращается сколько нашлось.
+ * @param {object} round раунд в формате rounds.js
+ * @returns {object[]} вопросы
+ */
+export function pickTableQuestions(round, { rnd = Math.random, count = PER_TABLE, maxPerKind = MAX_PER_KIND } = {}) {
+  const kinds = Object.keys(BUILDERS);
+  const used = Object.fromEntries(kinds.map((k) => [k, 0]));
+  const dead = new Set();
+  const seen = new Set();
+  const out = [];
+  for (let tries = 0; tries < 60 && out.length < count; tries++) {
+    const open = kinds.filter((k) => used[k] < maxPerKind && !dead.has(k));
+    if (!open.length) break;
+    const kind = open[Math.floor(rnd() * open.length)];
+    const q = BUILDERS[kind](round, rnd);
+    if (!q) { dead.add(kind); continue; }
+    if (seen.has(q.title)) continue;                 // тот же вопрос второй раз не задаём
+    seen.add(q.title);
+    used[kind]++;
+    out.push(q);
+  }
+  for (let i = out.length - 1; i > 0; i--) {         // перемешивание Фишера — Йетса
+    const j = Math.floor(rnd() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Хватает ли раунду вопросов на целый стол (PER_TABLE штук). */
+export function canQuiz(round, opts = {}) {
+  return pickTableQuestions(round, opts).length >= (opts.count ?? PER_TABLE);
+}

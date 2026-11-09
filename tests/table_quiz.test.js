@@ -250,3 +250,56 @@ test('баланс «сколько на столе»: лучшая постоя
   }
   assert.ok(best <= 0.55, `постоянная догадка берёт ${(best * 100).toFixed(1)} %`);
 });
+
+// ───── Подбор вопросов на стол ─────
+import { pickTableQuestions, canQuiz, PER_TABLE, MAX_PER_KIND } from '../src/table_quiz.js';
+
+const lcg = (seed) => { let s = seed; return () => { s = (s * 48271) % 2147483647; return s / 2147483647; }; };
+
+test('pickTableQuestions: нужные виды, не больше двух одного вида, без повторов', () => {
+  let full = 0;
+  let total = 0;
+  for (let seed = 1; seed <= 600; seed++) {
+    const r = simulateRound(seed);
+    if (!r) continue;
+    total++;
+    const qs = pickTableQuestions(r, { rnd: lcg(seed) });
+    assert.ok(qs.length <= PER_TABLE);
+    const byKind = {};
+    for (const q of qs) byKind[q.kind] = (byKind[q.kind] || 0) + 1;
+    assert.ok(Object.values(byKind).every((c) => c <= MAX_PER_KIND), JSON.stringify(byKind));
+    assert.equal(new Set(qs.map((q) => q.title)).size, qs.length);
+    if (qs.length === PER_TABLE) full++;
+  }
+  assert.ok(full / total >= 0.25, `полных столов ${full} из ${total}`);
+});
+
+test('pickTableQuestions: одно зерно — тот же набор; другое зерно — чаще всего другой', () => {
+  const r = simulateRound(5);
+  const a = pickTableQuestions(r, { rnd: lcg(1) }).map((q) => q.title);
+  const b = pickTableQuestions(r, { rnd: lcg(1) }).map((q) => q.title);
+  assert.deepEqual(a, b);
+  const others = new Set();
+  for (let k = 2; k < 30; k++) others.add(pickTableQuestions(r, { rnd: lcg(k) }).map((q) => q.title).join('|'));
+  assert.ok(others.size > 1);
+});
+
+test('pickTableQuestions: ограничения count и maxPerKind; пустой раунд даёт пустой набор', () => {
+  const r = simulateRound(5);
+  assert.ok(pickTableQuestions(r, { rnd: lcg(3), count: 2 }).length <= 2);
+  assert.equal(pickTableQuestions({ bids: [], hands: [] }, { rnd: lcg(3) }).length, 0);
+  assert.equal(pickTableQuestions(null, { rnd: lcg(3) }).length, 0);
+  const one = pickTableQuestions(r, { rnd: lcg(4), maxPerKind: 1 });
+  assert.equal(new Set(one.map((q) => q.kind)).size, one.length);
+});
+
+test('canQuiz: целый стол есть не у каждого раунда', () => {
+  let yes = 0;
+  let no = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const r = simulateRound(seed);
+    if (!r) continue;
+    canQuiz(r, { rnd: lcg(seed) }) ? yes++ : no++;
+  }
+  assert.ok(yes > 0 && no > 0);
+});
