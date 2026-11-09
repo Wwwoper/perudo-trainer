@@ -92,12 +92,12 @@ export function setupReadDrill() {
       `${renderBid(b.q, b.f)}</li>`).join('');
     ask.innerHTML = task.questions.map((q) =>
       `<div class="read-q" role="group" data-n="${q.n}" aria-labelledby="rdT${q.n}">` +
-      `<p class="read-q-title" id="rdT${q.n}">${seatLabel(round, q.seat)}: есть ли в руке цифра ${renderDie(q.f, 's')}?</p>` +
+      `<p class="read-q-title" id="rdT${q.n}">${seatLabel(round, q.seat)}: есть ли в руке хоть одна ${renderDie(q.f, 's')}?</p>` +
       `<p class="read-q-bid muted">Ставка ${q.n}: ${renderBid(q.q, q.f)}</p>` +
       knownHtml(q) +
       '<div class="read-yn" role="group" aria-label="Ваш ответ">' +
-      `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="yes" aria-pressed="false">Да, есть</button>` +
-      `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="no" aria-pressed="false">Нет, нет</button></div>` +
+      `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="yes" aria-pressed="false">Да</button>` +
+      `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="no" aria-pressed="false">Нет</button></div>` +
       '</div>').join('');
     sync();
   }

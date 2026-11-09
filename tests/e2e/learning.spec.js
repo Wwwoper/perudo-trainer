@@ -482,6 +482,9 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dCBids li').nth(1)).toContainText('Повышение');
         await expect(page.locator('#dCq')).not.toContainText('Учебный раунд');
         await expect(page.locator('#dCAsk .read-q')).toHaveCount(2);
+        await expect(page.locator('#dCAsk .read-q-title').first()).toContainText('есть ли в руке хоть одна');
+        await expect(page.locator('#dCAsk .read-yn-btn[data-v="yes"]').first()).toHaveText('Да');
+        await expect(page.locator('#dCAsk .read-yn-btn[data-v="no"]').first()).toHaveText('Нет');
         await expect(page.locator('#dCAsk .read-know')).toHaveCount(2);
         await expect(page.locator('#dCAsk .read-know').first()).toContainText('Всего за столом');
         await expect(page.locator('.read-hands')).toHaveCount(0);
