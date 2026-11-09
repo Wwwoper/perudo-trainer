@@ -14,6 +14,7 @@ export const KIND_WEAKEST_BID = 'weakestBid';
 /** Сколько ставок показывается в вопросе «Какая ставка самая слабая?». */
 export const WEAK_CHOICES = 3;
 export const KIND_WHO_HOLDS_MORE = 'whoHoldsMore';
+export const KIND_COUNT_FACE = 'countFace';
 const GLYPH = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 /** Грань как символ кубика (⚃). */
@@ -124,10 +125,45 @@ export function buildWhoHoldsMore(round, rnd = Math.random) {
 }
 
 /**
- * Проверка ответа на вопрос с точным совпадением (кнопки, выбор игрока или ставки).
+ * «Сколько всего кубиков цифры на столе?» — число. Цифра — одна из названных в ставках раунда; считаются кубики
+ * всех игроков, включая ваши, с учётом джокеров. Ответ задаётся кнопками «−» и «+»: range — границы, start —
+ * с какого числа начинать (начальный шанс цифры на всём столе, он ничего не подсказывает о раскладе).
+ * @returns {object|null}
+ */
+export function buildCountFace(round, rnd = Math.random) {
+  const bids = Array.isArray(round?.bids) ? round.bids : [];
+  const hands = Array.isArray(round?.hands) ? round.hands : [];
+  if (!bids.length || !hands.length || !hands.every(Array.isArray)) return null;
+  const faces = [...new Set(bids.filter((b) => b && Number.isInteger(b.f) && b.f >= 1 && b.f <= 6).map((b) => b.f))];
+  if (!faces.length) return null;
+  const f = faces[Math.floor(rnd() * faces.length)];
+  const total = hands.reduce((a, h) => a + h.length, 0);
+  const answer = countFace(hands, f, round.wild);
+  const jokers = round.wild && f !== 1;
+  const per = hands.map((h, s) => `${seatLabel(round, s)} — ${countFace([h], f, round.wild)}`).join(', ');
+  return {
+    kind: KIND_COUNT_FACE,
+    input: 'number',
+    title: `Сколько всего кубиков ${faceGlyph(f)} на столе${jokers ? ', считая единицы-джокеры' : ''}?`,
+    face: f,
+    range: { min: 0, max: total },
+    start: Math.min(total, Math.round(total * (jokers ? 1 / 3 : 1 / 6))),
+    answer,
+    explain: `На столе ${answer} × ${faceGlyph(f)}${jokers ? ' (с джокерами)' : ''}: ${per}.`,
+  };
+}
+
+/**
+ * Проверка ответа. Для кнопок, выбора игрока или ставки — точное совпадение (1 балл).
+ * Для числа: точно — 2 балла, ошибка в один кубик — 1 балл, иначе 0.
  * @returns {{ok:boolean, points:number, max:number}}
  */
 export function gradeQuestion(question, value) {
+  if (question?.input === 'number') {
+    const v = Number(value);
+    const diff = Number.isFinite(v) && value !== '' && value !== null ? Math.abs(v - question.answer) : Infinity;
+    return { ok: diff === 0, points: diff === 0 ? 2 : (diff === 1 ? 1 : 0), max: 2 };
+  }
   const ok = !!question && value === question.answer;
   return { ok, points: ok ? 1 : 0, max: 1 };
 }

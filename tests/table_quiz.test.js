@@ -184,3 +184,69 @@ test('баланс «у кого больше»: позиция ответа ≤
   assert.ok(n >= 600, `мало вопросов: ${n}`);
   assert.ok(Math.max(...pos) / n <= 0.55, JSON.stringify(pos));
 });
+
+// ───── «Сколько всего кубиков цифры на столе?» ─────
+import { buildCountFace, KIND_COUNT_FACE } from '../src/table_quiz.js';
+
+const cntRound = (over = {}) => ({
+  id: 'c1', ts: 0, round: 1, wild: true, me: 0,
+  dice: [4, 3, 5], styles: [null, 'smart', 'smart'],
+  hands: [[3, 3, 4, 5], [6, 4, 1], [4, 4, 1, 6, 2]],
+  bids: [{ s: 1, q: 3, f: 4 }, { s: 2, q: 5, f: 4 }],
+  end: { kind: 'dudo', by: 0, bidder: 2, actual: 6, ok: true },
+  ...over,
+});
+
+test('buildCountFace: считает кубики цифры на всём столе вместе с джокерами', () => {
+  const q = buildCountFace(cntRound(), () => 0);
+  assert.equal(q.kind, KIND_COUNT_FACE);
+  assert.equal(q.input, 'number');
+  assert.equal(q.face, 4);
+  assert.equal(q.answer, 6);                       // ⚃: 1 + 1 + 2 и две единицы
+  assert.deepEqual(q.range, { min: 0, max: 12 });
+  assert.equal(q.start, 4);                        // 12 кубиков × 1/3
+  assert.match(q.title, /джокер/);
+  assert.match(q.explain, /6 × ⚃/);
+});
+
+test('buildCountFace: единицы и Палифико — без джокеров', () => {
+  const pal = buildCountFace(cntRound({ wild: false }), () => 0);
+  assert.equal(pal.answer, 4);
+  assert.doesNotMatch(pal.title, /джокер/);
+  assert.equal(pal.start, 2);                      // 12 × 1/6
+  const ones = buildCountFace(cntRound({ bids: [{ s: 1, q: 2, f: 1 }] }), () => 0);
+  assert.equal(ones.face, 1);
+  assert.equal(ones.answer, 2);                    // единицы сами джокеров не имеют
+});
+
+test('buildCountFace: без ставок или рук вопрос не задаётся', () => {
+  assert.equal(buildCountFace(cntRound({ bids: [] })), null);
+  assert.equal(buildCountFace(null), null);
+});
+
+test('gradeQuestion для числа: 2 балла точно, 1 балл с ошибкой на кубик, иначе 0', () => {
+  const q = buildCountFace(cntRound(), () => 0);
+  assert.deepEqual(gradeQuestion(q, 6), { ok: true, points: 2, max: 2 });
+  assert.deepEqual(gradeQuestion(q, '5'), { ok: false, points: 1, max: 2 });
+  assert.deepEqual(gradeQuestion(q, 7), { ok: false, points: 1, max: 2 });
+  assert.deepEqual(gradeQuestion(q, 3), { ok: false, points: 0, max: 2 });
+  assert.deepEqual(gradeQuestion(q, ''), { ok: false, points: 0, max: 2 });
+  assert.deepEqual(gradeQuestion(q, null), { ok: false, points: 0, max: 2 });
+});
+
+test('баланс «сколько на столе»: лучшая постоянная догадка берёт не больше 55 % баллов', () => {
+  const qs = [];
+  let seq = 7;
+  const rnd = () => { seq = (seq * 48271) % 2147483647; return seq / 2147483647; };
+  for (let seed = 1; seed <= 4000; seed++) {
+    const r = simulateRound(seed);
+    const q = r && buildCountFace(r, rnd);
+    if (q) qs.push(q);
+  }
+  assert.ok(qs.length >= 1500);
+  let best = 0;
+  for (let c = 0; c <= 14; c++) {
+    best = Math.max(best, qs.reduce((a, q) => a + gradeQuestion(q, c).points, 0) / (qs.length * 2));
+  }
+  assert.ok(best <= 0.55, `постоянная догадка берёт ${(best * 100).toFixed(1)} %`);
+});
