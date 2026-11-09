@@ -310,6 +310,36 @@
   border-color: var(--bad);
 }
 
+.read-know {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-1);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.read-know p {
+  margin: 0;
+}
+
+.read-mine-row {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.read-mine {
+  display: inline-flex;
+  opacity: .5;
+}
+
+.read-mine.is-match {
+  opacity: 1;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px var(--acc);
+}
+
 .read-yn {
   display: grid;
   grid-template-columns: 1fr 1fr;

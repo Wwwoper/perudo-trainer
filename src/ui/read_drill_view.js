@@ -6,7 +6,7 @@
 import { getRounds, updateStats } from '../storage.js';
 import { renderBid, renderHand, renderDie, escapeHtml } from '../table.js';
 import { $ } from './common.js';
-import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead, addSeries, seriesLines, feedRows } from '../read_drill.js';
+import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead, addSeries, seriesLines, feedRows, knownFacts } from '../read_drill.js';
 import { makeSimRound, chooseSource, isSimRound } from '../read_sim.js';
 
 const seatLabel = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
@@ -26,6 +26,17 @@ export function setupReadDrill() {
   let task = null;
   let done = false;
   let series = null;   // ответы за сеанс для оценки серии; в хранилище не пишется
+
+  /** Карточка «Что вы знаете»: числа считаются сами, ваши подходящие кубики подсвечены. */
+  function knownHtml(q) {
+    const k = knownFacts(task, q);
+    const dice = k.mineDice.map((d) =>
+      `<span class="read-mine${d.match ? ' is-match' : ''}">${renderDie(d.v, 'xs', task.wild && d.v === 1)}</span>`).join('');
+    return '<div class="read-know">' +
+      `<p><b>Что вы знаете.</b> Кубиков у игрока: ${k.size}. Всего за столом: ${k.total}, скрыто от вас: ${k.hidden}.</p>` +
+      `<p>Ваши кубики: <span class="read-mine-row">${dice}</span> Нужной цифры у вас: ${k.mine}. ` +
+      `Чтобы ставка ${q.q}×${q.f} была верна, среди скрытых нужно ещё ${k.need}.</p></div>`;
+  }
 
   const hint = $('#dCHint');
   const answers = {};   // номер ставки → 'yes' | 'no'
@@ -67,6 +78,7 @@ export function setupReadDrill() {
       `<div class="read-q" role="group" data-n="${q.n}" aria-labelledby="rdT${q.n}">` +
       `<p class="read-q-title" id="rdT${q.n}">${seatLabel(round, q.seat)}: есть ли в руке цифра ${renderDie(q.f, 's')}?</p>` +
       `<p class="read-q-bid muted">Ставка ${q.n}: ${renderBid(q.q, q.f)}</p>` +
+      knownHtml(q) +
       '<div class="read-yn" role="group" aria-label="Ваш ответ">' +
       `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="yes" aria-pressed="false">Да, есть</button>` +
       `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="no" aria-pressed="false">Нет, нет</button></div>` +

@@ -482,6 +482,8 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dCBids li').nth(1)).toContainText('Повышение');
         await expect(page.locator('#dCq')).not.toContainText('Учебный раунд');
         await expect(page.locator('#dCAsk .read-q')).toHaveCount(2);
+        await expect(page.locator('#dCAsk .read-know')).toHaveCount(2);
+        await expect(page.locator('#dCAsk .read-know').first()).toContainText('Всего за столом');
         await expect(page.locator('.read-hands')).toHaveCount(0);
         // кнопка ждёт ответов на оба вопроса
         await expect(page.locator('#dCCheck')).toBeDisabled();

@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { BOT_NAMES } from '../src/bots.js';
-import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, addSeries, seriesLines, feedRows, MAX_QUESTIONS } from '../src/read_drill.js';
+import { addReadResult, canRead, seatLabel, seatNames, priorHas, pickReadRound, buildReadTask, checkReadAnswers, addSeries, seriesLines, feedRows, knownFacts, MAX_QUESTIONS } from '../src/read_drill.js';
 import { sanitizeRound } from '../src/rounds.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -250,5 +250,46 @@ describe('feedRows', () => {
     assert.deepEqual(feedRows(null), []);
     assert.deepEqual(feedRows({}), []);
     assert.equal(feedRows({ bids: [{ n: 1, seat: 1, q: 1, f: 2 }] })[0].asked, false);
+  });
+});
+
+describe('knownFacts', () => {
+  // ваша рука [2,3,5]; у мест 1 и 2 по 3 кубика; всего 9
+  const round = mk();
+  const task = buildReadTask(round, { rnd: () => 0 });
+  const q = (n) => task.questions.find((x) => x.n === n);
+  test('числа: кубиков у автора, всего, скрыто, ваших подходящих, сколько ещё нужно', () => {
+    const k = knownFacts(task, q(3));   // ставка 3×5, ваша тройка пятёрок: [5] → 1 подходящий
+    assert.equal(k.size, 3);
+    assert.equal(k.total, 9);
+    assert.equal(k.hidden, 6);
+    assert.equal(k.mine, 1);
+    assert.equal(k.need, 2);
+    assert.deepEqual(k.mineDice, [{ v: 2, match: false }, { v: 3, match: false }, { v: 5, match: true }]);
+  });
+  test('единица в вашей руке — джокер, кроме Палифико и ставок на единицы', () => {
+    const r = sanitizeRound({ ...mk(), hands: [[1, 3, 5], [5, 5, 1], [4, 6, 2]], end: { kind: 'dudo', by: 0, bidder: 1, actual: 5, ok: true } });
+    const t = buildReadTask(r, { rnd: () => 0 });
+    assert.equal(knownFacts(t, t.questions.find((x) => x.n === 3)).mine, 2);   // 5 и джокер
+    const p = sanitizeRound({ ...mk(), wild: false, hands: [[1, 3, 5], [5, 5, 1], [4, 6, 2]],
+      bids: [{ s: 2, q: 1, f: 4 }, { s: 0, q: 2, f: 4 }, { s: 1, q: 3, f: 5 }],
+      end: { kind: 'dudo', by: 0, bidder: 1, actual: 3, ok: true } });
+    const tp = buildReadTask(p, { rnd: () => 0 });
+    assert.equal(knownFacts(tp, tp.questions.find((x) => x.n === 3)).mine, 1);   // без джокеров только пятёрка
+  });
+  test('ставка уже закрыта вашими кубиками — нужно 0, не отрицательное', () => {
+    assert.equal(knownFacts({ hand: [4, 4, 4], dice: [3, 3], wild: true }, { q: 2, f: 4, size: 3 }).need, 0);
+  });
+  test('в данных нет чужих рук, исходные данные не меняются', () => {
+    const before = JSON.stringify(task);
+    const k = knownFacts(task, q(1));
+    assert.equal(JSON.stringify(task), before);
+    assert.ok(!('hands' in k));
+  });
+  test('мусор не ломает', () => {
+    const k = knownFacts(null, { q: 2, f: 3, size: 2 });
+    assert.equal(k.total, 0);
+    assert.equal(k.hidden, 0);
+    assert.equal(k.need, 2);
   });
 });

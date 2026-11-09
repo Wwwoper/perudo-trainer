@@ -150,6 +150,26 @@ export function feedRows(task) {
   }));
 }
 
+/**
+ * Факты для вопроса: что игрок знает до вскрытия. Считается по заданию, чужих рук в нём нет.
+ * @param {object} task результат buildReadTask
+ * @param {{n:number, q:number, f:number, size:number}} q один из вопросов задания
+ * @returns {{size:number, total:number, hidden:number, mine:number, mineDice:{v:number, match:boolean}[], need:number}}
+ *   size — кубиков в руке автора, total — всего за столом, hidden — скрыто от вас,
+ *   mine — ваших подходящих кубиков (с джокерами), need — сколько ещё нужно среди скрытых, чтобы ставка была верна
+ */
+export function knownFacts(task, q) {
+  const hand = Array.isArray(task?.hand) ? task.hand : [];
+  const dice = Array.isArray(task?.dice) ? task.dice : [];
+  const total = dice.reduce((a, b) => a + b, 0);
+  const mineDice = hand.slice().sort((a, b) => a - b).map((v) => ({ v, match: dieMatches(v, q.f, !!task.wild) }));
+  const mine = mineDice.filter((d) => d.match).length;
+  return {
+    size: q.size, total, hidden: Math.max(0, total - hand.length), mine, mineDice,
+    need: Math.max(0, q.q - mine),
+  };
+}
+
 /** Ответ на вопрос: 'yes' — в руке автора есть нужная цифра, 'no' — нет. */
 export const ANSWERS = Object.freeze(['yes', 'no']);
 const ANSWER_WORD = { yes: 'Да', no: 'Нет' };
