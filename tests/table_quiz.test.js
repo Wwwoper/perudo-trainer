@@ -126,3 +126,61 @@ test('баланс «самой слабой»: позиция ответа и �
   assert.ok(Math.max(...pos) / n <= 0.55, JSON.stringify(pos));
   assert.ok(biggest / n <= 0.55, `самая крупная ставка угадывает ${biggest}/${n}`);
 });
+
+// ───── «У кого больше кубиков со своей цифрой?» ─────
+import { buildWhoHoldsMore, KIND_WHO_HOLDS_MORE } from '../src/table_quiz.js';
+
+const holdRound = (over = {}) => ({
+  id: 'h1', ts: 0, round: 1, wild: true, me: 0,
+  dice: [2, 3, 3, 3], styles: [null, 'smart', 'smart', 'smart'],
+  hands: [[3, 3], [5, 5, 2], [6, 2, 3], [4, 1, 2]],
+  bids: [{ s: 1, q: 2, f: 5 }, { s: 2, q: 3, f: 6 }, { s: 3, q: 3, f: 4 }],
+  end: { kind: 'dudo', by: 0, bidder: 3, actual: 1, ok: false },
+  ...over,
+});
+
+test('buildWhoHoldsMore: побеждает игрок с большим числом кубиков своей цифры', () => {
+  // у Ирины ⚄⚄ = 2, у Алексея ⚅ = 1, у Юлии ⚃ и джокер = 2
+  const q = buildWhoHoldsMore(holdRound(), () => 0);
+  assert.equal(q.kind, KIND_WHO_HOLDS_MORE);
+  assert.equal(q.input, 'player');
+  assert.equal(q.options.length, 2);
+  assert.equal(q.answer, '1');
+  assert.deepEqual(q.options.map((o) => o.v), ['1', '2']);
+  assert.match(q.explain, /2 × ⚄.*1 × ⚅/);
+  assert.equal(gradeQuestion(q, '1').ok, true);
+  assert.equal(gradeQuestion(q, '2').ok, false);
+});
+
+test('buildWhoHoldsMore: берётся последняя ставка игрока, ничьи и разные размеры рук отбрасываются', () => {
+  const r = holdRound({ bids: [{ s: 1, q: 1, f: 3 }, { s: 2, q: 3, f: 6 }, { s: 1, q: 2, f: 5 }] });
+  const q = buildWhoHoldsMore(r, () => 0);
+  assert.equal(q.options[0].f, 5);                       // не ⚂, а последняя ставка Ирины
+  const tie = holdRound({ hands: [[3, 3], [5, 5, 2], [6, 6, 3], [4, 1, 2]], bids: [{ s: 1, q: 2, f: 5 }, { s: 2, q: 2, f: 6 }] });
+  assert.equal(buildWhoHoldsMore(tie, () => 0), null);   // 2 против 2
+  const sizes = holdRound({ dice: [2, 3, 2, 3], hands: [[3, 3], [5, 5, 2], [6, 6], [4, 1, 2]], bids: [{ s: 1, q: 2, f: 5 }, { s: 2, q: 2, f: 6 }] });
+  assert.equal(buildWhoHoldsMore(sizes, () => 0), null); // 3 и 2 кубика в руке
+});
+
+test('buildWhoHoldsMore: нужны двое чужих игроков; ваши ставки не берутся', () => {
+  assert.equal(buildWhoHoldsMore(holdRound({ bids: [{ s: 1, q: 2, f: 5 }, { s: 0, q: 3, f: 3 }] }), () => 0), null);
+  assert.equal(buildWhoHoldsMore(holdRound({ bids: [] }), () => 0), null);
+  assert.equal(buildWhoHoldsMore(null), null);
+});
+
+test('баланс «у кого больше»: позиция ответа ≤ 55 %, размер руки ничего не подсказывает', () => {
+  const pos = [0, 0];
+  let n = 0;
+  let seq = 11;
+  const rnd = () => { seq = (seq * 48271) % 2147483647; return seq / 2147483647; };
+  for (let seed = 1; seed <= 6000; seed++) {
+    const r = simulateRound(seed);
+    const q = r && buildWhoHoldsMore(r, rnd);
+    if (!q) continue;
+    n++;
+    pos[q.options.findIndex((o) => o.v === q.answer)]++;
+    assert.equal(r.hands[q.options[0].s].length, r.hands[q.options[1].s].length);
+  }
+  assert.ok(n >= 600, `мало вопросов: ${n}`);
+  assert.ok(Math.max(...pos) / n <= 0.55, JSON.stringify(pos));
+});

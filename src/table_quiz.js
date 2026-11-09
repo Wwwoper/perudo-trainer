@@ -13,6 +13,7 @@ export const KIND_LAST_TRUE = 'lastTrue';
 export const KIND_WEAKEST_BID = 'weakestBid';
 /** Сколько ставок показывается в вопросе «Какая ставка самая слабая?». */
 export const WEAK_CHOICES = 3;
+export const KIND_WHO_HOLDS_MORE = 'whoHoldsMore';
 const GLYPH = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 /** Грань как символ кубика (⚃). */
@@ -83,6 +84,43 @@ export function buildWeakestBid(round, rnd = Math.random) {
     };
   }
   return null;
+}
+
+/**
+ * «У кого больше кубиков со своей цифрой?» — выбор из двух соперников. Своя цифра игрока — та, что он назвал
+ * в своей последней ставке; считаются кубики этой цифры в его руке (с учётом джокеров). Ничьи не берутся. Берутся
+ * только игроки с одинаковым числом кубиков в начале раунда, иначе ответ угадывается по размеру руки.
+ * @returns {object|null}
+ */
+export function buildWhoHoldsMore(round, rnd = Math.random) {
+  const bids = Array.isArray(round?.bids) ? round.bids : [];
+  const hands = Array.isArray(round?.hands) ? round.hands : [];
+  const last = new Map();
+  for (const b of bids) if (b && b.s !== round.me && Array.isArray(hands[b.s])) last.set(b.s, b);
+  const rows = [...last.entries()].sort((a, b) => a[0] - b[0]).map(([seat, b]) => ({
+    s: seat, f: b.f, q: b.q, size: hands[seat].length, has: countFace([hands[seat]], b.f, round.wild),
+  }));
+  // Только пары с одинаковым числом кубиков в руке: иначе «у кого рука больше» почти всегда угадывает ответ.
+  const pairs = [];
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = i + 1; j < rows.length; j++) {
+      if (rows[i].has !== rows[j].has && rows[i].size === rows[j].size) pairs.push([rows[i], rows[j]]);
+    }
+  }
+  if (!pairs.length) return null;
+  const [a, b] = pairs[Math.floor(rnd() * pairs.length)];
+  const winner = a.has > b.has ? a : b;
+  const na = seatLabel(round, a.s);
+  const nb = seatLabel(round, b.s);
+  const part = (x, name) => `${name} — ${x.has} × ${faceGlyph(x.f)}`;
+  return {
+    kind: KIND_WHO_HOLDS_MORE,
+    input: 'player',
+    title: `У кого в руке больше кубиков той цифры, что он назвал в последней ставке: у ${na} или у ${nb}?`,
+    options: [a, b].map((x) => ({ v: String(x.s), s: x.s, f: x.f, name: seatLabel(round, x.s), label: `${seatLabel(round, x.s)} (${faceGlyph(x.f)})` })),
+    answer: String(winner.s),
+    explain: `В руках: ${part(a, na)}, ${part(b, nb)}.`,
+  };
 }
 
 /**
