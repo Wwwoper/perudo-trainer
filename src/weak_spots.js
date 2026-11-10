@@ -5,13 +5,15 @@
 // тема с малой выборкой отдельно помечается «пока мало данных» и в слабые не попадает.
 
 import { MOMENT_TAGS, TAG_LABELS } from './moments.js';
+import { QUIZ_LABELS, QUIZ_BASELINE } from './quiz_stats.js';
 
 /** Тема «чтение ставок»: копится из упражнения «Читай вскрытие», в метки решений партии не входит. */
 export const READ_TAG = 'read';
 /** Тема «торги с несколькими соперниками»: копится из режима «Лестница ставок», в метки решений партии не входит. */
 export const LADDER_TAG = 'ladder';
-const WEAK_TAGS = [...MOMENT_TAGS, READ_TAG, LADDER_TAG];
-const WEAK_LABELS = { ...TAG_LABELS, [READ_TAG]: 'чтение ставок по вскрытию', [LADDER_TAG]: 'торги с несколькими соперниками' };
+const QUIZ_TAG_LIST = Object.keys(QUIZ_LABELS);
+const WEAK_TAGS = [...MOMENT_TAGS, READ_TAG, LADDER_TAG, ...QUIZ_TAG_LIST];
+const WEAK_LABELS = { ...TAG_LABELS, [READ_TAG]: 'чтение ставок по вскрытию', [LADDER_TAG]: 'торги с несколькими соперниками', ...QUIZ_LABELS };
 
 /** Минимум решений по теме, чтобы делать вывод. */
 export const MIN_DECISIONS = 8;
@@ -26,6 +28,7 @@ export const TRAIN_MODE = {
   bigTable: 'big',
   [READ_TAG]: 'read',   // не режим тренажёра, а упражнение «Читай вскрытие»
   [LADDER_TAG]: 'ladder',
+  ...Object.fromEntries(QUIZ_TAG_LIST.map((t) => [t, 'quiz'])),   // тоже упражнение: викторина «Читай стол»
 };
 
 const isCount = (v) => Number.isInteger(v) && v >= 0;
@@ -46,8 +49,10 @@ export function weakSpots(byTag, { minN = MIN_DECISIONS, limit = MAX_WEAK } = {}
     if (!s || !isCount(s.n) || !isCount(s.good) || s.good > s.n || s.n === 0) continue;
     const label = WEAK_LABELS[tag];
     if (s.n < minN) { pending.push({ tag, label, n: s.n }); continue; }
-    if (s.good === s.n) continue;
-    weak.push({ tag, label, n: s.n, good: s.good, share: s.good / s.n, mode: TRAIN_MODE[tag] || null });
+    const baseline = QUIZ_BASELINE[tag];
+    // темы викторины слабые, только если вы отвечаете хуже лучшей постоянной догадки; остальные — при любой ошибке
+    if (baseline !== undefined ? s.good / s.n >= baseline : s.good === s.n) continue;
+    weak.push({ tag, label, n: s.n, good: s.good, share: s.good / s.n, mode: TRAIN_MODE[tag] || null, ...(baseline !== undefined ? { baseline } : {}) });
   }
   weak.sort((a, b) => a.share - b.share || b.n - a.n);
   return { weak: weak.slice(0, Math.max(0, limit)), pending };

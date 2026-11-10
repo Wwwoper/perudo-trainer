@@ -339,3 +339,18 @@ describe('sanitizePlayerEntry', () => {
     assert.deepStrictEqual(sanitizePlayerEntry(ok), { value: ok, dropped: 0 });
   });
 });
+
+describe('sanitizeStats: последняя серия викторины', () => {
+  it('сохраняется, а мусор отбрасывается', () => {
+    const ok = sanitizeStats({ quizLast: { correct: 14, total: 20, points: 17, max: 24, guess: 12 } });
+    assert.deepEqual(ok.value.quizLast, { correct: 14, total: 20, points: 17, max: 24, guess: 12 });
+    assert.equal(ok.dropped, 0);
+    for (const bad of [{ correct: 21, total: 20, points: 1, max: 2, guess: 1 }, { correct: 1, total: 0, points: 0, max: 0, guess: 0 },
+      { correct: 1, total: 2, points: 5, max: 3, guess: 1 }, { correct: 'x' }, 'строка', []]) {
+      const r = sanitizeStats({ quizLast: bad });
+      assert.equal('quizLast' in r.value, false);
+      assert.equal(r.dropped, 1);
+    }
+    assert.equal('quizLast' in sanitizeStats({}).value, false);
+  });
+});

@@ -4,12 +4,13 @@
 // не попадают (показываются ваши кубики, число кубиков у соперников и ход ставок).
 // Серия живёт в пределах страницы и в хранилище не пишется.
 
-import { getRounds } from '../storage.js';
+import { getRounds, getStats, updateStats } from '../storage.js';
 import { renderBid, renderHand, escapeHtml } from '../table.js';
 import { seatLabel as rawSeatLabel } from '../read_drill.js';
 import { PER_TABLE } from '../table_quiz.js';
 import { createSeries, currentQuestion, progress, submitAnswer, summarize } from '../quiz_series.js';
 import { progressLabel, resultLine, summaryView } from '../quiz_text.js';
+import { addQuizResults, lastSeriesRecord, lastSeriesText } from '../quiz_stats.js';
 import { $ } from './common.js';
 
 const label = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
@@ -19,6 +20,7 @@ export function setupQuizDrill() {
   const play = $('#dEPlay');
   const endBox = $('#dEEnd');
   const goBtn = $('#dEGo');
+  const lastEl = $('#dELast');
   const progEl = $('#dEProgress');
   const pointsEl = $('#dEPoints');
   const scene = $('#dEScene');
@@ -38,6 +40,7 @@ export function setupQuizDrill() {
   let series = null;
   let answered = false;
   let num = 0;
+  let saved = false;        // записана ли текущая серия в статистику
   let tableToReveal = -1;   // номер стола, у которого после ответа откроются руки
 
   const screen = (name) => {
@@ -92,8 +95,21 @@ export function setupQuizDrill() {
     nextBtn.classList.add('hide');
   }
 
+  /** Строка про последнюю сохранённую серию на старте. */
+  function showLast() {
+    const text = lastEl ? lastSeriesText(getStats().quizLast) : null;
+    if (!lastEl) return;
+    lastEl.hidden = !text;
+    lastEl.textContent = text ?? '';
+  }
+
   function finish() {
-    const v = summaryView(summarize(series));
+    const sum = summarize(series);
+    if (!saved) {   // серия записывается один раз: счётчики по видам вопросов и последняя серия
+      saved = true;
+      updateStats((S) => { S.byTag = addQuizResults(S.byTag, series.results); S.quizLast = lastSeriesRecord(sum); });
+    }
+    const v = summaryView(sum);
     screen('end');
     endText.textContent = `Верно: ${v.headline}`;
     endPoints.textContent = v.points;
@@ -162,7 +178,8 @@ export function setupQuizDrill() {
 
   function start() {
     series = createSeries({ rounds: getRounds() });
-    if (!series.tables.length) { screen('start'); return; }
+    saved = false;
+    if (!series.tables.length) { showLast(); screen('start'); return; }
     render();
   }
 
@@ -171,6 +188,6 @@ export function setupQuizDrill() {
 
   return {
     /** Открытие вкладки: незаконченная серия продолжается, иначе показывается старт. */
-    show() { if (!series) screen('start'); },
+    show() { if (!series) { showLast(); screen('start'); } },
   };
 }

@@ -108,7 +108,15 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dEEndPoints')).toContainText('Баллов:');
     await expect(page.locator('#dEKinds .quiz-kind').first()).toBeVisible();
     await expect(page.locator('#dEEnd')).not.toContainText(/undefined|NaN/);
-    await page.click('#dEAgain');
+    // серия записана: в профиле есть последняя серия и счётчики по видам вопросов, а после перезагрузки она видна на старте
+    const profile = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.userProfile') || '{}'));
+    expect(profile.quizLast.total).toBe(20);
+    expect(Object.keys(profile.byTag).some((k) => k.startsWith('quiz'))).toBe(true);
+    await page.reload();
+    await open(page, 'drill');
+    await page.click('.drill-tab[data-drill="E"]');
+    await expect(page.locator('#dELast')).toContainText('Последняя серия: верно');
+    await page.click('#dEGo');   // новая серия начинается с первого стола
     await expect(page.locator('#dEProgress')).toHaveText('Стол 1 из 5 · вопрос 1 из 4');
   });
 

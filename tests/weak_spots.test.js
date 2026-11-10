@@ -103,3 +103,25 @@ describe('weakSpotsHtml', () => {
     assert.ok(!weakSpotsHtml({ endgame: { n: 10, good: 1 } }).includes('<script'));
   });
 });
+
+describe('weakSpots: темы викторины «Читай стол»', () => {
+  it('слабая тема — только если доля верных ниже лучшей постоянной догадки', () => {
+    const r = weakSpots({ quizLast: { n: 10, good: 4 }, quizHold: { n: 10, good: 6 } });
+    assert.deepEqual(r.weak.map((w) => w.tag), ['quizLast']);   // 40 % < 55 %; 60 % ≥ 52 % — не слабая
+    assert.equal(r.weak[0].baseline, 0.55);
+    assert.equal(r.weak[0].mode, 'quiz');
+    assert.match(r.weak[0].label, /викторина/);
+  });
+  it('мало ответов — «пока мало данных», а не слабое место', () => {
+    const r = weakSpots({ quizCount: { n: MIN_DECISIONS - 1, good: 0 } });
+    assert.deepEqual(r.weak, []);
+    assert.deepEqual(r.pending.map((p) => p.tag), ['quizCount']);
+  });
+  it('в блоке видно число ответов, догадку и кнопку «Тренировать»', () => {
+    const html = weakSpotsHtml({ quizWeak: { n: 10, good: 2 } });
+    assert.match(html, /20%/);
+    assert.match(html, /10 отв\./);
+    assert.match(html, /догадка 40%/);
+    assert.match(html, /data-train="quiz"/);
+  });
+});

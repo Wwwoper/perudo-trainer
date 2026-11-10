@@ -93,6 +93,11 @@ function trainInMode(mode) {
     $('.drill-tab[data-drill="C"]')?.click();
     return;
   }
+  if (mode === 'quiz') {   // темы викторины тренируются в упражнении «Читай стол»
+    $('.tab-btn[data-t="drill"]')?.click();
+    $('.drill-tab[data-drill="E"]')?.click();
+    return;
+  }
   $('.tab-btn[data-t="train"]')?.click();
   trainerApi?.setMode(mode);
 }
