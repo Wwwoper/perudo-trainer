@@ -472,6 +472,92 @@
   margin-top: 8px;
 }
 
+/* Викторина «Читай стол» */
+.quiz-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.quiz-points {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.quiz-q {
+  margin: 8px 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.quiz-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quiz-opt,
+.quiz-minus,
+.quiz-plus {
+  min-height: var(--tap);
+  min-width: var(--tap);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.quiz-opt.is-right {
+  box-shadow: inset 0 0 0 2px var(--ok);
+}
+
+.quiz-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 8px 0;
+}
+
+.quiz-num {
+  min-width: 56px;
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.quiz-send {
+  display: block;
+  margin: 0 auto;
+}
+
+.quiz-fb {
+  margin-top: 8px;
+}
+
+.quiz-verdict {
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.quiz-verdict.is-ok {
+  color: var(--ok);
+}
+
+.quiz-verdict.is-bad {
+  color: var(--bad);
+}
+
+.quiz-end-text {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#dENext {
+  margin-top: 8px;
+}
+
 /* У «Серии» своя панель: нижний блок «Проверить / Новое» скрыт */
 .learn-layout > .action-dock.hide,
 #dDock.hide,

@@ -262,6 +262,9 @@
               <button class="drill-tab" data-drill="D" role="tab" aria-pressed="false">
                 Серия
               </button>
+              <button class="drill-tab" data-drill="E" role="tab" aria-pressed="false">
+                Читай стол
+              </button>
             </div>
           </div>
 
@@ -341,6 +344,25 @@
             </div>
             <div id="dDfb" class="drill-feedback" role="status" aria-live="polite"></div>
             <button id="dDNew" type="button" class="series-new">🔄 Новая серия</button>
+          </div>
+
+          <!-- Упражнение E: викторина «Читай стол» -->
+          <div class="card drill-board hide" id="dPanelE" role="tabpanel">
+            <div id="dEStart" class="quiz-start">
+              <p class="read-intro muted">Вам покажут кубики за столом и ход ставок, потом зададут четыре вопроса о том, что лежит на столе на самом деле. Серия: пять столов, двадцать вопросов. Руки соперников видны только после вопросов по столу. Серия считается в пределах открытой страницы.</p>
+              <button id="dEGo" type="button" class="btn-primary"><span class="btn-main">Начать серию</span></button>
+            </div>
+            <div id="dEPlay" class="quiz-play hide">
+              <div class="quiz-head"><span id="dEProgress" class="quiz-progress muted"></span><span id="dEPoints" class="quiz-points"></span></div>
+              <div id="dEScene" class="quiz-scene"></div>
+              <div id="dEAsk" class="quiz-ask"></div>
+              <div id="dEFb" class="quiz-fb" role="status" aria-live="polite"></div>
+              <button id="dENext" type="button" class="btn-primary hide"><span class="btn-main">Дальше</span></button>
+            </div>
+            <div id="dEEnd" class="quiz-end hide">
+              <p id="dEEndText" class="quiz-end-text"></p>
+              <button id="dEAgain" type="button" class="btn-primary"><span class="btn-main">Ещё одна серия</span></button>
+            </div>
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import { safeByRule, isHalfway } from '../drill_rule.js';
 import { setupPracticeTimer } from './practice_timer.js';
 import { setupReadDrill } from './read_drill_view.js';
 import { setupSeriesDrill } from './series_drill_view.js';
+import { setupQuizDrill } from './quiz_view.js';
 import { drillStep, hintOpenFor, stepNote, prefillExpected, STEP_PARTIAL } from '../drill_steps.js';
 
 let drillState = { A: null, B: null };
@@ -167,21 +168,23 @@ export function setupDrill() {
   let activeDrill = 'A';
   const readDrill = setupReadDrill();
   const seriesDrill = setupSeriesDrill();
+  const quizDrill = setupQuizDrill();
 
   document.querySelectorAll('.drill-tab').forEach((btn) => {
     btn.onclick = () => {
-      activeDrill = btn.dataset.drill;   // 'A', 'B', 'C' или 'D'
+      activeDrill = btn.dataset.drill;   // 'A', 'B', 'C', 'D' или 'E'
       document.querySelectorAll('.drill-tab').forEach((b) => {
         const on = b === btn;
         b.classList.toggle('on', on);
         b.setAttribute('aria-pressed', String(on));
       });
-      for (const k of ['A', 'B', 'C', 'D']) $(`#dPanel${k}`)?.classList.toggle('hide', activeDrill !== k);
+      for (const k of ['A', 'B', 'C', 'D', 'E']) $(`#dPanel${k}`)?.classList.toggle('hide', activeDrill !== k);
       if (activeDrill === 'C') readDrill?.next();   // раунды могли появиться после партии
       if (activeDrill === 'D') seriesDrill?.show();
-      // у «Читай вскрытие» и «Серии» своя панель без нижнего блока: таймера там нет
-      const own = activeDrill === 'C' || activeDrill === 'D';
-      $('#dDock')?.classList.toggle('hide', activeDrill === 'D');
+      if (activeDrill === 'E') quizDrill?.show();
+      // у «Читай вскрытие», «Серии» и «Читай стол» своя панель: таймера там нет, а нижний блок есть только у «Читай вскрытие»
+      const own = activeDrill === 'C' || activeDrill === 'D' || activeDrill === 'E';
+      $('#dDock')?.classList.toggle('hide', activeDrill === 'D' || activeDrill === 'E');
       $('#dTimer')?.classList.toggle('hide', own);
       if (!own) {
         timerFor = activeDrill;

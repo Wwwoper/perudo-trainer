@@ -76,6 +76,34 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dTimer')).toBeVisible();
   });
 
+  test('«Упражнения»: «Читай стол» — серия из 20 вопросов, ответ сразу оценивается, чужих рук на экране нет', async ({ page }) => {
+    await open(page, 'drill');
+    await page.click('.drill-tab[data-drill="E"]');
+    await expect(page.locator('#dPanelE')).toBeVisible();
+    await expect(page.locator('#dDock')).toBeHidden();
+    await expect(page.locator('#dTimer')).toBeHidden();
+    await expect(page.locator('#dEGo')).toBeVisible();
+    await page.click('#dEGo');
+    await expect(page.locator('#dEProgress')).toHaveText('Стол 1 из 5 · вопрос 1 из 4');
+    for (let i = 0; i < 20; i++) {
+      await expect(page.locator('#dEAsk .quiz-q')).toBeVisible();
+      if (i === 0) await expect(page.locator('#dEScene .read-hand-row')).toHaveCount(0);
+      const opt = page.locator('#dEAsk .quiz-opt').first();
+      if (await opt.count()) await opt.click();
+      else {
+        await page.click('#dEAsk .quiz-plus');
+        await page.click('#dEAsk .quiz-send');
+      }
+      await expect(page.locator('#dEFb .quiz-verdict')).toBeVisible();
+      await expect(page.locator('#dEFb')).not.toContainText(/undefined|NaN/);
+      await page.click('#dENext');
+    }
+    await expect(page.locator('#dEEnd')).toBeVisible();
+    await expect(page.locator('#dEEndText')).toContainText(/Верно: \d+ из 20\./);
+    await page.click('#dEAgain');
+    await expect(page.locator('#dEProgress')).toHaveText('Стол 1 из 5 · вопрос 1 из 4');
+  });
+
   test('«Упражнения»: «Серия» — десять ситуаций, итог только в конце, шанс можно сменить', async ({ page }) => {
     await open(page, 'drill');
     await page.click('.drill-tab[data-drill="D"]');
