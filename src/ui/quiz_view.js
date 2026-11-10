@@ -9,7 +9,7 @@ import { renderBid, renderHand, escapeHtml } from '../table.js';
 import { seatLabel as rawSeatLabel } from '../read_drill.js';
 import { PER_TABLE } from '../table_quiz.js';
 import { createSeries, currentQuestion, progress, submitAnswer, summarize } from '../quiz_series.js';
-import { progressLabel, resultLine, endLine, pointsText } from '../quiz_text.js';
+import { progressLabel, resultLine, summaryView } from '../quiz_text.js';
 import { $ } from './common.js';
 
 const label = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
@@ -25,17 +25,25 @@ export function setupQuizDrill() {
   const ask = $('#dEAsk');
   const fb = $('#dEFb');
   const nextBtn = $('#dENext');
+  const reveal = $('#dEReveal');
+  const revealBody = $('#dERevealBody');
+  const revealNext = $('#dERevealNext');
   const endText = $('#dEEndText');
+  const endPoints = $('#dEEndPoints');
+  const kindsEl = $('#dEKinds');
+  const weakEl = $('#dEWeak');
   const againBtn = $('#dEAgain');
-  if (!startBox || !play || !endBox || !goBtn || !progEl || !pointsEl || !scene || !ask || !fb || !nextBtn || !endText || !againBtn) return null;
+  if (!startBox || !play || !endBox || !goBtn || !progEl || !pointsEl || !scene || !ask || !fb || !nextBtn || !reveal || !revealBody || !revealNext || !endText || !endPoints || !kindsEl || !weakEl || !againBtn) return null;
 
   let series = null;
   let answered = false;
   let num = 0;
+  let tableToReveal = -1;   // номер стола, у которого после ответа откроются руки
 
   const screen = (name) => {
     startBox.classList.toggle('hide', name !== 'start');
     play.classList.toggle('hide', name !== 'play');
+    reveal.classList.toggle('hide', name !== 'reveal');
     endBox.classList.toggle('hide', name !== 'end');
   };
 
@@ -71,6 +79,7 @@ export function setupQuizDrill() {
     const cur = currentQuestion(series);
     if (!cur) { finish(); return; }
     answered = false;
+    tableToReveal = -1;
     screen('play');
     const p = progress(series);
     progEl.textContent = progressLabel(p, series.tables.length, PER_TABLE);
@@ -84,9 +93,35 @@ export function setupQuizDrill() {
   }
 
   function finish() {
-    const sum = summarize(series);
+    const v = summaryView(summarize(series));
     screen('end');
-    endText.textContent = endLine(sum);
+    endText.textContent = `Верно: ${v.headline}`;
+    endPoints.textContent = v.points;
+    kindsEl.innerHTML = v.kinds.map((k) =>
+      `<li class="quiz-kind"><span class="quiz-kind-name">${escapeHtml(k.name)}</span><b>${escapeHtml(k.text)}</b>` +
+      `<progress class="quiz-meter" max="100" value="${k.rate}" aria-label="${escapeHtml(k.name)}: ${k.rate} %"></progress>` +
+      `<span class="quiz-kind-note muted">${escapeHtml(k.note)}</span></li>`).join('');
+    weakEl.textContent = v.weak;
+  }
+
+  /** Конец стола: руки всех игроков, итог раунда и ответы по четырём вопросам. */
+  function showReveal(tableIdx) {
+    const { round, questions } = series.tables[tableIdx];
+    const hands = round.hands.map((h, i) =>
+      `<div class="read-hand-row"><span class="read-hand-who">${label(round, i)}</span>${renderHand(h, round.wild, 'sm')}</div>`).join('');
+    const last = round.bids[round.bids.length - 1];
+    const mine = series.results.filter((r) => r.table === tableIdx);
+    const good = mine.filter((r) => r.ok).length;
+    const rows = mine.map((r) => {
+      const v = resultLine(r);
+      return `<li><span class="quiz-verdict is-${v.tone}">${escapeHtml(v.text)}</span> ${escapeHtml(questions[r.index].short ?? questions[r.index].title)}</li>`;
+    }).join('');
+    revealBody.innerHTML = `<p class="quiz-q">Стол ${tableIdx + 1}: верно ${good} из ${mine.length}</p>` +
+      `<div class="read-hands" aria-label="Руки при вскрытии">${hands}</div>` +
+      (last ? `<p>Последняя ставка ${renderBid(last.q, last.f)}: на столе оказалось ${round.end.actual}.</p>` : '') +
+      `<ul class="quiz-recap">${rows}</ul>`;
+    revealNext.querySelector('.btn-main').textContent = progress(series).done ? 'Итог серии' : 'Следующий стол';
+    screen('reveal');
   }
 
   function answer(value) {
@@ -102,7 +137,8 @@ export function setupQuizDrill() {
     if (q.input !== 'number') ask.querySelector(`.quiz-opt[data-v="${CSS.escape(q.answer)}"]`)?.classList.add('is-right');
     fb.innerHTML = `<p class="quiz-verdict is-${verdict.tone}">${escapeHtml(verdict.text)}</p><p class="muted">${escapeHtml(q.explain)}</p>`;
     pointsEl.textContent = `Баллы: ${series.results.reduce((a, r) => a + r.points, 0)}`;
-    nextBtn.querySelector('.btn-main').textContent = progress(series).done ? 'Итог' : 'Дальше';
+    nextBtn.querySelector('.btn-main').textContent = out.tableDone ? 'Открыть руки' : 'Дальше';
+    tableToReveal = out.tableDone ? cur.table : -1;
     nextBtn.classList.remove('hide');
   }
 
@@ -121,7 +157,8 @@ export function setupQuizDrill() {
     if (out) out.textContent = String(num);
   });
 
-  nextBtn.onclick = () => render();
+  nextBtn.onclick = () => { if (tableToReveal >= 0) showReveal(tableToReveal); else render(); };
+  revealNext.onclick = () => render();
 
   function start() {
     series = createSeries({ rounds: getRounds() });
@@ -135,6 +172,5 @@ export function setupQuizDrill() {
   return {
     /** Открытие вкладки: незаконченная серия продолжается, иначе показывается старт. */
     show() { if (!series) screen('start'); },
-    pointsText,
   };
 }

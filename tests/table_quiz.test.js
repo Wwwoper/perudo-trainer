@@ -303,3 +303,29 @@ test('canQuiz: целый стол есть не у каждого раунда'
   }
   assert.ok(yes > 0 && no > 0);
 });
+
+test('у каждого вопроса есть короткая подпись для разбора стола', () => {
+  const seen = new Set();
+  for (let seed = 1; seed <= 200; seed++) {
+    const r = simulateRound(seed);
+    for (const q of r ? pickTableQuestions(r, { rnd: lcg(seed) }) : []) {
+      assert.ok(typeof q.short === 'string' && q.short.length > 0 && q.short.length < 50, `${q.kind}: ${q.short}`);
+      seen.add(q.kind);
+    }
+  }
+  assert.equal(seen.size, 4);
+});
+
+test('pickTableQuestions: виды чередуются, один вид не занимает полстола без нужды', () => {
+  const counts = { lastTrue: 0, weakestBid: 0, whoHoldsMore: 0, countFace: 0 };
+  for (let seed = 1; seed <= 1500; seed++) {
+    const r = simulateRound(seed);
+    if (!r) continue;
+    const qs = pickTableQuestions(r, { rnd: lcg(seed) });
+    if (qs.length < PER_TABLE) continue;
+    for (const q of qs) counts[q.kind]++;
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  assert.ok(counts.countFace / total <= 0.45, JSON.stringify(counts));   // раньше было около 50 %
+  assert.ok(Object.values(counts).every((c) => c > 0), JSON.stringify(counts));
+});

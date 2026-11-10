@@ -558,6 +558,45 @@
   margin-top: 8px;
 }
 
+.quiz-recap {
+  margin: 8px 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quiz-verdict.is-near {
+  color: var(--mut);
+}
+
+.quiz-kinds {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz-kind {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  align-items: baseline;
+}
+
+.quiz-meter {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 10px;
+}
+
+.quiz-kind-note {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+
 /* У «Серии» своя панель: нижний блок «Проверить / Новое» скрыт */
 .learn-layout > .action-dock.hide,
 #dDock.hide,

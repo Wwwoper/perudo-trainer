@@ -38,6 +38,7 @@ export function buildLastTrue(round) {
     kind: KIND_LAST_TRUE,
     input: 'two',
     title: `Ставка ${name}: ${last.q} × ${faceGlyph(last.f)}. Её проверили. Она верна?`,
+    short: 'Последняя ставка верна?',
     bid: { s: last.s, q: last.q, f: last.f, name },
     options: [{ v: 'yes', label: 'Верна' }, { v: 'no', label: 'Не верна' }],
     answer: ok ? 'yes' : 'no',
@@ -79,6 +80,7 @@ export function buildWeakestBid(round, rnd = Math.random) {
       kind: KIND_WEAKEST_BID,
       input: 'bid',
       title: 'Какая из этих ставок самая слабая? У автора меньше всего нужных кубиков в руке.',
+      short: 'Самая слабая ставка',
       options,
       answer: String(w.n),
       explain: `Нужных кубиков у авторов${cond}: ${detail}. Меньше всего у ${seatLabel(round, w.s)}.`,
@@ -117,6 +119,7 @@ export function buildWhoHoldsMore(round, rnd = Math.random) {
   return {
     kind: KIND_WHO_HOLDS_MORE,
     input: 'player',
+    short: `Кто держит больше: ${na} или ${nb}`,
     title: `У кого в руке больше кубиков той цифры, что он назвал в последней ставке: у ${na} или у ${nb}?`,
     options: [a, b].map((x) => ({ v: String(x.s), s: x.s, f: x.f, name: seatLabel(round, x.s), label: `${seatLabel(round, x.s)} (${faceGlyph(x.f)})` })),
     answer: String(winner.s),
@@ -145,6 +148,7 @@ export function buildCountFace(round, rnd = Math.random) {
     kind: KIND_COUNT_FACE,
     input: 'number',
     title: `Сколько всего кубиков ${faceGlyph(f)} на столе${jokers ? ', считая единицы-джокеры' : ''}?`,
+    short: `Сколько ${faceGlyph(f)} на столе`,
     face: f,
     range: { min: 0, max: total },
     start: Math.min(total, Math.round(total * (jokers ? 1 / 3 : 1 / 6))),
@@ -194,7 +198,10 @@ export function pickTableQuestions(round, { rnd = Math.random, count = PER_TABLE
   for (let tries = 0; tries < 60 && out.length < count; tries++) {
     const open = kinds.filter((k) => used[k] < maxPerKind && !dead.has(k));
     if (!open.length) break;
-    const kind = open[Math.floor(rnd() * open.length)];
+    // сначала виды, которых в этом столе ещё нет: так вопросы разных видов чередуются, а не всегда «Сколько на столе»
+    const least = Math.min(...open.map((k) => used[k]));
+    const fresh = open.filter((k) => used[k] === least);
+    const kind = fresh[Math.floor(rnd() * fresh.length)];
     const q = BUILDERS[kind](round, rnd);
     if (!q) { dead.add(kind); continue; }
     if (seen.has(q.title)) continue;                 // тот же вопрос второй раз не задаём

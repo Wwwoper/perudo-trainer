@@ -33,3 +33,30 @@ export function resultLine(result) {
 export function endLine({ correct, total, points, max }) {
   return `Верно: ${correct} из ${total}. Баллов: ${points} из ${max}.`;
 }
+
+const pct = (x) => `${Math.round(x * 100)} %`;
+
+/**
+ * Итог серии для экрана: заголовок, сравнение с лучшей постоянной догадкой, строки по видам вопросов и слабое место.
+ * @param {ReturnType<import('./quiz_series.js').summarize>} sum
+ */
+export function summaryView(sum) {
+  const diff = Math.round(sum.gain);
+  const compare = Math.abs(sum.gain) < 0.5
+    ? 'Это на уровне лучшей постоянной догадки.'
+    : (sum.gain > 0
+      ? `Это на ${pointsText(diff)} больше, чем дала бы лучшая постоянная догадка по тем же вопросам.`
+      : `Это на ${pointsText(-diff)} меньше, чем дала бы лучшая постоянная догадка по тем же вопросам.`);
+  return {
+    headline: `${sum.correct} из ${sum.total}`,
+    points: `Баллов: ${sum.points} из ${sum.max}. Постоянная догадка набрала бы около ${Math.round(sum.guess)}. ${compare}`,
+    kinds: sum.kinds.map((k) => ({
+      kind: k.kind, name: k.name, text: `${k.correct} из ${k.n}`,
+      rate: Math.round(k.rate * 100), guess: Math.round(k.guessRate * 100),
+      note: `лучшая постоянная догадка: ${pct(k.guessRate)}`,
+    })),
+    weak: sum.weakest
+      ? `Слабее всего вышел вид «${sum.weakest.name}»: ${pct(sum.weakest.rate)} баллов при ${pct(sum.weakest.guessRate)} у постоянной догадки.`
+      : 'Ни один вид вопросов не вышел хуже постоянной догадки.',
+  };
+}

@@ -97,9 +97,17 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dEFb .quiz-verdict')).toBeVisible();
       await expect(page.locator('#dEFb')).not.toContainText(/undefined|NaN/);
       await page.click('#dENext');
+      if (i % 4 === 3) {   // стол закончился: руки открыты, ответы перечислены
+        await expect(page.locator('#dEReveal .read-hand-row').first()).toBeVisible();
+        await expect(page.locator('#dEReveal .quiz-recap li')).toHaveCount(4);
+        await page.click('#dERevealNext');
+      }
     }
     await expect(page.locator('#dEEnd')).toBeVisible();
-    await expect(page.locator('#dEEndText')).toContainText(/Верно: \d+ из 20\./);
+    await expect(page.locator('#dEEndText')).toContainText(/Верно: \d+ из 20/);
+    await expect(page.locator('#dEEndPoints')).toContainText('Баллов:');
+    await expect(page.locator('#dEKinds .quiz-kind').first()).toBeVisible();
+    await expect(page.locator('#dEEnd')).not.toContainText(/undefined|NaN/);
     await page.click('#dEAgain');
     await expect(page.locator('#dEProgress')).toHaveText('Стол 1 из 5 · вопрос 1 из 4');
   });

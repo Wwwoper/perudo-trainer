@@ -26,3 +26,35 @@ test('resultLine: верно, точно, почти и мимо', () => {
 test('endLine: верные ответы и баллы', () => {
   assert.equal(endLine({ correct: 14, total: 20, points: 17, max: 24 }), 'Верно: 14 из 20. Баллов: 17 из 24.');
 });
+
+import { summaryView } from '../src/quiz_text.js';
+
+const sample = (over = {}) => ({
+  correct: 14, total: 20, points: 17, max: 24, guess: 11.4, gain: 5.6,
+  kinds: [
+    { kind: 'lastTrue', name: 'Верность ставки', n: 6, correct: 5, rate: 0.83, guessRate: 0.55 },
+    { kind: 'countFace', name: 'Сколько на столе', n: 4, correct: 1, rate: 0.35, guessRate: 0.37 },
+  ],
+  weakest: null,
+  ...over,
+});
+
+test('summaryView: заголовок, баллы и сравнение с догадкой', () => {
+  const v = summaryView(sample());
+  assert.equal(v.headline, '14 из 20');
+  assert.match(v.points, /17 из 24/);
+  assert.match(v.points, /около 11/);
+  assert.match(v.points, /на 6 баллов больше/);
+  assert.equal(v.kinds[0].text, '5 из 6');
+  assert.equal(v.kinds[0].rate, 83);
+  assert.equal(v.kinds[0].guess, 55);
+  assert.match(v.kinds[0].note, /55 %/);
+  assert.match(v.weak, /Ни один вид/);
+});
+
+test('summaryView: хуже догадки и на уровне догадки, слабое место называется', () => {
+  const worse = summaryView(sample({ gain: -3.2, weakest: { name: 'Сколько на столе', rate: 0.35, guessRate: 0.37 } }));
+  assert.match(worse.points, /на 3 балла меньше/);
+  assert.match(worse.weak, /Сколько на столе.*35 %.*37 %/);
+  assert.match(summaryView(sample({ gain: 0.2 })).points, /на уровне/);
+});
