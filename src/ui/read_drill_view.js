@@ -33,9 +33,8 @@ export function setupReadDrill() {
     const dice = k.mineDice.map((d) =>
       `<span class="read-mine${d.match ? ' is-match' : ''}">${renderDie(d.v, 'xs', task.wild && d.v === 1)}</span>`).join('');
     return '<div class="read-know">' +
-      `<p><b>Что вы знаете.</b> Кубиков у игрока: ${k.size}. Всего за столом: ${k.total}, скрыто от вас: ${k.hidden}.</p>` +
-      `<p>Ваши кубики: <span class="read-mine-row">${dice}</span> Нужной цифры у вас: ${k.mine}. ` +
-      `Чтобы ставка ${q.q}×${q.f} была верна, среди скрытых нужно ещё ${k.need}.</p>` +
+      `<p><b>Что вы знаете.</b> Кубиков у игрока: ${k.size}. Скрыто от вас: ${k.hidden}.</p>` +
+      `<p>Ваши кубики: <span class="read-mine-row">${dice}</span> Нужной цифры у вас: ${k.mine}.</p>` +
       `<p class="read-prior">${priorHint(q, task.wild)}</p></div>`;
   }
 
@@ -83,6 +82,7 @@ export function setupReadDrill() {
     const sizes = task.dice.map((d, i) => `${seatLabel(round, i)} — ${d}`).join(' · ');
     head.innerHTML = `Ваши кубики: ${renderHand(task.hand, task.wild)}<br>` +
       `Кубиков в руках: <b>${sizes}</b>.<br>` +
+      'Вопросы про руку автора ставки, а не про весь стол. Спрашиваем о нескольких ставках соперников: они отмечены в ленте.<br>' +
       (task.wild ? 'Единицы — джокеры: считаются за любую цифру.' : 'Единицы обычные: за другие цифры не считаются (раунд Палифико).') +
       (isSimRound(round) ? '<br><span class="read-sim muted">Учебный раунд: его сыграли боты программы. В статистику он не идёт.</span>' : '');
     bidsEl.innerHTML = feedRows(task).map((b) =>
@@ -93,7 +93,7 @@ export function setupReadDrill() {
     ask.innerHTML = task.questions.map((q) =>
       `<div class="read-q" role="group" data-n="${q.n}" aria-labelledby="rdT${q.n}">` +
       `<p class="read-q-title" id="rdT${q.n}">${seatLabel(round, q.seat)}: есть ли в руке хоть одна ${renderDie(q.f, 's')}?</p>` +
-      `<p class="read-q-bid muted">Ставка ${q.n}: ${renderBid(q.q, q.f)}</p>` +
+      `<p class="read-q-bid muted">Ставка №${q.n}, ${seatLabel(round, q.seat)}: ${renderBid(q.q, q.f)}</p>` +
       knownHtml(q) +
       '<div class="read-yn" role="group" aria-label="Ваш ответ">' +
       `<button type="button" class="read-yn-btn" data-n="${q.n}" data-v="yes" aria-pressed="false">Да</button>` +

@@ -569,7 +569,10 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dCAsk .read-yn-btn[data-v="yes"]').first()).toHaveText('Да');
         await expect(page.locator('#dCAsk .read-yn-btn[data-v="no"]').first()).toHaveText('Нет');
         await expect(page.locator('#dCAsk .read-know')).toHaveCount(2);
-        await expect(page.locator('#dCAsk .read-know').first()).toContainText('Всего за столом');
+        await expect(page.locator('#dCAsk .read-know').first()).toContainText('Скрыто от вас');
+        await expect(page.locator('#dCAsk .read-know').first()).not.toContainText('ставка');
+        await expect(page.locator('#dCAsk .read-q-bid').first()).toContainText(/Ставка №\d+, /);
+        await expect(page.locator('#dCq')).toContainText('Вопросы про руку автора ставки');
         await expect(page.locator('.read-hands')).toHaveCount(0);
         // кнопка ждёт ответов на оба вопроса
         await expect(page.locator('#dCCheck')).toBeDisabled();
