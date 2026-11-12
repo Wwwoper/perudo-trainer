@@ -105,3 +105,21 @@ test('kindBaselines: у каждого вида есть доля лучшей �
   for (const v of Object.values(b)) assert.ok(v > 0.3 && v <= 0.55, String(v));
   assert.equal(kindBaselines(), b);   // считается один раз
 });
+
+import { pointsBeforeTable, totalPoints } from '../src/quiz_series.js';
+
+test('pointsBeforeTable: внутри стола счёт не растёт, после стола засчитывается; totalPoints — всё', () => {
+  let s = fresh();
+  const seen = [];
+  while (currentQuestion(s)) {
+    const cur = currentQuestion(s);
+    seen.push(pointsBeforeTable(s, cur.table));
+    s = submitAnswer(s, cur.question.answer).series;
+  }
+  // 5 столов по 4 вопроса: 4 раза подряд одно и то же число, потом оно растёт
+  for (let t = 0; t < 5; t++) assert.equal(new Set(seen.slice(t * 4, t * 4 + 4)).size, 1);
+  assert.equal(seen[0], 0);
+  assert.ok(seen[4] > 0 && seen[8] > seen[4]);
+  assert.equal(totalPoints(s), summarize(s).points);
+  assert.equal(pointsBeforeTable(s, 5), totalPoints(s));
+});

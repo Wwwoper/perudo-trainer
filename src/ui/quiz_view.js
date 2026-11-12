@@ -8,7 +8,9 @@ import { getRounds, getStats, updateStats } from '../storage.js';
 import { renderBid, renderHand, escapeHtml } from '../table.js';
 import { seatLabel as rawSeatLabel } from '../read_drill.js';
 import { PER_TABLE } from '../table_quiz.js';
-import { createSeries, currentQuestion, progress, submitAnswer, summarize } from '../quiz_series.js';
+import {
+  createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints,
+} from '../quiz_series.js';
 import { progressLabel, resultLine, summaryView } from '../quiz_text.js';
 import { addQuizResults, lastSeriesRecord, lastSeriesText } from '../quiz_stats.js';
 import { $ } from './common.js';
@@ -86,7 +88,7 @@ export function setupQuizDrill() {
     screen('play');
     const p = progress(series);
     progEl.textContent = progressLabel(p, series.tables.length, PER_TABLE);
-    pointsEl.textContent = `Баллы: ${series.results.reduce((a, r) => a + r.points, 0)}`;
+    pointsEl.textContent = `Баллы: ${pointsBeforeTable(series, p.table)}`;   // внутри стола счёт не растёт: он выдал бы верные ответы
     scene.innerHTML = sceneHtml(cur.round);
     const q = cur.question;
     if (q.input === 'number') num = Math.max(q.range.min, Math.min(q.range.max, q.start));
@@ -130,12 +132,15 @@ export function setupQuizDrill() {
     const good = mine.filter((r) => r.ok).length;
     const rows = mine.map((r) => {
       const v = resultLine(r);
-      return `<li><span class="quiz-verdict is-${v.tone}">${escapeHtml(v.text)}</span> ${escapeHtml(questions[r.index].short ?? questions[r.index].title)}</li>`;
+      const q = questions[r.index];
+      return `<li><b>${escapeHtml(q.short ?? q.title)}</b><br><span class="quiz-verdict is-${v.tone}">${escapeHtml(v.text)}</span>` +
+        `<span class="muted"> ${escapeHtml(q.explain)}</span></li>`;
     }).join('');
     revealBody.innerHTML = `<p class="quiz-q">Стол ${tableIdx + 1}: верно ${good} из ${mine.length}</p>` +
       `<div class="read-hands" aria-label="Руки при вскрытии">${hands}</div>` +
       (last ? `<p>Последняя ставка ${renderBid(last.q, last.f)}: на столе оказалось ${round.end.actual}.</p>` : '') +
       `<ul class="quiz-recap">${rows}</ul>`;
+    pointsEl.textContent = `Баллы: ${totalPoints(series)}`;
     revealNext.querySelector('.btn-main').textContent = progress(series).done ? 'Итог серии' : 'Следующий стол';
     screen('reveal');
   }
@@ -148,11 +153,10 @@ export function setupQuizDrill() {
     const out = submitAnswer(series, value);
     series = out.series;
     const q = cur.question;
-    const verdict = resultLine(out.result);
+    // Верно или нет, пояснение и счёт до вскрытия не показываются: иначе они подсказывают следующие вопросы стола.
     ask.querySelectorAll('button').forEach((b) => { b.disabled = true; });
-    if (q.input !== 'number') ask.querySelector(`.quiz-opt[data-v="${CSS.escape(q.answer)}"]`)?.classList.add('is-right');
-    fb.innerHTML = `<p class="quiz-verdict is-${verdict.tone}">${escapeHtml(verdict.text)}</p><p class="muted">${escapeHtml(q.explain)}</p>`;
-    pointsEl.textContent = `Баллы: ${series.results.reduce((a, r) => a + r.points, 0)}`;
+    if (q.input !== 'number') ask.querySelector(`.quiz-opt[data-v="${CSS.escape(String(value))}"]`)?.classList.add('is-chosen');
+    fb.innerHTML = '<p class="quiz-accepted">Ответ принят. Оценка будет при вскрытии стола.</p>';
     nextBtn.querySelector('.btn-main').textContent = out.tableDone ? 'Открыть руки' : 'Дальше';
     tableToReveal = out.tableDone ? cur.table : -1;
     nextBtn.classList.remove('hide');

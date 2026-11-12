@@ -76,7 +76,7 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dTimer')).toBeVisible();
   });
 
-  test('«Упражнения»: «Читай стол» — серия из 20 вопросов, ответ сразу оценивается, чужих рук на экране нет', async ({ page }) => {
+  test('«Упражнения»: «Читай стол» — серия из 20 вопросов, оценка только при вскрытии стола, чужих рук на экране нет', async ({ page }) => {
     await open(page, 'drill');
     await page.click('.drill-tab[data-drill="E"]');
     await expect(page.locator('#dPanelE')).toBeVisible();
@@ -85,6 +85,7 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dEGo')).toBeVisible();
     await page.click('#dEGo');
     await expect(page.locator('#dEProgress')).toHaveText('Стол 1 из 5 · вопрос 1 из 4');
+    let seenPoints = 0;   // счёт на экране вопросов меняется только после вскрытия стола
     for (let i = 0; i < 20; i++) {
       await expect(page.locator('#dEAsk .quiz-q')).toBeVisible();
       if (i === 0) await expect(page.locator('#dEScene .read-hand-row')).toHaveCount(0);
@@ -94,12 +95,17 @@ test.describe('Учебные вкладки', () => {
         await page.click('#dEAsk .quiz-plus');
         await page.click('#dEAsk .quiz-send');
       }
-      await expect(page.locator('#dEFb .quiz-verdict')).toBeVisible();
-      await expect(page.locator('#dEFb')).not.toContainText(/undefined|NaN/);
+      // до вскрытия стола ни вердикта, ни чисел, ни роста счёта: они подсказывали бы следующие вопросы
+      await expect(page.locator('#dEFb')).toContainText('Ответ принят');
+      await expect(page.locator('#dEFb')).not.toContainText(/Верно|Мимо|Почти|Точно|undefined|NaN/);
+      await expect(page.locator('#dEPlay .quiz-verdict')).toHaveCount(0);
+      await expect(page.locator('#dEPoints')).toHaveText(new RegExp(`Баллы: ${seenPoints}$`));
       await page.click('#dENext');
       if (i % 4 === 3) {   // стол закончился: руки открыты, ответы перечислены
         await expect(page.locator('#dEReveal .read-hand-row').first()).toBeVisible();
         await expect(page.locator('#dEReveal .quiz-recap li')).toHaveCount(4);
+        await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict')).toHaveCount(4);
+        seenPoints = Number((await page.locator('#dEPoints').textContent()).replace(/\D/g, ''));
         await page.click('#dERevealNext');
       }
     }

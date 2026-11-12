@@ -102,6 +102,14 @@ export function progress(series) {
   return { table: series.tables.length, q: 0, done: true };
 }
 
+/** Баллы за столы, которые уже закончились (до стола tableIdx не включая): внутри стола итог не растёт. */
+export function pointsBeforeTable(series, tableIdx) {
+  return series.results.filter((r) => r.table < tableIdx).reduce((a, r) => a + r.points, 0);
+}
+
+/** Баллы за все ответы серии. */
+export const totalPoints = (series) => series.results.reduce((a, r) => a + r.points, 0);
+
 /** Текущий вопрос или null, если серия закончена. */
 export function currentQuestion(series) {
   const p = progress(series);
