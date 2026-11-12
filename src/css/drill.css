@@ -492,6 +492,24 @@
   font-weight: 600;
 }
 
+.quiz-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 8px 0;
+}
+
+.quiz-seat {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.quiz-seat-name {
+  margin-right: 4px;
+  font-weight: 600;
+}
+
 .quiz-opts {
   display: flex;
   flex-direction: column;

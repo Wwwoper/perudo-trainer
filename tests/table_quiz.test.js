@@ -24,7 +24,8 @@ test('buildLastTrue: верная ставка → ответ «yes», пояс�
   assert.equal(q.answer, 'yes');
   assert.deepEqual(q.options.map((o) => o.v), ['yes', 'no']);
   assert.match(q.title, /3 × ⚃/);
-  assert.match(q.explain, /3 × ⚃.*джокер.*3.*хватило/);
+  assert.match(q.explain, /Нужно 3 × ⚃, на столе 3: хватило/);
+  assert.doesNotMatch(q.explain, /джокер/);   // про единицы сказано один раз, в шапке стола
 });
 
 test('buildLastTrue: неверная ставка → «no»', () => {
@@ -33,7 +34,7 @@ test('buildLastTrue: неверная ставка → «no»', () => {
   assert.match(q.explain, /не хватило/);
 });
 
-test('buildLastTrue: без джокеров (Палифико) про джокеры не пишем', () => {
+test('buildLastTrue: слов про джокеров в пояснении нет и при Палифико', () => {
   const q = buildLastTrue(round({ wild: false }));
   assert.doesNotMatch(q.explain, /джокер/);
 });
@@ -86,6 +87,7 @@ test('buildWeakestBid: слабая ставка — где у автора ме
   assert.deepEqual(q.options.map((o) => o.n), [1, 2, 3]);
   assert.equal(q.answer, '2');
   assert.match(q.explain, /Меньше всего у/);
+  assert.match(q.title, /у кого из авторов меньше всего нужных кубиков/);
   assert.ok(q.options.every((o) => /× [⚀-⚅]$/.test(o.label)));
 });
 
@@ -197,15 +199,15 @@ const cntRound = (over = {}) => ({
   ...over,
 });
 
-test('buildCountFace: считает кубики цифры на всём столе вместе с джокерами', () => {
+test('buildCountFace: считает кубики цифры на всём столе вместе с джокерами (в тексте их не повторяем)', () => {
   const q = buildCountFace(cntRound(), () => 0);
   assert.equal(q.kind, KIND_COUNT_FACE);
   assert.equal(q.input, 'number');
   assert.equal(q.face, 4);
   assert.equal(q.answer, 6);                       // ⚃: 1 + 1 + 2 и две единицы
   assert.deepEqual(q.range, { min: 0, max: 12 });
-  assert.equal(q.start, 4);                        // 12 кубиков × 1/3
-  assert.match(q.title, /джокер/);
+  assert.equal('start' in q, false);               // счётчик начинается с нуля, стартового числа нет
+  assert.equal(q.title, 'Сколько всего ⚃ на столе?');
   assert.match(q.explain, /6 × ⚃/);
 });
 
@@ -213,7 +215,6 @@ test('buildCountFace: единицы и Палифико — без джокер
   const pal = buildCountFace(cntRound({ wild: false }), () => 0);
   assert.equal(pal.answer, 4);
   assert.doesNotMatch(pal.title, /джокер/);
-  assert.equal(pal.start, 2);                      // 12 × 1/6
   const ones = buildCountFace(cntRound({ bids: [{ s: 1, q: 2, f: 1 }] }), () => 0);
   assert.equal(ones.face, 1);
   assert.equal(ones.answer, 2);                    // единицы сами джокеров не имеют

@@ -11,7 +11,7 @@ import { countFace } from './rounds.js';
 
 export const KIND_LAST_TRUE = 'lastTrue';
 export const KIND_WEAKEST_BID = 'weakestBid';
-/** Сколько ставок показывается в вопросе «Какая ставка самая слабая?». */
+/** Сколько ставок показывается в вопросе «У кого из авторов меньше всего нужных кубиков?». */
 export const WEAK_CHOICES = 3;
 export const KIND_WHO_HOLDS_MORE = 'whoHoldsMore';
 export const KIND_COUNT_FACE = 'countFace';
@@ -33,7 +33,6 @@ export function buildLastTrue(round) {
   if (!Number.isInteger(actual) || !Number.isInteger(last.q) || !Number.isInteger(last.f)) return null;
   const name = seatLabel(round, last.s);
   const ok = actual >= last.q;
-  const cond = (round.wild && last.f !== 1) ? ' с учётом единиц-джокеров' : '';
   return {
     kind: KIND_LAST_TRUE,
     input: 'two',
@@ -42,12 +41,12 @@ export function buildLastTrue(round) {
     bid: { s: last.s, q: last.q, f: last.f, name },
     options: [{ v: 'yes', label: 'Верна' }, { v: 'no', label: 'Не верна' }],
     answer: ok ? 'yes' : 'no',
-    explain: `На столе было ${actual} × ${faceGlyph(last.f)}${cond}, а в ставке ${last.q}: ${ok ? 'хватило' : 'не хватило'}.`,
+    explain: `Нужно ${last.q} × ${faceGlyph(last.f)}, на столе ${actual}: ${ok ? 'хватило' : 'не хватило'}.`,
   };
 }
 
 /**
- * «Какая ставка самая слабая?» — выбор одной из трёх чужих ставок. Слабая — та, у автора которой в руке меньше
+ * «У кого из авторов меньше всего нужных кубиков?» — выбор одной из трёх чужих ставок. Слабая — та, у автора которой в руке меньше
  * всего кубиков названной грани (с учётом джокеров). Берутся только тройки, где такая ставка одна.
  * Ставки в вариантах идут в порядке хода. rnd нужен, чтобы выбрать тройку из нескольких возможных.
  * @returns {object|null}
@@ -74,16 +73,15 @@ export function buildWeakestBid(round, rnd = Math.random) {
       const name = seatLabel(round, x.s);
       return { v: String(x.n), n: x.n, s: x.s, q: x.q, f: x.f, name, label: `${name}: ${x.q} × ${faceGlyph(x.f)}` };
     });
-    const cond = (round.wild) ? ' (единицы — джокеры)' : '';
     const detail = pick.map((x) => `${seatLabel(round, x.s)} — ${x.has} из ${hands[x.s].length}`).join(', ');
     return {
       kind: KIND_WEAKEST_BID,
       input: 'bid',
-      title: 'Какая из этих ставок самая слабая? У автора меньше всего нужных кубиков в руке.',
-      short: 'Самая слабая ставка',
+      title: 'Ставки соперников: у кого из авторов меньше всего нужных кубиков в руке?',
+      short: 'Меньше всего нужных кубиков',
       options,
       answer: String(w.n),
-      explain: `Нужных кубиков у авторов${cond}: ${detail}. Меньше всего у ${seatLabel(round, w.s)}.`,
+      explain: `Нужных кубиков в руке: ${detail}. Меньше всего у ${seatLabel(round, w.s)}.`,
     };
   }
   return null;
@@ -120,7 +118,7 @@ export function buildWhoHoldsMore(round, rnd = Math.random) {
     kind: KIND_WHO_HOLDS_MORE,
     input: 'player',
     short: `Кто держит больше: ${na} или ${nb}`,
-    title: `У кого в руке больше кубиков той цифры, что он назвал в последней ставке: у ${na} или у ${nb}?`,
+    title: `Кто держит больше своей цифры: ${na} или ${nb}? Своя цифра — из последней ставки игрока.`,
     options: [a, b].map((x) => ({ v: String(x.s), s: x.s, f: x.f, name: seatLabel(round, x.s), label: `${seatLabel(round, x.s)} (${faceGlyph(x.f)})` })),
     answer: String(winner.s),
     explain: `В руках: ${part(a, na)}, ${part(b, nb)}.`,
@@ -129,8 +127,8 @@ export function buildWhoHoldsMore(round, rnd = Math.random) {
 
 /**
  * «Сколько всего кубиков цифры на столе?» — число. Цифра — одна из названных в ставках раунда; считаются кубики
- * всех игроков, включая ваши, с учётом джокеров. Ответ задаётся кнопками «−» и «+»: range — границы, start —
- * с какого числа начинать (начальный шанс цифры на всём столе, он ничего не подсказывает о раскладе).
+ * всех игроков, включая ваши, с учётом джокеров. Ответ задаётся кнопками «−» и «+»: range — границы,
+ * счётчик начинается с нуля.
  * @returns {object|null}
  */
 export function buildCountFace(round, rnd = Math.random) {
@@ -142,18 +140,16 @@ export function buildCountFace(round, rnd = Math.random) {
   const f = faces[Math.floor(rnd() * faces.length)];
   const total = hands.reduce((a, h) => a + h.length, 0);
   const answer = countFace(hands, f, round.wild);
-  const jokers = round.wild && f !== 1;
   const per = hands.map((h, s) => `${seatLabel(round, s)} — ${countFace([h], f, round.wild)}`).join(', ');
   return {
     kind: KIND_COUNT_FACE,
     input: 'number',
-    title: `Сколько всего кубиков ${faceGlyph(f)} на столе${jokers ? ', считая единицы-джокеры' : ''}?`,
+    title: `Сколько всего ${faceGlyph(f)} на столе?`,
     short: `Сколько ${faceGlyph(f)} на столе`,
     face: f,
     range: { min: 0, max: total },
-    start: Math.min(total, Math.round(total * (jokers ? 1 / 3 : 1 / 6))),
     answer,
-    explain: `На столе ${answer} × ${faceGlyph(f)}${jokers ? ' (с джокерами)' : ''}: ${per}.`,
+    explain: `На столе ${answer} × ${faceGlyph(f)}: ${per}.`,
   };
 }
 

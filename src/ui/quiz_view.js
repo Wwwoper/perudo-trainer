@@ -5,7 +5,7 @@
 // Серия живёт в пределах страницы и в хранилище не пишется.
 
 import { getRounds, getStats, updateStats } from '../storage.js';
-import { renderBid, renderHand, renderDie, escapeHtml } from '../table.js';
+import { renderBid, renderHand, renderDie, renderHiddenDice, escapeHtml } from '../table.js';
 import { seatLabel as rawSeatLabel } from '../read_drill.js';
 import { PER_TABLE } from '../table_quiz.js';
 import {
@@ -57,7 +57,8 @@ export function setupQuizDrill() {
 
   /** Ваши кубики, число кубиков у соперников и ход ставок; чужих рук здесь нет. */
   function sceneHtml(round) {
-    const sizes = round.dice.map((d, i) => `${label(round, i)} — ${d}`).join(' · ');
+    const seats = round.dice.map((d, i) => (i === round.me ? '' :
+      `<span class="quiz-seat"><span class="quiz-seat-name">${label(round, i)}</span>${renderHiddenDice(d)}</span>`)).join('');
     const rows = round.bids.map((b, i) =>
       `<li class="read-bid${b.s === round.me ? ' is-me' : ''}"><span class="read-bid-n">${i + 1}</span>` +
       `<span class="read-bid-who">${label(round, b.s)}</span>${renderBid(b.q, b.f)}</li>`).join('');
@@ -65,9 +66,8 @@ export function setupQuizDrill() {
       ? `<li class="read-bid"><span class="read-bid-n">${round.bids.length + 1}</span><span class="read-bid-who">${label(round, round.end.by)}</span><b>Не верю</b></li>`
       : '';
     return `<p>Ваши кубики: ${renderHand(round.hands[round.me], round.wild)}<br>` +
-      `Кубиков в руках: <b>${sizes}</b>.<br>` +
-      (round.wild ? 'Единицы — джокеры: считаются за любую цифру.' : 'Единицы обычные: за другие цифры не считаются (раунд Палифико).') +
-      `</p><ol class="read-bids" aria-label="Ставки раунда по порядку">${rows}${end}</ol>`;
+      (round.wild ? 'Единицы — джокеры: считаются за любую цифру, на кубиках выделены цветом.' : 'Единицы обычные: за другие цифры не считаются (раунд Палифико).') +
+      `</p><div class="quiz-seats" aria-label="Кубиков у соперников">${seats}</div><ol class="read-bids" aria-label="Ставки раунда по порядку">${rows}${end}</ol>`;
   }
 
   function askHtml(q) {
@@ -94,7 +94,7 @@ export function setupQuizDrill() {
     pointsEl.textContent = `Баллы: ${pointsBeforeTable(series, p.table)}`;   // внутри стола счёт не растёт: он выдал бы верные ответы
     scene.innerHTML = sceneHtml(cur.round);
     const q = cur.question;
-    if (q.input === 'number') num = Math.max(q.range.min, Math.min(q.range.max, q.start));
+    if (q.input === 'number') num = q.range.min;   // счётчик с нуля: стартовое число не подсказывает ответ
     ask.innerHTML = askHtml(q);
     fb.innerHTML = '';
     nextBtn.classList.add('hide');

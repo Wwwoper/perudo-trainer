@@ -14,7 +14,7 @@ import { simulateRound, isSimRound } from './read_sim.js';
 export const TABLES_DEFAULT = 5;
 export const KIND_NAMES = Object.freeze({
   [KIND_LAST_TRUE]: 'Верность ставки',
-  [KIND_WEAKEST_BID]: 'Самая слабая ставка',
+  [KIND_WEAKEST_BID]: 'Меньше всего нужных кубиков',
   [KIND_WHO_HOLDS_MORE]: 'Кто держит больше',
   [KIND_COUNT_FACE]: 'Сколько на столе',
 });
