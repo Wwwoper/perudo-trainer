@@ -58,3 +58,15 @@ test('summaryView: хуже догадки и на уровне догадки, 
   assert.match(worse.weak, /Сколько на столе.*35 %.*37 %/);
   assert.match(summaryView(sample({ gain: 0.2 })).points, /на уровне/);
 });
+
+import { splitDice } from '../src/quiz_text.js';
+
+test('splitDice: символы кубиков становятся гранями, остальное — текстом', () => {
+  assert.deepEqual(splitDice('Ставка Ирины: 3 × ⚄. Верна?'), [
+    { text: 'Ставка Ирины: 3 × ' }, { face: 5 }, { text: '. Верна?' },
+  ]);
+  assert.deepEqual(splitDice('⚀⚅'), [{ face: 1 }, { face: 6 }]);
+  assert.deepEqual(splitDice('без кубиков'), [{ text: 'без кубиков' }]);
+  assert.deepEqual(splitDice(''), []);
+  assert.deepEqual(splitDice(null), []);
+});

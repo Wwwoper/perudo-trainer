@@ -5,17 +5,20 @@
 // Серия живёт в пределах страницы и в хранилище не пишется.
 
 import { getRounds, getStats, updateStats } from '../storage.js';
-import { renderBid, renderHand, escapeHtml } from '../table.js';
+import { renderBid, renderHand, renderDie, escapeHtml } from '../table.js';
 import { seatLabel as rawSeatLabel } from '../read_drill.js';
 import { PER_TABLE } from '../table_quiz.js';
 import {
   createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints,
 } from '../quiz_series.js';
-import { progressLabel, resultLine, summaryView } from '../quiz_text.js';
+import { progressLabel, resultLine, summaryView, splitDice } from '../quiz_text.js';
 import { addQuizResults, lastSeriesRecord, lastSeriesText } from '../quiz_stats.js';
 import { $ } from './common.js';
 
 const label = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
+
+/** Текст вопроса в HTML: символы ⚀–⚅ заменены нарисованными кубиками (30 px), остальное экранировано. */
+const diced = (text) => splitDice(text).map((p) => ('face' in p ? renderDie(p.face, 's') : escapeHtml(p.text))).join('');
 
 export function setupQuizDrill() {
   const startBox = $('#dEStart');
@@ -68,7 +71,7 @@ export function setupQuizDrill() {
   }
 
   function askHtml(q) {
-    const title = `<p class="quiz-q">${escapeHtml(q.title)}</p>`;
+    const title = `<p class="quiz-q">${diced(q.title)}</p>`;
     if (q.input === 'number') {
       return `${title}<div class="quiz-step"><button type="button" class="quiz-minus" aria-label="Меньше">−</button>` +
         `<output id="dENum" class="quiz-num" aria-live="polite">${num}</output>` +
@@ -76,7 +79,7 @@ export function setupQuizDrill() {
         '<button type="button" class="btn-primary quiz-send"><span class="btn-main">Ответить</span></button>';
     }
     return `${title}<div class="quiz-opts" role="group" aria-label="Ваш ответ">` +
-      q.options.map((o) => `<button type="button" class="quiz-opt" data-v="${escapeHtml(o.v)}">${escapeHtml(o.label)}</button>`).join('') +
+      q.options.map((o) => `<button type="button" class="quiz-opt" data-v="${escapeHtml(o.v)}">${diced(o.label)}</button>`).join('') +
       '</div>';
   }
 
@@ -133,8 +136,8 @@ export function setupQuizDrill() {
     const rows = mine.map((r) => {
       const v = resultLine(r);
       const q = questions[r.index];
-      return `<li><b>${escapeHtml(q.short ?? q.title)}</b><br><span class="quiz-verdict is-${v.tone}">${escapeHtml(v.text)}</span>` +
-        `<span class="muted"> ${escapeHtml(q.explain)}</span></li>`;
+      return `<li><b>${diced(q.short ?? q.title)}</b><br><span class="quiz-verdict is-${v.tone}">${escapeHtml(v.text)}</span>` +
+        `<span class="muted"> ${diced(q.explain)}</span></li>`;
     }).join('');
     revealBody.innerHTML = `<p class="quiz-q">Стол ${tableIdx + 1}: верно ${good} из ${mine.length}</p>` +
       `<div class="read-hands" aria-label="Руки при вскрытии">${hands}</div>` +

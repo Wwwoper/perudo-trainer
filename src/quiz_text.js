@@ -60,3 +60,24 @@ export function summaryView(sum) {
       : 'Ни один вид вопросов не вышел хуже постоянной догадки.',
   };
 }
+
+const DIE_CHARS = '⚀⚁⚂⚃⚄⚅';
+
+/**
+ * Разбивает строку вопроса на части: обычный текст и грани кубиков. Символ ⚃ в текстах вопросов заменяется
+ * на нарисованный кубик в интерфейсе: сам символ мелкий, и ⚁/⚂ и ⚃/⚄ легко спутать.
+ * @param {string} text
+ * @returns {({text:string}|{face:number})[]}
+ */
+export function splitDice(text) {
+  const out = [];
+  let buf = '';
+  for (const ch of String(text ?? '')) {
+    const i = DIE_CHARS.indexOf(ch);
+    if (i < 0) { buf += ch; continue; }
+    if (buf) { out.push({ text: buf }); buf = ''; }
+    out.push({ face: i + 1 });
+  }
+  if (buf) out.push({ text: buf });
+  return out;
+}

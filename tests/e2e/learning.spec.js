@@ -89,6 +89,9 @@ test.describe('Учебные вкладки', () => {
     for (let i = 0; i < 20; i++) {
       await expect(page.locator('#dEAsk .quiz-q')).toBeVisible();
       if (i === 0) await expect(page.locator('#dEScene .read-hand-row')).toHaveCount(0);
+      // кубики в вопросе и вариантах нарисованы, а не набраны мелкими символами
+      expect(await page.locator('#dEAsk .die').count()).toBeGreaterThan(0);
+      await expect(page.locator('#dEAsk')).not.toContainText(/[⚀-⚅]/);
       const opt = page.locator('#dEAsk .quiz-opt').first();
       if (await opt.count()) await opt.click();
       else {
@@ -104,6 +107,7 @@ test.describe('Учебные вкладки', () => {
       if (i % 4 === 3) {   // стол закончился: руки открыты, ответы перечислены
         await expect(page.locator('#dEReveal .read-hand-row').first()).toBeVisible();
         await expect(page.locator('#dEReveal .quiz-recap li')).toHaveCount(4);
+        await expect(page.locator('#dEReveal')).not.toContainText(/[⚀-⚅]/);
         await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict')).toHaveCount(4);
         seenPoints = Number((await page.locator('#dEPoints').textContent()).replace(/\D/g, ''));
         await page.click('#dERevealNext');
