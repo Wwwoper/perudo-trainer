@@ -162,10 +162,15 @@ describe('серия за сеанс', () => {
     assert.match(l[1], /угадали бы 2 из 4/);
     assert.match(l[2], /Серия короткая/);
   });
-  test('после 10 ответов: лучше, наравне, хуже начального шанса', () => {
-    assert.match(seriesLines({ n: 10, good: 7, guess: 5 })[2], /лучше, чем начальный шанс/);
-    assert.match(seriesLines({ n: 10, good: 5, guess: 5 })[2], /наравне/);
-    assert.match(seriesLines({ n: 10, good: 4, guess: 6 })[2], /начальный шанс угадывает чаще/);
+  test('после 10 ответов: лучше, мало для вывода, хуже догадки', () => {
+    assert.match(seriesLines({ n: 10, good: 8, guess: 5 })[2], /лучше: на 3 ответа больше/);
+    assert.match(seriesLines({ n: 10, good: 10, guess: 4 })[2], /на 6 ответов больше/);
+    assert.match(seriesLines({ n: 10, good: 6, guess: 5 })[2], /судить рано/);
+    assert.match(seriesLines({ n: 10, good: 5, guess: 5 })[2], /судить рано/);
+    assert.match(seriesLines({ n: 10, good: 4, guess: 7 })[2], /угадывает чаще/);
+  });
+  test('в строках серии нет слов «начальный шанс»: они относятся к режиму новичка', () => {
+    for (const g of [8, 5, 3]) for (const l of seriesLines({ n: 10, good: g, guess: 5 })) assert.ok(!/начальн/i.test(l), l);
   });
   test('тексты без запрещённых формулировок', () => {
     for (const g of [7, 5, 4]) for (const l of seriesLines({ n: 10, good: g, guess: 5 })) for (const re of BANNED) assert.ok(!re.test(l), `${re}: ${l}`);

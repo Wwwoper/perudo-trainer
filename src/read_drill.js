@@ -235,7 +235,7 @@ export function checkReadAnswers(round, task, answers) {
   return { items, good, guessGood, total: items.length, lines, outcome };
 }
 
-/** Минимум ответов за сеанс, после которого серия сравнивается с догадкой по начальному шансу. */
+/** Минимум ответов за сеанс, после которого серия сравнивается с догадкой по числу кубиков у автора. */
 export const MIN_SERIES = 10;
 
 /**
@@ -249,21 +249,25 @@ export function addSeries(series, res) {
   return { n: s.n + res.total, good: s.good + res.good, guess: s.guess + res.guessGood };
 }
 
-/** Строки оценки серии: сколько угадано и как это соотносится с догадкой по начальному шансу. */
+/** Разница в ответах, меньше которой серия не считается лучше или хуже догадки (как в «Читай стол»). */
+export const SURE_GAP = 3;
+
+/** Строки оценки серии: сколько угадано и как это соотносится с догадкой только по числу кубиков у автора. */
 export function seriesLines(series, { min = MIN_SERIES } = {}) {
   if (!series || !Number.isInteger(series.n) || series.n < 1) return [];
   const lines = [
     `Угадано за сеанс: ${series.good} из ${series.n}.`,
-    `Если отвечать только по начальному шансу цифры (без чтения ставок), угадали бы ${series.guess} из ${series.n}.`,
+    `Если отвечать только по числу кубиков у автора, без чтения ставок, угадали бы ${series.guess} из ${series.n}.`,
   ];
+  const gain = series.good - series.guess;
   if (series.n < min) {
     lines.push(`Серия короткая: выводы после ${min} ответов.`);
-  } else if (series.good > series.guess) {
-    lines.push('Вы читаете ставки лучше, чем начальный шанс.');
-  } else if (series.good === series.guess) {
-    lines.push('Пока вы угадываете наравне с начальным шансом: смотрите, какие ставки на это указывают.');
+  } else if (gain >= SURE_GAP) {
+    lines.push(`Вы читаете ставки лучше: на ${gain} ${gain < 5 ? 'ответа' : 'ответов'} больше.`);
+  } else if (gain <= -SURE_GAP) {
+    lines.push('Пока догадка по числу кубиков угадывает чаще. Обратите внимание на то, повышал ли автор цифру и сколько у него кубиков.');
   } else {
-    lines.push('Пока начальный шанс угадывает чаще. Обратите внимание на число кубиков у автора и на то, повышал ли он цифру.');
+    lines.push('Разница с догадкой мала, судить рано: сыграйте ещё несколько раундов.');
   }
   return lines;
 }
