@@ -28,6 +28,13 @@ test('buildLastTrue: верная ставка → ответ «yes», пояс�
   assert.doesNotMatch(q.explain, /джокер/);   // про единицы сказано один раз, в шапке стола
 });
 
+test('buildLastTrue: короткий вопрос с формой имени, без слов «Её проверили»', () => {
+  const q = buildLastTrue(round());
+  assert.match(q.title, /^Ставка [А-Яа-яё]+ — \d+ × [⚀-⚅]\. Она верна\?$/);
+  assert.ok(!/проверили/.test(q.title));
+  assert.deepEqual(q.options.map((o) => o.label), ['Верна', 'Не верна']);
+});
+
 test('buildLastTrue: неверная ставка → «no»', () => {
   const q = buildLastTrue(round({}, { actual: 2, ok: false }));
   assert.equal(q.answer, 'no');
@@ -88,7 +95,8 @@ test('buildWeakestBid: слабая ставка — где у автора ме
   assert.equal(q.answer, '2');
   assert.match(q.explain, /ставка 1 \(.+\) — 2 из 2.*ставка 2 \(.+\) — 1 из 2/);
   assert.match(q.explain, /Меньше всего у ставки 2\./);
-  assert.match(q.title, /у кого из авторов меньше всего нужных кубиков/);
+  assert.match(q.title, /^При какой ставке меньше всего нужных кубиков в руке игрока\?$/);
+  assert.ok(!/автор/i.test(q.title + q.explain));
   assert.ok(q.options.every((o) => /× [⚀-⚅]$/.test(o.label)));
 });
 

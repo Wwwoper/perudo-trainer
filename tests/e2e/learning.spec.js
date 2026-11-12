@@ -94,7 +94,13 @@ test.describe('Учебные вкладки', () => {
       // кубики в вопросе и вариантах нарисованы, а не набраны мелкими символами
       expect(await page.locator('#dEAsk .die').count()).toBeGreaterThan(0);
       await expect(page.locator('#dEAsk')).not.toContainText(/[⚀-⚅]/);
+      await expect(page.locator('#dEAsk')).not.toContainText(/автор|проверили/i);
       const opt = page.locator('#dEAsk .quiz-opt').first();
+      if (await page.locator('#dEAsk .quiz-opts-two').count()) {   // «Верна» и «Не верна» стоят в одной строке
+        const tops = await page.locator('#dEAsk .quiz-opts-two .quiz-opt').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+        expect(tops).toHaveLength(2);
+        expect(tops[0]).toBe(tops[1]);
+      }
       if (await opt.count()) await opt.click();
       else {
         await page.click('#dEAsk .quiz-plus');
@@ -573,7 +579,7 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dCAsk .read-know').first()).toContainText('Скрыто от вас');
         await expect(page.locator('#dCAsk .read-know').first()).not.toContainText('ставка');
         await expect(page.locator('#dCAsk .read-q-bid').first()).toContainText(/Ставка №\d+, /);
-        await expect(page.locator('#dCq')).toContainText('Вопросы про руку автора ставки');
+        await expect(page.locator('#dCq')).toContainText('Вопросы про руку игрока, сделавшего ставку');
         await expect(page.locator('.read-hands')).toHaveCount(0);
         // кнопка ждёт ответов на оба вопроса
         await expect(page.locator('#dCCheck')).toBeDisabled();

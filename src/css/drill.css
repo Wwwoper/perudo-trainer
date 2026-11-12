@@ -594,6 +594,15 @@
   gap: 8px;
 }
 
+.quiz-opts-two {
+  flex-direction: row;
+}
+
+.quiz-opts-two .quiz-opt {
+  flex: 1;
+  min-width: 0;
+}
+
 .quiz-opt,
 .quiz-minus,
 .quiz-plus {

@@ -79,7 +79,7 @@ export function setupQuizDrill() {
         `<button type="button" class="quiz-plus" aria-label="Больше">+</button></div>` +
         '<button type="button" class="btn-primary quiz-send"><span class="btn-main">Ответить</span></button>';
     }
-    return `${title}<div class="quiz-opts" role="group" aria-label="Ваш ответ">` +
+    return `${title}<div class="quiz-opts${q.input === 'two' ? ' quiz-opts-two' : ''}" role="group" aria-label="Ваш ответ">` +
       q.options.map((o) => `<button type="button" class="quiz-opt" data-v="${escapeHtml(o.v)}">${diced(o.label)}</button>`).join('') +
       '</div>';
   }

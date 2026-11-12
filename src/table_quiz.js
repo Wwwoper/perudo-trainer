@@ -8,10 +8,11 @@
 
 import { seatLabel } from './read_drill.js';
 import { countFace } from './rounds.js';
+import { bidOf } from './names_ru.js';
 
 export const KIND_LAST_TRUE = 'lastTrue';
 export const KIND_WEAKEST_BID = 'weakestBid';
-/** Сколько ставок показывается в вопросе «У кого из авторов меньше всего нужных кубиков?». */
+/** Сколько ставок показывается в вопросе «При какой ставке меньше всего нужных кубиков в руке игрока?». */
 export const WEAK_CHOICES = 3;
 export const KIND_WHO_HOLDS_MORE = 'whoHoldsMore';
 export const KIND_COUNT_FACE = 'countFace';
@@ -22,7 +23,7 @@ export const faceGlyph = (f) => GLYPH[f] ?? String(f);
 
 /**
  * «Последняя ставка верна?» — две кнопки. Берутся раунды, где ставку проверили («Не верю»),
- * а её автор — не вы. Ответ: 'yes', если нужных кубиков на столе хватило.
+ * а её игрок — не вы. Ответ: 'yes', если нужных кубиков на столе хватило.
  * @returns {object|null}
  */
 export function buildLastTrue(round) {
@@ -36,7 +37,7 @@ export function buildLastTrue(round) {
   return {
     kind: KIND_LAST_TRUE,
     input: 'two',
-    title: `Ставка ${name}: ${last.q} × ${faceGlyph(last.f)}. Её проверили. Она верна?`,
+    title: `${bidOf(name).replace(/^./, (c) => c.toUpperCase())} — ${last.q} × ${faceGlyph(last.f)}. Она верна?`,
     short: 'Последняя ставка верна?',
     bid: { s: last.s, q: last.q, f: last.f, name },
     options: [{ v: 'yes', label: 'Верна' }, { v: 'no', label: 'Не верна' }],
@@ -73,16 +74,16 @@ export function buildWeakestBid(round, rnd = Math.random) {
       const name = seatLabel(round, x.s);
       return { v: String(x.n), n: x.n, s: x.s, q: x.q, f: x.f, name, label: `${name}: ${x.q} × ${faceGlyph(x.f)}` };
     });
-    // у одного автора может быть две ставки из тройки, поэтому строки подписаны номером ставки
+    // у одного игрока может быть две ставки из тройки, поэтому строки подписаны номером ставки
     const detail = pick.map((x) => `ставка ${x.n} (${seatLabel(round, x.s)}) — ${x.has} из ${hands[x.s].length}`).join(', ');
     return {
       kind: KIND_WEAKEST_BID,
       input: 'bid',
-      title: 'Ставки соперников: у кого из авторов меньше всего нужных кубиков в руке?',
+      title: 'При какой ставке меньше всего нужных кубиков в руке игрока?',
       short: 'Меньше всего нужных кубиков',
       options,
       answer: String(w.n),
-      explain: `Нужных кубиков в руке автора: ${detail}. Меньше всего у ставки ${w.n}.`,
+      explain: `Нужных кубиков в руке игрока: ${detail}. Меньше всего у ставки ${w.n}.`,
     };
   }
   return null;
