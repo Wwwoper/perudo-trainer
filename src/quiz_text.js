@@ -84,3 +84,8 @@ export function splitDice(text) {
   if (buf) out.push({ text: buf });
   return out;
 }
+
+/** Значок у вердикта: ✓ верно, ≈ почти, ✗ мимо. Цвет не единственный сигнал: значок виден и без него. */
+export function verdictMark(tone) {
+  return tone === 'ok' ? '✓' : tone === 'near' ? '≈' : '✗';
+}

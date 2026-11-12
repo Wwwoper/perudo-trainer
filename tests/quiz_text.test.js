@@ -71,3 +71,12 @@ test('splitDice: символы кубиков становятся граням
   assert.deepEqual(splitDice(''), []);
   assert.deepEqual(splitDice(null), []);
 });
+
+import { verdictMark } from '../src/quiz_text.js';
+
+test('verdictMark: свой значок для верно, почти и мимо', () => {
+  assert.equal(verdictMark('ok'), '✓');
+  assert.equal(verdictMark('near'), '≈');
+  assert.equal(verdictMark('bad'), '✗');
+  assert.equal(verdictMark('что-то'), '✗');
+});

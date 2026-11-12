@@ -73,7 +73,8 @@ export function buildWeakestBid(round, rnd = Math.random) {
       const name = seatLabel(round, x.s);
       return { v: String(x.n), n: x.n, s: x.s, q: x.q, f: x.f, name, label: `${name}: ${x.q} × ${faceGlyph(x.f)}` };
     });
-    const detail = pick.map((x) => `${seatLabel(round, x.s)} — ${x.has} из ${hands[x.s].length}`).join(', ');
+    // у одного автора может быть две ставки из тройки, поэтому строки подписаны номером ставки
+    const detail = pick.map((x) => `ставка ${x.n} (${seatLabel(round, x.s)}) — ${x.has} из ${hands[x.s].length}`).join(', ');
     return {
       kind: KIND_WEAKEST_BID,
       input: 'bid',
@@ -81,7 +82,7 @@ export function buildWeakestBid(round, rnd = Math.random) {
       short: 'Меньше всего нужных кубиков',
       options,
       answer: String(w.n),
-      explain: `Нужных кубиков в руке: ${detail}. Меньше всего у ${seatLabel(round, w.s)}.`,
+      explain: `Нужных кубиков в руке автора: ${detail}. Меньше всего у ставки ${w.n}.`,
     };
   }
   return null;

@@ -86,7 +86,8 @@ test('buildWeakestBid: слабая ставка — где у автора ме
   assert.equal(q.options.length, WEAK_CHOICES);
   assert.deepEqual(q.options.map((o) => o.n), [1, 2, 3]);
   assert.equal(q.answer, '2');
-  assert.match(q.explain, /Меньше всего у/);
+  assert.match(q.explain, /ставка 1 \(.+\) — 2 из 2.*ставка 2 \(.+\) — 1 из 2/);
+  assert.match(q.explain, /Меньше всего у ставки 2\./);
   assert.match(q.title, /у кого из авторов меньше всего нужных кубиков/);
   assert.ok(q.options.every((o) => /× [⚀-⚅]$/.test(o.label)));
 });

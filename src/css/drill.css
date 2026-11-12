@@ -28,6 +28,19 @@
   font-family: inherit;
 }
 
+/* Пять вкладок на узком экране: меньше поля и шрифт, иначе ряд шире 360 px и страница уменьшается */
+@media (max-width: 400px) {
+  .drill-tabs {
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .drill-tab {
+    padding: 8px 2px;
+    font-size: 12px;
+  }
+}
+
 .drill-tab:hover {
   color: var(--fg);
 }
@@ -497,6 +510,55 @@
   margin: 8px 0;
   font-size: 17px;
   font-weight: 600;
+}
+
+.quiz-hands {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.quiz-hand-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 34%) 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.quiz-hand-who {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.quiz-hand-dice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.quiz-outcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.quiz-call {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.quiz-why {
+  display: block;
+  margin-top: 2px;
+}
+
+.quiz-mark {
+  display: inline-block;
+  min-width: 1em;
+  font-weight: 700;
 }
 
 .quiz-seats {

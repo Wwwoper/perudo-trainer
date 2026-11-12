@@ -11,7 +11,7 @@ import { PER_TABLE } from '../table_quiz.js';
 import {
   createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints, totalQuestions,
 } from '../quiz_series.js';
-import { progressLabel, resultLine, summaryView, splitDice } from '../quiz_text.js';
+import { progressLabel, resultLine, summaryView, splitDice, verdictMark } from '../quiz_text.js';
 import { addQuizResults, lastSeriesRecord, lastSeriesText } from '../quiz_stats.js';
 import { $ } from './common.js';
 
@@ -64,7 +64,7 @@ export function setupQuizDrill() {
       `<li class="read-bid${b.s === round.me ? ' is-me' : ''}"><span class="read-bid-n">${i + 1}</span>` +
       `<span class="read-bid-who">${label(round, b.s)}</span>${renderBid(b.q, b.f)}</li>`).join('');
     const end = round.end?.kind === 'dudo'
-      ? `<li class="read-bid"><span class="read-bid-n">${round.bids.length + 1}</span><span class="read-bid-who">${label(round, round.end.by)}</span><b>Не верю</b></li>`
+      ? `<li class="read-bid quiz-call"><span class="read-bid-n">${round.bids.length + 1}</span><span class="read-bid-who">${label(round, round.end.by)}</span><b>Не верю</b></li>`
       : '';
     return `<p>Ваши кубики: ${renderHand(round.hands[round.me], round.wild)}<br>` +
       (round.wild ? 'Единицы — джокеры: считаются за любую цифру, на кубиках выделены цветом.' : 'Единицы обычные: за другие цифры не считаются (раунд Палифико).') +
@@ -132,19 +132,20 @@ export function setupQuizDrill() {
   function showReveal(tableIdx) {
     const { round, questions } = series.tables[tableIdx];
     const hands = round.hands.map((h, i) =>
-      `<div class="read-hand-row"><span class="read-hand-who">${label(round, i)}</span>${renderHand(h, round.wild, 'sm')}</div>`).join('');
+      `<div class="quiz-hand-row"><span class="quiz-hand-who">${label(round, i)}</span><span class="quiz-hand-dice">${renderHand(h, round.wild, 's')}</span></div>`).join('');
     const last = round.bids[round.bids.length - 1];
     const mine = series.results.filter((r) => r.table === tableIdx);
     const good = mine.filter((r) => r.ok).length;
     const rows = mine.map((r) => {
       const v = resultLine(r);
       const q = questions[r.index];
-      return `<li><b>${diced(q.short ?? q.title)}</b><br><span class="quiz-verdict is-${v.tone}">${escapeHtml(v.text)}</span>` +
-        `<span class="muted"> ${diced(q.explain)}</span></li>`;
+      return `<li><b>${diced(q.short ?? q.title)}</b><br><span class="quiz-verdict is-${v.tone}"><span class="quiz-mark" aria-hidden="true">${verdictMark(v.tone)}</span> ${escapeHtml(v.text)}</span>` +
+        `<span class="quiz-why muted">${diced(q.explain)}</span></li>`;
     }).join('');
     revealBody.innerHTML = `<p class="quiz-q">Стол ${tableIdx + 1}: верно ${good} из ${mine.length}</p>` +
-      `<div class="read-hands" aria-label="Руки при вскрытии">${hands}</div>` +
-      (last ? `<p>Последняя ставка ${renderBid(last.q, last.f)}: на столе оказалось ${round.end.actual}.</p>` : '') +
+      `<div class="quiz-hands" aria-label="Руки при вскрытии">${hands}</div>` +
+      (last ? `<p class="quiz-outcome"><span>Последняя ставка</span>${renderBid(last.q, last.f)}</p>` +
+        `<p>На столе оказалось ${round.end.actual}: ставка ${round.end.actual >= last.q ? 'верна' : 'не верна'}.</p>` : '') +
       `<ul class="quiz-recap">${rows}</ul>`;
     pointsEl.textContent = `Баллы: ${totalPoints(series)}`;
     revealNext.querySelector('.btn-main').textContent = progress(series).done ? 'Итог серии' : 'Следующий стол';

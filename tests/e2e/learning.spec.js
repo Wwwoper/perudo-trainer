@@ -88,8 +88,9 @@ test.describe('Учебные вкладки', () => {
     let seenPoints = 0;   // счёт на экране вопросов меняется только после вскрытия стола
     for (let i = 0; i < 20; i++) {
       await expect(page.locator('#dEAsk .quiz-q')).toBeVisible();
+      if (i === 0) expect((await page.locator('#dEScene .quiz-call').boundingBox()).height).toBeGreaterThanOrEqual(44);   // строка «Не верю» не мельче строк ставок
       await expect(page.locator('#dEBar')).toHaveAttribute('value', String(i));
-      if (i === 0) await expect(page.locator('#dEScene .read-hand-row')).toHaveCount(0);
+      if (i === 0) await expect(page.locator('#dEScene .quiz-hand-row')).toHaveCount(0);
       // кубики в вопросе и вариантах нарисованы, а не набраны мелкими символами
       expect(await page.locator('#dEAsk .die').count()).toBeGreaterThan(0);
       await expect(page.locator('#dEAsk')).not.toContainText(/[⚀-⚅]/);
@@ -106,10 +107,19 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dEPoints')).toHaveText(new RegExp(`Баллы: ${seenPoints}$`));
       await page.click('#dENext');
       if (i % 4 === 3) {   // стол закончился: руки открыты, ответы перечислены
-        await expect(page.locator('#dEReveal .read-hand-row').first()).toBeVisible();
+        await expect(page.locator('#dEReveal .quiz-hand-row').first()).toBeVisible();
         await expect(page.locator('#dEReveal .quiz-recap li')).toHaveCount(4);
         await expect(page.locator('#dEReveal')).not.toContainText(/[⚀-⚅]/);
         await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict')).toHaveCount(4);
+        await expect(page.locator('#dEReveal .quiz-recap .quiz-mark')).toHaveCount(4);
+        if (i === 3) {   // длинное имя не сдвигает кубики: они остаются в одной колонке, страница не шире экрана
+          await page.evaluate(() => {
+            document.querySelector('#dEReveal .quiz-hand-who').textContent = 'Очень-Длинное-Имя-Соперника-Из-Сорока-Знаков-Подряд';
+          });
+          const lefts = await page.locator('#dEReveal .quiz-hand-dice').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+          expect(new Set(lefts).size).toBe(1);
+          expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        }
         seenPoints = Number((await page.locator('#dEPoints').textContent()).replace(/\D/g, ''));
         await page.click('#dERevealNext');
       }

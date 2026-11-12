@@ -196,11 +196,36 @@ def measure_all(base_url, browser):
         page.evaluate(READ_SEED)
         page.click("#dNew")
         snap("drill C", "#dCCheck")
-        for n in (1, 2, 4):
-            page.eval_on_selector(f'input[name="rd{n}"]', "(el) => { el.value = '80'; el.dispatchEvent(new Event('input', { bubbles: true })); }")
+        # ответ «Да» на каждый вопрос задания (ползунков уверенности больше нет)
+        for btn in page.locator('#dCAsk .read-q .read-yn-btn[data-v="yes"]').all():
+            btn.click()
         page.click("#dCCheck")
         # длинный разбор прокручивается внутри панели (.dock-scroll): на экране должна остаться кнопка
         snap("drill C: after check", "#dCCheck")
+
+        # Викторина «Читай стол»: старт, вопрос, вскрытие стола и итог серии
+        page.click('.drill-tab[data-drill="E"]')
+        snap("drill E: start", "#dEGo")
+        page.click("#dEGo")
+        snap("drill E: question", "#dEProgress")
+
+        def quiz_answer():
+            opts = page.locator("#dEAsk .quiz-opt")
+            if opts.count():
+                opts.first.click()
+            else:
+                page.click("#dEAsk .quiz-send")
+            page.click("#dENext")
+
+        for _ in range(4):
+            quiz_answer()
+        snap("drill E: reveal", "#dERevealBody .quiz-q")
+        page.click("#dERevealNext")
+        for i in range(16):
+            quiz_answer()
+            if i % 4 == 3:
+                page.click("#dERevealNext")
+        snap("drill E: end", "#dEEndText")
 
         _tab(page, "duel")
         snap("duel", "#dStart")
