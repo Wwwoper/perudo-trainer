@@ -564,6 +564,17 @@
   margin-top: 2px;
 }
 
+.quiz-said {
+  display: block;
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+.quiz-legend {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
 .quiz-mark {
   display: inline-block;
   min-width: 1em;

@@ -34,6 +34,9 @@ export function buildLastTrue(round) {
   if (!Number.isInteger(actual) || !Number.isInteger(last.q) || !Number.isInteger(last.f)) return null;
   const name = seatLabel(round, last.s);
   const ok = actual >= last.q;
+  const lines = [ok
+    ? `На столе было ${actual} × ${faceGlyph(last.f)}, а нужно было ${last.q}: ставки хватило.`
+    : `На столе было ${actual} из ${last.q} × ${faceGlyph(last.f)}: ставки не хватило.`];
   return {
     kind: KIND_LAST_TRUE,
     input: 'two',
@@ -42,7 +45,8 @@ export function buildLastTrue(round) {
     bid: { s: last.s, q: last.q, f: last.f, name },
     options: [{ v: 'yes', label: 'Верна' }, { v: 'no', label: 'Не верна' }],
     answer: ok ? 'yes' : 'no',
-    explain: `Нужно ${last.q} × ${faceGlyph(last.f)}, на столе ${actual}: ${ok ? 'хватило' : 'не хватило'}.`,
+    lines,
+    explain: lines.join(' '),
   };
 }
 
@@ -75,15 +79,17 @@ export function buildWeakestBid(round, rnd = Math.random) {
       return { v: String(x.n), n: x.n, s: x.s, q: x.q, f: x.f, name, label: `${name}: ${x.q} × ${faceGlyph(x.f)}` };
     });
     // у одного игрока может быть две ставки из тройки, поэтому строки подписаны номером ставки
-    const detail = pick.map((x) => `ставка ${x.n} (${seatLabel(round, x.s)}) — ${x.has} из ${hands[x.s].length}`).join(', ');
+    const lines = [`Минимум был у ${seatLabel(round, w.s)}.`,
+      ...pick.map((x) => `Ставка ${x.n} · ${seatLabel(round, x.s)} — ${x.has} из ${hands[x.s].length} ${faceGlyph(x.f)}`)];
     return {
       kind: KIND_WEAKEST_BID,
       input: 'bid',
       title: 'При какой ставке меньше всего нужных кубиков в руке игрока?',
-      short: 'Меньше всего нужных кубиков',
+      short: 'При какой ставке меньше всего нужных кубиков?',
       options,
       answer: String(w.n),
-      explain: `Нужных кубиков в руке игрока: ${detail}. Меньше всего у ставки ${w.n}.`,
+      lines,
+      explain: lines.join(' '),
     };
   }
   return null;
@@ -123,7 +129,8 @@ export function buildWhoHoldsMore(round, rnd = Math.random) {
     title: `Кто держит больше своей цифры: ${na} или ${nb}? Своя цифра — из последней ставки игрока.`,
     options: [a, b].map((x) => ({ v: String(x.s), s: x.s, f: x.f, name: seatLabel(round, x.s), label: `${seatLabel(round, x.s)} (${faceGlyph(x.f)})` })),
     answer: String(winner.s),
-    explain: `В руках: ${part(a, na)}, ${part(b, nb)}.`,
+    lines: [`Больше у ${seatLabel(round, winner.s)}.`, `В руках: ${part(a, na)}, ${part(b, nb)}.`],
+    explain: `Больше у ${seatLabel(round, winner.s)}. В руках: ${part(a, na)}, ${part(b, nb)}.`,
   };
 }
 
@@ -147,12 +154,30 @@ export function buildCountFace(round, rnd = Math.random) {
     kind: KIND_COUNT_FACE,
     input: 'number',
     title: `Сколько всего ${faceGlyph(f)} на столе?`,
-    short: `Сколько ${faceGlyph(f)} на столе`,
+    short: `Сколько ${faceGlyph(f)} на столе?`,
     face: f,
     range: { min: 0, max: total },
     answer,
-    explain: `На столе ${answer} × ${faceGlyph(f)}: ${per}.`,
+    lines: [`На столе было ${answer} × ${faceGlyph(f)}: ${per}.`],
+    explain: `На столе было ${answer} × ${faceGlyph(f)}: ${per}.`,
   };
+}
+
+/**
+ * Что вы ответили, для разбора: «Вы ответили: не верна», «Вы выбрали: Андрей: 1 × ⚃», «Вы сказали: 4 × ⚂».
+ * Без ответа или с неизвестным вариантом возвращает null.
+ * @returns {string|null}
+ */
+export function youSaid(question, value) {
+  if (!question || value === undefined || value === null || value === '') return null;
+  if (question.input === 'number') {
+    const v = Number(value);
+    return Number.isFinite(v) ? `Вы сказали: ${v} × ${faceGlyph(question.face)}` : null;
+  }
+  const opt = (question.options || []).find((o) => String(o.v) === String(value));
+  if (!opt) return null;
+  if (question.input === 'two') return `Вы ответили: ${opt.label.replace(/^./, (c) => c.toLowerCase())}`;
+  return `Вы выбрали: ${opt.label}`;
 }
 
 /**

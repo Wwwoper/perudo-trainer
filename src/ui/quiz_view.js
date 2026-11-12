@@ -7,7 +7,7 @@
 import { getRounds, getStats, updateStats } from '../storage.js';
 import { renderBid, renderHand, renderDie, renderHiddenDice, escapeHtml } from '../table.js';
 import { seatLabel as rawSeatLabel } from '../read_drill.js';
-import { PER_TABLE } from '../table_quiz.js';
+import { PER_TABLE, youSaid } from '../table_quiz.js';
 import {
   createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints, totalQuestions,
 } from '../quiz_series.js';
@@ -139,14 +139,17 @@ export function setupQuizDrill() {
     const rows = mine.map((r) => {
       const v = resultLine(r);
       const q = questions[r.index];
+      const said = youSaid(q, r.value);
+      const why = (q.lines ?? [q.explain]).map((l) => `<span class="quiz-why muted">${diced(l)}</span>`).join('');
       return `<li><b>${diced(q.short ?? q.title)}</b><br><span class="quiz-verdict is-${v.tone}"><span class="quiz-mark" aria-hidden="true">${verdictMark(v.tone)}</span> ${escapeHtml(v.text)}</span>` +
-        `<span class="quiz-why muted">${diced(q.explain)}</span></li>`;
+        (said ? `<span class="quiz-said">${diced(said)}</span>` : '') + why + '</li>';
     }).join('');
     revealBody.innerHTML = `<p class="quiz-q">Стол ${tableIdx + 1}: верно ${good} из ${mine.length}</p>` +
       `<div class="quiz-hands" aria-label="Руки при вскрытии">${hands}</div>` +
       (last ? `<p class="quiz-outcome"><span>Последняя ставка</span>${renderBid(last.q, last.f)}</p>` +
         `<p>На столе оказалось ${round.end.actual}: ставка ${round.end.actual >= last.q ? 'верна' : 'не верна'}.</p>` : '') +
-      `<ul class="quiz-recap">${rows}</ul>`;
+      `<ul class="quiz-recap">${rows}</ul>` +
+      '<p class="quiz-legend muted">Баллы: вопрос с выбором даёт 1, число на столе 2, а ошибка в один кубик в числе 1.</p>';
     pointsEl.textContent = `Баллы: ${totalPoints(series)}`;
     revealNext.querySelector('.btn-main').textContent = progress(series).done ? 'Итог серии' : 'Следующий стол';
     screen('reveal');

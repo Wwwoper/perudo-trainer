@@ -118,6 +118,11 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dEReveal')).not.toContainText(/[⚀-⚅]/);
         await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict')).toHaveCount(4);
         await expect(page.locator('#dEReveal .quiz-recap .quiz-mark')).toHaveCount(4);
+        await expect(page.locator('#dEReveal .quiz-recap .quiz-said')).toHaveCount(4);   // что вы ответили, у каждого вопроса
+        await expect(page.locator('#dEReveal .quiz-recap .quiz-said').first()).toContainText(/^Вы (ответили|выбрали|сказали): /);
+        await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict').first()).toContainText(/из [12]$/);   // баллы «из максимума»
+        await expect(page.locator('#dEReveal .quiz-legend')).toBeVisible();
+        await expect(page.locator('#dEReveal')).not.toContainText(/автор/i);
         if (i === 3) {   // длинное имя не сдвигает кубики: они остаются в одной колонке, страница не шире экрана
           await page.evaluate(() => {
             document.querySelector('#dEReveal .quiz-hand-who').textContent = 'Очень-Длинное-Имя-Соперника-Из-Сорока-Знаков-Подряд';

@@ -24,7 +24,7 @@ test('buildLastTrue: верная ставка → ответ «yes», пояс�
   assert.equal(q.answer, 'yes');
   assert.deepEqual(q.options.map((o) => o.v), ['yes', 'no']);
   assert.match(q.title, /3 × ⚃/);
-  assert.match(q.explain, /Нужно 3 × ⚃, на столе 3: хватило/);
+  assert.match(q.explain, /^На столе было 3 × ⚃, а нужно было 3: ставки хватило\.$/);
   assert.doesNotMatch(q.explain, /джокер/);   // про единицы сказано один раз, в шапке стола
 });
 
@@ -38,7 +38,7 @@ test('buildLastTrue: короткий вопрос с формой имени, �
 test('buildLastTrue: неверная ставка → «no»', () => {
   const q = buildLastTrue(round({}, { actual: 2, ok: false }));
   assert.equal(q.answer, 'no');
-  assert.match(q.explain, /не хватило/);
+  assert.equal(q.explain, 'На столе было 2 из 3 × ⚃: ставки не хватило.');
 });
 
 test('buildLastTrue: слов про джокеров в пояснении нет и при Палифико', () => {
@@ -85,7 +85,7 @@ const weakRound = (over = {}) => ({
 });
 const mid = () => 0.3;
 
-test('buildWeakestBid: слабая ставка — где у автора меньше всего нужных кубиков', () => {
+test('buildWeakestBid: слабая ставка — где у игрока меньше всего нужных кубиков', () => {
   // Ирина: 2 из 2 (⚄⚄), Алексей: 1 из 2 (⚅), Юлия: 2 из 2 (⚃ и джокер) → ровно одна слабая
   const q = buildWeakestBid(weakRound(), mid);
   assert.equal(q.kind, KIND_WEAKEST_BID);
@@ -93,8 +93,11 @@ test('buildWeakestBid: слабая ставка — где у автора ме
   assert.equal(q.options.length, WEAK_CHOICES);
   assert.deepEqual(q.options.map((o) => o.n), [1, 2, 3]);
   assert.equal(q.answer, '2');
-  assert.match(q.explain, /ставка 1 \(.+\) — 2 из 2.*ставка 2 \(.+\) — 1 из 2/);
-  assert.match(q.explain, /Меньше всего у ставки 2\./);
+  assert.match(q.lines[0], /^Минимум был у .+\.$/);
+  assert.match(q.lines[1], /^Ставка 1 · .+ — 2 из 2 ⚄$/);
+  assert.match(q.lines[2], /^Ставка 2 · .+ — 1 из 2 ⚅$/);
+  assert.equal(q.lines.length, 4);
+  assert.equal(q.short, 'При какой ставке меньше всего нужных кубиков?');
   assert.match(q.title, /^При какой ставке меньше всего нужных кубиков в руке игрока\?$/);
   assert.ok(!/автор/i.test(q.title + q.explain));
   assert.ok(q.options.every((o) => /× [⚀-⚅]$/.test(o.label)));
@@ -338,4 +341,37 @@ test('pickTableQuestions: виды чередуются, один вид не з
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   assert.ok(counts.countFace / total <= 0.45, JSON.stringify(counts));   // раньше было около 50 %
   assert.ok(Object.values(counts).every((c) => c > 0), JSON.stringify(counts));
+});
+
+import { youSaid } from '../src/table_quiz.js';
+
+test('youSaid: ответ игрока для каждого вида вопроса', () => {
+  const two = buildLastTrue(round());
+  assert.equal(youSaid(two, 'no'), 'Вы ответили: не верна');
+  assert.equal(youSaid(two, 'yes'), 'Вы ответили: верна');
+  const weak = buildWeakestBid(weakRound(), mid);
+  assert.equal(youSaid(weak, '1'), `Вы выбрали: ${weak.options[0].label}`);
+  const hold = buildWhoHoldsMore(weakRound({ hands: [[3, 3], [5, 5], [6, 2], [4, 1]] }), () => 0);
+  if (hold) assert.match(youSaid(hold, hold.options[0].v), /^Вы выбрали: .+ \([⚀-⚅]\)$/);
+  const cnt = buildCountFace(round(), () => 0);
+  assert.equal(youSaid(cnt, 4), `Вы сказали: 4 × ${faceGlyph(cnt.face)}`);
+  assert.equal(youSaid(cnt, '3'), `Вы сказали: 3 × ${faceGlyph(cnt.face)}`);
+});
+
+test('youSaid: без ответа и с чужим значением — null', () => {
+  const two = buildLastTrue(round());
+  for (const v of [undefined, null, '', 'maybe']) assert.equal(youSaid(two, v), null);
+  assert.equal(youSaid(null, 'yes'), null);
+  assert.equal(youSaid(buildCountFace(round(), () => 0), 'abc'), null);
+});
+
+test('у каждого вопроса есть строки разбора, а explain — их склейка; слов «автор» нет', () => {
+  const qs = [buildLastTrue(round()), buildWeakestBid(weakRound(), mid), buildCountFace(round(), () => 0)];
+  for (const q of qs) {
+    assert.ok(Array.isArray(q.lines) && q.lines.length > 0, q.kind);
+    assert.equal(q.explain, q.lines.join(' '));
+    assert.ok(!/автор/i.test(q.explain), q.explain);
+  }
+  assert.match(buildCountFace(round(), () => 0).explain, /^На столе было \d+ × [⚀-⚅]: Вы — \d+/);
+  assert.match(buildCountFace(round(), () => 0).short, /\?$/);
 });
