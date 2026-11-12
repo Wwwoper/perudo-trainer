@@ -219,7 +219,7 @@ def measure_all(base_url, browser):
 
         for _ in range(4):
             quiz_answer()
-        snap("drill E: reveal", "#dERevealBody .quiz-q")
+        snap("drill E: reveal", "#dERevealBody .quiz-table-head")
         page.click("#dERevealNext")
         for i in range(16):
             quiz_answer()

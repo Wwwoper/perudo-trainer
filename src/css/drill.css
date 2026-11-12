@@ -521,11 +521,40 @@
   font-weight: 600;
 }
 
+.quiz-table-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.quiz-table-no {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.quiz-table-score {
+  font-weight: 700;
+  color: var(--acc);
+}
+
 .quiz-hands {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin: 8px 0;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-1);
+}
+
+.quiz-hands-title {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .quiz-hand-row {
@@ -545,13 +574,6 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-}
-
-.quiz-outcome {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
 }
 
 .quiz-call {
@@ -679,6 +701,15 @@
   margin-top: 8px;
 }
 
+#dERevealNext {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--tap-lg);
+  margin-top: 12px;
+  font-size: 18px;
+}
+
 .quiz-last {
   margin: 0 0 12px;
   font-weight: 600;
@@ -686,14 +717,53 @@
 
 .quiz-recap {
   margin: 8px 0;
-  padding-left: 18px;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+}
+
+.quiz-ans {
+  padding: 10px 0 10px 12px;
+  border-left: 4px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.quiz-ans:last-child {
+  border-bottom: 0;
+}
+
+.quiz-ans.is-ok {
+  border-left-color: var(--ok);
+}
+
+.quiz-ans.is-near {
+  border-left-color: var(--warn);
+}
+
+.quiz-ans.is-bad {
+  border-left-color: var(--bad);
+}
+
+.quiz-ans-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.quiz-ans-head .quiz-verdict {
+  margin: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .quiz-verdict.is-near {
-  color: var(--mut);
+  color: var(--warn);
 }
 
 .quiz-kinds {

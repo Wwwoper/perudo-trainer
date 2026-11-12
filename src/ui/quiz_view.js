@@ -11,7 +11,7 @@ import { PER_TABLE, youSaid } from '../table_quiz.js';
 import {
   createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints, totalQuestions,
 } from '../quiz_series.js';
-import { progressLabel, resultLine, summaryView, splitDice, verdictMark } from '../quiz_text.js';
+import { progressLabel, resultLine, summaryView, splitDice, verdictMark, pointsText } from '../quiz_text.js';
 import { addQuizResults, lastSeriesRecord, lastSeriesText } from '../quiz_stats.js';
 import { $ } from './common.js';
 
@@ -135,21 +135,22 @@ export function setupQuizDrill() {
     const { round, questions } = series.tables[tableIdx];
     const hands = round.hands.map((h, i) =>
       `<div class="quiz-hand-row"><span class="quiz-hand-who">${label(round, i)}</span><span class="quiz-hand-dice">${renderHand(h, round.wild, 's')}</span></div>`).join('');
-    const last = round.bids[round.bids.length - 1];
     const mine = series.results.filter((r) => r.table === tableIdx);
     const good = mine.filter((r) => r.ok).length;
+    const got = mine.reduce((a, r) => a + r.points, 0);
     const rows = mine.map((r) => {
       const v = resultLine(r);
       const q = questions[r.index];
       const said = youSaid(q, r.value);
       const why = (q.lines ?? [q.explain]).map((l) => `<span class="quiz-why muted">${diced(l)}</span>`).join('');
-      return `<li><b>${diced(q.short ?? q.title)}</b><br><span class="quiz-verdict is-${v.tone}"><span class="quiz-mark" aria-hidden="true">${verdictMark(v.tone)}</span> ${escapeHtml(v.text)}</span>` +
+      return `<li class="quiz-ans is-${v.tone}"><div class="quiz-ans-head"><b>${diced(q.short ?? q.title)}</b>` +
+        `<span class="quiz-verdict is-${v.tone}"><span class="quiz-mark" aria-hidden="true">${verdictMark(v.tone)}</span> ${escapeHtml(v.text)}</span></div>` +
         (said ? `<span class="quiz-said">${diced(said)}</span>` : '') + why + '</li>';
     }).join('');
-    revealBody.innerHTML = `<p class="quiz-q">Стол ${tableIdx + 1}: верно ${good} из ${mine.length}</p>` +
-      `<div class="quiz-hands" aria-label="Руки при вскрытии">${hands}</div>` +
-      (last ? `<p class="quiz-outcome"><span>Последняя ставка</span>${renderBid(last.q, last.f)}</p>` +
-        `<p>На столе оказалось ${round.end.actual}: ставка ${round.end.actual >= last.q ? 'верна' : 'не верна'}.</p>` : '') +
+    revealBody.innerHTML =
+      `<div class="quiz-table-head"><span class="quiz-table-no">Стол ${tableIdx + 1}</span>` +
+      `<span class="quiz-table-score">Верно ${good} из ${mine.length} · +${pointsText(got)}</span></div>` +
+      `<div class="quiz-hands" aria-label="Руки при вскрытии"><span class="quiz-hands-title muted">Открытые кубики</span>${hands}</div>` +
       `<ul class="quiz-recap">${rows}</ul>` +
       '<p class="quiz-legend muted">Баллы: вопрос с выбором даёт 1, число на столе 2, а ошибка в один кубик в числе 1.</p>';
     pointsEl.textContent = `Баллы: ${totalPoints(series)}`;

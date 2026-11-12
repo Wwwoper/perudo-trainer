@@ -127,6 +127,15 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dEReveal .quiz-recap .quiz-said').first()).toContainText(/^Вы (ответили|выбрали|сказали): /);
         await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict').first()).toContainText(/из [12]$/);   // баллы «из максимума»
         await expect(page.locator('#dEReveal .quiz-legend')).toBeVisible();
+        await expect(page.locator('#dEReveal .quiz-table-no')).toHaveText(`Стол ${(i - 3) / 4 + 1}`);
+        await expect(page.locator('#dEReveal .quiz-table-score')).toHaveText(/^Верно \d из 4 · \+\d+ (балл|балла|баллов)$/);
+        await expect(page.locator('#dEReveal')).not.toContainText(/Последняя ставка \d|ставка не верна|ставка верна\./);   // факт один раз, у своего вопроса
+        // у каждого ответа цветная полоса слева, итог стола справа, кнопка «Следующий стол» на всю ширину блока
+        await expect(page.locator('#dEReveal .quiz-ans')).toHaveCount(4);
+        const box = await page.locator('#dEReveal').boundingBox();
+        const nb = await page.locator('#dERevealNext').boundingBox();
+        expect(nb.width).toBeGreaterThan(box.width - 4);
+        expect(nb.height).toBeGreaterThanOrEqual(48);
         await expect(page.locator('#dEReveal')).not.toContainText(/автор/i);
         if (i === 3) {   // длинное имя не сдвигает кубики: они остаются в одной колонке, страница не шире экрана
           await page.evaluate(() => {

@@ -8,7 +8,7 @@
 
 import { seatLabel } from './read_drill.js';
 import { countFace } from './rounds.js';
-import { bidOf } from './names_ru.js';
+import { bidOf, genitive } from './names_ru.js';
 
 export const KIND_LAST_TRUE = 'lastTrue';
 export const KIND_WEAKEST_BID = 'weakestBid';
@@ -16,6 +16,8 @@ export const KIND_WEAKEST_BID = 'weakestBid';
 export const WEAK_CHOICES = 3;
 export const KIND_WHO_HOLDS_MORE = 'whoHoldsMore';
 export const KIND_COUNT_FACE = 'countFace';
+/** «у Юлии»; для имени без формы без склонения: «у игрока Ник». */
+const atWho = (name) => { const g = genitive(name); return g ? `у ${g}` : `у игрока ${name}`; };
 const GLYPH = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 /** Грань как символ кубика (⚃). */
@@ -79,7 +81,7 @@ export function buildWeakestBid(round, rnd = Math.random) {
       return { v: String(x.n), n: x.n, s: x.s, q: x.q, f: x.f, name, label: `${name}: ${x.q} × ${faceGlyph(x.f)}` };
     });
     // у одного игрока может быть две ставки из тройки, поэтому строки подписаны номером ставки
-    const lines = [`Минимум был у ${seatLabel(round, w.s)}.`,
+    const lines = [`Минимум был ${atWho(seatLabel(round, w.s))}.`,
       ...pick.map((x) => `Ставка ${x.n} · ${seatLabel(round, x.s)} — ${x.has} из ${hands[x.s].length} ${faceGlyph(x.f)}`)];
     return {
       kind: KIND_WEAKEST_BID,
@@ -129,8 +131,8 @@ export function buildWhoHoldsMore(round, rnd = Math.random) {
     title: `Кто держит больше своей цифры: ${na} или ${nb}? Своя цифра — из последней ставки игрока.`,
     options: [a, b].map((x) => ({ v: String(x.s), s: x.s, f: x.f, name: seatLabel(round, x.s), label: `${seatLabel(round, x.s)} (${faceGlyph(x.f)})` })),
     answer: String(winner.s),
-    lines: [`Больше у ${seatLabel(round, winner.s)}.`, `В руках: ${part(a, na)}, ${part(b, nb)}.`],
-    explain: `Больше у ${seatLabel(round, winner.s)}. В руках: ${part(a, na)}, ${part(b, nb)}.`,
+    lines: [`Больше ${atWho(seatLabel(round, winner.s))}.`, `В руках: ${part(a, na)}, ${part(b, nb)}.`],
+    explain: `Больше ${atWho(seatLabel(round, winner.s))}. В руках: ${part(a, na)}, ${part(b, nb)}.`,
   };
 }
 

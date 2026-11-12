@@ -74,6 +74,7 @@ test('баланс: на учебных столах самый частый о�
 
 // ───── «Какая ставка самая слабая?» ─────
 import { buildWeakestBid, KIND_WEAKEST_BID, WEAK_CHOICES } from '../src/table_quiz.js';
+import { GENITIVE } from '../src/names_ru.js';
 
 const weakRound = (over = {}) => ({
   id: 'w1', ts: 0, round: 1, wild: true, me: 0,
@@ -374,4 +375,11 @@ test('у каждого вопроса есть строки разбора, а 
   }
   assert.match(buildCountFace(round(), () => 0).explain, /^На столе было \d+ × [⚀-⚅]: Вы — \d+/);
   assert.match(buildCountFace(round(), () => 0).short, /\?$/);
+});
+
+test('«Минимум был у…» и «Больше у…» — имя в родительном падеже', () => {
+  const weak = buildWeakestBid(weakRound(), mid);
+  assert.ok(Object.values(GENITIVE).some((g) => weak.lines[0] === `Минимум был у ${g}.`), weak.lines[0]);
+  const hold = buildWhoHoldsMore(weakRound({ hands: [[3, 3], [5, 5], [6, 2], [4, 1]] }), () => 0);
+  if (hold) assert.ok(Object.values(GENITIVE).some((g) => hold.lines[0] === `Больше у ${g}.`), hold.lines[0]);
 });
