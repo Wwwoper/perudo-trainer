@@ -66,9 +66,11 @@ export function setupQuizDrill() {
     const end = round.end?.kind === 'dudo'
       ? `<li class="read-bid quiz-call"><span class="read-bid-n">${round.bids.length + 1}</span><span class="read-bid-who">${label(round, round.end.by)}</span><b>Не верю</b></li>`
       : '';
-    return `<p>Ваши кубики: ${renderHand(round.hands[round.me], round.wild)}<br>` +
-      (round.wild ? 'Единицы — джокеры: считаются за любую цифру, на кубиках выделены цветом.' : 'Единицы обычные: за другие цифры не считаются (раунд Палифико).') +
-      `</p><div class="quiz-seats" aria-label="Кубиков у соперников">${seats}</div><ol class="read-bids" aria-label="Ставки раунда по порядку">${rows}${end}</ol>`;
+    const note = round.wild ? 'Единицы — джокеры.' : 'Единицы обычные (Палифико).';
+    return `<p>Ваши кубики: ${renderHand(round.hands[round.me], round.wild)}</p>` +
+      `<div class="quiz-seats" aria-label="Кубиков у соперников">${seats}</div>` +
+      `<ol class="read-bids" aria-label="Ставки раунда по порядку">${rows}${end}</ol>` +
+      `<p class="quiz-note muted">${note}</p>`;
   }
 
   function askHtml(q) {
@@ -166,10 +168,11 @@ export function setupQuizDrill() {
     // Верно или нет, пояснение и счёт до вскрытия не показываются: иначе они подсказывают следующие вопросы стола.
     ask.querySelectorAll('button').forEach((b) => { b.disabled = true; });
     if (q.input !== 'number') ask.querySelector(`.quiz-opt[data-v="${CSS.escape(String(value))}"]`)?.classList.add('is-chosen');
-    fb.innerHTML = '<p class="quiz-accepted">Ответ принят. Оценка будет при вскрытии стола.</p>';
-    nextBtn.querySelector('.btn-main').textContent = out.tableDone ? 'Открыть руки' : 'Дальше';
+    // Одна кнопка вместо сообщения и «Дальше»: она же говорит, что ответ принят.
+    nextBtn.querySelector('.btn-main').textContent = out.tableDone ? 'Ответ принят. Открываем руки' : 'Ответ принят. Идём дальше';
     tableToReveal = out.tableDone ? cur.table : -1;
     nextBtn.classList.remove('hide');
+    nextBtn.focus();
   }
 
   ask.addEventListener('click', (e) => {

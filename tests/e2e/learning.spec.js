@@ -95,6 +95,8 @@ test.describe('Учебные вкладки', () => {
       expect(await page.locator('#dEAsk .die').count()).toBeGreaterThan(0);
       await expect(page.locator('#dEAsk')).not.toContainText(/[⚀-⚅]/);
       await expect(page.locator('#dEAsk')).not.toContainText(/автор|проверили/i);
+      await expect(page.locator('#dEScene .quiz-note')).toHaveText(/^Единицы — джокеры\.$|^Единицы обычные/);
+      await expect(page.locator('#dEScene')).not.toContainText('считаются за любую цифру');
       const opt = page.locator('#dEAsk .quiz-opt').first();
       if (await page.locator('#dEAsk .quiz-opts-two').count()) {   // «Верна» и «Не верна» стоят в одной строке
         const tops = await page.locator('#dEAsk .quiz-opts-two .quiz-opt').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
@@ -107,8 +109,11 @@ test.describe('Учебные вкладки', () => {
         await page.click('#dEAsk .quiz-send');
       }
       // до вскрытия стола ни вердикта, ни чисел, ни роста счёта: они подсказывали бы следующие вопросы
-      await expect(page.locator('#dEFb')).toContainText('Ответ принят');
-      await expect(page.locator('#dEFb')).not.toContainText(/Верно|Мимо|Почти|Точно|undefined|NaN/);
+      // одна кнопка вместо сообщения и «Дальше»; на четвёртом вопросе стола она открывает руки
+      await expect(page.locator('#dENext')).toHaveText(i % 4 === 3 ? 'Ответ принят. Открываем руки' : 'Ответ принят. Идём дальше');
+      await expect(page.locator('#dEFb')).toBeEmpty();
+      await expect(page.locator('#dENext')).not.toContainText(/Верно|Мимо|Почти|Точно|undefined|NaN/);
+      await expect(page.locator('#dEPlay')).not.toContainText(/Оценка будет/);
       await expect(page.locator('#dEPlay .quiz-verdict')).toHaveCount(0);
       await expect(page.locator('#dEPoints')).toHaveText(new RegExp(`Баллы: ${seenPoints}$`));
       await page.click('#dENext');
