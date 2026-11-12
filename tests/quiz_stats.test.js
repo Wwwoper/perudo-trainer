@@ -67,9 +67,10 @@ test('addQuizResults: счётчики растут, исходный объек
 test('lastSeriesRecord и lastSeriesText', () => {
   const rec = lastSeriesRecord({ correct: 14, total: 20, points: 17, max: 24, guess: 11.6 });
   assert.deepEqual(rec, { correct: 14, total: 20, points: 17, max: 24, guess: 12 });
-  assert.equal(lastSeriesText(rec), 'Последняя серия: верно 14 из 20, баллов 17 из 24, на 5 лучше постоянной догадки.');
-  assert.match(lastSeriesText({ ...rec, points: 10 }), /на 2 хуже/);
-  assert.match(lastSeriesText({ ...rec, points: 12 }), /на уровне/);
+  assert.equal(lastSeriesText(rec), 'Последняя серия: верно 14 из 20.');
+  assert.equal(lastSeriesText(rec, { correct: 9, total: 20 }), 'Последняя серия: верно 14 из 20 (до этого 9 из 20).');
+  assert.equal(lastSeriesText(rec, { total: 0 }), 'Последняя серия: верно 14 из 20.');
+  assert.equal(lastSeriesText(rec, 'мусор'), 'Последняя серия: верно 14 из 20.');
   assert.equal(lastSeriesText(null), null);
   assert.equal(lastSeriesText({ total: 0 }), null);
 });

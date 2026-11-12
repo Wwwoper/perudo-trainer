@@ -353,4 +353,11 @@ describe('sanitizeStats: последняя серия викторины', () =
     }
     assert.equal('quizLast' in sanitizeStats({}).value, false);
   });
+  it('серия до последней (quizPrev) проходит ту же проверку', () => {
+    const rec = { correct: 9, total: 20, points: 11, max: 24, guess: 10 };
+    assert.deepEqual(sanitizeStats({ quizPrev: rec }).value.quizPrev, rec);
+    const bad = sanitizeStats({ quizPrev: { correct: 30, total: 20, points: 1, max: 2, guess: 1 } });
+    assert.equal('quizPrev' in bad.value, false);
+    assert.equal(bad.dropped, 1);
+  });
 });

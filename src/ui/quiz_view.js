@@ -9,7 +9,7 @@ import { renderBid, renderHand, renderDie, renderHiddenDice, escapeHtml } from '
 import { seatLabel as rawSeatLabel } from '../read_drill.js';
 import { PER_TABLE } from '../table_quiz.js';
 import {
-  createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints,
+  createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints, totalQuestions,
 } from '../quiz_series.js';
 import { progressLabel, resultLine, summaryView, splitDice } from '../quiz_text.js';
 import { addQuizResults, lastSeriesRecord, lastSeriesText } from '../quiz_stats.js';
@@ -28,6 +28,7 @@ export function setupQuizDrill() {
   const lastEl = $('#dELast');
   const progEl = $('#dEProgress');
   const pointsEl = $('#dEPoints');
+  const bar = $('#dEBar');
   const scene = $('#dEScene');
   const ask = $('#dEAsk');
   const fb = $('#dEFb');
@@ -40,7 +41,7 @@ export function setupQuizDrill() {
   const kindsEl = $('#dEKinds');
   const weakEl = $('#dEWeak');
   const againBtn = $('#dEAgain');
-  if (!startBox || !play || !endBox || !goBtn || !progEl || !pointsEl || !scene || !ask || !fb || !nextBtn || !reveal || !revealBody || !revealNext || !endText || !endPoints || !kindsEl || !weakEl || !againBtn) return null;
+  if (!startBox || !play || !endBox || !goBtn || !progEl || !pointsEl || !bar || !scene || !ask || !fb || !nextBtn || !reveal || !revealBody || !revealNext || !endText || !endPoints || !kindsEl || !weakEl || !againBtn) return null;
 
   let series = null;
   let answered = false;
@@ -91,6 +92,8 @@ export function setupQuizDrill() {
     screen('play');
     const p = progress(series);
     progEl.textContent = progressLabel(p, series.tables.length, PER_TABLE);
+    bar.max = totalQuestions(series);
+    bar.value = series.results.length;
     pointsEl.textContent = `Баллы: ${pointsBeforeTable(series, p.table)}`;   // внутри стола счёт не растёт: он выдал бы верные ответы
     scene.innerHTML = sceneHtml(cur.round);
     const q = cur.question;
@@ -102,7 +105,7 @@ export function setupQuizDrill() {
 
   /** Строка про последнюю сохранённую серию на старте. */
   function showLast() {
-    const text = lastEl ? lastSeriesText(getStats().quizLast) : null;
+    const text = lastEl ? lastSeriesText(getStats().quizLast, getStats().quizPrev) : null;
     if (!lastEl) return;
     lastEl.hidden = !text;
     lastEl.textContent = text ?? '';
@@ -112,7 +115,7 @@ export function setupQuizDrill() {
     const sum = summarize(series);
     if (!saved) {   // серия записывается один раз: счётчики по видам вопросов и последняя серия
       saved = true;
-      updateStats((S) => { S.byTag = addQuizResults(S.byTag, series.results); S.quizLast = lastSeriesRecord(sum); });
+      updateStats((S) => { S.byTag = addQuizResults(S.byTag, series.results); if (S.quizLast) S.quizPrev = S.quizLast; S.quizLast = lastSeriesRecord(sum); });
     }
     const v = summaryView(sum);
     screen('end');

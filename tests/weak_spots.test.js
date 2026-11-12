@@ -121,7 +121,7 @@ describe('weakSpots: темы викторины «Читай стол»', () =>
     const html = weakSpotsHtml({ quizWeak: { n: 10, good: 2 } });
     assert.match(html, /20%/);
     assert.match(html, /10 отв\./);
-    assert.match(html, /догадка 40%/);
+    assert.match(html, /всегда один ответ 40%/);
     assert.match(html, /data-train="quiz"/);
   });
 });

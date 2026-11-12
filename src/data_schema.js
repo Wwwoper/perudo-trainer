@@ -97,11 +97,12 @@ export function sanitizeStats(raw) {
     dropped += tags.dropped;
   }
 
-  if (raw.quizLast !== undefined) {   // последняя серия викторины «Читай стол»
-    const q = raw.quizLast;
+  for (const key of ['quizLast', 'quizPrev']) {   // последняя серия викторины «Читай стол» и серия до неё
+    if (raw[key] === undefined) continue;
+    const q = raw[key];
     const [correct, total, points, max, guess] = ['correct', 'total', 'points', 'max', 'guess'].map((k) => toCount(q?.[k]));
     if (!isPlainObject(q) || [correct, total, points, max, guess].includes(null) || total === 0 || correct > total || points > max) dropped++;
-    else out.quizLast = { correct, total, points, max, guess };
+    else out[key] = { correct, total, points, max, guess };
   }
 
   if (raw.drill !== undefined) {

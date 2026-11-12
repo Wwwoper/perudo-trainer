@@ -88,6 +88,7 @@ test.describe('Учебные вкладки', () => {
     let seenPoints = 0;   // счёт на экране вопросов меняется только после вскрытия стола
     for (let i = 0; i < 20; i++) {
       await expect(page.locator('#dEAsk .quiz-q')).toBeVisible();
+      await expect(page.locator('#dEBar')).toHaveAttribute('value', String(i));
       if (i === 0) await expect(page.locator('#dEScene .read-hand-row')).toHaveCount(0);
       // кубики в вопросе и вариантах нарисованы, а не набраны мелкими символами
       expect(await page.locator('#dEAsk .die').count()).toBeGreaterThan(0);
@@ -116,18 +117,36 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dEEnd')).toBeVisible();
     await expect(page.locator('#dEEndText')).toContainText(/Верно: \d+ из 20/);
     await expect(page.locator('#dEEndPoints')).toContainText('Баллов:');
+    await expect(page.locator('#dEEndPoints')).not.toContainText('постоянн');
     await expect(page.locator('#dEKinds .quiz-kind').first()).toBeVisible();
     await expect(page.locator('#dEEnd')).not.toContainText(/undefined|NaN/);
     // серия записана: в профиле есть последняя серия и счётчики по видам вопросов, а после перезагрузки она видна на старте
     const profile = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.userProfile') || '{}'));
     expect(profile.quizLast.total).toBe(20);
+    expect(profile.quizPrev).toBeUndefined();   // первая серия: сравнивать пока не с чем
     expect(Object.keys(profile.byTag).some((k) => k.startsWith('quiz'))).toBe(true);
     await page.reload();
     await open(page, 'drill');
     await page.click('.drill-tab[data-drill="E"]');
     await expect(page.locator('#dELast')).toContainText('Последняя серия: верно');
+    await expect(page.locator('#dELast')).not.toContainText('постоянн');
     await page.click('#dEGo');   // новая серия начинается с первого стола
     await expect(page.locator('#dEProgress')).toHaveText('Стол 1 из 5 · вопрос 1 из 4');
+    // вторая серия: прошлая становится «предыдущей», и старт показывает обе
+    for (let i = 0; i < 20; i++) {
+      const opt = page.locator('#dEAsk .quiz-opt').first();
+      if (await opt.count()) await opt.click();
+      else await page.click('#dEAsk .quiz-send');
+      await page.click('#dENext');
+      if (i % 4 === 3) await page.click('#dERevealNext');
+    }
+    await expect(page.locator('#dEEnd')).toBeVisible();
+    const after = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.userProfile') || '{}'));
+    expect(after.quizPrev.total).toBe(20);
+    await page.reload();
+    await open(page, 'drill');
+    await page.click('.drill-tab[data-drill="E"]');
+    await expect(page.locator('#dELast')).toContainText('до этого');
   });
 
   test('«Упражнения»: «Серия» — десять ситуаций, итог только в конце, шанс можно сменить', async ({ page }) => {

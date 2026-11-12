@@ -481,6 +481,13 @@
   margin-bottom: 8px;
 }
 
+.quiz-bar {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin: 0 0 10px;
+}
+
 .quiz-points {
   font-weight: 600;
   font-variant-numeric: tabular-nums;

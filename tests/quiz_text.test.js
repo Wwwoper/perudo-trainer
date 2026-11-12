@@ -27,7 +27,7 @@ test('endLine: верные ответы и баллы', () => {
   assert.equal(endLine({ correct: 14, total: 20, points: 17, max: 24 }), 'Верно: 14 из 20. Баллов: 17 из 24.');
 });
 
-import { summaryView } from '../src/quiz_text.js';
+import { summaryView, SURE_GAP } from '../src/quiz_text.js';
 
 const sample = (over = {}) => ({
   correct: 14, total: 20, points: 17, max: 24, guess: 11.4, gain: 5.6,
@@ -39,24 +39,25 @@ const sample = (over = {}) => ({
   ...over,
 });
 
-test('summaryView: заголовок, баллы и сравнение с догадкой', () => {
+test('summaryView: заголовок, баллы и сравнение с ответом «всегда одно и то же»', () => {
   const v = summaryView(sample());
   assert.equal(v.headline, '14 из 20');
   assert.match(v.points, /17 из 24/);
-  assert.match(v.points, /около 11/);
-  assert.match(v.points, /на 6 баллов больше/);
+  assert.match(v.points, /всегда отвечать одним и тем же ответом, набралось бы около 11/);
+  assert.match(v.points, /заметно лучше/);
   assert.equal(v.kinds[0].text, '5 из 6');
   assert.equal(v.kinds[0].rate, 83);
   assert.equal(v.kinds[0].guess, 55);
-  assert.match(v.kinds[0].note, /55 %/);
+  assert.match(v.kinds[0].note, /одном и том же ответе.*55 %/);
   assert.match(v.weak, /Ни один вид/);
 });
 
-test('summaryView: хуже догадки и на уровне догадки, слабое место называется', () => {
+test('summaryView: «лучше» и «хуже» только при заметной разнице, иначе «судить рано»', () => {
+  assert.match(summaryView(sample({ gain: -3.2 })).points, /хуже/);
+  assert.match(summaryView(sample({ gain: SURE_GAP })).points, /заметно лучше/);
+  for (const gain of [0, 2.9, -2.9]) assert.match(summaryView(sample({ gain })).points, /судить рано/);
   const worse = summaryView(sample({ gain: -3.2, weakest: { name: 'Сколько на столе', rate: 0.35, guessRate: 0.37 } }));
-  assert.match(worse.points, /на 3 балла меньше/);
   assert.match(worse.weak, /Сколько на столе.*35 %.*37 %/);
-  assert.match(summaryView(sample({ gain: 0.2 })).points, /на уровне/);
 });
 
 import { splitDice } from '../src/quiz_text.js';

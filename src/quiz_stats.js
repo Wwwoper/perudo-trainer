@@ -25,7 +25,7 @@ export const QUIZ_LABELS = Object.freeze({
 });
 
 /**
- * Доля верных ответов у лучшей постоянной догадки по каждой теме. Считается по учебным столам; тест
+ * Доля верных ответов у лучшего одного и того же ответа на все вопросы темы. Считается по учебным столам; тест
  * пересчитывает её и следит, чтобы константы не разошлись с реальностью.
  */
 export const QUIZ_BASELINE = Object.freeze({
@@ -67,11 +67,12 @@ export function lastSeriesRecord(sum) {
   };
 }
 
-/** Строка про последнюю серию на старте или null, если серий ещё не было. */
-export function lastSeriesText(rec) {
+/**
+ * Строка про последнюю серию на старте или null, если серий ещё не было. Если есть серия до неё,
+ * показывается и она: сравнение с собой в прошлый раз понятнее любой «догадки».
+ */
+export function lastSeriesText(rec, prev = null) {
   if (!rec || !Number.isInteger(rec.total) || rec.total <= 0) return null;
-  const d = rec.points - rec.guess;
-  const cmp = d > 0 ? `, на ${Math.abs(d)} лучше постоянной догадки`
-    : d < 0 ? `, на ${Math.abs(d)} хуже постоянной догадки` : ', на уровне постоянной догадки';
-  return `Последняя серия: верно ${rec.correct} из ${rec.total}, баллов ${rec.points} из ${rec.max}${cmp}.`;
+  const before = prev && Number.isInteger(prev.total) && prev.total > 0 ? ` (до этого ${prev.correct} из ${prev.total})` : '';
+  return `Последняя серия: верно ${rec.correct} из ${rec.total}${before}.`;
 }
