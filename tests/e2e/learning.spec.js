@@ -541,6 +541,7 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dCBody')).toBeVisible();
         await expect(page.locator('#dCEmpty')).toBeHidden();
         await expect(page.locator('#dCq')).toContainText('Учебный раунд');
+        await expect(page.locator('#dCq .read-sim')).toBeVisible();
         const n = await page.locator('#dCAsk .read-q').count();
         expect(n).toBeGreaterThanOrEqual(1);
         await expect(page.locator('#dCCheck')).toBeDisabled();
@@ -587,6 +588,8 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dCfb .read-hand-row')).toHaveCount(3);
         await expect(page.locator('.read-q.is-ok')).toHaveCount(1);
         await expect(page.locator('.read-q.is-bad')).toHaveCount(1);
+        await expect(page.locator('.read-q.is-ok .read-q-verdict')).toContainText('✓ Верно');
+        await expect(page.locator('.read-q.is-bad .read-q-verdict')).toContainText('✗ Неверно');
         await expect(page.locator('#dCAsk .read-yn-btn').first()).toBeDisabled();
         await expect(page.locator('#dCCheck')).toBeDisabled();
         expect(await page.locator('#dCfb').textContent()).not.toMatch(/обманщик|врёт/i);

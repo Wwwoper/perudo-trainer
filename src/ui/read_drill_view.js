@@ -8,6 +8,7 @@ import { renderBid, renderHand, renderDie, escapeHtml } from '../table.js';
 import { $ } from './common.js';
 import { pickReadRound, buildReadTask, checkReadAnswers, seatLabel as rawSeatLabel, addReadResult, canRead, addSeries, seriesLines, feedRows, knownFacts, priorHint } from '../read_drill.js';
 import { makeSimRound, chooseSource, isSimRound } from '../read_sim.js';
+import { verdictMark } from '../quiz_text.js';
 
 const seatLabel = (round, seat) => escapeHtml(rawSeatLabel(round, seat));
 
@@ -84,7 +85,7 @@ export function setupReadDrill() {
       `Кубиков в руках: <b>${sizes}</b>.<br>` +
       'Вопросы про руку автора ставки, а не про весь стол. Спрашиваем о нескольких ставках соперников: они отмечены в ленте.<br>' +
       (task.wild ? 'Единицы — джокеры: считаются за любую цифру.' : 'Единицы обычные: за другие цифры не считаются (раунд Палифико).') +
-      (isSimRound(round) ? '<br><span class="read-sim muted">Учебный раунд: его сыграли боты программы. В статистику он не идёт.</span>' : '');
+      (isSimRound(round) ? '<p class="read-sim"><b>Учебный раунд.</b> Его сыграли боты программы, в статистику он не идёт.</p>' : '');
     bidsEl.innerHTML = feedRows(task).map((b) =>
       `<li class="read-bid${b.isMe ? ' is-me' : ''}${b.asked ? ' is-asked' : ''}"><span class="read-bid-n">${b.n}</span>` +
       `<span class="read-bid-who">${seatLabel(round, b.seat)}<span class="read-bid-act muted">${b.action}</span></span>` +
@@ -126,6 +127,10 @@ export function setupReadDrill() {
     for (const it of res.items) {
       const box = ask.querySelector(`.read-q[data-n="${it.n}"]`);
       box?.classList.add(it.ok ? 'is-ok' : 'is-bad');
+      box?.querySelector('.read-q-verdict')?.remove();
+      box?.insertAdjacentHTML('beforeend', `<p class="read-q-verdict ${it.ok ? 'text-ok' : 'text-bad'}">` +
+        `<span class="quiz-mark">${verdictMark(it.ok ? 'ok' : 'bad')}</span> ` +
+        `${it.ok ? 'Верно' : 'Неверно'}: в руке нужной цифры ${it.has ? 'есть' : 'нет'}.</p>`);
       box?.querySelector(`.read-yn-btn[data-v="${it.has ? 'yes' : 'no'}"]`)?.classList.add('is-right');
     }
     ask.querySelectorAll('.read-yn-btn').forEach((i) => { i.disabled = true; });
