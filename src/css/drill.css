@@ -736,7 +736,9 @@
 /* Главные кнопки викторины: на всю ширину блока, одной высоты, текст по центру.
    Адреса дублируют класс: страница остаётся ровной, даже если браузер показал старую разметку из кэша. */
 .quiz-wide:not(.hide),
-#dEGo,
+#dEGo:not(.hide),
+#dEResumeGo,
+#dEResumeNew,
 #dENext:not(.hide),
 #dERevealNext,
 #dEAgain {
@@ -747,6 +749,31 @@
   min-height: var(--tap-lg);
   margin-top: 12px;
   font-size: 18px;
+}
+
+.quiz-resume {
+  margin: 0 0 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-1);
+}
+
+.quiz-resume-text {
+  margin: 0;
+  font-weight: 600;
+}
+
+.quiz-secondary {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.quiz-secondary.is-confirm {
+  border-color: var(--bad);
 }
 
 .quiz-start-title {

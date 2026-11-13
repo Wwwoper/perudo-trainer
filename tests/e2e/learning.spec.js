@@ -214,6 +214,63 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dELast')).toContainText('до этого');
   });
 
+  test('«Упражнения»: «Читай стол» — незаконченная серия переживает обновление страницы, продолжить или начать новую (с подтверждением)', async ({ page }) => {
+    const openQuiz = async () => {
+      await open(page, 'drill');
+      await page.click('.drill-tab[data-drill="E"]');
+    };
+    const answerOne = async () => {
+      const opt = page.locator('#dEAsk .quiz-opt').first();
+      if (await opt.count()) await opt.click();
+      else await page.click('#dEAsk .quiz-send');
+    };
+    await openQuiz();
+    await expect(page.locator('#dEResume')).toBeHidden();   // сохранённой серии нет
+    await page.click('#dEGo');
+    for (let i = 0; i < 13; i++) {
+      await answerOne();
+      await page.click('#dENext');
+      if (i % 4 === 3) await page.click('#dERevealNext');
+    }
+    await page.reload();
+    await openQuiz();
+    await expect(page.locator('#dEResumeText')).toHaveText('Незаконченная серия: 13 из 20 · стол 4 из 5');
+    await expect(page.locator('#dEGo')).toBeHidden();
+    {   // кнопки карточки на всю ширину блока
+      const sb = await page.locator('#dEStart').boundingBox();
+      for (const id of ['#dEResumeGo', '#dEResumeNew']) expect((await page.locator(id).boundingBox()).width).toBeGreaterThan(sb.width - 40);
+    }
+    await page.click('#dEResumeGo');
+    await expect(page.locator('#dEProgress')).toHaveText('Стол 4 из 5 · вопрос 2 из 4');
+    for (let i = 0; i < 3; i++) {   // дойти до конца стола и уйти, не открыв руки
+      await answerOne();
+      if (i < 2) await page.click('#dENext');
+    }
+    await expect(page.locator('#dENext')).toBeVisible();
+    await page.reload();
+    await openQuiz();
+    await expect(page.locator('#dEResumeText')).toHaveText('Незаконченная серия: 16 из 20 · стол 4 из 5');
+    await page.click('#dEResumeGo');
+    await expect(page.locator('#dEReveal')).toBeVisible();   // вскрытие, которое ещё не видели, показывается первым
+    await expect(page.locator('.quiz-table-no')).toHaveText('Стол 4');
+    await page.reload();
+    await openQuiz();   // вскрытие уже видели: продолжение с пятого стола
+    await expect(page.locator('#dEResumeText')).toHaveText('Незаконченная серия: 16 из 20 · стол 5 из 5');
+    await page.click('#dEResumeGo');
+    await expect(page.locator('#dEProgress')).toHaveText('Стол 5 из 5 · вопрос 1 из 4');
+    await page.reload();
+    await openQuiz();
+    await page.click('#dEResumeNew');   // первое нажатие только просит подтверждение
+    await expect(page.locator('#dEResumeNew')).toContainText('Точно начать новую? Прогресс 16 из 20 пропадёт');
+    await expect(page.locator('#dEResume')).toBeVisible();
+    await page.click('#dEResumeNew');
+    await expect(page.locator('#dEProgress')).toHaveText('Стол 1 из 5 · вопрос 1 из 4');
+    await page.reload();
+    await openQuiz();
+    await expect(page.locator('#dEResume')).toBeHidden();   // у новой серии ответов ещё нет
+    await expect(page.locator('#dEGo')).toBeVisible();
+  });
+
   test('«Упражнения»: «Серия» — десять ситуаций, итог только в конце, шанс можно сменить', async ({ page }) => {
     await open(page, 'drill');
     await page.click('.drill-tab[data-drill="D"]');

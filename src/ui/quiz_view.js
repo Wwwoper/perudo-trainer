@@ -4,7 +4,7 @@
 // не попадают (показываются ваши кубики, число кубиков у соперников и ход ставок).
 // Серия живёт в пределах страницы и в хранилище не пишется.
 
-import { getRounds, getStats, updateStats } from '../storage.js';
+import { getRounds, getStats, updateStats, getQuizSeries, setQuizSeries, clearQuizSeries } from '../storage.js';
 import { renderBid, renderHand, renderDie, renderHiddenDice, escapeHtml } from '../table.js';
 import { seatLabel as rawSeatLabel } from '../read_drill.js';
 import { PER_TABLE, youSaid } from '../table_quiz.js';
@@ -12,6 +12,7 @@ import {
   createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints, totalQuestions,
 } from '../quiz_series.js';
 import { progressLabel, resultLine, summaryView, splitDice, verdictMark } from '../quiz_text.js';
+import { describeSavedSeries } from '../quiz_save.js';
 import { addQuizResults, lastSeriesRecord, lastSeriesText } from '../quiz_stats.js';
 import { $ } from './common.js';
 
@@ -26,6 +27,11 @@ export function setupQuizDrill() {
   const endBox = $('#dEEnd');
   const goBtn = $('#dEGo');
   const lastEl = $('#dELast');
+  // Карточка незаконченной серии необязательна: если браузер показал старую разметку из кэша, старт работает как раньше
+  const resumeBox = $('#dEResume');
+  const resumeText = $('#dEResumeText');
+  const resumeGo = $('#dEResumeGo');
+  const resumeNew = $('#dEResumeNew');
   const progEl = $('#dEProgress');
   const pointsEl = $('#dEPoints');
   const bar = $('#dEBar');
@@ -47,6 +53,7 @@ export function setupQuizDrill() {
   let answered = false;
   let num = 0;
   let saved = false;        // записана ли текущая серия в статистику
+  let revealed = 0;         // у скольких столов уже показано вскрытие (нужно для сохранения серии)
   let tableToReveal = -1;   // номер стола, у которого после ответа откроются руки
 
   const screen = (name) => {
@@ -108,8 +115,27 @@ export function setupQuizDrill() {
     nextBtn.classList.add('hide');
   }
 
+  /** Записывает ход серии, чтобы после обновления страницы её можно было продолжить. */
+  const persist = () => { setQuizSeries(series, revealed); };
+
+  let pending = null;   // прочитанный снимок, который предложен на старте
+  const NEW_LABEL = 'Начать новую';
+
+  /** Карточка «Незаконченная серия» на старте; при её показе кнопка «Начать серию» не нужна. */
+  function showResume() {
+    pending = resumeBox ? getQuizSeries() : null;
+    if (resumeBox) resumeBox.hidden = !pending;
+    goBtn.classList.toggle('hide', !!pending);
+    if (!pending) return;
+    const d = describeSavedSeries(pending.series, pending.revealed);
+    resumeText.textContent = `Незаконченная серия: ${d.answered} из ${d.total} · стол ${d.table} из ${d.tables}`;
+    resumeNew.classList.remove('is-confirm');
+    resumeNew.querySelector('.btn-main').textContent = NEW_LABEL;
+  }
+
   /** Строка про последнюю сохранённую серию на старте. */
   function showLast() {
+    showResume();
     const text = lastEl ? lastSeriesText(getStats().quizLast, getStats().quizPrev) : null;
     if (!lastEl) return;
     lastEl.hidden = !text;
@@ -118,6 +144,7 @@ export function setupQuizDrill() {
 
   function finish() {
     const sum = summarize(series);
+    clearQuizSeries();   // законченную серию продолжать нечем
     if (!saved) {   // серия записывается один раз: счётчики по видам вопросов и последняя серия
       saved = true;
       updateStats((S) => { S.byTag = addQuizResults(S.byTag, series.results); if (S.quizLast) S.quizPrev = S.quizLast; S.quizLast = lastSeriesRecord(sum); });
@@ -160,6 +187,8 @@ export function setupQuizDrill() {
       '<details class="quiz-legend"><summary>ⓘ Как считаются баллы</summary>' +
       '<p>Верный выбор даёт 1 балл. Число на столе даёт 2 балла, если назвали точно, и 1 балл, если ошиблись на один кубик.</p></details>';
     pointsEl.textContent = `Баллы: ${totalPoints(series)}`;
+    revealed = Math.max(revealed, tableIdx + 1);
+    persist();
     revealNext.querySelector('.btn-main').textContent = progress(series).done ? 'Итог серии' : 'Следующий стол';
     screen('reveal');
   }
@@ -171,6 +200,7 @@ export function setupQuizDrill() {
     answered = true;
     const out = submitAnswer(series, value);
     series = out.series;
+    persist();
     const q = cur.question;
     // Верно или нет, пояснение и счёт до вскрытия не показываются: иначе они подсказывают следующие вопросы стола.
     ask.querySelectorAll('button').forEach((b) => { b.disabled = true; });
@@ -205,13 +235,38 @@ export function setupQuizDrill() {
   revealNext.onclick = () => render();
 
   function start() {
+    clearQuizSeries();   // новая серия заменяет сохранённую
     series = createSeries({ rounds: getRounds() });
     saved = false;
+    revealed = 0;
     if (!series.tables.length) { showLast(); screen('start'); return; }
     render();
   }
 
   goBtn.onclick = start;
+
+  /** Продолжение сохранённой серии: непросмотренное вскрытие показывается первым, иначе следующий вопрос. */
+  function resume() {
+    if (!pending) return;
+    series = pending.series;
+    revealed = pending.revealed;
+    saved = false;
+    const d = describeSavedSeries(series, revealed);
+    pending = null;
+    if (d.pendingReveal) showReveal(revealed); else render();
+  }
+  if (resumeGo) resumeGo.onclick = resume;
+  if (resumeNew) {
+    resumeNew.onclick = () => {   // сначала подтверждение: прогресс жалко потерять случайным нажатием
+      if (!resumeNew.classList.contains('is-confirm')) {
+        const d = describeSavedSeries(pending.series, pending.revealed);
+        resumeNew.classList.add('is-confirm');
+        resumeNew.querySelector('.btn-main').textContent = `Точно начать новую? Прогресс ${d.answered} из ${d.total} пропадёт`;
+        return;
+      }
+      start();
+    };
+  }
   againBtn.onclick = start;
 
   return {
