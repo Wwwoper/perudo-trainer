@@ -478,6 +478,10 @@
   margin: 8px 0;
 }
 
+.series-pick-label {
+  margin: 8px 0 0;
+}
+
 .series-chance,
 .series-buttons button,
 .series-new {

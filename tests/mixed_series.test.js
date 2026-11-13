@@ -87,6 +87,8 @@ describe('тексты', () => {
   const sc = scoreSeries({ chance: 0.7, outcomes: [true, true, false] }, ['believe', 'dudo', 'dudo']);
   it('условие, шаг и итог', () => {
     assert.match(seriesPrompt(0.3), /шансом 30 %/);
+    assert.match(seriesPrompt(0.3), /«Верю».*не оспариваете.*«Не верю!».*дудо/);   // что значат кнопки в терминах игры
+    assert.doesNotMatch(SERIES_NOTE, /Время и очки/);   // это сказано во вступлении, до начала серии
     assert.match(stepLine('believe', true, 0.7), /оказалась верной.*70 %.*совпало с исходом/);
     assert.match(stepLine('dudo', true, 0.7), /не совпало/);
     assert.equal(stepLine('x', true, 0.7), '');

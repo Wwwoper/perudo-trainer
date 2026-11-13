@@ -334,8 +334,9 @@
 
           <!-- Упражнение D: «Серия» -->
           <div class="card drill-board hide" id="dPanelD" role="tabpanel">
-            <p class="read-intro muted">Десять однотипных ситуаций с одним и тем же шансом ставки. Выбирайте «Верю» или «Не верю!»: исход каждой ситуации разыгрывается по шансу, а оценивается вся серия, а не один исход. В статистику серия не идёт.</p>
-            <div id="dDPick" class="series-pick" role="group" aria-label="Шанс ставки в серии"></div>
+            <p class="read-intro muted">Десять однотипных ситуаций с одним и тем же шансом ставки. Исход каждой разыгрывается по шансу, а оценивается вся серия, а не один исход. Результат считается только внутри серии: в общую статистику и очередь повторов он не записывается, время и очки не учитываются.</p>
+            <p id="dDPickLabel" class="series-pick-label muted">Шанс, с которым ставка верна в каждой ситуации серии:</p>
+            <div id="dDPick" class="series-pick" role="group" aria-labelledby="dDPickLabel"></div>
             <div id="dDq" class="drill-question"></div>
             <p id="dDProgress" class="muted"></p>
             <div class="series-buttons">
