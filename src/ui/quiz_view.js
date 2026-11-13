@@ -66,14 +66,18 @@ export function setupQuizDrill() {
     const end = round.end?.kind === 'dudo'
       ? `<li class="read-bid quiz-call"><span class="read-bid-n">${round.bids.length + 1}</span><span class="read-bid-who">${label(round, round.end.by)}</span><b>Не верю</b></li>`
       : '';
-    const note = round.wild ? 'Единицы — джокеры.' : 'Единицы обычные (Палифико).';
-    return `<p>Ваши кубики: ${renderHand(round.hands[round.me], round.wild)}</p>` +
-      `<div class="quiz-seats" aria-label="Кубиков у соперников">${seats}<span class="quiz-note muted">${note}</span></div>` +
+    // Подсказка о джокерах: значок ⓘ и оранжевый кубик единицы, как у вас в руке
+    const hint = round.wild
+      ? `<span class="quiz-hint" aria-label="Единицы — джокеры"><span class="quiz-hint-i" aria-hidden="true">ⓘ</span>${renderDie(1, 'xs', true)}<span>— джокеры</span></span>`
+      : '<span class="quiz-hint"><span class="quiz-hint-i" aria-hidden="true">ⓘ</span><span>Единицы обычные (Палифико)</span></span>';
+    return `<div class="quiz-mine"><span>Ваши кубики:</span><span class="quiz-mine-dice">${renderHand(round.hands[round.me], round.wild)}</span>${hint}</div>` +
+      `<div class="quiz-seats" aria-label="Кубиков у соперников">${seats}</div>` +
       `<ol class="read-bids" aria-label="Ставки раунда по порядку">${rows}${end}</ol>`;
   }
 
   function askHtml(q) {
-    const title = `<p class="quiz-q">${diced(q.title)}</p>`;
+    const title = `<p class="quiz-q">${diced(q.title)}</p>` +
+      (q.hint ? `<p class="quiz-hint"><span class="quiz-hint-i" aria-hidden="true">ⓘ</span><span>${diced(q.hint)}</span></p>` : '');
     if (q.input === 'number') {
       return `${title}<div class="quiz-step"><button type="button" class="quiz-minus" aria-label="Меньше">−</button>` +
         `<output id="dENum" class="quiz-num" aria-live="polite">${num}</output>` +

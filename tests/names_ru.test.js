@@ -29,7 +29,7 @@ describe('names_ru', () => {
     assert.equal(bidOf('Вы'), 'ваша ставка');
     assert.equal(bidOf('Андрей'), 'ставка Андрея');
     assert.equal(bidOf('Юлия'), 'ставка Юлии');
-    assert.equal(bidOf('Лис_77'), 'ставка: Лис_77');
+    assert.equal(bidOf('Лис_77'), 'ставка игрока Лис_77');
     assert.equal(bidOf(''), 'ставка');
     assert.equal(bidOf(undefined), 'ставка');
   });

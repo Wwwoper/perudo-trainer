@@ -43,7 +43,7 @@ export function buildLastTrue(round) {
   return {
     kind: KIND_LAST_TRUE,
     input: 'two',
-    title: `${bidOf(name).replace(/^./, (c) => c.toUpperCase())} — ${last.q} × ${faceGlyph(last.f)}. Она верна?`,
+    title: `Верна ли ${bidOf(name)} — ${last.q} × ${faceGlyph(last.f)}?`,
     short: 'Последняя ставка верна?',
     bid: { s: last.s, q: last.q, f: last.f, name },
     options: [{ v: 'yes', label: 'Верна' }, { v: 'no', label: 'Не верна' }],
@@ -130,7 +130,8 @@ export function buildWhoHoldsMore(round, rnd = Math.random) {
     kind: KIND_WHO_HOLDS_MORE,
     input: 'player',
     short: `Кто держит больше: ${na} или ${nb}`,
-    title: `Кто держит больше своей цифры: ${na} или ${nb}? Своя цифра — из последней ставки игрока.`,
+    title: `Кто держит больше своей цифры: ${na} или ${nb}?`,
+    hint: 'Своя цифра — из последней ставки игрока.',
     options: [a, b].map((x) => ({ v: String(x.s), s: x.s, f: x.f, name: seatLabel(round, x.s), label: `${seatLabel(round, x.s)} (${faceGlyph(x.f)})` })),
     answer: String(winner.s),
     lines: [`Больше ${atWho(seatLabel(round, winner.s))}.`, `В руках: ${part(a, na)}, ${part(b, nb)}.`],

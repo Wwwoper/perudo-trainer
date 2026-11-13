@@ -592,9 +592,41 @@
   font-weight: 600;
 }
 
-.quiz-note {
-  margin-left: auto;
+.quiz-mine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 8px 0;
+}
+
+.quiz-mine-dice {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Подсказка: значок ⓘ и приглушённый текст на светлой плашке */
+.quiz-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--mut);
   font-size: 13px;
+  line-height: 1.3;
+}
+
+.quiz-mine .quiz-hint {
+  margin: 0 0 0 auto;
+}
+
+.quiz-hint-i {
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .quiz-legend {

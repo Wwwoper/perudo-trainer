@@ -101,8 +101,18 @@ test.describe('Учебные вкладки', () => {
       // кубики в вопросе и вариантах нарисованы, а не набраны мелкими символами
       expect(await page.locator('#dEAsk .die').count()).toBeGreaterThan(0);
       await expect(page.locator('#dEAsk')).not.toContainText(/[⚀-⚅]/);
-      await expect(page.locator('#dEAsk')).not.toContainText(/автор|проверили/i);
-      await expect(page.locator('#dEScene .quiz-seats .quiz-note')).toHaveText(/^Единицы — джокеры\.$|^Единицы обычные/);   // справа от числа кубиков игроков
+      await expect(page.locator('#dEAsk')).not.toContainText(/автор|проверили|Она верна/i);
+      if ((await page.locator('#dEAsk .quiz-q').innerText()).startsWith('Кто держит')) {   // вопрос и подсказка отдельными блоками
+        await expect(page.locator('#dEAsk .quiz-q')).not.toContainText('Своя цифра');
+        await expect(page.locator('#dEAsk .quiz-hint')).toContainText('Своя цифра — из последней ставки игрока.');
+      }
+      if ((await page.locator('#dEAsk .quiz-q').innerText()).startsWith('Верна ли')) {
+        await expect(page.locator('#dEAsk .quiz-q')).toHaveText(/\?$/);   // знак вопроса после кубика, без точки перед ним
+      }
+      // подсказка о джокерах: значок ⓘ и оранжевый кубик, в строке «Ваши кубики» справа
+      await expect(page.locator('#dEScene .quiz-mine .quiz-hint')).toContainText(/джокеры|Палифико/);
+      await expect(page.locator('#dEScene .quiz-mine .quiz-hint .die.wild')).toHaveCount(1);
+      await expect(page.locator('#dEScene .quiz-mine .quiz-hint-i')).toHaveText('ⓘ');
       await expect(page.locator('#dEScene')).not.toContainText('считаются за любую цифру');
       const opt = page.locator('#dEAsk .quiz-opt').first();
       if (await page.locator('#dEAsk .quiz-opts-two').count()) {   // «Верна» и «Не верна» стоят в одной строке

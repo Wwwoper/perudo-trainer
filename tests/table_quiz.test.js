@@ -30,8 +30,8 @@ test('buildLastTrue: верная ставка → ответ «yes», пояс�
 
 test('buildLastTrue: короткий вопрос с формой имени, без слов «Её проверили»', () => {
   const q = buildLastTrue(round());
-  assert.match(q.title, /^Ставка [А-Яа-яё]+ — \d+ × [⚀-⚅]\. Она верна\?$/);
-  assert.ok(!/проверили/.test(q.title));
+  assert.match(q.title, /^Верна ли ставка [А-Яа-яё]+ — \d+ × [⚀-⚅]\?$/);   // знак вопроса сразу после кубика, без лишней точки
+  assert.ok(!/проверили|Она верна/.test(q.title));
   assert.deepEqual(q.options.map((o) => o.label), ['Верна', 'Не верна']);
 });
 
@@ -399,4 +399,12 @@ test('linesOk: при верном ответе пояснение не повт
   assert.ok(!cnt.linesOk[0].includes(`${cnt.answer} × `));
   const hold = buildWhoHoldsMore(weakRound({ hands: [[3, 3], [5, 5], [6, 2], [4, 1]] }), () => 0);
   if (hold) { assert.equal(hold.linesOk.length, 1); assert.match(hold.linesOk[0], /^В руках: /); }
+});
+
+test('buildWhoHoldsMore: вопрос и подсказка про «свою цифру» — отдельные поля', () => {
+  const q = buildWhoHoldsMore(weakRound({ hands: [[3, 3], [5, 5], [6, 2], [4, 1]] }), () => 0);
+  if (!q) return;
+  assert.match(q.title, /^Кто держит больше своей цифры: .+ или .+\?$/);
+  assert.ok(!q.title.includes('Своя цифра'));
+  assert.equal(q.hint, 'Своя цифра — из последней ставки игрока.');
 });
