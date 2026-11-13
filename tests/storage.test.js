@@ -312,3 +312,79 @@ describe('режим звука', () => {
     assert.strictEqual(getSoundMode(), 'normal');
   });
 });
+
+describe('Незаконченная серия «Читай стол»', () => {
+  const NOW = 1_800_000_000_000;
+  const KEY = 'perudo.quizSeries';
+
+  /** Серия с n данными ответами. */
+  async function seriesWith(n) {
+    const { createSeries, submitAnswer, currentQuestion } = await import('../src/quiz_series.js');
+    let x = 5;
+    const rnd = () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; };
+    let s = createSeries({ rounds: [], rnd });
+    for (let i = 0; i < n; i++) {
+      const q = currentQuestion(s).question;
+      s = submitAnswer(s, q.input === 'number' ? 1 : q.options[0].v).series;
+    }
+    return s;
+  }
+
+  it('сохраняется, читается и стирается', async () => {
+    const { getQuizSeries, setQuizSeries, clearQuizSeries } = await import('../src/storage.js');
+    delete mockStorage[KEY];
+    assert.strictEqual(getQuizSeries(NOW), null);
+    const s = await seriesWith(6);
+    assert.strictEqual(setQuizSeries(s, 1, NOW), true);
+    const r = getQuizSeries(NOW + 1000);
+    assert.deepStrictEqual(r.series.results, s.results);
+    assert.strictEqual(r.revealed, 1);
+    clearQuizSeries();
+    assert.strictEqual(mockStorage[KEY], undefined);
+    assert.strictEqual(getQuizSeries(NOW), null);
+  });
+
+  it('нечего сохранять: серия без ответов или законченная не затирает прежний снимок', async () => {
+    const { getQuizSeries, setQuizSeries } = await import('../src/storage.js');
+    delete mockStorage[KEY];
+    assert.strictEqual(setQuizSeries(await seriesWith(0), 0, NOW), false);
+    assert.strictEqual(mockStorage[KEY], undefined);
+    setQuizSeries(await seriesWith(5), 1, NOW);
+    const before = mockStorage[KEY];
+    assert.strictEqual(setQuizSeries(await seriesWith(20), 5, NOW), false);
+    assert.strictEqual(mockStorage[KEY], before);
+    assert.ok(getQuizSeries(NOW));
+  });
+
+  it('старше 7 суток, повреждённый или чужой снимок отбрасывается и стирается из хранилища', async () => {
+    const { getQuizSeries, setQuizSeries } = await import('../src/storage.js');
+    setQuizSeries(await seriesWith(6), 1, NOW);
+    assert.strictEqual(getQuizSeries(NOW + 7 * 24 * 3600 * 1000 + 1), null);
+    assert.strictEqual(mockStorage[KEY], undefined, 'просроченный снимок стёрт');
+
+    mockStorage[KEY] = '{не json';
+    assert.strictEqual(getQuizSeries(NOW), null);
+    mockStorage[KEY] = JSON.stringify({ v: 99, savedAt: NOW, tables: [], answers: [] });
+    assert.strictEqual(getQuizSeries(NOW), null);
+    assert.strictEqual(mockStorage[KEY], undefined, 'негодный снимок стёрт');
+    mockStorage[KEY] = JSON.stringify([1, 2, 3]);
+    assert.strictEqual(getQuizSeries(NOW), null);
+  });
+
+  it('запись не бросает, если хранилище недоступно', async () => {
+    const { setQuizSeries, getQuizSeries, clearQuizSeries } = await import('../src/storage.js');
+    const saved = global.localStorage;
+    global.localStorage = {
+      getItem() { throw new Error('закрыто'); },
+      setItem() { throw new Error('переполнено'); },
+      removeItem() { throw new Error('закрыто'); },
+    };
+    try {
+      assert.doesNotThrow(() => setQuizSeries(undefined, 0, NOW));
+      assert.doesNotThrow(() => clearQuizSeries());
+      assert.strictEqual(getQuizSeries(NOW), null);
+    } finally {
+      global.localStorage = saved;
+    }
+  });
+});

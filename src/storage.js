@@ -5,6 +5,7 @@ import { sanitizeDeviceState } from './backup_reminder.js';
 import { sanitizeCloudState } from './cloud_policy.js';
 import { sanitizeGameSettings } from './game_settings.js';
 import { makeSnapshot, restoreSnapshot } from './saved_game.js';
+import { makeQuizSnapshot, restoreQuizSnapshot } from './quiz_save.js';
 import { sanitizeSoundMode } from './sound_plan.js';
 import { sanitizeThemeMode } from './theme.js';
 import { sanitizeStats, sanitizeTrainingQueue, sanitizeGames, sanitizeReviews, sanitizeRounds, sanitizeDuelStats, sanitizeBotMemory } from './data_schema.js';
@@ -23,6 +24,7 @@ const KEYS = {
   PLAYER: 'perudo.player',
   DEVICE: 'perudo.device',
   ACTIVE_GAME: 'perudo.activeGame',
+  QUIZ_SERIES: 'perudo.quizSeries',
   CLOUD: 'perudo.cloud',
   TRAINING_QUEUE: 'perudo.trainingQueue',
   TUTORIAL_PROGRESS: 'perudo.tutorialProgress',
@@ -95,6 +97,30 @@ export function setActiveGame(parts) {
 
 export function clearActiveGame() {
   try { localStorage.removeItem(KEYS.ACTIVE_GAME); } catch (e) {}
+}
+
+// Незаконченная серия «Читай стол»: снимок для «Продолжить» после обновления страницы. Как и незавершённая
+// партия, это состояние устройства: в резервную копию и в облако не входит (BACKUP_KEYS его не содержит).
+// getQuizSeries возвращает проверенную серию { series, revealed } или null. Негодный или просроченный
+// снимок при чтении стирается, чтобы не лежать в хранилище мёртвым грузом.
+export function getQuizSeries(now = Date.now()) {
+  const raw = get(KEYS.QUIZ_SERIES, null);
+  if (raw === null) return null;
+  const r = restoreQuizSnapshot(raw, now);
+  if (!r) clearQuizSeries();
+  return r;
+}
+
+/** Сохраняет серию; false, если сохранять нечего (нет ответов или серия закончена): прежний снимок остаётся как был. */
+export function setQuizSeries(series, revealed, now = Date.now()) {
+  const snap = makeQuizSnapshot(series, revealed, now);
+  if (!snap) return false;
+  set(KEYS.QUIZ_SERIES, snap);
+  return true;
+}
+
+export function clearQuizSeries() {
+  try { localStorage.removeItem(KEYS.QUIZ_SERIES); } catch (e) {}
 }
 
 // Звуки: режим «выкл / тихо / обычно». Хранится в perudo.settings.soundMode; по умолчанию выключены.

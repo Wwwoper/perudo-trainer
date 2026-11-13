@@ -241,6 +241,8 @@ describe('Состояние устройства не входит в копи�
   it('ключ perudo.device не в списке и при импорте игнорируется', () => {
     assert.ok(!BACKUP_KEYS.includes('perudo.device'));
     assert.ok(!BACKUP_KEYS.includes('perudo.cloud'), 'токен облака не должен попадать в файл копии');
+    assert.ok(!BACKUP_KEYS.includes('perudo.activeGame'), 'незавершённая партия — состояние устройства');
+    assert.ok(!BACKUP_KEYS.includes('perudo.quizSeries'), 'незаконченная серия «Читай стол» — состояние устройства');
     const text = JSON.stringify({ format: BACKUP_FORMAT, version: 2, data: { 'perudo.settings': { a: 1 }, 'perudo.device': { nextAt: 1 } } });
     const r = parseBackup(text);
     assert.ok(r.ok);
