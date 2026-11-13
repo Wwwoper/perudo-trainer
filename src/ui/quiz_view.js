@@ -11,7 +11,7 @@ import { PER_TABLE, youSaid } from '../table_quiz.js';
 import {
   createSeries, currentQuestion, progress, submitAnswer, summarize, pointsBeforeTable, totalPoints, totalQuestions,
 } from '../quiz_series.js';
-import { progressLabel, resultLine, summaryView, splitDice, verdictMark, pointsText } from '../quiz_text.js';
+import { progressLabel, resultLine, summaryView, splitDice, verdictMark } from '../quiz_text.js';
 import { addQuizResults, lastSeriesRecord, lastSeriesText } from '../quiz_stats.js';
 import { $ } from './common.js';
 
@@ -68,9 +68,8 @@ export function setupQuizDrill() {
       : '';
     const note = round.wild ? 'Единицы — джокеры.' : 'Единицы обычные (Палифико).';
     return `<p>Ваши кубики: ${renderHand(round.hands[round.me], round.wild)}</p>` +
-      `<div class="quiz-seats" aria-label="Кубиков у соперников">${seats}</div>` +
-      `<ol class="read-bids" aria-label="Ставки раунда по порядку">${rows}${end}</ol>` +
-      `<p class="quiz-note muted">${note}</p>`;
+      `<div class="quiz-seats" aria-label="Кубиков у соперников">${seats}<span class="quiz-note muted">${note}</span></div>` +
+      `<ol class="read-bids" aria-label="Ставки раунда по порядку">${rows}${end}</ol>`;
   }
 
   function askHtml(q) {
@@ -79,7 +78,7 @@ export function setupQuizDrill() {
       return `${title}<div class="quiz-step"><button type="button" class="quiz-minus" aria-label="Меньше">−</button>` +
         `<output id="dENum" class="quiz-num" aria-live="polite">${num}</output>` +
         `<button type="button" class="quiz-plus" aria-label="Больше">+</button></div>` +
-        '<button type="button" class="btn-primary quiz-send"><span class="btn-main">Ответить</span></button>';
+        '<button type="button" class="btn-primary quiz-send quiz-wide"><span class="btn-main">Ответить</span></button>';
     }
     return `${title}<div class="quiz-opts${q.input === 'two' ? ' quiz-opts-two' : ''}" role="group" aria-label="Ваш ответ">` +
       q.options.map((o) => `<button type="button" class="quiz-opt" data-v="${escapeHtml(o.v)}">${diced(o.label)}</button>`).join('') +
@@ -138,21 +137,23 @@ export function setupQuizDrill() {
     const mine = series.results.filter((r) => r.table === tableIdx);
     const good = mine.filter((r) => r.ok).length;
     const got = mine.reduce((a, r) => a + r.points, 0);
+    const max = mine.reduce((a, r) => a + r.max, 0);
     const rows = mine.map((r) => {
       const v = resultLine(r);
       const q = questions[r.index];
       const said = youSaid(q, r.value);
-      const why = (q.lines ?? [q.explain]).map((l) => `<span class="quiz-why muted">${diced(l)}</span>`).join('');
+      const shown = r.ok && q.linesOk ? q.linesOk : (q.lines ?? [q.explain]);   // верный ответ не повторяем в пояснении
+      const why = shown.map((l) => `<span class="quiz-why muted">${diced(l)}</span>`).join('');
       return `<li class="quiz-ans is-${v.tone}"><div class="quiz-ans-head"><b>${diced(q.short ?? q.title)}</b>` +
         `<span class="quiz-verdict is-${v.tone}"><span class="quiz-mark" aria-hidden="true">${verdictMark(v.tone)}</span> ${escapeHtml(v.text)}</span></div>` +
         (said ? `<span class="quiz-said">${diced(said)}</span>` : '') + why + '</li>';
     }).join('');
     revealBody.innerHTML =
       `<div class="quiz-table-head"><span class="quiz-table-no">Стол ${tableIdx + 1}</span>` +
-      `<span class="quiz-table-score">Верно ${good} из ${mine.length} · +${pointsText(got)}</span></div>` +
+      `<span class="quiz-table-score">Верно ${good} из ${mine.length} · баллы: ${got} из ${max}</span></div>` +
       `<div class="quiz-hands" aria-label="Руки при вскрытии"><span class="quiz-hands-title muted">Открытые кубики</span>${hands}</div>` +
       `<ul class="quiz-recap">${rows}</ul>` +
-      '<p class="quiz-legend muted">Баллы: вопрос с выбором даёт 1, число на столе 2, а ошибка в один кубик в числе 1.</p>';
+      '<p class="quiz-legend muted">Как считаются баллы: верный выбор даёт 1 балл; число на столе даёт 2 балла, если назвали точно, и 1 балл, если ошиблись на один кубик.</p>';
     pointsEl.textContent = `Баллы: ${totalPoints(series)}`;
     revealNext.querySelector('.btn-main').textContent = progress(series).done ? 'Итог серии' : 'Следующий стол';
     screen('reveal');

@@ -593,7 +593,7 @@
 }
 
 .quiz-note {
-  margin: 6px 0 0;
+  margin-left: auto;
   font-size: 13px;
 }
 
@@ -697,11 +697,8 @@
   font-weight: 600;
 }
 
-#dENext {
-  margin-top: 8px;
-}
-
-#dERevealNext {
+/* Главные кнопки викторины: на всю ширину блока, текст по центру */
+.quiz-wide:not(.hide) {
   display: flex;
   justify-content: center;
   width: 100%;
@@ -710,8 +707,34 @@
   font-size: 18px;
 }
 
+.quiz-start-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.quiz-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quiz-fact {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .quiz-last {
   margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-1);
   font-weight: 600;
 }
 

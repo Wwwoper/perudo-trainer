@@ -22,10 +22,10 @@ export function progressLabel({ table, q }, tables, perTable) {
  * @returns {{tone:'ok'|'near'|'bad', text:string}}
  */
 export function resultLine(result) {
-  const score = `+${result.points} из ${result.max}`;
+  const score = `баллы: ${result.points} из ${result.max}`;
   if (result.ok) return { tone: 'ok', text: `${result.max > 1 ? 'Точно' : 'Верно'}, ${score}` };
   if (result.points > 0) return { tone: 'near', text: `Почти, ${score}` };
-  return { tone: 'bad', text: `Мимо, 0 из ${result.max}` };
+  return { tone: 'bad', text: `Мимо, ${score}` };
 }
 
 /** Строка в конце серии: «Верно: 14 из 20. Баллов: 17 из 24.» */

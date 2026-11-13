@@ -24,7 +24,7 @@ test('buildLastTrue: верная ставка → ответ «yes», пояс�
   assert.equal(q.answer, 'yes');
   assert.deepEqual(q.options.map((o) => o.v), ['yes', 'no']);
   assert.match(q.title, /3 × ⚃/);
-  assert.match(q.explain, /^На столе было 3 × ⚃, а нужно было 3: ставки хватило\.$/);
+  assert.equal(q.explain, 'На столе было 3 × ⚃ из 3.');
   assert.doesNotMatch(q.explain, /джокер/);   // про единицы сказано один раз, в шапке стола
 });
 
@@ -38,7 +38,7 @@ test('buildLastTrue: короткий вопрос с формой имени, �
 test('buildLastTrue: неверная ставка → «no»', () => {
   const q = buildLastTrue(round({}, { actual: 2, ok: false }));
   assert.equal(q.answer, 'no');
-  assert.equal(q.explain, 'На столе было 2 из 3 × ⚃: ставки не хватило.');
+  assert.equal(q.explain, 'На столе было 2 × ⚃ из 3: ставки не хватило.');
 });
 
 test('buildLastTrue: слов про джокеров в пояснении нет и при Палифико', () => {
@@ -382,4 +382,21 @@ test('«Минимум был у…» и «Больше у…» — имя в р
   assert.ok(Object.values(GENITIVE).some((g) => weak.lines[0] === `Минимум был у ${g}.`), weak.lines[0]);
   const hold = buildWhoHoldsMore(weakRound({ hands: [[3, 3], [5, 5], [6, 2], [4, 1]] }), () => 0);
   if (hold) assert.ok(Object.values(GENITIVE).some((g) => hold.lines[0] === `Больше у ${g}.`), hold.lines[0]);
+});
+
+test('buildLastTrue: запас над ставкой — «при ставке N»', () => {
+  const q = buildLastTrue(round({}, { actual: 5 }));
+  assert.equal(q.answer, 'yes');
+  assert.equal(q.explain, 'На столе было 5 × ⚃ при ставке 3.');
+});
+
+test('linesOk: при верном ответе пояснение не повторяет ответ', () => {
+  const weak = buildWeakestBid(weakRound(), mid);
+  assert.ok(weak.linesOk.length === weak.lines.length - 1);
+  assert.ok(weak.linesOk.every((l) => !/^Минимум был/.test(l)));
+  const cnt = buildCountFace(round(), () => 0);
+  assert.match(cnt.linesOk[0], /^По рукам: Вы — \d+/);
+  assert.ok(!cnt.linesOk[0].includes(`${cnt.answer} × `));
+  const hold = buildWhoHoldsMore(weakRound({ hands: [[3, 3], [5, 5], [6, 2], [4, 1]] }), () => 0);
+  if (hold) { assert.equal(hold.linesOk.length, 1); assert.match(hold.linesOk[0], /^В руках: /); }
 });

@@ -83,6 +83,13 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dDock')).toBeHidden();
     await expect(page.locator('#dTimer')).toBeHidden();
     await expect(page.locator('#dEGo')).toBeVisible();
+    {   // старт: заголовок, три факта о серии, кнопка на всю ширину блока
+      await expect(page.locator('#dEStart .quiz-start-title')).toHaveText('Читай стол');
+      await expect(page.locator('#dEStart .quiz-fact')).toHaveText(['5 столов', '4 вопроса на стол', '20 вопросов']);
+      const sb = await page.locator('#dEStart').boundingBox();
+      const gb = await page.locator('#dEGo').boundingBox();
+      expect(gb.width).toBeGreaterThan(sb.width - 4);
+    }
     await page.click('#dEGo');
     await expect(page.locator('#dEProgress')).toHaveText('Стол 1 из 5 · вопрос 1 из 4');
     let seenPoints = 0;   // счёт на экране вопросов меняется только после вскрытия стола
@@ -95,7 +102,7 @@ test.describe('Учебные вкладки', () => {
       expect(await page.locator('#dEAsk .die').count()).toBeGreaterThan(0);
       await expect(page.locator('#dEAsk')).not.toContainText(/[⚀-⚅]/);
       await expect(page.locator('#dEAsk')).not.toContainText(/автор|проверили/i);
-      await expect(page.locator('#dEScene .quiz-note')).toHaveText(/^Единицы — джокеры\.$|^Единицы обычные/);
+      await expect(page.locator('#dEScene .quiz-seats .quiz-note')).toHaveText(/^Единицы — джокеры\.$|^Единицы обычные/);   // справа от числа кубиков игроков
       await expect(page.locator('#dEScene')).not.toContainText('считаются за любую цифру');
       const opt = page.locator('#dEAsk .quiz-opt').first();
       if (await page.locator('#dEAsk .quiz-opts-two').count()) {   // «Верна» и «Не верна» стоят в одной строке
@@ -113,6 +120,9 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dENext')).toHaveText(i % 4 === 3 ? 'Ответ принят. Открываем руки' : 'Ответ принят. Идём дальше');
       await expect(page.locator('#dEFb')).toBeEmpty();
       await expect(page.locator('#dENext')).not.toContainText(/Верно|Мимо|Почти|Точно|undefined|NaN/);
+      const nxt = await page.locator('#dENext').boundingBox();
+      const plb = await page.locator('#dEPlay').boundingBox();
+      expect(nxt.width).toBeGreaterThan(plb.width - 40);   // кнопка на всю ширину блока, как «Следующий стол»
       await expect(page.locator('#dEPlay')).not.toContainText(/Оценка будет/);
       await expect(page.locator('#dEPlay .quiz-verdict')).toHaveCount(0);
       await expect(page.locator('#dEPoints')).toHaveText(new RegExp(`Баллы: ${seenPoints}$`));
@@ -125,10 +135,10 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dEReveal .quiz-recap .quiz-mark')).toHaveCount(4);
         await expect(page.locator('#dEReveal .quiz-recap .quiz-said')).toHaveCount(4);   // что вы ответили, у каждого вопроса
         await expect(page.locator('#dEReveal .quiz-recap .quiz-said').first()).toContainText(/^Вы (ответили|выбрали|сказали): /);
-        await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict').first()).toContainText(/из [12]$/);   // баллы «из максимума»
-        await expect(page.locator('#dEReveal .quiz-legend')).toBeVisible();
+        await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict').first()).toContainText(/баллы: \d из [12]$/);   // баллы «N из максимума»
+        await expect(page.locator('#dEReveal .quiz-legend')).toContainText('Как считаются баллы');
         await expect(page.locator('#dEReveal .quiz-table-no')).toHaveText(`Стол ${(i - 3) / 4 + 1}`);
-        await expect(page.locator('#dEReveal .quiz-table-score')).toHaveText(/^Верно \d из 4 · \+\d+ (балл|балла|баллов)$/);
+        await expect(page.locator('#dEReveal .quiz-table-score')).toHaveText(/^Верно \d из 4 · баллы: \d+ из \d+$/);
         await expect(page.locator('#dEReveal')).not.toContainText(/Последняя ставка \d|ставка не верна|ставка верна\./);   // факт один раз, у своего вопроса
         // у каждого ответа цветная полоса слева, итог стола справа, кнопка «Следующий стол» на всю ширину блока
         await expect(page.locator('#dEReveal .quiz-ans')).toHaveCount(4);

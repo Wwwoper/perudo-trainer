@@ -16,12 +16,12 @@ test('progressLabel: стол и вопрос считаются с единиц
   assert.equal(progressLabel({ table: 1, q: 2 }, 5, 4), 'Стол 2 из 5 · вопрос 3 из 4');
 });
 
-test('resultLine: верно, точно, почти и мимо, баллы «из максимума»', () => {
-  assert.deepEqual(resultLine({ ok: true, points: 1, max: 1 }), { tone: 'ok', text: 'Верно, +1 из 1' });
-  assert.deepEqual(resultLine({ ok: true, points: 2, max: 2 }), { tone: 'ok', text: 'Точно, +2 из 2' });
-  assert.deepEqual(resultLine({ ok: false, points: 1, max: 2 }), { tone: 'near', text: 'Почти, +1 из 2' });
-  assert.deepEqual(resultLine({ ok: false, points: 0, max: 1 }), { tone: 'bad', text: 'Мимо, 0 из 1' });
-  assert.deepEqual(resultLine({ ok: false, points: 0, max: 2 }), { tone: 'bad', text: 'Мимо, 0 из 2' });
+test('resultLine: верно, точно, почти и мимо, «баллы: N из M»', () => {
+  assert.deepEqual(resultLine({ ok: true, points: 1, max: 1 }), { tone: 'ok', text: 'Верно, баллы: 1 из 1' });
+  assert.deepEqual(resultLine({ ok: true, points: 2, max: 2 }), { tone: 'ok', text: 'Точно, баллы: 2 из 2' });
+  assert.deepEqual(resultLine({ ok: false, points: 1, max: 2 }), { tone: 'near', text: 'Почти, баллы: 1 из 2' });
+  assert.deepEqual(resultLine({ ok: false, points: 0, max: 1 }), { tone: 'bad', text: 'Мимо, баллы: 0 из 1' });
+  assert.deepEqual(resultLine({ ok: false, points: 0, max: 2 }), { tone: 'bad', text: 'Мимо, баллы: 0 из 2' });
 });
 
 test('endLine: верные ответы и баллы', () => {

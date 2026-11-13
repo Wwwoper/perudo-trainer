@@ -36,9 +36,10 @@ export function buildLastTrue(round) {
   if (!Number.isInteger(actual) || !Number.isInteger(last.q) || !Number.isInteger(last.f)) return null;
   const name = seatLabel(round, last.s);
   const ok = actual >= last.q;
+  const g = faceGlyph(last.f);
   const lines = [ok
-    ? `На столе было ${actual} × ${faceGlyph(last.f)}, а нужно было ${last.q}: ставки хватило.`
-    : `На столе было ${actual} из ${last.q} × ${faceGlyph(last.f)}: ставки не хватило.`];
+    ? `На столе было ${actual} × ${g} ${actual === last.q ? `из ${last.q}` : `при ставке ${last.q}`}.`
+    : `На столе было ${actual} × ${g} из ${last.q}: ставки не хватило.`];
   return {
     kind: KIND_LAST_TRUE,
     input: 'two',
@@ -81,8 +82,8 @@ export function buildWeakestBid(round, rnd = Math.random) {
       return { v: String(x.n), n: x.n, s: x.s, q: x.q, f: x.f, name, label: `${name}: ${x.q} × ${faceGlyph(x.f)}` };
     });
     // у одного игрока может быть две ставки из тройки, поэтому строки подписаны номером ставки
-    const lines = [`Минимум был ${atWho(seatLabel(round, w.s))}.`,
-      ...pick.map((x) => `Ставка ${x.n} · ${seatLabel(round, x.s)} — ${x.has} из ${hands[x.s].length} ${faceGlyph(x.f)}`)];
+    const perBid = pick.map((x) => `Ставка ${x.n} · ${seatLabel(round, x.s)} — ${x.has} из ${hands[x.s].length} ${faceGlyph(x.f)}`);
+    const lines = [`Минимум был ${atWho(seatLabel(round, w.s))}.`, ...perBid];
     return {
       kind: KIND_WEAKEST_BID,
       input: 'bid',
@@ -91,6 +92,7 @@ export function buildWeakestBid(round, rnd = Math.random) {
       options,
       answer: String(w.n),
       lines,
+      linesOk: perBid,   // при верном ответе «Минимум был у…» повторяло бы ваш выбор
       explain: lines.join(' '),
     };
   }
@@ -132,6 +134,7 @@ export function buildWhoHoldsMore(round, rnd = Math.random) {
     options: [a, b].map((x) => ({ v: String(x.s), s: x.s, f: x.f, name: seatLabel(round, x.s), label: `${seatLabel(round, x.s)} (${faceGlyph(x.f)})` })),
     answer: String(winner.s),
     lines: [`Больше ${atWho(seatLabel(round, winner.s))}.`, `В руках: ${part(a, na)}, ${part(b, nb)}.`],
+    linesOk: [`В руках: ${part(a, na)}, ${part(b, nb)}.`],
     explain: `Больше ${atWho(seatLabel(round, winner.s))}. В руках: ${part(a, na)}, ${part(b, nb)}.`,
   };
 }
@@ -161,6 +164,7 @@ export function buildCountFace(round, rnd = Math.random) {
     range: { min: 0, max: total },
     answer,
     lines: [`На столе было ${answer} × ${faceGlyph(f)}: ${per}.`],
+    linesOk: [`По рукам: ${per}.`],   // число вы уже назвали верно, повторять его не нужно
     explain: `На столе было ${answer} × ${faceGlyph(f)}: ${per}.`,
   };
 }

@@ -349,9 +349,11 @@
           <!-- Упражнение E: викторина «Читай стол» -->
           <div class="card drill-board hide" id="dPanelE" role="tabpanel">
             <div id="dEStart" class="quiz-start">
-              <p class="read-intro muted">Вам покажут кубики за столом и ход ставок, потом зададут четыре вопроса о том, что лежит на столе на самом деле. Серия: пять столов, двадцать вопросов. Руки соперников видны только после вопросов по столу. Законченная серия попадает в статистику.</p>
+              <h3 class="quiz-start-title">Читай стол</h3>
+              <p class="read-intro muted">Вам покажут кубики за столом и ход ставок, потом зададут четыре вопроса о том, что лежит на столе на самом деле. Руки соперников видны только после вопросов по столу. Законченная серия попадает в статистику.</p>
+              <ul class="quiz-facts" aria-label="Серия"><li class="quiz-fact">5 столов</li><li class="quiz-fact">4 вопроса на стол</li><li class="quiz-fact">20 вопросов</li></ul>
               <p id="dELast" class="quiz-last" hidden></p>
-              <button id="dEGo" type="button" class="btn-primary"><span class="btn-main">Начать серию</span></button>
+              <button id="dEGo" type="button" class="btn-primary quiz-wide"><span class="btn-main">Начать серию</span></button>
             </div>
             <div id="dEPlay" class="quiz-play hide">
               <div class="quiz-head"><span id="dEProgress" class="quiz-progress muted"></span><span id="dEPoints" class="quiz-points"></span></div>
@@ -359,18 +361,18 @@
               <div id="dEScene" class="quiz-scene"></div>
               <div id="dEAsk" class="quiz-ask"></div>
               <div id="dEFb" class="quiz-fb" role="status" aria-live="polite"></div>
-              <button id="dENext" type="button" class="btn-primary hide"><span class="btn-main">Дальше</span></button>
+              <button id="dENext" type="button" class="btn-primary quiz-wide hide"><span class="btn-main">Дальше</span></button>
             </div>
             <div id="dEReveal" class="quiz-reveal hide">
               <div id="dERevealBody"></div>
-              <button id="dERevealNext" type="button" class="btn-primary"><span class="btn-main">Следующий стол</span></button>
+              <button id="dERevealNext" type="button" class="btn-primary quiz-wide"><span class="btn-main">Следующий стол</span></button>
             </div>
             <div id="dEEnd" class="quiz-end hide">
               <p id="dEEndText" class="quiz-end-text"></p>
               <p id="dEEndPoints"></p>
               <ul id="dEKinds" class="quiz-kinds"></ul>
               <p id="dEWeak" class="muted"></p>
-              <button id="dEAgain" type="button" class="btn-primary"><span class="btn-main">Ещё одна серия</span></button>
+              <button id="dEAgain" type="button" class="btn-primary quiz-wide"><span class="btn-main">Ещё одна серия</span></button>
             </div>
           </div>
         </div>
