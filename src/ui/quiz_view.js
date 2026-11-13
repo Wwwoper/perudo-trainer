@@ -153,7 +153,8 @@ export function setupQuizDrill() {
       `<span class="quiz-table-score">Верно ${good} из ${mine.length} · баллы: ${got} из ${max}</span></div>` +
       `<div class="quiz-hands" aria-label="Руки при вскрытии"><span class="quiz-hands-title muted">Открытые кубики</span>${hands}</div>` +
       `<ul class="quiz-recap">${rows}</ul>` +
-      '<p class="quiz-legend muted">Как считаются баллы: верный выбор даёт 1 балл; число на столе даёт 2 балла, если назвали точно, и 1 балл, если ошиблись на один кубик.</p>';
+      '<details class="quiz-legend"><summary>ⓘ Как считаются баллы</summary>' +
+      '<p>Верный выбор даёт 1 балл. Число на столе даёт 2 балла, если назвали точно, и 1 балл, если ошиблись на один кубик.</p></details>';
     pointsEl.textContent = `Баллы: ${totalPoints(series)}`;
     revealNext.querySelector('.btn-main').textContent = progress(series).done ? 'Итог серии' : 'Следующий стол';
     screen('reveal');
@@ -173,6 +174,7 @@ export function setupQuizDrill() {
     // Одна кнопка вместо сообщения и «Дальше»: она же говорит, что ответ принят.
     nextBtn.querySelector('.btn-main').textContent = out.tableDone ? 'Ответ принят. Открываем руки' : 'Ответ принят. Идём дальше';
     tableToReveal = out.tableDone ? cur.table : -1;
+    ask.querySelector('.quiz-send')?.classList.add('hide');   // «Ответить» уступает место кнопке «Дальше»: экран не растёт
     nextBtn.classList.remove('hide');
     nextBtn.focus();
   }
@@ -192,7 +194,10 @@ export function setupQuizDrill() {
     if (out) out.textContent = String(num);
   });
 
-  nextBtn.onclick = () => { if (tableToReveal >= 0) showReveal(tableToReveal); else render(); };
+  nextBtn.onclick = (e) => {
+    if (e.detail > 1) return;   // второй щелчок двойного нажатия по «Ответить» не должен пролистывать вопрос
+    if (tableToReveal >= 0) showReveal(tableToReveal); else render();
+  };
   revealNext.onclick = () => render();
 
   function start() {

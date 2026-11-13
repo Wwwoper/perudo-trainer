@@ -598,8 +598,17 @@
 }
 
 .quiz-legend {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   font-size: 13px;
+  color: var(--mut);
+}
+
+.quiz-legend summary {
+  cursor: pointer;
+}
+
+.quiz-legend p {
+  margin: 6px 0 0;
 }
 
 .quiz-mark {
@@ -644,9 +653,9 @@
 .quiz-opt,
 .quiz-minus,
 .quiz-plus {
-  min-height: var(--tap);
-  min-width: var(--tap);
-  font-size: 16px;
+  min-height: var(--tap-lg);
+  min-width: var(--tap-lg);
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -668,11 +677,6 @@
   font-size: 32px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-.quiz-send {
-  display: block;
-  margin: 0 auto;
 }
 
 .quiz-fb {
@@ -697,10 +701,16 @@
   font-weight: 600;
 }
 
-/* Главные кнопки викторины: на всю ширину блока, текст по центру */
-.quiz-wide:not(.hide) {
+/* Главные кнопки викторины: на всю ширину блока, одной высоты, текст по центру.
+   Адреса дублируют класс: страница остаётся ровной, даже если браузер показал старую разметку из кэша. */
+.quiz-wide:not(.hide),
+#dEGo,
+#dENext:not(.hide),
+#dERevealNext,
+#dEAgain {
   display: flex;
   justify-content: center;
+  align-items: center;
   width: 100%;
   min-height: var(--tap-lg);
   margin-top: 12px;

@@ -110,10 +110,12 @@ test.describe('Учебные вкладки', () => {
         expect(tops).toHaveLength(2);
         expect(tops[0]).toBe(tops[1]);
       }
-      if (await opt.count()) await opt.click();
+      const isNumber = !(await opt.count());
+      if (!isNumber) await opt.click();
       else {
         await page.click('#dEAsk .quiz-plus');
         await page.click('#dEAsk .quiz-send');
+        await expect(page.locator('#dEAsk .quiz-send')).toBeHidden();   // «Ответить» уступает место кнопке «Дальше»
       }
       // до вскрытия стола ни вердикта, ни чисел, ни роста счёта: они подсказывали бы следующие вопросы
       // одна кнопка вместо сообщения и «Дальше»; на четвёртом вопросе стола она открывает руки
@@ -121,6 +123,10 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#dEFb')).toBeEmpty();
       await expect(page.locator('#dENext')).not.toContainText(/Верно|Мимо|Почти|Точно|undefined|NaN/);
       const nxt = await page.locator('#dENext').boundingBox();
+      // все кнопки викторины одной высоты, различается только ширина
+      const ref = await page.locator(isNumber ? '#dEAsk .quiz-plus' : '#dEAsk .quiz-opt').first().boundingBox();
+      expect(Math.round(nxt.height)).toBe(Math.round(ref.height));
+      expect(Math.round(nxt.height)).toBeGreaterThanOrEqual(52);
       const plb = await page.locator('#dEPlay').boundingBox();
       expect(nxt.width).toBeGreaterThan(plb.width - 40);   // кнопка на всю ширину блока, как «Следующий стол»
       await expect(page.locator('#dEPlay')).not.toContainText(/Оценка будет/);
@@ -136,7 +142,11 @@ test.describe('Учебные вкладки', () => {
         await expect(page.locator('#dEReveal .quiz-recap .quiz-said')).toHaveCount(4);   // что вы ответили, у каждого вопроса
         await expect(page.locator('#dEReveal .quiz-recap .quiz-said').first()).toContainText(/^Вы (ответили|выбрали|сказали): /);
         await expect(page.locator('#dEReveal .quiz-recap .quiz-verdict').first()).toContainText(/баллы: \d из [12]$/);   // баллы «N из максимума»
-        await expect(page.locator('#dEReveal .quiz-legend')).toContainText('Как считаются баллы');
+        await expect(page.locator('#dEReveal .quiz-legend summary')).toContainText('Как считаются баллы');
+        await expect(page.locator('#dEReveal .quiz-legend p')).toBeHidden();   // строка про баллы свёрнута, с кнопкой не сливается
+        await page.click('#dEReveal .quiz-legend summary');
+        await expect(page.locator('#dEReveal .quiz-legend p')).toContainText('2 балла, если назвали точно');
+        await page.click('#dEReveal .quiz-legend summary');
         await expect(page.locator('#dEReveal .quiz-table-no')).toHaveText(`Стол ${(i - 3) / 4 + 1}`);
         await expect(page.locator('#dEReveal .quiz-table-score')).toHaveText(/^Верно \d из 4 · баллы: \d+ из \d+$/);
         await expect(page.locator('#dEReveal')).not.toContainText(/Последняя ставка \d|ставка не верна|ставка верна\./);   // факт один раз, у своего вопроса
