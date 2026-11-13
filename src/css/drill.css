@@ -494,6 +494,74 @@
   color: var(--on-accent);
 }
 
+/* Прогресс серии: по точке на ситуацию, после ответа точка показывает совпадение решения с исходом */
+.series-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.series-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.series-dot.is-ok {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.series-dot.is-miss {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.series-dot.is-cur {
+  border-color: var(--acc);
+  background: var(--acc);
+}
+
+.series-count {
+  font-weight: 600;
+}
+
+/* Разбор ответа: полоса цвета и значок; исход не равен качеству решения, поэтому «не совпало» янтарное, а не красное */
+.series-ans {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-1);
+}
+
+.series-ans.is-ok {
+  border-left-color: var(--ok);
+}
+
+.series-ans.is-miss {
+  border-left-color: var(--warn);
+}
+
+.series-ans p {
+  margin: 0;
+}
+
+.series-ans-head {
+  font-weight: 600;
+}
+
+.series-ans-note {
+  margin-top: 4px;
+}
+
 .series-summary {
   margin-top: 8px;
 }

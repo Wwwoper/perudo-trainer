@@ -277,13 +277,17 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dPanelD')).toBeVisible();
     await expect(page.locator('#dDock')).toBeHidden();
     await expect(page.locator('#dDq')).toContainText('шансом 30 %');
-    await expect(page.locator('#dDProgress')).toHaveText('Ситуация 1 из 10.');
+    await expect(page.locator('#dDProgress .series-count')).toHaveText('Ситуация 1 из 10.');
+    await expect(page.locator('#dDProgress .series-dot')).toHaveCount(10);
+    await expect(page.locator('#dDProgress .series-dot.is-cur')).toHaveCount(1);
     for (let i = 0; i < 9; i++) {
       await page.click(i % 2 ? '#dDBelieve' : '#dDDudo');
       await expect(page.locator('#dDfb')).toContainText('Один исход не оценивает решение');
+      await expect(page.locator('#dDfb .series-ans')).toHaveCount(1);                  // карточка ответа с цветом и значком
+      await expect(page.locator('#dDProgress .series-dot.is-ok, #dDProgress .series-dot.is-miss')).toHaveCount(i + 1);
       await expect(page.locator('#dDfb .series-summary')).toHaveCount(0);        // итога до конца серии нет
     }
-    await expect(page.locator('#dDProgress')).toHaveText('Ситуация 10 из 10.');
+    await expect(page.locator('#dDProgress .series-count')).toHaveText('Ситуация 10 из 10.');
     await page.click('#dDDudo');
     await expect(page.locator('#dDfb .series-summary')).toContainText('Совпало с исходом');
     await expect(page.locator('#dDBelieve')).toBeDisabled();
@@ -293,7 +297,7 @@ test.describe('Учебные вкладки', () => {
     // смена шанса начинает новую серию
     await page.click('.series-chance[data-chance="0.7"]');
     await expect(page.locator('#dDq')).toContainText('шансом 70 %');
-    await expect(page.locator('#dDProgress')).toHaveText('Ситуация 1 из 10.');
+    await expect(page.locator('#dDProgress .series-count')).toHaveText('Ситуация 1 из 10.');
     await expect(page.locator('#dDfb')).toBeEmpty();
     await expect(page.locator('#dDBelieve')).toBeEnabled();
     // возврат к другому упражнению возвращает нижний блок

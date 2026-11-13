@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SERIES_LENGTH, CHANCES, toChance, makeSeries, isRight, likelierAction, scoreSeries,
-  seriesPrompt, stepLine, summaryLines, SERIES_NOTE, SERIES_TITLE,
+  seriesPrompt, stepLine, stepParts, progressMarks, summaryLines, SERIES_NOTE, SERIES_TITLE,
 } from '../src/mixed_series.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -109,5 +109,30 @@ describe('тексты', () => {
     const t = [SERIES_TITLE, SERIES_NOTE, seriesPrompt(0.5), stepLine('dudo', false, 0.3), ...summaryLines(sc, 3)].join(' ');
     for (const re of BANNED) assert.ok(!re.test(t), `${re}`);
     assert.doesNotMatch(t, /обманщик|врёт|блефует/i);
+  });
+});
+
+describe('Разбор ситуации и точки прогресса', () => {
+  it('stepParts: верность, исход и пояснение отдельно; stepLine собирается из них', () => {
+    const t = stepParts('believe', false, 0.3);
+    assert.equal(t.ok, false);
+    assert.match(t.verdict, /не совпало с исходом/);
+    assert.match(t.fact, /оказалась неверной.*30 %/);
+    assert.match(t.note, /Один исход не оценивает решение/);
+    assert.equal(stepLine('believe', false, 0.3), `${t.fact} ${t.verdict}. ${t.note}`);
+    assert.equal(stepParts('x', true, 0.5), null);
+  });
+
+  it('progressMarks: совпало, не совпало, текущая и впереди', () => {
+    const series = { chance: 0.7, outcomes: [true, false, true, true] };
+    assert.deepEqual(progressMarks(series, []), ['cur', 'todo', 'todo', 'todo']);
+    assert.deepEqual(progressMarks(series, ['believe', 'believe']), ['ok', 'miss', 'cur', 'todo']);
+    assert.deepEqual(progressMarks(series, ['believe', 'dudo', 'dudo', 'believe']), ['ok', 'ok', 'miss', 'ok']);
+  });
+
+  it('progressMarks: пустая или испорченная серия не роняет', () => {
+    assert.deepEqual(progressMarks(null, []), []);
+    assert.deepEqual(progressMarks({ outcomes: [true] }, null), ['cur']);
+    assert.deepEqual(progressMarks({}, ['believe']), []);
   });
 });

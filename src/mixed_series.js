@@ -92,11 +92,35 @@ export function seriesPrompt(p) {
   return `В каждой ситуации серии ставка верна с шансом ${pc(p)}. «Верю» — вы не оспариваете ставку и играете дальше. «Не верю!» — вы оспариваете её (в игре это дудо).`;
 }
 
-/** Разбор отдельной ситуации: исход и верность решения. */
-export function stepLine(action, held, p) {
+/** Разбор отдельной ситуации по частям: верность решения, что выпало и пояснение. null, если действие неизвестно. */
+export function stepParts(action, held, p) {
   const ok = isRight(action, held);
-  if (ok === null) return '';
-  return `Ставка ${held ? 'оказалась верной' : 'оказалась неверной'} (шанс был ${pc(p)}). Ваше решение ${ok ? 'совпало с исходом' : 'не совпало с исходом'}. Один исход не оценивает решение.`;
+  if (ok === null) return null;
+  return {
+    ok,
+    verdict: `Ваше решение ${ok ? 'совпало с исходом' : 'не совпало с исходом'}`,
+    fact: `Ставка ${held ? 'оказалась верной' : 'оказалась неверной'} (шанс был ${pc(p)}).`,
+    note: 'Один исход не оценивает решение.',
+  };
+}
+
+/** Разбор отдельной ситуации одной строкой: исход и верность решения. */
+export function stepLine(action, held, p) {
+  const t = stepParts(action, held, p);
+  return t ? `${t.fact} ${t.verdict}. ${t.note}` : '';
+}
+
+/**
+ * Метки прогресса для точек: у каждой ситуации серии одно состояние.
+ * 'ok' — решение совпало с исходом, 'miss' — не совпало, 'cur' — текущая, 'todo' — впереди.
+ */
+export function progressMarks(series, choices) {
+  const outcomes = Array.isArray(series?.outcomes) ? series.outcomes : [];
+  const made = Array.isArray(choices) ? choices : [];
+  return outcomes.map((held, i) => {
+    if (i < made.length) return isRight(made[i], held) ? 'ok' : 'miss';
+    return i === made.length ? 'cur' : 'todo';
+  });
 }
 
 /** Строки итога серии (только когда серия закончена; иначе — сколько осталось). */

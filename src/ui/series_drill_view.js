@@ -2,7 +2,7 @@
 // Серия живёт в пределах страницы и в хранилище не пишется.
 import { $ } from './common.js';
 import {
-  SERIES_LENGTH, CHANCES, makeSeries, scoreSeries, seriesPrompt, stepLine, summaryLines, SERIES_NOTE, SERIES_TITLE,
+  SERIES_LENGTH, CHANCES, makeSeries, scoreSeries, seriesPrompt, stepParts, progressMarks, summaryLines, SERIES_NOTE, SERIES_TITLE,
 } from '../mixed_series.js';
 
 export function setupSeriesDrill() {
@@ -28,7 +28,9 @@ export function setupSeriesDrill() {
     pick.querySelectorAll('.series-chance').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.chance) === chance)));
     q.textContent = seriesPrompt(chance);
     const n = choices.length;
-    prog.textContent = done() ? `Серия закончена: ${SERIES_LENGTH} из ${SERIES_LENGTH}.` : `Ситуация ${n + 1} из ${SERIES_LENGTH}.`;
+    const label = done() ? `Серия закончена: ${SERIES_LENGTH} из ${SERIES_LENGTH}.` : `Ситуация ${n + 1} из ${SERIES_LENGTH}.`;
+    const dots = progressMarks(series, choices).map((m) => `<span class="series-dot is-${m}">${m === 'ok' ? '✓' : m === 'miss' ? '✗' : ''}</span>`).join('');
+    prog.innerHTML = `<span class="series-dots" aria-hidden="true">${dots}</span><span class="series-count">${label}</span>`;
     bBelieve.disabled = done();
     bDudo.disabled = done();
   }
@@ -45,7 +47,8 @@ export function setupSeriesDrill() {
     if (done()) return;
     const i = choices.length;
     choices.push(action);
-    const lines = [`<p>${stepLine(action, series.outcomes[i], series.chance)}</p>`];
+    const t = stepParts(action, series.outcomes[i], series.chance);
+    const lines = [`<div class="series-ans is-${t.ok ? 'ok' : 'miss'}"><p class="series-ans-head"><span aria-hidden="true">${t.ok ? '✓' : '✗'}</span> ${t.verdict}</p><p class="series-ans-fact">${t.fact}</p><p class="muted series-ans-note">${t.note}</p></div>`];
     if (done()) {
       const sum = summaryLines(scoreSeries(series, choices), series.outcomes.length);
       lines.push(`<div class="series-summary"><b>${SERIES_TITLE}</b><ul class="read-lines">${sum.map((l) => `<li>${l}</li>`).join('')}</ul></div>`);
