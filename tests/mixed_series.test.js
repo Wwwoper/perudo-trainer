@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   SERIES_LENGTH, CHANCES, toChance, makeSeries, isRight, likelierAction, scoreSeries,
-  seriesPrompt, stepLine, stepParts, progressMarks, summaryLines, SERIES_NOTE, SERIES_TITLE,
+  seriesPrompt, stepLine, stepParts, progressMarks, summaryFacts, summaryLines, SERIES_NOTE, SERIES_TITLE,
 } from '../src/mixed_series.js';
 import { BANNED } from '../src/situation_text.js';
 
@@ -93,9 +93,12 @@ describe('тексты', () => {
     assert.match(stepLine('dudo', true, 0.7), /не совпало/);
     assert.equal(stepLine('x', true, 0.7), '');
     const t = summaryLines(sc, 3).join(' ');
-    assert.match(t, /держалась в 2 из 3/);
-    assert.match(t, /Совпало с исходом: 2 из 3 \(67 %\).*около 70 %/);
-    assert.match(t, /каждый раз выбирали более вероятную сторону, совпало бы 2 из 3/);
+    assert.match(t, /Совпало с исходом: 2 из 3 \(67 %\)/);
+    assert.match(t, /Если бы каждый раз выбирали более вероятную сторону, совпало бы 2 из 3.*около 70 %/);
+    assert.equal(summaryLines(sc, 3).length, 2);   // главное число и одна строка сравнения
+    assert.match(summaryFacts(sc), /верной в 2 из 3 ситуаций.*«Верю» 1, «Не верю!» 2/);
+    assert.equal(summaryFacts(scoreSeries({ chance: 0.7, outcomes: [true, true] }, ['believe'])), '');   // серия не закончена
+    assert.equal(summaryFacts(null), '');
   });
   it('неполная серия: итога нет, пустая — без строк', () => {
     assert.match(summaryLines(scoreSeries({ chance: 0.7, outcomes: [true, true] }, ['believe']), 2)[0], /1 из 2/);

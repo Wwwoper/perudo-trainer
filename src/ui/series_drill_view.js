@@ -2,7 +2,7 @@
 // Серия живёт в пределах страницы и в хранилище не пишется.
 import { $ } from './common.js';
 import {
-  SERIES_LENGTH, CHANCES, makeSeries, scoreSeries, seriesPrompt, stepParts, progressMarks, summaryLines, SERIES_NOTE, SERIES_TITLE,
+  SERIES_LENGTH, CHANCES, makeSeries, scoreSeries, seriesPrompt, stepParts, progressMarks, summaryLines, summaryFacts, SERIES_NOTE, SERIES_TITLE,
 } from '../mixed_series.js';
 
 export function setupSeriesDrill() {
@@ -13,6 +13,7 @@ export function setupSeriesDrill() {
   const bBelieve = $('#dDBelieve');
   const bDudo = $('#dDDudo');
   const bNew = $('#dDNew');
+  const decide = bBelieve?.parentElement;   // блок кнопок решений
   if (!pick || !q || !prog || !fb || !bBelieve || !bDudo || !bNew) return null;
 
   let chance = CHANCES[0];
@@ -33,6 +34,10 @@ export function setupSeriesDrill() {
     prog.innerHTML = `<span class="series-dots" aria-hidden="true">${dots}</span><span class="series-count">${label}</span>`;
     bBelieve.disabled = done();
     bDudo.disabled = done();
+    // После десятой ситуации решать больше нечего: кнопки уходят, остаётся итог и «Ещё одна серия»
+    if (decide) decide.hidden = done();
+    bNew.classList.toggle('btn-primary', done() && choices.length > 0);
+    bNew.textContent = done() && choices.length > 0 ? 'Ещё одна серия' : 'Новая серия';
   }
 
   function start(p = chance) {
@@ -50,8 +55,9 @@ export function setupSeriesDrill() {
     const t = stepParts(action, series.outcomes[i], series.chance);
     const lines = [`<div class="series-ans is-${t.ok ? 'ok' : 'miss'}"><p class="series-ans-head"><span aria-hidden="true">${t.ok ? '✓' : '✗'}</span> ${t.verdict}</p><p class="series-ans-fact">${t.fact}</p><p class="muted series-ans-note">${t.note}</p></div>`];
     if (done()) {
-      const sum = summaryLines(scoreSeries(series, choices), series.outcomes.length);
-      lines.push(`<div class="series-summary"><b>${SERIES_TITLE}</b><ul class="read-lines">${sum.map((l) => `<li>${l}</li>`).join('')}</ul></div>`);
+      const sc = scoreSeries(series, choices);
+      const [main, ...rest] = summaryLines(sc, series.outcomes.length);
+      lines.push(`<div class="series-summary"><b>${SERIES_TITLE}</b><p class="series-score">${main}</p>${rest.map((l) => `<p>${l}</p>`).join('')}<p class="muted">${summaryFacts(sc)}</p></div>`);
       lines.push(`<p class="muted">${SERIES_NOTE}</p>`);
     }
     fb.innerHTML = lines.join('');

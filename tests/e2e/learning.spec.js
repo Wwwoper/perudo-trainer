@@ -290,8 +290,10 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dDProgress .series-count')).toHaveText('Ситуация 10 из 10.');
     await page.click('#dDDudo');
     await expect(page.locator('#dDfb .series-summary')).toContainText('Совпало с исходом');
-    await expect(page.locator('#dDBelieve')).toBeDisabled();
-    await expect(page.locator('#dDDudo')).toBeDisabled();
+    await expect(page.locator('#dDBelieve')).toBeHidden();      // после десятой решать нечего
+    await expect(page.locator('#dDDudo')).toBeHidden();
+    await expect(page.locator('#dDNew')).toHaveText('Ещё одна серия');
+    await expect(page.locator('#dDfb .series-score')).toContainText('Совпало с исходом');
     const text = await page.locator('#dDfb').textContent();
     expect(text).not.toMatch(/undefined|NaN|обманщик|врёт/i);
     // смена шанса начинает новую серию
@@ -299,6 +301,7 @@ test.describe('Учебные вкладки', () => {
     await expect(page.locator('#dDq')).toContainText('шансом 70 %');
     await expect(page.locator('#dDProgress .series-count')).toHaveText('Ситуация 1 из 10.');
     await expect(page.locator('#dDfb')).toBeEmpty();
+    await expect(page.locator('#dDNew')).toHaveText('Новая серия');
     await expect(page.locator('#dDBelieve')).toBeEnabled();
     // возврат к другому упражнению возвращает нижний блок
     await page.click('.drill-tab[data-drill="A"]');

@@ -482,6 +482,10 @@
   margin: 8px 0 0;
 }
 
+.series-buttons[hidden] {
+  display: none;
+}
+
 .series-chance,
 .series-buttons button,
 .series-new {
@@ -564,6 +568,19 @@
 
 .series-summary {
   margin-top: 8px;
+}
+
+.series-summary p {
+  margin: 6px 0;
+}
+
+.series-score {
+  font-size: 1.2em;
+  font-weight: 700;
+}
+
+.series-new.btn-primary {
+  min-width: 60%;
 }
 
 /* Викторина «Читай стол» */
