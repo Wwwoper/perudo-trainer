@@ -1161,6 +1161,24 @@
   margin: 0;
 }
 
+.result-tasks[hidden] {
+  display: none;
+}
+
+/* Первая партия: «Перейти к задачам» главная, «Разобрать партию» второстепенная, остальное — текстовые действия */
+.result-dialog.is-first .result-actions #gResultTasks { order: 0; }
+.result-dialog.is-first .result-actions #gResultCalc { order: 1; }
+.result-dialog.is-first .result-actions #gResultAgain,
+.result-dialog.is-first .result-actions #gResultView {
+  order: 2;
+  min-height: var(--tap);
+  border: 0;
+  background: none;
+  color: var(--acc);
+  font-weight: 400;
+  text-decoration: underline;
+}
+
 /* Телефон в альбомной ориентации: три кнопки в ряд, чтобы окно итогов помещалось без прокрутки */
 @media (max-height: 500px) and (orientation: landscape) {
   .result-dialog {

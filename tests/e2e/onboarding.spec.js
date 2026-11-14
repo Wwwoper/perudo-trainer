@@ -19,6 +19,8 @@ test.describe('Экран приветствия', () => {
     await expect(w).toBeVisible();
     await expect(w).toContainText('Добро пожаловать в Перудо');
     await expect(w.locator('.welcome-step')).toHaveCount(3);
+    await expect(w.locator('.welcome-start')).toBeVisible();
+    await expect(w.locator('.welcome-links > *')).toHaveCount(2);   // правила и пропуск — равные текстовые ссылки
     await expect(page.locator('.app-header')).toBeHidden();
     await expect(page.locator('#calc')).toBeHidden();
     await expect(w.locator('a.welcome-rules')).toHaveAttribute('href', 'docs/guide/rules.html');

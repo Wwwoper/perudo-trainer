@@ -1207,6 +1207,37 @@ test.describe('Покерный стол в партии', () => {
     expect(profile.byTag.endgame).toEqual({ n: 1, good: 0 });
   });
 
+  test('окно итогов первой партии: главное действие — «Перейти к задачам», остальное второстепенно', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('perudo.device', JSON.stringify({ onboarding: { step: 'game', tasks: 0, done: false, skipped: false } }));
+    });
+    await loseWithBluff(page);
+    const dlg = page.locator('#gResultDialog');
+    await expect(dlg).toHaveJSProperty('open', true, { timeout: 10_000 });
+    await expect(dlg).toHaveClass(/is-first/);
+    await expect(page.locator('#gResultTasks')).toBeVisible();
+    await expect(page.locator('#gResultTasks')).toBeFocused();
+    const h = async (id) => (await page.locator(id).boundingBox()).height;
+    expect(await h('#gResultTasks')).toBeGreaterThan(await h('#gResultAgain'));   // «Сыграть ещё» теперь не главная кнопка
+    for (let i = 0; i < 6; i++) {                                                // Tab ходит по кругу внутри окна
+      await page.keyboard.press('Tab');
+      expect(await page.evaluate(() => !!document.activeElement.closest('#gResultDialog'))).toBe(true);
+    }
+    await page.locator('#gResultTasks').click();
+    await expect(dlg).toHaveJSProperty('open', false);
+    await expect(page.locator('#train')).toBeVisible();                          // открыт Тренажёр с первыми задачами
+  });
+
+  test('окно итогов обычной партии: «Перейти к задачам» нет, главная «Сыграть ещё»', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await loseWithBluff(page);
+    await expect(page.locator('#gResultDialog')).toHaveJSProperty('open', true, { timeout: 10_000 });
+    await expect(page.locator('#gResultDialog')).not.toHaveClass(/is-first/);
+    await expect(page.locator('#gResultTasks')).toBeHidden();
+    await expect(page.locator('#gResultAgain')).toBeFocused();
+  });
+
   test('окно итогов: «Разобрать партию» закрывает окно и показывает вкладку «Расчёт» с карточкой итога', async ({ page }) => {
     await page.evaluate(() => localStorage.clear());
     await loseWithBluff(page);

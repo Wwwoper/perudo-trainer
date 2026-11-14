@@ -4,6 +4,8 @@ import { buildGameResult, resultHeadline, pluralDice } from '../result.js';
 import { escapeHtml } from '../table.js';
 import { $ } from './common.js';
 import { revealIsOpen } from './reveal_dialog.js';
+import { getDeviceState } from '../storage.js';
+import { isTaskMode } from '../onboarding.js';
 
 let resultTimer = null;
 let resultOpener = null;
@@ -37,8 +39,14 @@ function showResultDialog(game) {
   if (!dlg || !result || dlg.open || typeof dlg.showModal !== 'function') return false;
   if ($('#game')?.classList.contains('hide')) return false;   // вкладка «Партия» не на экране
   fillResultDialog(result);
+  // Первая партия: главным действием становится переход к задачам, остальное уходит на второй план
+  const first = isTaskMode(getDeviceState().onboarding);
+  dlg.classList.toggle('is-first', first);
+  const tasksBtn = $('#gResultTasks');
+  if (tasksBtn) tasksBtn.hidden = !first;
   resultOpener = document.activeElement;
   dlg.showModal();
+  if (first) tasksBtn?.focus();
   return true;
 }
 
@@ -50,6 +58,7 @@ export function setupResultDialog(getGame, { onOpenCalc } = {}) {
   const dlg = $('#gResultDialog');
   if (!dlg) return;
   $('#gResultView')?.addEventListener('click', () => dlg.close());
+  $('#gResultTasks')?.addEventListener('click', () => { skipFocusRestore = true; dlg.close(); });   // переход к задачам делает общий обработчик data-action
   $('#gResultCalc')?.addEventListener('click', () => {
     skipFocusRestore = true;
     dlg.close();
@@ -69,7 +78,7 @@ export function setupResultDialog(getGame, { onOpenCalc } = {}) {
   // Tab ходит по кругу внутри окна (нативный диалог иначе выпускает фокус в интерфейс браузера).
   dlg.addEventListener('keydown', (e) => {
     if (e.key !== 'Tab') return;
-    const items = [...dlg.querySelectorAll('button:not([disabled])')];
+    const items = [...dlg.querySelectorAll('button:not([disabled]):not([hidden])')];   // скрытая «Перейти к задачам» в цикл не входит
     if (!items.length) return;
     const first = items[0];
     const last = items[items.length - 1];
