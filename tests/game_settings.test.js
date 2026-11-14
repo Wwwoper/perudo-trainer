@@ -12,7 +12,7 @@ global.localStorage = {
 const {
   defaultGameSettings, sanitizeGameSettings, isDefaultGameSettings, describeGameSettings,
   GAME_SETTINGS_VERSION, EXPLAIN_MODES, EXPLAIN_DEPTHS,
-  firstGamePreset, isFirstGamePreset, FIRST_GAME_LABEL, FIRST_GAME_HINT,
+  firstGamePreset, isFirstGamePreset, FIRST_GAME_LABEL, FIRST_GAME_HINT, firstPresetView, FIRST_GAME_APPLIED_HINT,
 } = await import('../src/game_settings.js');
 const {
   getLastGameSettings, setLastGameSettings, clearLastGameSettings, getSettings, setSettings,
@@ -224,5 +224,27 @@ describe('пресет «Первая учебная партия»', () => {
       const t = readFileSync(new URL(`../docs/guide/${f}.html`, import.meta.url), 'utf8').replace(/<[^>]+>/g, ' ');
       assert.ok(t.includes(`«${FIRST_GAME_LABEL}»`), f);
     }
+  });
+});
+
+describe('строка «Первая учебная партия»', () => {
+  it('до первой сыгранной партии видна, после — нет', () => {
+    assert.strictEqual(firstPresetView({ games: 0, matches: false }).visible, true);
+    assert.strictEqual(firstPresetView({ games: 1, matches: false }).visible, false);
+    assert.strictEqual(firstPresetView({ games: 12, matches: true }).visible, false);
+  });
+  it('мусор вместо числа партий считается нулём партий', () => {
+    for (const games of [undefined, null, NaN, -3, 'x']) {
+      assert.strictEqual(firstPresetView({ games, matches: false }).visible, true, String(games));
+    }
+  });
+  it('когда настройки уже выставлены, подсказка говорит, что осталось начать партию', () => {
+    const v = firstPresetView({ games: 0, matches: true });
+    assert.strictEqual(v.pressed, true);
+    assert.strictEqual(v.hint, FIRST_GAME_APPLIED_HINT);
+    assert.match(v.hint, /Начать партию/);
+    const w = firstPresetView({ games: 0, matches: false });
+    assert.strictEqual(w.pressed, false);
+    assert.strictEqual(w.hint, FIRST_GAME_HINT);
   });
 });

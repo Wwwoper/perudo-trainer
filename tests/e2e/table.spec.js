@@ -378,6 +378,25 @@ test.describe('Покерный стол в партии', () => {
     });
   });
 
+  test('«Первая учебная партия»: когда настройки уже выставлены, кнопка это показывает, а после сыгранной партии строка исчезает', async ({ page }) => {
+    await page.locator('#gBots').fill('4');
+    await expect(page.locator('#gFirstPreset')).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('#gFirstPreset').click();
+    await expect(page.locator('#gFirstPreset')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#gFirstPresetHint')).toContainText('Осталось нажать «Начать партию»');
+    await page.locator('#gFirstPreset').click();   // повторное нажатие ничего не ломает
+    await expect(page.locator('#gFirstPreset')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('#gBots').fill('3');
+    await expect(page.locator('#gFirstPreset')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#gFirstPresetHint')).toContainText('Один бот «Осторожный»');
+    // после первой сыгранной партии пресет «первой» не предлагается
+    await page.evaluate(() => localStorage.setItem('perudo.userProfile', JSON.stringify({
+      n: 0, good: 0, totalGames: 1, totalWins: 0, byMode: {}, drill: { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } },
+    })));
+    await reloadToSetup(page);
+    await expect(page.locator('#gFirstPreset')).toBeHidden();
+  });
+
   test('«Объяснения»: выбор запоминается после партии и перезагрузки, пояснение меняется с режимом помощи', async ({ page }) => {
     await expect(page.locator('#gExplain')).toHaveValue('auto');
     await expect(page.locator('#gExplainDepth')).toHaveValue('short');

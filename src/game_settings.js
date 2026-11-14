@@ -123,6 +123,23 @@ export function firstGamePreset() {
   });
 }
 
+/** Подсказка под кнопкой, когда настройки уже совпадают с пресетом (кнопка тогда ничего не меняет). */
+export const FIRST_GAME_APPLIED_HINT = 'Настройки первой партии выставлены. Осталось нажать «Начать партию».';
+
+/**
+ * Вид строки с пресетом. Пресет предлагает именно первую партию, поэтому после первой сыгранной он не нужен.
+ * @param {{games: number, matches: boolean}} s games — сколько партий сыграно, matches — настройки уже совпадают с пресетом
+ * @returns {{visible: boolean, pressed: boolean, hint: string}}
+ */
+export function firstPresetView({ games, matches }) {
+  const played = Number.isFinite(games) && games > 0;
+  return {
+    visible: !played,
+    pressed: !!matches,
+    hint: matches ? FIRST_GAME_APPLIED_HINT : FIRST_GAME_HINT,
+  };
+}
+
 /** Совпадают ли настройки с пресетом «Первая учебная партия». */
 export function isFirstGamePreset(s) {
   return JSON.stringify(sanitizeGameSettings(s)) === JSON.stringify(firstGamePreset());

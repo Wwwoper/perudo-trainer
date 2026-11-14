@@ -50,8 +50,17 @@
   margin: var(--space-2) 0 var(--space-4);
 }
 
+.preset-row[hidden] {
+  display: none;
+}
+
 .preset-row button {
   min-height: 44px;
+}
+
+.preset-row button[aria-pressed="true"] {
+  border-color: var(--ok);
+  box-shadow: inset 0 0 0 1px var(--ok);
 }
 
 #game.is-prestart #gDock,

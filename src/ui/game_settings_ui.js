@@ -5,9 +5,9 @@
 
 import { $ } from './common.js';
 import {
-  sanitizeGameSettings, defaultGameSettings, isDefaultGameSettings, firstGamePreset,
+  sanitizeGameSettings, defaultGameSettings, isDefaultGameSettings, firstGamePreset, isFirstGamePreset, firstPresetView,
 } from '../game_settings.js';
-import { getLastGameSettings, setLastGameSettings, clearLastGameSettings } from '../storage.js';
+import { getLastGameSettings, setLastGameSettings, clearLastGameSettings, getStats } from '../storage.js';
 
 const num = (id, fallback) => $(id)?.value ?? fallback;
 
@@ -83,6 +83,18 @@ function refreshResetButton() {
   if (btn) btn.hidden = isDefaultGameSettings(readGameSettings());
 }
 
+/** Строка «Первая учебная партия»: исчезает после первой сыгранной, а когда настройки уже выставлены, говорит об этом. */
+export function refreshFirstPreset() {
+  const btn = $('#gFirstPreset');
+  if (!btn) return;
+  const v = firstPresetView({ games: getStats().totalGames || 0, matches: isFirstGamePreset(readGameSettings()) });
+  const row = btn.closest('.preset-row');
+  if (row) row.hidden = !v.visible;
+  btn.setAttribute('aria-pressed', String(v.pressed));
+  const hint = $('#gFirstPresetHint');
+  if (hint) hint.textContent = v.hint;
+}
+
 /** Подстановка сохранённых настроек при загрузке и кнопка «Сбросить к стандартным». */
 export function setupGameSettings() {
   const saved = getLastGameSettings();
@@ -101,12 +113,14 @@ export function setupGameSettings() {
     preset.addEventListener('click', () => {
       applyGameSettings(firstGamePreset());
       refreshResetButton();
+      refreshFirstPreset();
     });
   }
   const panel = $('#panSettings');
   if (panel) {
-    panel.addEventListener('change', refreshResetButton);
-    panel.addEventListener('input', refreshResetButton);
+    panel.addEventListener('change', () => { refreshResetButton(); refreshFirstPreset(); });
+    panel.addEventListener('input', () => { refreshResetButton(); refreshFirstPreset(); });
   }
   refreshResetButton();
+  refreshFirstPreset();
 }

@@ -43,7 +43,7 @@ import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_style
 import { setupSettingsHelp } from './ui/settings_help.js';
 import { setupTheme, setupThemeControls, changeThemeMode } from './ui/theme.js';
 import { setupSound, setupSoundControls, playCue, resetSound, changeSoundMode } from './ui/sound.js';
-import { setupGameSettings, rememberGameSettings } from './ui/game_settings_ui.js';
+import { setupGameSettings, rememberGameSettings, refreshFirstPreset } from './ui/game_settings_ui.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal, getBotMind, setBotMind } from './ui/bot_mind.js';
 import { renderStats, setupStats, downloadBackup } from './ui/stats.js';
 import { backupReminderHtml, setupBackupReminder } from './ui/backup_reminder.js';
@@ -195,6 +195,7 @@ function renderPrestart() {
   if ($('#gFeed')) $('#gFeed').textContent = '';
   if ($('#gameTable')) $('#gameTable').innerHTML = '';
   moveSettings(true);
+  refreshFirstPreset();   // после первой сыгранной партии пресет «Первая учебная партия» уже не предлагается
   refreshResume();
 }
 
