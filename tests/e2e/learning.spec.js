@@ -574,6 +574,32 @@ test.describe('Учебные вкладки', () => {
       expect(await page.locator('#tFb').textContent()).not.toMatch(/undefined|NaN|блеф|обман/i);
     });
 
+    test('условие задачи: вопрос крупно, правило подсказкой', async ({ page }) => {
+      await open(page, 'train');
+      await expect(page.locator('#tTask')).toHaveText('Верить ставке соперника и повысить или сказать «Не верю»?');
+      await expect(page.locator('#tTaskRule')).toContainText('Верен ход, проходящий порог шанса');
+      const q = await page.locator('#tTask').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      const r = await page.locator('#tTaskRule').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(q).toBeGreaterThan(r);
+    });
+
+    test('разбор хода блоками: шансы, почему, при ошибке лучший ход; список вариантов свёрнут, проценты без «.0»', async ({ page }) => {
+      await open(page, 'train');
+      await page.click('#tDudo');
+      const fb = page.locator('#tFb');
+      await expect(fb.locator('.big')).toBeVisible();
+      await expect(fb.locator('.fb-title').nth(0)).toHaveText('Шансы');
+      await expect(fb.locator('.fb-title').nth(1)).toHaveText('Почему');
+      await expect(fb.locator('.fb-chances .fb-row')).toHaveCount(2);
+      const good = /Хорошее/.test(await fb.locator('.big').textContent());
+      await expect(fb.locator('.fb-block.is-best')).toHaveCount(good ? 0 : 1);      // лучший ход показан только при ошибке
+      await expect(fb.locator('details.trainer-all')).not.toHaveAttribute('open', '');
+      await expect(fb.locator('.trainer-option').first()).toBeHidden();             // список вариантов свёрнут
+      await fb.locator('details.trainer-all summary').click();
+      await expect(fb.locator('.trainer-option').first()).toBeVisible();
+      expect(await fb.textContent()).not.toMatch(/\d\.\d%|\.0\b|undefined|NaN/);   // «6.2%» и «50.0%» заменены на «6,2 %» и «50 %»
+    });
+
     test('недопустимая ставка отклоняется и не попадает в статистику', async ({ page }) => {
       await open(page, 'train');
       const before = await page.locator('#tStat').textContent();

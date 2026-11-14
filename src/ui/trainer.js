@@ -9,7 +9,7 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT } from '../trainer_text.js';
+import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, moveBreakdown } from '../trainer_text.js';
 import { gradeMove } from '../trainer_grade.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
@@ -151,7 +151,11 @@ export function setupTrainer({ account } = {}) {
     answered = false;
     timer.start();
     if ($('#tDesc')) $('#tDesc').textContent = m.d;
-    if ($('#tTask')) $('#tTask').textContent = TASK_TEXT;
+    if ($('#tTask')) {
+      // Вопрос крупно, правило — подсказкой; со старой разметкой из кэша весь текст остаётся в одном абзаце
+      if ($('#tTaskRule')) { $('#tTask').textContent = TASK_QUESTION; $('#tTaskRule').textContent = TASK_RULE; }
+      else $('#tTask').textContent = TASK_TEXT;
+    }
     if ($('#tInfo')) {
       $('#tInfo').innerHTML =
         (cur.item ? `<span class="trainer-chip trainer-repeat">${repeatChipText(cur.item)}</span>` : '') +
@@ -204,7 +208,23 @@ export function setupTrainer({ account } = {}) {
       bid: { q: cur.q, f: cur.f }, total: cur.n, hand: cur.h, wild: cur.m.wild,
       threshold: thr, probBid: (...args) => P.probBid(...args),
     });
-    return optionsHtml(markChosen(options, choice), thr);
+    return optionsHtml(markChosen(options, choice), thr, chanceText);
+  }
+
+  /** Разбор хода блоками: шансы, почему, лучший ход; полный список вариантов свёрнут. */
+  function breakdownHtml({ kind, bid, mine, p, po, t, g }) {
+    const b = moveBreakdown({ kind, p, po, t, good: g.good, noGoodMove: !!g.noGoodMove });
+    const mineLabel = kind === 'dudo' ? '«Не верю» сработает' : `Ваша ставка ${renderBid(mine.q, mine.f)} верна`;
+    const row = (cls, label, chance, status) =>
+      `<li class="fb-row ${cls}"><span class="fb-label">${label}</span><b class="fb-chance">${chanceText(chance)}</b>` +
+      `${status ? `<span class="fb-status">${status}</span>` : ''}</li>`;
+    const status = b.mine.passes ? `✓ не ниже порога ${chanceText(t)}` : `✗ ниже порога ${chanceText(t)}`;
+    return `<section class="fb-block"><h4 class="fb-title">Шансы</h4><ul class="fb-chances">` +
+      row(b.mine.passes ? 'is-pass' : 'is-fail', mineLabel, b.mine.chance, status) +
+      row('', `Ставка соперника ${renderBid(bid.q, bid.f)} верна`, b.opp.chance, '') + '</ul></section>' +
+      `<section class="fb-block"><h4 class="fb-title">Почему</h4><p>${b.why}</p></section>` +
+      (g.good ? '' : `<section class="fb-block is-best"><h4 class="fb-title">Лучший ход</h4><p>${correctMoveText(g.best, chanceText, (a, c) => renderBid(a, c))}</p></section>`) +
+      `<details class="trainer-all"><summary>Все варианты по шансу</summary>${hint(kind === 'dudo' ? { type: 'dudo' } : { type: 'raise', q: mine.q, f: mine.f })}</details>`;
   }
 
   function answer(good, html, grade = null) {
@@ -243,7 +263,7 @@ export function setupTrainer({ account } = {}) {
     if ($('#tFb')) {
       $('#tFb').innerHTML =
         `<div class="big ${good ? 'text-ok' : 'text-bad'}">${gradeVerdictText(good, !!grade?.noGoodMove)}</div>` +
-        `<p class="trainer-model-note">${grade?.noGoodMove ? NO_GOOD_NOTE : MODEL_NOTE}</p>` +
+        `<p class="trainer-model-note quiz-hint"><span class="quiz-hint-i" aria-hidden="true">ⓘ</span><span>${grade?.noGoodMove ? NO_GOOD_NOTE : MODEL_NOTE}</span></p>` +
         (cur.item ? `<p class="trainer-repeat-note">${repeatAfterText(cur.item, good)}</p>` : '') + html;
     }
     setAnswered(true);
@@ -278,8 +298,7 @@ export function setupTrainer({ account } = {}) {
     }
     const p = P.probBid(q, f, n, h, m.wild);
     const g = grade({ type: 'dudo' });
-    const msg = g.good ? 'Этот ход верный.' : correctMoveText(g.best, pct, (Q, F) => renderBid(Q, F));
-    answer(g.good, `<p>Шанс, что ставка ${renderBid(q, f)} верна: <b>${pct(p)}</b> (порог ${pct(t)}). ${msg}</p>${hint({ type: 'dudo' })}`, g);
+    answer(g.good, breakdownHtml({ kind: 'dudo', bid: { q, f }, mine: null, p: null, po: p, t, g }), g);
   };
 
   const raiseBtn = $('#tRaise');
@@ -304,11 +323,7 @@ export function setupTrainer({ account } = {}) {
     const p = P.probBid(Q, F, n, h, m.wild);
     const po = P.probBid(q, f, n, h, m.wild);
     const g = grade({ type: 'raise', q: Q, f: F });
-    answer(g.good,
-      `<p>Ваша ставка ${renderBid(Q, F)} верна с шансом <b>${pct(p)}</b> (порог ${pct(t)}). ` +
-      `Ставка соперника была верна с шансом ${pct(po)}. ` +
-      `${g.good ? 'Этот ход верный.' : correctMoveText(g.best, pct, (a, b) => renderBid(a, b))}</p>${hint({ type: 'raise', q: Q, f: F })}`, g
-    );
+    answer(g.good, breakdownHtml({ kind: 'raise', bid: { q, f }, mine: { q: Q, f: F }, p, po, t, g }), g);
   };
 
   if ($('#tNew')) $('#tNew').onclick = () => newSituation();

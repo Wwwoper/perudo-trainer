@@ -30,7 +30,38 @@ export function correctMoveText(best, pct, bid) {
   return `Верным было бы повышение ${bid(best.q, best.f)}: ваша ставка верна с шансом ${pct(best.success)}.`;
 }
 
-export const TASK_TEXT = 'Задача: верить ставке соперника и повысить или сказать «Не верю». Верен ход, проходящий порог шанса; если такого хода нет, верен ход с наибольшим шансом успеха.';
+export const TASK_QUESTION = 'Верить ставке соперника и повысить или сказать «Не верю»?';
+export const TASK_RULE = 'Верен ход, проходящий порог шанса; если такого хода нет, верен ход с наибольшим шансом успеха.';
+export const TASK_TEXT = `${TASK_QUESTION} ${TASK_RULE}`;
+
+/** Шанс для разбора хода: «6,2 %», «50 %» (без лишнего «.0» и с запятой). */
+export function chanceText(x) {
+  if (!Number.isFinite(x)) return '—';
+  const v = Math.round(Math.min(1, Math.max(0, x)) * 1000) / 10;
+  return `${String(v).replace('.', ',')} %`;
+}
+
+/**
+ * Разбор хода по частям: шансы (ваш ход и ставка соперника) и одно предложение «почему».
+ * kind 'raise': p — шанс вашей ставки, po — шанс ставки соперника.
+ * kind 'dudo': po — шанс ставки соперника, шанс вашего хода — что проверка сработает (1 − po).
+ * @returns {{mine: {chance: number, passes: boolean}, opp: {chance: number}, why: string}}
+ */
+export function moveBreakdown({ kind, p, po, t, good, noGoodMove }) {
+  const mineChance = kind === 'dudo' ? 1 - po : p;
+  const T = chanceText(t);
+  const c = chanceText(mineChance);
+  let why;
+  if (noGoodMove) {
+    why = good ? `Ни один ход не проходит порог ${T}; этот даёт наибольший шанс успеха.`
+      : `Ни один ход не проходит порог ${T}, но был ход с большим шансом успеха.`;
+  } else if (kind === 'dudo') {
+    why = `«Не верю» сработает с шансом ${c}: это ${good ? 'не ниже' : 'ниже'} порога ${T}.`;
+  } else {
+    why = `Шанс вашей ставки ${c} ${good ? 'не ниже' : 'ниже'} порога ${T}.`;
+  }
+  return { mine: { chance: mineChance, passes: mineChance >= t }, opp: { chance: po }, why };
+}
 
 /** Пояснение под списком вариантов: согласовано с оценкой; пусто, если есть безопасное повышение. */
 export function optionsNote(options) {

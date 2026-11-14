@@ -182,15 +182,24 @@
   color: var(--bad-fg);
 }
 
-.trainer-task {
-  margin: 0 0 10px;
-  font-size: 14px;
-  line-height: 1.4;
+/* Вопрос задачи крупно, правило оценки — подсказкой под ним */
+.trainer-question {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.trainer-rule {
+  align-items: flex-start;
+  border-radius: 12px;
+  margin-bottom: 10px;
 }
 
 /* телефон лёжа: ситуация и кнопки ответа должны помещаться вместе, задача описана в руководстве */
 @media (max-height: 500px) {
-  .trainer-task { display: none; }
+  .trainer-board .trainer-rule,
+  .trainer-board .trainer-question { display: none; }   /* селектор с .trainer-board: .quiz-hint из drill.css иначе перебивает display */
 }
 
 .trainer-repeat-note {
@@ -265,6 +274,76 @@
   margin: 0 0 6px;
   font-size: 12px;
   color: var(--text-soft);
+}
+
+/* Подсказка под вердиктом в том же стиле, что и другие подсказки интерфейса */
+.trainer-feedback .quiz-hint {
+  align-items: flex-start;
+  border-radius: 12px;
+}
+
+/* Разбор хода блоками: шансы, почему, лучший ход */
+.fb-block {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.fb-title {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+
+.fb-chances {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fb-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 8px;
+  padding: 3px 0;
+}
+
+.fb-status {
+  grid-column: 1 / -1;
+  font-size: 13px;
+}
+
+.fb-row.is-pass .fb-status {
+  color: var(--ok);
+}
+
+.fb-row.is-fail .fb-status {
+  color: var(--bad);
+}
+
+.fb-block.is-best {
+  padding: 8px 10px;
+  border-left: 3px solid var(--acc);
+  border-radius: 6px;
+  background: var(--tint-soft);
+}
+
+.trainer-all {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.trainer-all summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--mut);
 }
 
 /* Статистика — свёрнута */

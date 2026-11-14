@@ -8,7 +8,7 @@ import { optionsNote } from '../trainer_text.js';
  * @param {object[]} options варианты из compareOptions(), по желанию с отметкой chosen (markChosen)
  * @param {number} threshold порог, с которым сравнивались варианты
  */
-export function optionsHtml(options, threshold) {
+export function optionsHtml(options, threshold, fmt = pct) {
   const rows = options.map((o) => {
     const bid = o.type === 'dudo' ? '' : ` ${renderBid(o.q, o.f, 'xs')}`;
     const name = o.type === 'dudo' ? 'Не верю'
@@ -17,11 +17,11 @@ export function optionsHtml(options, threshold) {
     const what = o.type === 'dudo' ? 'проверка сработает:' : 'ставка верна:';
     return `<li class="trainer-option${o.chosen ? ' is-chosen' : ''}">` +
       `<span class="trainer-option-name">${o.meetsThreshold ? '✓ ' : ''}${name}${bid}</span> ` +
-      `<span class="trainer-option-chance">${what} <b>${pct(o.success)}</b></span>` +
+      `<span class="trainer-option-chance">${what} <b>${fmt(o.success)}</b></span>` +
       `${o.chosen ? ' <span class="trainer-option-mark">← ваш выбор</span>' : ''}</li>`;
   }).join('');
   const note = optionsNote(options);
-  return `<p class="muted">Варианты по шансу · ✓ = порог ${pct(threshold)}</p>` +
+  return `<p class="muted">Варианты по шансу · ✓ = порог ${fmt(threshold)}</p>` +
     `<ul class="trainer-options">${rows}</ul>` +
     (note ? `<p class="muted">${note}</p>` : '');
 }
