@@ -388,35 +388,9 @@
 }
 
 /* Подвкладки: результаты — главное, профиль и данные — в стороне */
+/* Форма вкладок — общая, в components.css (сегментный переключатель) */
 .stats-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 3px;
   margin-bottom: var(--space-3);
-  background: var(--surface-1);
-  border-radius: var(--radius-s);
-}
-
-.stats-tab {
-  flex: 1;
-  min-height: var(--tap);
-  padding: 0 8px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--mut);
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.stats-tab[aria-selected="true"] {
-  background: var(--acc);
-  color: var(--on-accent);
-}
-
-.stats-tab:focus-visible {
-  outline: 2px solid var(--acc);
-  outline-offset: 2px;
 }
 
 .stats-actions {

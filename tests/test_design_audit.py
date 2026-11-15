@@ -146,6 +146,31 @@ class BrowserTest(unittest.TestCase):
         page.locator(".dx-nav a").first.click()
         self.assertTrue(page.locator("#dx-actions").is_visible())
 
+    def test_three_tab_groups_share_one_look(self):
+        """Вкладки панели партии, упражнений и статистики — один сегментный переключатель."""
+        page = self.browser.new_context(viewport={"width": 1000, "height": 800}).new_page()
+        page.goto(self.base + "/docs/dev/design.html")
+        props = ["fontSize", "fontWeight", "borderTopLeftRadius", "minHeight", "paddingLeft", "paddingTop",
+                 "color", "backgroundColor", "fontFamily", "borderTopWidth"]
+        js = """([sel, props]) => { const el = document.querySelector(sel); const s = getComputedStyle(el);
+                return Object.fromEntries(props.map((p) => [p, s[p]])); }"""
+        for theme in ("light", "dark"):
+            page.evaluate("t => document.documentElement.setAttribute('data-theme', t)", theme)
+            for state, sels in {
+                "неактивная": ["#dxSideTabs [aria-selected=false]", "#dxDrillTabs .drill-tab:not(.on)", "#dxStatsTabs [aria-selected=false]"],
+                "активная": ["#dxSideTabs [aria-selected=true]", "#dxDrillTabs .drill-tab.on", "#dxStatsTabs [aria-selected=true]"],
+            }.items():
+                got = [page.evaluate(js, [s, props]) for s in sels]
+                self.assertEqual(got[0], got[1], f"{theme}, {state}: панель партии и упражнения")
+                self.assertEqual(got[0], got[2], f"{theme}, {state}: панель партии и статистика")
+            box = [page.evaluate("""(s) => { const c = getComputedStyle(document.querySelector(s));
+                    return [c.display, c.gap, c.padding, c.borderTopLeftRadius, c.backgroundColor]; }""", s)
+                   for s in ("#dxSideTabs", "#dxDrillTabs", "#dxStatsTabs")]
+            self.assertEqual(box[0], box[1])
+            self.assertEqual(box[0], box[2])
+        h = page.evaluate("document.querySelector('#dxDrillTabs .drill-tab').getBoundingClientRect().height")
+        self.assertGreaterEqual(h, 44)
+
     def test_live_collection_covers_every_kind(self):
         snaps = da.collect_live(browser=self.browser)
         kinds = da.group_signatures(snaps)

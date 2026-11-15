@@ -4,31 +4,13 @@
   padding: 8px 12px;
 }
 
+/* Общая форма вкладок — в components.css (сегментный переключатель). Здесь только то, что зависит от содержимого. */
 .drill-tabs {
-  display: flex;
-  gap: 3px;
-  background: var(--surface-1);
-  border-radius: 8px;
-  padding: 3px;
   flex: 1;
   min-width: 0;
 }
 
-.drill-tab {
-  flex: 1;
-  min-height: var(--tap);
-  padding: 8px 10px;
-  border: none;
-  background: transparent;
-  color: var(--mut);
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-/* Пять вкладок на узком экране: меньше поля и шрифт, иначе ряд шире 360 px и страница уменьшается */
+/* Пять вкладок с длинными подписями: на узком экране шрифт меньше, иначе ряд шире 360 px и страница уменьшается */
 @media (max-width: 400px) {
   .drill-tabs {
     gap: 2px;
@@ -36,18 +18,9 @@
   }
 
   .drill-tab {
-    padding: 8px 2px;
+    padding: 0 2px;
     font-size: 12px;
   }
-}
-
-.drill-tab:hover {
-  color: var(--fg);
-}
-
-.drill-tab.on {
-  background: var(--acc);
-  color: var(--on-accent);
 }
 
 .drill-board {

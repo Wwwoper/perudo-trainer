@@ -97,11 +97,13 @@
     </div>
 
     <h3 class="dx-h" id="dx-switch">Вкладки (активная и неактивная рядом)</h3>
-    <p class="dx-why">Две системы вкладок. Общее: высота, поведение, различие активной и неактивной.</p>
+    <p class="dx-why">Три экземпляра одного сегментного переключателя (стили в components.css). Форма, шрифт, высота и состояния должны совпадать.</p>
     <div class="dx-row">
-      <div class="dx-cell"><span class="dx-cap">тренажёр · .drill-tab / .on</span><span class="drill-tabs"><button type="button" class="drill-tab">Серия</button><button type="button" class="drill-tab on">Правило единиц</button></span></div>
+      <div class="dx-cell"><span class="dx-cap">панель партии · .side-tabs / aria-selected</span>
+        <span class="side-tabs" id="dxSideTabs" role="tablist" aria-label="Образец"><button type="button" role="tab" aria-selected="true">Расчёт</button><button type="button" role="tab" aria-selected="false">Журнал</button></span></div>
+      <div class="dx-cell"><span class="dx-cap">тренажёр · .drill-tab / .on</span><span class="drill-tabs" id="dxDrillTabs"><button type="button" class="drill-tab">Серия</button><button type="button" class="drill-tab on">Правило единиц</button></span></div>
       <div class="dx-cell"><span class="dx-cap">статистика · .stats-tab / aria-selected</span>
-        <span class="stats-tabs" role="tablist" aria-label="Образец"><button type="button" class="stats-tab" role="tab" aria-selected="false">Игрок</button><button type="button" class="stats-tab" role="tab" aria-selected="true">Данные</button></span></div>
+        <span class="stats-tabs" id="dxStatsTabs" role="tablist" aria-label="Образец"><button type="button" class="stats-tab" role="tab" aria-selected="false">Игрок</button><button type="button" class="stats-tab" role="tab" aria-selected="true">Данные</button></span></div>
     </div>
 
     <h3 class="dx-h" id="dx-game">Игровые контролы выбора</h3>

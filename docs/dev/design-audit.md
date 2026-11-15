@@ -8,18 +8,18 @@
 
 ### Размер шрифта
 
-Значений через токены: **1**; чисел в px: **171**, разных чисел: **17**.
+Значений через токены: **1**; чисел в px: **173**, разных чисел: **17**.
 
 | px | раз |
 |---:|---:|
-| 13 | 39 |
-| 14 | 34 |
+| 13 | 41 |
+| 14 | 35 |
 | 12 | 28 |
 | 18 | 17 |
 | 16 | 12 |
-| 15 | 8 |
 | 20 | 8 |
 | 11 | 7 |
+| 15 | 7 |
 | 22 | 6 |
 | 17 | 3 |
 | 10 | 2 |
@@ -32,18 +32,18 @@
 
 ### Скругление
 
-Значений через токены: **23**; чисел в px: **64**, разных чисел: **12**.
+Значений через токены: **27**; чисел в px: **63**, разных чисел: **12**.
 
 | px | раз |
 |---:|---:|
-| 8 | 20 |
-| 6 | 12 |
+| 8 | 19 |
+| 6 | 9 |
 | 12 | 8 |
 | 999 | 7 |
 | 4 | 5 |
 | 10 | 5 |
+| 2 | 4 |
 | 20 | 2 |
-| 2 | 1 |
 | 5 | 1 |
 | 7 | 1 |
 | 9 | 1 |
@@ -51,17 +51,17 @@
 
 ### Отступы (padding, margin, gap)
 
-Значений через токены: **170**; чисел в px: **459**, разных чисел: **17**.
+Значений через токены: **179**; чисел в px: **450**, разных чисел: **17**.
 
 | px | раз |
 |---:|---:|
-| 8 | 96 |
+| 8 | 92 |
 | 6 | 91 |
-| 4 | 65 |
-| 10 | 63 |
+| 4 | 62 |
+| 10 | 62 |
 | 12 | 56 |
 | 2 | 33 |
-| 3 | 18 |
+| 3 | 17 |
 | 1 | 11 |
 | 14 | 9 |
 | 5 | 4 |
@@ -75,7 +75,7 @@
 
 ### Минимальная высота
 
-Значений через токены: **87**; чисел в px: **28**, разных чисел: **13**.
+Значений через токены: **88**; чисел в px: **27**, разных чисел: **12**.
 
 | px | раз |
 |---:|---:|
@@ -86,7 +86,6 @@
 | 64 | 2 |
 | 72 | 2 |
 | 90 | 2 |
-| 40 | 1 |
 | 220 | 1 |
 | 300 | 1 |
 | 320 | 1 |
@@ -98,9 +97,13 @@
 - `#gAdvice` — `src/css/components.css`, `src/css/game.css`
 - `.app-header` — `src/css/base.css`, `src/css/game.css`
 - `.check` — `src/css/game.css`, `src/css/learn.css`
+- `.drill-tab` — `src/css/components.css`, `src/css/drill.css`
+- `.drill-tabs` — `src/css/components.css`, `src/css/drill.css`
 - `.field` — `src/css/game.css`, `src/css/learn.css`
 - `.field-row` — `src/css/game.css`, `src/css/learn.css`
 - `.link-btn` — `src/css/game.css`, `src/css/learn.css`
+- `.side-tabs` — `src/css/components.css`, `src/css/game.css`
+- `.stats-tabs` — `src/css/components.css`, `src/css/learn.css`
 - `main` — `src/css/base.css`, `src/css/game.css`, `src/css/trainer.css`
 
 ### Классы кнопок
@@ -125,23 +128,23 @@
 
 Подпись элемента: шрифт · вес · отступы · скругление · рамка · фон · цвет · высота. Чем больше разных подписей у одного вида, тем сильнее он разъехался.
 
-### Кнопки: 72 шт., разных подписей — 24
+### Кнопки: 72 шт., разных подписей — 20
 
 | раз | подпись | вкладки | примеры |
 |---:|---|---|---|
 | 15 | 16 · 400 · 0/0 · 10 · 1 · rgba(0, 0, 0, 0) · rgb(26, 31, 43) · 44 | calc, game, train | button.face-btn |
+| 9 | 14 · 600 · 0/8 · 6 · 0 · rgba(0, 0, 0, 0) · rgb(86, 96, 116) · 44 | drill, game, stats | button#tabCalc.has-hint «Расчёт»; button#tabReview «Разбор»; button#tabOpp «Стол» |
 | 9 | 15 · 400 · 4/6 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | calc | button «+1»; button «+2»; button «+3» |
 | 6 | 14 · 400 · 4/14 · 999 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | train | button.mode-btn «Палифико»; button.mode-btn «Эндшпиль»; button.mode-btn «Большой стол» |
-| 4 | 14 · 600 · 8/10 · 6 · 0 · rgba(0, 0, 0, 0) · rgb(86, 96, 116) · 50 | drill | button.drill-tab «Правило единиц»; button.drill-tab «Читай вскрытие»; button.drill-tab «Серия» |
 | 4 | 16 · 400 · 8/12 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | duel, game (настройки), stats | button#gFirstPreset «Первая учебная партия»; button#gMemoryReset «Забыть мою игру»; button#dSolve «Рассчитать равновесие» |
 | 4 | 22 · 400 · 0/0 · 0 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 52 | calc, game, train | button#gPlus «+»; button#tTPlus «+»; button#tPlus «+» |
 | 4 | 22 · 400 · 0/0 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 52 | calc, game, train | button#gMinus «−»; button#tTMinus «−»; button#tMinus «−» |
-| 3 | 14 · 600 · 0/8 · 6 · 0 · rgba(0, 0, 0, 0) · rgb(86, 96, 116) · 40 | game | button#tabCalc.has-hint «Расчёт»; button#tabReview «Разбор»; button#tabOpp «Стол» |
+| 3 | 14 · 600 · 0/8 · 6 · 0 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | drill, game, stats | button#tabLog «Журнал»; button.drill-tab.on «Оценка в уме»; button#stTabResults.stats-tab «Результаты» |
 | 3 | 16 · 400 · 0/0 · 10 · 1 · rgb(219, 230, 251) · rgb(26, 31, 43) · 44 | calc, game, train | button.face-btn.sel |
 | 3 | 16 · 700 · 6/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 52 | drill, game, train | button#gRaise.btn-primary «Ставлю 1×2шанс 100.0%»; button#tRaise.btn-primary «Ставлю»; button#dACheck.btn-primary «Проверить» |
-| 2 | 15 · 600 · 0/8 · 6 · 0 · rgba(0, 0, 0, 0) · rgb(86, 96, 116) · 44 | stats | button#stTabPlayer.stats-tab «Игрок»; button#stTabData.stats-tab «Данные» |
 | 2 | 16 · 700 · 6/12 · 8 · 1 · rgb(198, 47, 47) · rgb(255, 255, 255) · 52 | game, train | button#gDudo.bad «Не верю!»; button#tDudo.bad «Не верю!» |
-| … | ещё подписей: 12 | | |
+| 2 | 16 · 700 · 8/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | duel, game (настройки) | button.btn-primary.side-start «Начать партию»; button#dStart.btn-primary.duel-start «Играть против оптимально» |
+| … | ещё подписей: 8 | | |
 
 ### Заголовки и «summary»: 19 шт., разных подписей — 8
 

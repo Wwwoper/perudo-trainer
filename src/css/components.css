@@ -357,3 +357,61 @@
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
+
+/* Сегментный переключатель (вкладки). Три экземпляра: .side-tabs (панель партии), .drill-tabs (упражнения),
+   .stats-tabs (статистика). Форма, шрифт, высота и состояния общие; в своих файлах остаётся только то,
+   что зависит от содержимого (число вкладок, иконка, точка-подсказка). */
+.side-tabs,
+.drill-tabs,
+.stats-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: 3px;
+  background: var(--surface-1);
+  border-radius: var(--radius-s);
+}
+
+.side-tabs [role="tab"],
+.drill-tab,
+.stats-tab {
+  flex: 1;
+  min-height: var(--tap);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: calc(var(--radius-s) - 2px);
+  background: transparent;
+  color: var(--mut);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.side-tabs [role="tab"]:hover,
+.drill-tab:hover,
+.stats-tab:hover {
+  color: var(--fg);
+}
+
+.side-tabs [role="tab"][aria-selected="true"],
+.drill-tab.on,
+.stats-tab[aria-selected="true"] {
+  background: var(--acc);
+  color: var(--on-accent);
+}
+
+.side-tabs [role="tab"]:focus-visible,
+.drill-tab:focus-visible,
+.stats-tab:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .side-tabs [role="tab"],
+  .drill-tab,
+  .stats-tab {
+    padding: 0 var(--space-1);
+    font-size: 13px;
+  }
+}
