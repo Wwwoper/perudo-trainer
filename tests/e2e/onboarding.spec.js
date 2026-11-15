@@ -106,9 +106,14 @@ test.describe('Задачи онбординга в Тренажёре', () => {
     }
     expect((await read(page, 'perudo.trainingQueue')) ?? []).toEqual([]);          // промахи в очередь повторов не попали
     expect((await read(page, 'perudo.userProfile'))?.n ?? 0).toBe(0);
+    const boardY = async () => (await page.locator('.trainer-board').boundingBox()).y;
+    const before = await boardY();
     await page.locator('#tDudo').click();
-    await expect(box).toContainText('Первое знакомство закончено');
     await expect(box.locator('progress')).toHaveJSProperty('value', 4);
+    expect(await boardY(), 'стол не сдвигается после последней задачи').toBe(before);
+    await expect(box).not.toContainText('Первое знакомство закончено');                // итог теперь в окне, а не над столом
+    await expect(page.locator('#tNext')).toHaveText('Завершить знакомство');
+    await expect(page.locator('#obFinishDialog')).toHaveCount(0);                    // окно открывается только по нажатию
     expect((await read(page, 'perudo.device')).onboarding).toMatchObject({ step: 'finish', tasks: 4, done: false });
     expect((await read(page, 'perudo.userProfile'))?.n ?? 0).toBe(0);
   });
@@ -118,7 +123,11 @@ test.describe('Задачи онбординга в Тренажёре', () => {
       await page.locator('#tDudo').click();
       if (i < 3) await page.locator('#tNext').click();
     }
-    await expect(page.locator('#obTasks a.ob-rules')).toHaveAttribute('href', 'docs/guide/rules.html');
+    await page.locator('#tNext').click();                                         // «Завершить знакомство»
+    const dlg = page.locator('#obFinishDialog');
+    await expect(dlg).toBeVisible();
+    await expect(dlg).toContainText('Первое знакомство закончено');
+    await expect(dlg.locator('a.ob-rules')).toHaveAttribute('href', 'docs/guide/rules.html');
     await expect(page.locator('[data-ob="login"]')).toHaveCount(0);               // выбор уже сделан (гость): только «в приложение»
     await page.locator('[data-ob="app"]').click();
     await expect(page.locator('#obTasks')).toBeHidden();
@@ -155,21 +164,66 @@ test.describe('Итоговый экран онбординга: выбор «Я
     await expect(page.locator('#clWelcome')).toBeHidden();
   });
 
-  test('после последней задачи выбор предлагается на итоговом экране, окно не открывается', async ({ page }) => {
+  test('после последней задачи выбор предлагается в окне «Завершить знакомство», стол не сдвигается', async ({ page }) => {
+    await openTab(page, 'train');
+    const boardY = async () => (await page.locator('.trainer-board').boundingBox()).y;
+    const before = await boardY();
+    await page.locator('#tDudo').click();
+    expect(await boardY()).toBe(before);
+    await expect(page.locator('#tFb .big')).toBeVisible();                        // разбор последнего ответа остаётся на виду
+    await expect(page.locator('#obFinishDialog')).toHaveCount(0);
+    await page.locator('#tNext').click();
+    const dlg = page.locator('#obFinishDialog');
+    await expect(dlg).toBeVisible();
+    await expect(dlg).toContainText('Первое знакомство закончено');
+    await expect(dlg).toContainText('Где хранить ваши данные?');
+    await expect(dlg.locator('[data-ob="login"]')).toHaveText('Войти через Яндекс');
+    await expect(dlg.locator('[data-ob="guest"]')).toHaveText('Играть как гость');
+    await expect(dlg).toContainText('Файл вашего профиля хранится на Яндекс Диске и доступен на других устройствах');
+    await expect(dlg.locator('a.ob-rules')).toHaveAttribute('href', 'docs/guide/rules.html');
+    // два варианта одной высоты кнопки и в пределах экрана
+    const hs = await dlg.locator('.ob-card button').evaluateAll((bs) => bs.map((b) => Math.round(b.getBoundingClientRect().height)));
+    expect(new Set(hs).size).toBe(1);
+    const box = await dlg.boundingBox();
+    const vp = page.viewportSize();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(vp.width);
+    expect(box.y + box.height).toBeLessThanOrEqual(vp.height);
+    await expect(page.locator('#clWelcome')).toBeHidden();
+  });
+
+  test('окно закрыли, не выбрав: знакомство не завершено, «Завершить знакомство» остаётся доступным', async ({ page }) => {
     await openTab(page, 'train');
     await page.locator('#tDudo').click();
-    const box = page.locator('#obTasks');
-    await expect(box).toContainText('Первое знакомство закончено');
-    await expect(box).toContainText('Перейти в приложение: где хранить данные?');
-    await expect(box.locator('[data-ob="login"]')).toHaveText('Войти через Яндекс');
-    await expect(box.locator('[data-ob="guest"]')).toHaveText('Играть как гость');
-    await expect(box.locator('a.ob-rules')).toHaveAttribute('href', 'docs/guide/rules.html');
+    await page.locator('#tNext').click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#obFinishDialog')).toHaveCount(0);
+    expect((await read(page, 'perudo.device')).onboarding).toMatchObject({ step: 'finish', done: false });
+    await expect(page.locator('#tNext')).toHaveText('Завершить знакомство');
+    await page.locator('#tNext').click();                                          // можно открыть снова
+    await expect(page.locator('#obFinishDialog')).toBeVisible();
+  });
+
+  test('вернулись в Тренажёр позже: «Завершить знакомство» есть в блоке задач', async ({ page }) => {
+    await page.evaluate(() => {
+      const d = JSON.parse(localStorage.getItem('perudo.device'));
+      d.onboarding = { step: 'finish', tasks: 4, done: false, skipped: false };
+      localStorage.setItem('perudo.device', JSON.stringify(d));
+    });
+    await page.reload();
+    await expect(page.locator('#clWelcome')).toBeVisible();                        // вне Тренажёра окно выбора хранения возвращается
+    await page.keyboard.press('Escape');
     await expect(page.locator('#clWelcome')).toBeHidden();
+    await openTab(page, 'train');
+    await expect(page.locator('#obTasks [data-ob="finish"]')).toBeVisible();
+    await page.locator('#obTasks [data-ob="finish"]').click();
+    await expect(page.locator('#obFinishDialog')).toBeVisible();
   });
 
   test('«Играть как гость»: выбор сохранён, сценарий закончен, открыта «Партия»', async ({ page }) => {
     await openTab(page, 'train');
     await page.locator('#tDudo').click();
+    await page.locator('#tNext').click();
     await page.locator('[data-ob="guest"]').click();
     await expect(page.locator('#game')).toBeVisible();
     await expect(page.locator('#obTasks')).toBeHidden();
@@ -183,6 +237,7 @@ test.describe('Итоговый экран онбординга: выбор «Я
     await page.route(/oauth\.yandex\./, (r) => r.fulfill({ status: 302, headers: { location: 'http://127.0.0.1:4173/index.html' } }));   // вход «не состоялся»: назад в приложение
     await openTab(page, 'train');
     await page.locator('#tDudo').click();
+    await page.locator('#tNext').click();
     const req = page.waitForRequest(/oauth\.yandex\./);
     await page.locator('[data-ob="login"]').click();
     await req;

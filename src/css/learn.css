@@ -1165,14 +1165,27 @@ body[data-welcome] main > section:not(#welcome) {
   display: grid;
   place-items: center;
   min-height: var(--tap);
-  padding: 0 var(--space-1);
-  border: 0;
-  background: none;
-  color: var(--acc);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--fg);
   font: inherit;
+  font-size: 15px;
+  line-height: 1.25;
   text-align: center;
-  text-decoration: underline;
+  text-decoration: none;
   cursor: pointer;
+}
+
+.welcome-rules:hover,
+.welcome-skip:hover {
+  background: var(--info-bg);
+}
+
+/* Заголовок получает фокус программно (для чтения с экрана): рамки вокруг него не нужно */
+.welcome-title:focus {
+  outline: none;
 }
 
 .welcome-note {
@@ -1205,29 +1218,69 @@ body[data-welcome] main > section:not(#welcome) {
   margin-top: var(--space-2);
 }
 
-/* Итоговый экран онбординга: выбор «Яндекс или гость» и ссылка на правила */
-.ob-choice {
+/* Окно завершения знакомства: два равных варианта хранения данных */
+.ob-finish-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-l);
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: 0 20px 60px var(--black-a60);
+}
+
+.ob-finish-dialog::backdrop {
+  background: var(--scrim-strong);
+}
+
+.ob-finish-body {
   display: grid;
   gap: var(--space-2);
-  margin: var(--space-1) 0 var(--space-2);
+  padding: var(--space-4);
 }
 
-.ob-choice button {
-  min-height: var(--tap);
+.ob-finish-body p {
+  margin: 0;
 }
 
-.ob-choice p {
-  margin: var(--space-1) 0 0;
+.ob-finish-title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
 }
 
-.ob-choice-title {
-  margin: var(--space-2) 0 0;
+.ob-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.ob-card {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+}
+
+.ob-card button,
+.ob-app {
+  min-height: var(--tap-lg);
+}
+
+@media (max-width: 480px) {
+  .ob-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ob-finish-note {
+  font-size: 14px;
 }
 
 .ob-rules {
-  display: inline-grid;
+  display: grid;
   place-items: center;
   min-height: var(--tap);
-  padding: 0 12px;
-  color: var(--fg);
+  color: var(--acc);
 }

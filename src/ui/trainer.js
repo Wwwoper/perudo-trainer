@@ -14,6 +14,7 @@ import { gradeMove } from '../trainer_grade.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
 import { setupTaskBanner } from './onboarding_tasks.js';
+import { FINISH_TEXT } from '../onboarding.js';
 import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
 import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
 
@@ -267,6 +268,7 @@ export function setupTrainer({ account } = {}) {
         (cur.item ? `<p class="trainer-repeat-note">${repeatAfterText(cur.item, good)}</p>` : '') + html;
     }
     setAnswered(true);
+    syncNext();
     $('#tNext')?.focus();
   }
 
@@ -327,7 +329,18 @@ export function setupTrainer({ account } = {}) {
   };
 
   if ($('#tNew')) $('#tNew').onclick = () => newSituation();
-  if ($('#tNext')) $('#tNext').onclick = () => { newSituation(); $('#tDudo')?.focus(); };
+  /** После последней задачи знакомства «Новая ситуация» превращается в «Завершить знакомство». */
+  function syncNext() {
+    const b = $('#tNext');
+    if (b) b.textContent = tasks.finishPending() ? FINISH_TEXT.finishButton : '🔄 Новая ситуация';
+  }
+  if ($('#tNext')) {
+    $('#tNext').onclick = () => {
+      if (tasks.finishPending()) { tasks.openFinish(); return; }
+      newSituation();
+      $('#tDudo')?.focus();
+    };
+  }
 
   if ($('#tMode')) {
     $('#tMode').onchange = () => {

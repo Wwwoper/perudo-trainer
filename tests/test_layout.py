@@ -1175,7 +1175,7 @@ class LayoutTest(unittest.TestCase):
                     self.assertLessEqual(b["y"] + b["height"], h, sel)
 
     def test_onboarding_finish_screen_fits_every_viewport(self):
-        """Итоговый экран онбординга с выбором «Яндекс или гость»: кнопки удобны для пальца и помещаются по ширине."""
+        """Окно «Первое знакомство закончено» с выбором «Яндекс или гость»: кнопки удобны для пальца, окно помещается в экран."""
         for w, h in [(320, 568), (360, 640), (390, 844), (844, 390), (1280, 720)]:
             with self.subTest(size=f"{w}x{h}"):
                 ctx = self.raw_browser.new_context(viewport={"width": w, "height": h})
@@ -1188,12 +1188,22 @@ class LayoutTest(unittest.TestCase):
                     page.goto(self.url)
                     # при загрузке на «Калькуляторе» открыто окно выбора (по правилам, пока игрок не на итоговом экране): уходим в Тренажёр напрямую
                     page.evaluate("document.querySelector('.tab-btn[data-t=train]').click()")
-                    page.wait_for_selector("#obTasks [data-ob='guest']")
+                    page.wait_for_selector("#obTasks [data-ob='finish']")
                     self.assertFalse(page.locator("#clWelcome").evaluate("d => d.open"), "окно выбора мешает итоговому экрану")
+                    btn = page.locator("#obTasks [data-ob='finish']")
+                    btn.scroll_into_view_if_needed()
+                    self.assertGreaterEqual(btn.bounding_box()["height"], 44, "Завершить знакомство")
+                    btn.click()
+                    dlg = page.locator("#obFinishDialog")
+                    dlg.wait_for(state="visible")
                     self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w, "горизонтальная прокрутка")
+                    box = dlg.bounding_box()
+                    self.assertGreaterEqual(box["x"], 0)
+                    self.assertLessEqual(box["x"] + box["width"], w, "окно шире экрана")
+                    self.assertLessEqual(box["y"] + box["height"], h, "окно выше экрана")
                     for sel in ("[data-ob='login']", "[data-ob='guest']", "a.ob-rules"):
-                        page.locator(f"#obTasks {sel}").scroll_into_view_if_needed()
-                        b = page.locator(f"#obTasks {sel}").bounding_box()
+                        page.locator(f"#obFinishDialog {sel}").scroll_into_view_if_needed()
+                        b = page.locator(f"#obFinishDialog {sel}").bounding_box()
                         self.assertGreaterEqual(b["height"], 44, sel)
                         self.assertGreaterEqual(b["x"], 0, sel)
                         self.assertLessEqual(b["x"] + b["width"], w, sel)
