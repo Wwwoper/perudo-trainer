@@ -113,6 +113,7 @@ main {
 }
 
 button,
+.btn,
 select,
 input {
   font: inherit;
@@ -132,16 +133,30 @@ input[type=range] {
 }
 
 button {
+  min-height: var(--tap);   /* любая кнопка не ниже зоны нажатия; крупные (--tap-lg) задаются на месте */
   cursor: pointer;
 }
 
-button:hover {
+/* Ссылка, которой нужен вид обычной кнопки (руководство, GitHub): <a class="btn"> */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:hover,
+.btn:hover {
   border-color: var(--acc);
 }
 
 /* На устройствах без мыши hover не «залипает» после касания */
 @media (hover: none) {
-  button:hover {
+  button:hover,
+  .btn:hover {
     border-color: var(--line-2);
   }
 }
@@ -164,14 +179,27 @@ button.on {
   border-color: var(--acc);
 }
 
+/* Действия партии: главная, «Не верю!», Calza. Одна геометрия (рамка 1px, жирный шрифт), различается цвет. */
+.btn-primary,
+button.bad,
+button.calza {
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.btn-primary {
+  background: var(--acc);
+  border-color: var(--acc);
+}
+
 button.bad {
   background: var(--bad);
-  color: var(--on-accent);
+  border-color: var(--bad);
 }
 
 button.calza {
   background: var(--warn);
-  color: var(--on-accent);
+  border-color: var(--warn);
 }
 
 button:disabled {

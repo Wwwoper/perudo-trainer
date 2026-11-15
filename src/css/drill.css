@@ -827,8 +827,9 @@
 }
 
 .quiz-secondary {
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  min-height: var(--tap);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-s);
   background: transparent;
   color: inherit;
   cursor: pointer;

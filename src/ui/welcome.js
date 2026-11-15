@@ -43,7 +43,7 @@ export function refreshWelcome() {
     `<button type="button" class="btn-primary welcome-start" data-welcome="start">${WELCOME.start}</button>` +
     `<div class="welcome-links">` +
     `<a class="welcome-rules" href="${WELCOME.rulesHref}" target="_blank" rel="noopener">${WELCOME.rules}</a>` +
-    `<button type="button" class="link-btn welcome-skip" data-welcome="skip">${WELCOME.skip}</button></div></div>` +
+    `<button type="button" class="welcome-skip" data-welcome="skip">${WELCOME.skip}</button></div></div>` +
     `<p class="muted welcome-note">${WELCOME.note}</p></div>`;
   setShown(true);
 }

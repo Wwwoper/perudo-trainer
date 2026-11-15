@@ -171,6 +171,39 @@ class BrowserTest(unittest.TestCase):
         h = page.evaluate("document.querySelector('#dxDrillTabs .drill-tab').getBoundingClientRect().height")
         self.assertGreaterEqual(h, 44)
 
+    def test_button_set_shares_geometry_and_variants_differ_only_by_color(self):
+        """Единый набор кнопок: обычная, ссылка-кнопка, главная, «Не верю!», Calza, вторичная."""
+        page = self.browser.new_context(viewport={"width": 1000, "height": 800}).new_page()
+        page.goto(self.base + "/docs/dev/design.html")
+        js = """(sel) => { const s = getComputedStyle(document.querySelector(sel));
+                return { r: s.borderTopLeftRadius, b: s.borderTopWidth, bs: s.borderTopStyle, h: document.querySelector(sel).getBoundingClientRect().height,
+                         fs: s.fontSize, fw: s.fontWeight, td: s.textDecorationLine, bg: s.backgroundColor, bc: s.borderTopColor }; }"""
+        for theme in ("light", "dark"):
+            page.evaluate("t => document.documentElement.setAttribute('data-theme', t)", theme)
+            base = page.evaluate(js, "#dx-actions + p + .dx-row button:not(.on):not(:disabled)")
+            for sel in ("a.btn", ".btn-primary:not(:disabled)", "button.bad:not(:disabled)", "button.calza:not(:disabled)", ".quiz-secondary"):
+                g = page.evaluate(js, sel)
+                for k in ("r", "b", "bs", "fs"):
+                    self.assertEqual(g[k], base[k], f"{theme}: {sel} отличается от обычной кнопки по {k}")
+                self.assertGreaterEqual(g["h"], 44, f"{theme}: {sel} ниже 44 px")
+            for sel in (".btn-primary:not(:disabled)", "button.bad:not(:disabled)", "button.calza:not(:disabled)"):
+                g = page.evaluate(js, sel)
+                self.assertEqual(g["fw"], "700", f"{theme}: {sel} должна быть жирной")
+                self.assertEqual(g["bc"], g["bg"], f"{theme}: {sel}: цвет рамки совпадает с фоном")
+            link = page.evaluate(js, ".link-btn")
+            self.assertEqual(link["td"], "underline")                     # текстовая ссылка, не кнопка
+            self.assertEqual(link["b"], "0px")
+            self.assertEqual(page.evaluate(js, "a.btn")["td"], "none")
+
+    def test_link_and_button_selectors_are_defined_once(self):
+        files = {}
+        for rel in da.CSS_FILES:
+            with open(os.path.join(ROOT, rel), encoding="utf-8") as f:
+                files[rel] = f.read()
+        dup = da.duplicate_selectors({k: v for k, v in files.items() if not k.endswith("themes.css")})
+        for sel in (".link-btn", ".btn", ".btn-primary", "button.bad", "button.calza", ".quiz-secondary"):
+            self.assertNotIn(sel, dup, f"{sel} определён в нескольких файлах: {dup.get(sel)}")
+
     def test_live_collection_covers_every_kind(self):
         snaps = da.collect_live(browser=self.browser)
         kinds = da.group_signatures(snaps)

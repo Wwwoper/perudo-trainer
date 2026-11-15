@@ -323,12 +323,6 @@
   font-weight: 500;
 }
 
-.btn-primary {
-  background: var(--acc);
-  color: var(--on-accent);
-  border-color: var(--acc);
-}
-
 /* Не ваш ход: геометрия не меняется, управление затемнено */
 .action-dock.is-waiting .stepper,
 .action-dock.is-waiting .face-pick,

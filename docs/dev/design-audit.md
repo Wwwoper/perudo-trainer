@@ -32,13 +32,13 @@
 
 ### Скругление
 
-Значений через токены: **27**; чисел в px: **63**, разных чисел: **12**.
+Значений через токены: **28**; чисел в px: **62**, разных чисел: **12**.
 
 | px | раз |
 |---:|---:|
 | 8 | 19 |
 | 6 | 9 |
-| 12 | 8 |
+| 12 | 7 |
 | 999 | 7 |
 | 4 | 5 |
 | 10 | 5 |
@@ -75,11 +75,11 @@
 
 ### Минимальная высота
 
-Значений через токены: **88**; чисел в px: **27**, разных чисел: **12**.
+Значений через токены: **92**; чисел в px: **25**, разных чисел: **12**.
 
 | px | раз |
 |---:|---:|
-| 44 | 7 |
+| 44 | 5 |
 | 16 | 4 |
 | 48 | 3 |
 | 24 | 2 |
@@ -101,14 +101,14 @@
 - `.drill-tabs` — `src/css/components.css`, `src/css/drill.css`
 - `.field` — `src/css/game.css`, `src/css/learn.css`
 - `.field-row` — `src/css/game.css`, `src/css/learn.css`
-- `.link-btn` — `src/css/game.css`, `src/css/learn.css`
 - `.side-tabs` — `src/css/components.css`, `src/css/game.css`
 - `.stats-tabs` — `src/css/components.css`, `src/css/learn.css`
 - `main` — `src/css/base.css`, `src/css/game.css`, `src/css/trainer.css`
 
 ### Классы кнопок
 
-- `.btn-primary` — `src/css/drill.css`, `src/css/game.css`
+- `.btn` — `src/css/base.css`
+- `.btn-primary` — `src/css/base.css`, `src/css/drill.css`, `src/css/game.css`
 - `.btn-row` — `src/css/learn.css`
 - `.btn-sub` — `src/css/game.css`
 - `.dock-buttons` — `src/css/game.css`, `src/css/learn.css`
@@ -116,7 +116,7 @@
 - `.hud-tab-btn` — `src/css/game.css`
 - `.icon-btn` — `src/css/game.css`
 - `.icon-btn-text` — `src/css/game.css`
-- `.link-btn` — `src/css/game.css`, `src/css/learn.css`
+- `.link-btn` — `src/css/game.css`
 - `.mode-btn` — `src/css/trainer.css`
 - `.read-yn-btn` — `src/css/drill.css`
 - `.series-buttons` — `src/css/drill.css`
@@ -128,7 +128,7 @@
 
 Подпись элемента: шрифт · вес · отступы · скругление · рамка · фон · цвет · высота. Чем больше разных подписей у одного вида, тем сильнее он разъехался.
 
-### Кнопки: 72 шт., разных подписей — 20
+### Кнопки: 72 шт., разных подписей — 19
 
 | раз | подпись | вкладки | примеры |
 |---:|---|---|---|
@@ -142,9 +142,9 @@
 | 3 | 14 · 600 · 0/8 · 6 · 0 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | drill, game, stats | button#tabLog «Журнал»; button.drill-tab.on «Оценка в уме»; button#stTabResults.stats-tab «Результаты» |
 | 3 | 16 · 400 · 0/0 · 10 · 1 · rgb(219, 230, 251) · rgb(26, 31, 43) · 44 | calc, game, train | button.face-btn.sel |
 | 3 | 16 · 700 · 6/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 52 | drill, game, train | button#gRaise.btn-primary «Ставлю 1×2шанс 100.0%»; button#tRaise.btn-primary «Ставлю»; button#dACheck.btn-primary «Проверить» |
+| 3 | 16 · 700 · 8/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | duel, game (настройки), stats | button.btn-primary.side-start «Начать партию»; button#dStart.btn-primary.duel-start «Играть против оптимально»; button.btn-primary «Сыграть партию» |
 | 2 | 16 · 700 · 6/12 · 8 · 1 · rgb(198, 47, 47) · rgb(255, 255, 255) · 52 | game, train | button#gDudo.bad «Не верю!»; button#tDudo.bad «Не верю!» |
-| 2 | 16 · 700 · 8/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | duel, game (настройки) | button.btn-primary.side-start «Начать партию»; button#dStart.btn-primary.duel-start «Играть против оптимально» |
-| … | ещё подписей: 8 | | |
+| … | ещё подписей: 7 | | |
 
 ### Заголовки и «summary»: 19 шт., разных подписей — 8
 
