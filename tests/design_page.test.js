@@ -37,3 +37,25 @@ test('цвета образца — только токены, определё�
   assert.ok(tokens.length >= 20);
   for (const t of tokens) assert.ok(new RegExp(`--${t}\\s*:`).test(themes), `токена --${t} нет в themes.css`);
 });
+
+test('ссылки блока «Пары для сравнения» ведут на существующие якоря, id не повторяются', () => {
+  const ids = [...page.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(new Set(ids).size, ids.length, 'повторяющиеся id');
+  const hrefs = [...page.matchAll(/<a href="#([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(hrefs.length >= 7);
+  for (const h of hrefs) assert.ok(ids.includes(h), `нет якоря #${h}`);
+});
+
+test('кнопки сгруппированы по типу взаимодействия, у каждого примера подпись «роль · класс»', () => {
+  for (const id of ['dx-actions', 'dx-links', 'dx-switch', 'dx-game']) assert.ok(page.includes(`id="${id}"`), `нет группы ${id}`);
+  const caps = [...page.matchAll(/<span class="dx-cap">([^<]+)<\/span>/g)].map((m) => m[1]);
+  const buttons = caps.filter((c) => /\.(btn-primary|bad|calza|link-btn|icon-btn|drill-tab|stats-tab|face-btn|mode-btn|quiz-secondary)/.test(c));
+  assert.ok(buttons.length >= 10);
+  for (const c of buttons) assert.match(c, /^[^·]+ · /, `нет роли в подписи: ${c}`);
+});
+
+test('у состояний «выбран / недоступен» пары показаны рядом', () => {
+  for (const frag of ['class="drill-tab on"', 'aria-selected="true"', 'class="face-btn sel"', 'class="mode-btn is-on"', 'class="btn-primary" disabled', 'class="bad" disabled']) {
+    assert.ok(page.includes(frag), `нет состояния ${frag}`);
+  }
+});

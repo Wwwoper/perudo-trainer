@@ -131,12 +131,20 @@ class BrowserTest(unittest.TestCase):
             page.on("requestfailed", lambda r: errors.append(r.url))
             page.goto(self.base + "/docs/dev/design.html")
             self.assertEqual(page.locator("#dxSwatches > div").count(), 25)
-            self.assertGreaterEqual(page.locator("#dx-buttons button").count(), 14)
+            self.assertGreaterEqual(page.locator("#dx-buttons button").count(), 22)
             self.assertEqual(page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), True,
                              f"горизонтальная прокрутка на {w} px")
             page.locator("#dxTheme").click()
             self.assertEqual(page.evaluate("document.documentElement.dataset.theme"), "dark")
             self.assertEqual(errors, [])
+
+    def test_theme_from_url_and_anchor_targets_are_visible(self):
+        page = self.browser.new_context(viewport={"width": 1000, "height": 800}).new_page()
+        page.goto(self.base + "/docs/dev/design.html?theme=dark")
+        self.assertEqual(page.evaluate("document.documentElement.dataset.theme"), "dark")
+        self.assertEqual(page.locator("#dxTheme").inner_text(), "Светлая тема")
+        page.locator(".dx-nav a").first.click()
+        self.assertTrue(page.locator("#dx-actions").is_visible())
 
     def test_live_collection_covers_every_kind(self):
         snaps = da.collect_live(browser=self.browser)
