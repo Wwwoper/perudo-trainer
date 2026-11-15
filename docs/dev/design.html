@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Перудо — образец элементов интерфейса</title>
+  <!-- Настоящие стили приложения: страница показывает элементы такими, какие они есть сейчас. -->
+  <link rel="stylesheet" href="../../src/css/themes.css">
+  <link rel="stylesheet" href="../../src/table.css">
+  <link rel="stylesheet" href="../../src/css/base.css">
+  <link rel="stylesheet" href="../../src/css/game.css">
+  <link rel="stylesheet" href="../../src/css/learn.css">
+  <link rel="stylesheet" href="../../src/css/components.css">
+  <link rel="stylesheet" href="../../src/css/trainer.css">
+  <link rel="stylesheet" href="../../src/css/drill.css">
+  <style>
+    /* Только раскладка самой страницы-образца. Стили элементов не переопределяются. */
+    .dx-wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
+    .dx-sec { margin: 24px 0; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+    .dx-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0; }
+    .dx-cell { display: grid; gap: 4px; justify-items: start; }
+    .dx-cap { font-size: 12px; color: var(--mut); font-family: ui-monospace, monospace; }
+    .dx-sw { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+    .dx-sw div { padding: 8px; border: 1px solid var(--line-2); border-radius: 8px; font-size: 12px; font-family: ui-monospace, monospace; }
+    .dx-sw i { display: block; height: 28px; margin-bottom: 6px; border-radius: 6px; border: 1px solid var(--line-2); }
+    .dx-narrow { max-width: 420px; }
+  </style>
+</head>
+<body>
+<div class="dx-wrap">
+  <h1>Образец элементов интерфейса</h1>
+  <p class="muted">Страница собрана из настоящих стилей приложения. Одинаковые по смыслу элементы должны здесь выглядеть одинаково;
+    всё, что отличается без причины, видно рядом. Описание — в <a href="design.md">design.md</a>, цифры — в <a href="design-audit.md">design-audit.md</a>.</p>
+  <div class="dx-row">
+    <button type="button" id="dxTheme">Тёмная тема</button>
+  </div>
+
+  <section class="dx-sec" id="dx-type">
+    <h2>Текст</h2>
+    <div class="dx-cell"><span class="dx-cap">h1</span><h1 style="margin:0">Перудо</h1></div>
+    <div class="dx-cell"><span class="dx-cap">h2</span><h2 style="margin:0">Новая партия</h2></div>
+    <div class="dx-cell"><span class="dx-cap">h3</span><h3 style="margin:0">Соперники</h3></div>
+    <div class="dx-cell"><span class="dx-cap">p</span><p style="margin:0">Обычный текст абзаца: правила, пояснения и подсказки.</p></div>
+    <div class="dx-cell"><span class="dx-cap">.muted</span><p class="muted" style="margin:0">Второстепенный текст под заголовком или рядом с полем.</p></div>
+    <div class="dx-cell"><span class="dx-cap">.text-bad / .warn / .c0 / .c1 / .c2</span>
+      <p style="margin:0"><b class="text-bad">Не верю!</b> · <b class="warn">Calza!</b> · <span class="c0">Вы</span> · <span class="c1">Бот</span> · <span class="c2">Бот</span></p></div>
+  </section>
+
+  <section class="dx-sec" id="dx-buttons">
+    <h2>Кнопки</h2>
+    <div class="dx-row">
+      <div class="dx-cell"><span class="dx-cap">button</span><button type="button">Обычная</button></div>
+      <div class="dx-cell"><span class="dx-cap">button.on</span><button type="button" class="on">Выбрана</button></div>
+      <div class="dx-cell"><span class="dx-cap">button:disabled</span><button type="button" disabled>Недоступна</button></div>
+      <div class="dx-cell"><span class="dx-cap">.btn-primary</span><button type="button" class="btn-primary">Главная</button></div>
+      <div class="dx-cell"><span class="dx-cap">button.bad</span><button type="button" class="bad">Не верю!</button></div>
+      <div class="dx-cell"><span class="dx-cap">button.calza</span><button type="button" class="calza">Calza</button></div>
+    </div>
+    <div class="dx-row">
+      <div class="dx-cell"><span class="dx-cap">.link-btn</span><button type="button" class="link-btn">Сыграть ещё</button></div>
+      <div class="dx-cell"><span class="dx-cap">.link-danger</span><button type="button" class="link-btn link-danger">Сбросить всё</button></div>
+      <div class="dx-cell"><span class="dx-cap">.icon-btn</span><button type="button" class="icon-btn" aria-label="Настройки">⚙️</button></div>
+      <div class="dx-cell"><span class="dx-cap">.quiz-secondary</span><button type="button" class="quiz-secondary">Позже</button></div>
+      <div class="dx-cell"><span class="dx-cap">.key-moment-replay</span><button type="button" class="key-moment-replay">Добавить в очередь повторов</button></div>
+    </div>
+    <div class="dx-row">
+      <div class="dx-cell"><span class="dx-cap">.face-btn / .sel</span><span><button type="button" class="face-btn">3</button> <button type="button" class="face-btn sel">4</button></span></div>
+      <div class="dx-cell"><span class="dx-cap">.mode-btn</span><button type="button" class="mode-btn">Палифико</button></div>
+      <div class="dx-cell"><span class="dx-cap">.drill-tab / .on</span><span class="drill-tabs"><button type="button" class="drill-tab">Серия</button><button type="button" class="drill-tab on">Правило единиц</button></span></div>
+      <div class="dx-cell"><span class="dx-cap">.stats-tab</span><button type="button" class="stats-tab">Игрок</button></div>
+    </div>
+  </section>
+
+  <section class="dx-sec" id="dx-fields">
+    <h2>Поля и списки</h2>
+    <div class="dx-row">
+      <div class="dx-cell"><span class="dx-cap">input[type=number]</span><input type="number" value="5" aria-label="Число"></div>
+      <div class="dx-cell"><span class="dx-cap">input[type=text]</span><input type="text" value="Игрок" aria-label="Имя"></div>
+      <div class="dx-cell"><span class="dx-cap">select</span><select aria-label="Выбор"><option>По умолчанию</option><option>Осторожный</option></select></div>
+      <div class="dx-cell"><span class="dx-cap">.drill-input</span><input class="drill-input" type="text" value="5" aria-label="Ответ"></div>
+    </div>
+  </section>
+
+  <section class="dx-sec" id="dx-chips">
+    <h2>Чипы и значки</h2>
+    <div class="dx-row">
+      <div class="dx-cell"><span class="dx-cap">.chip.xs</span><span class="chip xs">3<em>×</em></span></div>
+      <div class="dx-cell"><span class="dx-cap">.chip</span><span class="chip">3<em>×</em></span></div>
+      <div class="dx-cell"><span class="dx-cap">.chip.lg</span><span class="chip lg">3<em>×</em></span></div>
+      <div class="dx-cell"><span class="dx-cap">.chip.xl</span><span class="chip xl">3<em>×</em></span></div>
+      <div class="dx-cell"><span class="dx-cap">.badge</span><span class="badge">Продвинутый режим</span></div>
+    </div>
+  </section>
+
+  <section class="dx-sec" id="dx-cards">
+    <h2>Карточки и блоки</h2>
+    <div class="dx-narrow">
+      <div class="dx-cell" style="justify-items:stretch"><span class="dx-cap">.card</span>
+        <div class="card"><b>Карточка</b><p class="muted" style="margin:4px 0 0">Блок на фоне страницы: настройки, результаты, пояснения.</p></div></div>
+      <div class="dx-cell" style="justify-items:stretch;margin-top:12px"><span class="dx-cap">.result-card</span>
+        <div class="result-card"><p>Итог партии: победа. Решений: 4.</p></div></div>
+      <div class="dx-cell" style="justify-items:stretch;margin-top:12px"><span class="dx-cap">.key-moment / .meh / .bad</span>
+        <div class="key-moment"><p>Верный ход.</p></div>
+        <div class="key-moment meh"><p>Спорный ход.</p></div>
+        <div class="key-moment bad"><p>Ошибка.</p></div></div>
+      <div class="dx-cell" style="justify-items:stretch;margin-top:12px"><span class="dx-cap">details &gt; summary</span>
+        <details class="key-moments"><summary><span class="dc-title">Ключевые моменты (1)</span><span class="dc-sub">Решения партии, которые стоит разобрать</span></summary><p class="muted">Содержимое.</p></details></div>
+    </div>
+  </section>
+
+  <section class="dx-sec" id="dx-rows">
+    <h2>Строки списков</h2>
+    <div class="dx-narrow">
+      <div class="dx-cell" style="justify-items:stretch"><span class="dx-cap">журнал: .log-row (ставка, «Не верю!», итог)</span>
+        <div class="log-row"><span class="log-name c1">Анастасия</span><span class="log-chip"><span class="chip xs">2<em>×</em></span></span><span class="log-note"></span></div>
+        <div class="log-row dudo"><span class="log-name c0">Вы</span><span class="log-chip"><span class="chip xs">2<em>×</em></span></span><span class="log-note"><b class="text-bad">Не верю!</b></span></div>
+        <div class="log-row log-result">Проверка: на столе 4 из 2 — ставка верна.</div>
+        <div class="round-head">Раунд 2 · кубиков на столе: 14 · начинает: Вы</div></div>
+      <div class="dx-cell" style="justify-items:stretch;margin-top:12px"><span class="dx-cap">разбор: .trainer-option</span>
+        <ul class="trainer-options">
+          <li class="trainer-option is-chosen"><span class="trainer-option-name">Не верю<small class="trainer-option-what">проверка сработает <span class="trainer-option-mark">← ваш выбор</span></small></span><span class="trainer-option-chip"></span><span class="trainer-option-chance"><b>30.0%</b></span></li>
+          <li class="trainer-option"><span class="trainer-option-name">✓ Минимальное повышение<small class="trainer-option-what">ставка верна</small></span><span class="trainer-option-chip"><span class="chip xs">2<em>×</em></span></span><span class="trainer-option-chance"><b>80.0%</b></span></li>
+        </ul></div>
+    </div>
+  </section>
+
+  <section class="dx-sec" id="dx-colors">
+    <h2>Цвета (токены)</h2>
+    <div class="dx-sw" id="dxSwatches"></div>
+  </section>
+</div>
+<script>
+  // Переключатель темы и образцы цветов из токенов; других сценариев на странице нет.
+  const root = document.documentElement;
+  const btn = document.getElementById('dxTheme');
+  btn.addEventListener('click', () => {
+    const dark = root.getAttribute('data-theme') !== 'dark';
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    btn.textContent = dark ? 'Светлая тема' : 'Тёмная тема';
+  });
+  const TOKENS = ['bg', 'card', 'fg', 'mut', 'acc', 'on-accent', 'ok', 'warn', 'bad', 'bad-text', 'surface-1', 'surface-2', 'surface-3',
+    'surface-4', 'line', 'line-2', 'line-soft', 'tint-soft', 'tint-faint', 'selected', 'info-bg', 'ok-bg', 'warn-bg', 'bad-bg', 'gold'];
+  const box = document.getElementById('dxSwatches');
+  for (const t of TOKENS) {
+    const d = document.createElement('div');
+    const i = document.createElement('i');
+    i.style.background = `var(--${t})`;
+    d.append(i, `--${t}`);
+    box.append(d);
+  }
+</script>
+</body>
+</html>
