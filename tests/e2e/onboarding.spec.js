@@ -20,7 +20,10 @@ test.describe('Экран приветствия', () => {
     await expect(w).toContainText('Добро пожаловать в Перудо');
     await expect(w.locator('.welcome-step')).toHaveCount(3);
     await expect(w.locator('.welcome-start')).toBeVisible();
-    await expect(w.locator('.welcome-links > *')).toHaveCount(2);   // правила и пропуск — равные текстовые ссылки
+    await expect(w.locator('.welcome-links > *')).toHaveCount(2);   // правила и пропуск — равные кнопки
+    const sizes = await w.locator('.welcome-links > *').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }));
+    expect(sizes[0][0], 'ширина нижних кнопок одинакова').toBe(sizes[1][0]);
+    expect(sizes[0][1], 'высота нижних кнопок одинакова').toBe(sizes[1][1]);
     await expect(page.locator('.app-header')).toBeHidden();
     await expect(page.locator('#calc')).toBeHidden();
     await expect(w.locator('a.welcome-rules')).toHaveAttribute('href', 'docs/guide/rules.html');

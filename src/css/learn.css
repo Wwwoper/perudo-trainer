@@ -1093,22 +1093,25 @@ body[data-welcome] main > section:not(#welcome) {
 }
 
 .welcome-card {
+  display: grid;
+  gap: var(--space-4);   /* один вертикальный ритм между всеми блоками карточки */
   width: min(100%, 520px);
+  padding: 20px;
 }
 
 .welcome-title {
-  margin: 0 0 var(--space-2);
+  margin: 0;
   font-size: 22px;
 }
 
 .welcome-lead {
-  margin: 0 0 var(--space-3);
+  margin: 0;
 }
 
 .welcome-steps {
   display: grid;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-3);
+  gap: var(--space-3);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -1117,7 +1120,7 @@ body[data-welcome] main > section:not(#welcome) {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: var(--space-2);
+  column-gap: var(--space-3);
 }
 
 .welcome-num {
@@ -1144,9 +1147,9 @@ body[data-welcome] main > section:not(#welcome) {
 
 .welcome-actions {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
   justify-items: stretch;
-  margin-bottom: var(--space-2);
+  margin: 0;
 }
 
 .welcome-start {
@@ -1156,12 +1159,15 @@ body[data-welcome] main > section:not(#welcome) {
 /* Второстепенные действия: одинаковые текстовые ссылки, не кнопки */
 .welcome-links {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));   /* ровно пополам: содержимое кнопки не раздвигает колонку */
   gap: var(--space-2);
 }
 
 .welcome-rules,
 .welcome-skip {
+  box-sizing: border-box;
+  width: 100%;
+  white-space: normal;
   display: grid;
   place-items: center;
   min-height: var(--tap);
@@ -1190,6 +1196,7 @@ body[data-welcome] main > section:not(#welcome) {
 
 .welcome-note {
   margin: 0;
+  font-size: 13px;
   text-align: center;
 }
 
