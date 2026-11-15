@@ -45,6 +45,7 @@ function showResultDialog(game) {
   const tasksBtn = $('#gResultTasks');
   if (tasksBtn) tasksBtn.hidden = !first;
   resultOpener = document.activeElement;
+  dlg.classList.remove('kbd');
   dlg.showModal();
   if (first) tasksBtn?.focus();
   return true;
@@ -57,6 +58,7 @@ function showResultDialog(game) {
 export function setupResultDialog(getGame, { onOpenCalc } = {}) {
   const dlg = $('#gResultDialog');
   if (!dlg) return;
+  dlg.addEventListener('keydown', (e) => { if (e.key === 'Tab') dlg.classList.add('kbd'); });   // кольцо фокуса только для клавиатуры
   $('#gResultView')?.addEventListener('click', () => dlg.close());
   $('#gResultTasks')?.addEventListener('click', () => { skipFocusRestore = true; dlg.close(); });   // переход к задачам делает общий обработчик data-action
   $('#gResultCalc')?.addEventListener('click', () => {

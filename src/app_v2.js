@@ -689,6 +689,15 @@ function renderSituation() {
   }
 }
 
+/** Точка на вкладке «Расчёт», пока там есть совет на вашем ходу (в «Новичке» и «Тренировке»); открытая вкладка точку не показывает. */
+function syncCalcHint() {
+  const tab = $('#tabCalc');
+  if (!tab) return;
+  const has = !!(assistConfig.showFutureBidOdds && game && game.state === 'active' && game.players[0].alive && game.currentPlayer === 0);
+  tab.classList.toggle('has-hint', has);
+  tab.setAttribute('aria-label', has ? 'Расчёт: есть подсказка' : 'Расчёт');
+}
+
 function renderPractical() {
   const el = $('#gPractical');
   if (!el) return;
@@ -696,6 +705,7 @@ function renderPractical() {
   // В честном режиме не показываем ничего стратегического.
   // Берём showFutureBidOdds как маркер: он true в novice и training,
   // false в game (см. assist.js).
+  syncCalcHint();
   if (!assistConfig.showFutureBidOdds) { el.innerHTML = ''; return; }
 
   if (!game || game.state !== 'active') { el.innerHTML = ''; return; }

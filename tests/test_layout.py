@@ -228,6 +228,7 @@ class LayoutTest(unittest.TestCase):
 
     def test_safe_bid_labels_are_left_and_values_right(self):
         page = self.open_game(1366, 768, 3)
+        page.locator("#tabCalc").click()
         rows = page.locator("#gPractical .ph-row")
         self.assertGreaterEqual(rows.count(), 5)
         for i in range(rows.count()):
@@ -396,7 +397,7 @@ class LayoutTest(unittest.TestCase):
         side = page.locator("#gSide").bounding_box()
         self.assertGreaterEqual(side["x"], stage["x"] + stage["width"] - 1)
         self.assertEqual(page.locator("#gSide [role=tab]:visible").count(), 5)   # Расчёт, Журнал, Разбор, Стол, Настройки
-        self.assertTrue(page.locator("#panCalc").is_visible())
+        self.assertTrue(page.locator("#panLog").is_visible())                  # после старта открыт «Журнал»
         self.assertFalse(page.locator(".sheet-close").is_visible())
         self.assertFalse(page.locator("#gBackdrop").is_visible())
         self.assertFalse(page.locator(".hud-tab-btn").first.is_visible())
@@ -500,7 +501,7 @@ class LayoutTest(unittest.TestCase):
         page.locator("#tabSettings").click()
         page.select_option("#gAssist", "training")
         page.locator("#panSettings .side-start").click()
-        self.assertEqual(page.locator("#tabCalc").get_attribute("aria-selected"), "true")
+        self.assertEqual(page.locator("#tabLog").get_attribute("aria-selected"), "true")   # журнал при старте всегда
 
     def test_situation_card_fits_and_is_tappable(self):
         """Карточка «Картина стола» в «Расчёте»: помещается в панель, кнопки не меньше 44 px, страница не ползёт вбок."""
@@ -521,6 +522,8 @@ class LayoutTest(unittest.TestCase):
                 calc = page.locator('.hud-tab-btn[data-open-tab="tabCalc"]')
                 if calc.is_visible():
                     calc.click()
+                else:
+                    page.locator("#tabCalc").click()
                 card = page.locator("#gSitCard")
                 self.assertEqual(card.count(), 1)
                 self.assertGreaterEqual(page.locator(".sit-summary").bounding_box()["height"], 44)
@@ -566,6 +569,8 @@ class LayoutTest(unittest.TestCase):
                 calc = page.locator('.hud-tab-btn[data-open-tab="tabCalc"]')
                 if calc.is_visible():
                     calc.click()
+                else:
+                    page.locator("#tabCalc").click()
                     page.wait_for_timeout(450)
                 guess = page.locator("#gSituation .sit-guess")
                 self.assertEqual(guess.count(), 1)
@@ -1917,7 +1922,7 @@ class LayoutTest(unittest.TestCase):
         page.locator("#gDudo").click()
         page.wait_for_timeout(500)
         self.assertFalse(page.locator("#gReveal").evaluate("d => d.open"))
-        self.assertIn("Проверка: на столе 4 из 3", page.locator("#gHistory").inner_text())
+        self.assertIn("Проверка: на столе 4 из 3", page.locator("#gHistory").text_content())
 
     def test_reveal_keyboard(self):
         page = self.open_game(1366, 768, 2, reveal=True)

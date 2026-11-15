@@ -562,6 +562,42 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gReveal')).toBeVisible();
   }
 
+  test('после старта партии открыта вкладка «Журнал»; на вашем ходу в «Новичке» на «Расчёте» точка с подсказкой', async ({ page }) => {
+    await startGame(page, { bots: 1, assist: 'novice' });
+    await expect(page.locator('#tabLog')).toHaveAttribute('aria-selected', 'true');
+    await waitMyTurn(page);
+    await expect(page.locator('#tabCalc')).toHaveClass(/has-hint/);
+    await expect(page.locator('#tabCalc')).toHaveAttribute('aria-label', 'Расчёт: есть подсказка');
+    const dot = await page.locator('#tabCalc').evaluate((el) => getComputedStyle(el, '::after').content);
+    expect(dot).not.toBe('none');
+    await openTab(page, 'tabCalc');                                                  // на телефоне вкладки в шторке
+    await expect(page.locator('#tabCalc')).toHaveAttribute('aria-selected', 'true');
+    expect(await page.locator('#tabCalc').evaluate((el) => getComputedStyle(el, '::after').content)).toBe('none');
+  });
+
+  test('в режиме «Игра» подсказок нет: журнал открыт и точки на «Расчёте» нет', async ({ page }) => {
+    await startGame(page, { bots: 1, assist: 'game' });
+    await expect(page.locator('#tabLog')).toHaveAttribute('aria-selected', 'true');
+    await waitMyTurn(page);
+    await expect(page.locator('#tabCalc')).not.toHaveClass(/has-hint/);
+    await expect(page.locator('#tabCalc')).toHaveAttribute('aria-label', 'Расчёт');
+  });
+
+  test('вскрытие: раскрывающиеся блоки выглядят как кнопки — пояснение, «Показать ▾» и «Скрыть ▴»', async ({ page }) => {
+    await revealAfterDudo(page, { assist: 'novice' });
+    for (const id of ['#gRevealSaid', '#gRevealDecision']) {
+      const sum = page.locator(`${id} summary`);
+      await expect(sum.locator('.dc-title')).toBeVisible();
+      await expect(sum.locator('.dc-sub')).toBeVisible();
+      const after = (el) => getComputedStyle(el, '::after').content;
+      expect(await sum.evaluate(after)).toContain('Показать');
+      await sum.click();
+      expect(await sum.evaluate(after)).toContain('Скрыть');
+      const marker = await sum.evaluate((el) => getComputedStyle(el).listStyleType);
+      expect(marker).toBe('none');                                                   // стандартный треугольник заменён своим значком
+    }
+  });
+
   test('вскрытие: «Кто что называл» и «Решение и результат» свёрнуты, раскрываются и останавливают таймер', async ({ page }) => {
     await revealAfterDudo(page, { assist: 'novice' });
     const said = page.locator('#gRevealSaid');
@@ -1227,6 +1263,30 @@ test.describe('Покерный стол в партии', () => {
     await page.locator('#gResultTasks').click();
     await expect(dlg).toHaveJSProperty('open', false);
     await expect(page.locator('#train')).toBeVisible();                          // открыт Тренажёр с первыми задачами
+  });
+
+  test('окно итогов: кольцо фокуса только при клавиатуре, строки счёта одного вида, ссылки первой партии в один ряд', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('perudo.device', JSON.stringify({ onboarding: { step: 'game', tasks: 0, done: false, skipped: false } }));
+    });
+    await loseWithBluff(page);
+    const dlg = page.locator('#gResultDialog');
+    await expect(dlg).toHaveJSProperty('open', true, { timeout: 10_000 });
+    const ring = () => page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle);
+    await expect(page.locator('#gResultTasks')).toBeFocused();
+    expect(await ring()).toBe('none');                                              // окно открылось само: двойной контур не показывается
+    await page.keyboard.press('Tab');
+    expect(await ring()).toBe('solid');                                             // клавиатура: кольцо видно
+    const rows = await page.locator('#gResultStand li').evaluateAll((lis) => lis.map((li) => {
+      const cs = getComputedStyle(li); const v = getComputedStyle(li.lastElementChild);
+      return { border: cs.borderTopWidth, weight: v.fontWeight, align: v.textAlign };
+    }));
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    for (const r of rows) expect(r).toEqual(rows[0]);                              // рамка, вес и выравнивание правой колонки у всех строк одинаковы
+    const again = await page.locator('#gResultAgain').boundingBox();
+    const view = await page.locator('#gResultView').boundingBox();
+    expect(Math.abs(again.y - view.y)).toBeLessThan(2);                              // «Сыграть ещё» и «Посмотреть стол» в одном ряду
   });
 
   test('окно итогов обычной партии: «Перейти к задачам» нет, главная «Сыграть ещё»', async ({ page }) => {

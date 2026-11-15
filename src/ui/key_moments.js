@@ -57,7 +57,7 @@ export function keyMomentsHtml(decisions, moments) {
     : '';
   if (!moments.length) return summary;
   const queue = getTrainingQueue();
-  return summary + `<details class="key-moments"><summary>Ключевые моменты (${moments.length})</summary>` +
+  return summary + `<details class="key-moments"><summary><span class="dc-title">Ключевые моменты (${moments.length})</span><span class="dc-sub">Решения партии, которые стоит разобрать</span></summary>` +
     `<p class="muted">Сравнение по шансу ставки, а не оценка выигрыша.</p>` +
     moments.map((m) => momentHtml(m, queue)).join('') + `</details>`;
 }

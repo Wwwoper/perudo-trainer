@@ -89,9 +89,8 @@ export function setupSidePanel(showOdds) {
   wide.addEventListener?.('change', (e) => { if (e.matches) close(); });
 
   sideApi.close = close;
-  // Режим «Игра» — без подсказок, поэтому по умолчанию журнал; иначе расчёт.
-  sideApi.pick = () => select(document.getElementById(
-    showOdds() ? 'tabCalc' : 'tabLog'));
+  // По умолчанию журнал: он понятнее новичку. Совет в «Расчёте» отмечен точкой на вкладке (см. syncCalcHint в app_v2.js).
+  sideApi.pick = () => select(document.getElementById('tabLog'));
   sideApi.select = (tabId) => {
     const tab = document.getElementById(tabId);
     if (tab) select(tab);

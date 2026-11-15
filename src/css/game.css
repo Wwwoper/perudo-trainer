@@ -528,6 +528,21 @@
   }
 }
 
+.side-tabs [role="tab"].has-hint[aria-selected="false"] {
+  position: relative;
+}
+
+.side-tabs [role="tab"].has-hint[aria-selected="false"]::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
 .side-tabs [role="tab"][aria-selected="true"] {
   background: var(--acc);
   color: var(--on-accent);
@@ -858,13 +873,23 @@
   justify-content: space-between;
   gap: var(--space-2);
   padding: 6px 10px;
+  border: 1px solid var(--line);
   border-radius: var(--radius-s);
   background: var(--surface-4);
   font-size: 14px;
 }
 
+.result-stand li > span:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Победитель отмечен золотой рамкой и жирным именем; правая колонка у всех строк одинаковая */
 .result-stand li.is-winner {
-  outline: 1px solid var(--gold);
+  border-color: var(--gold);
+}
+
+.result-stand li.is-winner > span:first-child {
   font-weight: 700;
 }
 
@@ -1036,13 +1061,56 @@
 }
 
 .reveal-more > summary {
-  display: flex;
-  align-items: center;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 6px 12px;
+}
+
+/* Раскрывающиеся блоки (подсказки вскрытия, ключевые моменты): видно, что это кнопка — заголовок, пояснение и «Показать ▾» справа */
+.reveal-more > summary,
+.key-moments > summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: var(--space-2);
+  list-style: none;
   cursor: pointer;
+}
+
+.reveal-more > summary::-webkit-details-marker,
+.key-moments > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dc-title {
   font-weight: 700;
+}
+
+.dc-sub {
+  grid-column: 1;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--mut);
+}
+
+.reveal-more > summary::after,
+.key-moments > summary::after {
+  content: 'Показать ▾';
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--acc);
+  white-space: nowrap;
+}
+
+.reveal-more[open] > summary::after,
+.key-moments[open] > summary::after {
+  content: 'Скрыть ▴';
+}
+
+.reveal-more > summary:hover,
+.key-moments > summary:hover {
+  background: var(--tint-faint);
 }
 
 .reveal-said {
@@ -1165,7 +1233,26 @@
   display: none;
 }
 
+/* Кольцо фокуса в окне итога показываем только при управлении с клавиатуры (класс kbd): иначе оно выглядит как залипшая вторая обводка */
+.result-dialog:not(.kbd) button:focus {
+  outline: none;
+}
+
+.result-card:focus {
+  outline: none;
+}
+
 /* Первая партия: «Перейти к задачам» главная, «Разобрать партию» второстепенная, остальное — текстовые действия */
+.result-dialog.is-first .result-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.result-dialog.is-first .result-actions #gResultTasks,
+.result-dialog.is-first .result-actions #gResultCalc {
+  grid-column: 1 / -1;
+}
+
 .result-dialog.is-first .result-actions #gResultTasks { order: 0; }
 .result-dialog.is-first .result-actions #gResultCalc { order: 1; }
 .result-dialog.is-first .result-actions #gResultAgain,
@@ -1188,6 +1275,10 @@
   .result-actions {
     flex-direction: row;
     flex-wrap: wrap;
+  }
+
+  .result-dialog.is-first .result-actions {
+    display: flex;
   }
 
   .result-actions button {
@@ -1394,11 +1485,7 @@
   border-top: 1px solid var(--line-soft);
 }
 .key-moments > summary {
-  display: flex;
-  align-items: center;
   min-height: var(--tap);
-  font-weight: 700;
-  cursor: pointer;
 }
 .key-moments-summary {
   margin: 4px 0;
