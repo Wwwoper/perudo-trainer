@@ -400,8 +400,12 @@
   padding: 0;
 }
 .trainer-option {
-  padding: 4px 0 4px 10px;
-  line-height: 1.7;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem 4.5rem;   /* вариант | чип | вероятность */
+  align-items: center;
+  column-gap: 10px;
+  padding: 6px 8px 6px 10px;
+  line-height: 1.4;
   border-left: 3px solid transparent;
 }
 .trainer-option.is-chosen {
@@ -409,11 +413,25 @@
   background: var(--tint-soft);
 }
 .trainer-option-name {
-  display: inline-block;
-  margin-right: 6px;
+  min-width: 0;
+}
+.trainer-option-what {
+  display: block;
+  color: var(--mut);
+  font-size: 13px;
+}
+.trainer-option-chip {
+  display: flex;
+  justify-content: center;
+}
+.trainer-option-chip .chip {
+  box-sizing: border-box;
+  width: 100%;
+  justify-content: center;
 }
 .trainer-option-chance {
-  color: var(--mut);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .trainer-option-mark {
   color: var(--acc);

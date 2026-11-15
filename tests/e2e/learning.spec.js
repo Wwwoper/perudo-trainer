@@ -521,7 +521,7 @@ test.describe('Учебные вкладки', () => {
       await expect(rows.first()).toContainText('Не верю');
       await expect(rows.first()).toHaveClass(/is-chosen/);
       await expect(rows.first()).toContainText('ваш выбор');
-      await expect(rows.first()).toContainText('проверка сработает:');
+      await expect(rows.first()).toContainText('проверка сработает');
       await expect(page.locator('#tFb .trainer-option.is-chosen')).toHaveCount(1);
       await expect(page.locator('#tFb')).toContainText('Варианты по шансу');
     });

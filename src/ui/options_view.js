@@ -10,15 +10,17 @@ import { optionsNote } from '../trainer_text.js';
  */
 export function optionsHtml(options, threshold, fmt = pct) {
   const rows = options.map((o) => {
-    const bid = o.type === 'dudo' ? '' : ` ${renderBid(o.q, o.f, 'xs')}`;
+    const chip = o.type === 'dudo' ? '' : renderBid(o.q, o.f, 'xs');
     const name = o.type === 'dudo' ? 'Не верю'
       : o.type === 'safeRaise' ? 'Самая сильная безопасная'
         : `Минимальное повышение${o.isBestSafe ? ' (она же самая сильная безопасная)' : ''}`;
-    const what = o.type === 'dudo' ? 'проверка сработает:' : 'ставка верна:';
+    const what = o.type === 'dudo' ? 'проверка сработает' : 'ставка верна';
+    // три колонки: вариант | чип | вероятность; пояснения — второй строкой под названием
     return `<li class="trainer-option${o.chosen ? ' is-chosen' : ''}">` +
-      `<span class="trainer-option-name">${o.meetsThreshold ? '✓ ' : ''}${name}${bid}</span> ` +
-      `<span class="trainer-option-chance">${what} <b>${fmt(o.success)}</b></span>` +
-      `${o.chosen ? ' <span class="trainer-option-mark">← ваш выбор</span>' : ''}</li>`;
+      `<span class="trainer-option-name">${o.meetsThreshold ? '✓ ' : ''}${name}` +
+      `<small class="trainer-option-what">${what}${o.chosen ? ' <span class="trainer-option-mark">← ваш выбор</span>' : ''}</small></span>` +
+      `<span class="trainer-option-chip">${chip}</span>` +
+      `<span class="trainer-option-chance"><b>${fmt(o.success)}</b></span></li>`;
   }).join('');
   const note = optionsNote(options);
   return `<p class="muted">Варианты по шансу · ✓ = порог ${fmt(threshold)}</p>` +

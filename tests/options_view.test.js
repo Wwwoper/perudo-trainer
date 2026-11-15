@@ -14,8 +14,8 @@ describe('optionsHtml', () => {
     const h = optionsHtml([dudo, min, safe], 0.5);
     assert.equal((h.match(/<li /g) || []).length, 3);
     assert.match(h, /Варианты по шансу · ✓ = порог 50\.0%/);
-    assert.match(h, /проверка сработает: <b>30\.0%<\/b>/);
-    assert.match(h, /ставка верна: <b>80\.0%<\/b>/);
+    assert.match(h, /проверка сработает[^]*?<span class="trainer-option-chance"><b>30\.0%<\/b>/);
+    assert.match(h, /ставка верна[^]*?<span class="trainer-option-chance"><b>80\.0%<\/b>/);
   });
   it('галочка только у вариантов, проходящих порог', () => {
     const h = optionsHtml([dudo, min], 0.5);
@@ -44,6 +44,13 @@ describe('optionsHtml', () => {
   it('есть безопасное повышение — подсказки нет', () => {
     const h = optionsHtml([dudo, safe], 0.5);
     assert.ok(!h.includes('Безопасных повышений') && !h.includes('Ни один ход'));
+  });
+  it('колонки: вариант | чип | вероятность; у «Не верю» колонка чипа пустая, чипа нет внутри названия', () => {
+    const h = optionsHtml([dudo, min], 0.5);
+    const [d, m] = h.split('<li ').slice(1);
+    assert.match(d, /<span class="trainer-option-chip"><\/span>/);
+    assert.match(m, /<span class="trainer-option-chip"><span class="chip xs">2/);
+    assert.ok(!m.slice(0, m.indexOf('trainer-option-chip')).includes('class="chip'));   // чип не внутри названия
   });
   it('пустой список не падает', () => {
     assert.match(optionsHtml([], 0.5), /<ul class="trainer-options"><\/ul>/);

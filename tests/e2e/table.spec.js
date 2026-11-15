@@ -1424,6 +1424,31 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gResultCard .key-moment')).toHaveCount(1, { timeout: 10_000 });
   }
 
+  test('разбор в итоге: варианты в колонках «вариант | чип | вероятность», проценты выровнены вправо; фон карточки без кремового тона', async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await loseByWrongDudo(page);
+    await page.evaluate(() => { document.querySelector('#gResultDialog')?.close?.(); });
+    await openTab(page, 'tabLog');
+    const card = page.locator('#gResultCard');
+    await card.locator('.key-moments > summary').click();
+    const rows = card.locator('.key-moment .trainer-option');
+    await expect(rows.first()).toBeVisible();
+    const cols = await rows.evaluateAll((els) => els.map((e) => {
+      const c = e.querySelector('.trainer-option-chance').getBoundingClientRect();
+      const n = e.querySelector('.trainer-option-name').getBoundingClientRect();
+      const ch = e.querySelector('.trainer-option-chip').getBoundingClientRect();
+      return { right: Math.round(c.right), nx: Math.round(n.x), chipx: Math.round(ch.x), align: getComputedStyle(e.querySelector('.trainer-option-chance')).textAlign };
+    }));
+    expect(cols.length).toBeGreaterThanOrEqual(2);
+    for (const c of cols) {
+      expect(c.right).toBe(cols[0].right);                                             // проценты в одной правой колонке
+      expect(c.chipx).toBe(cols[0].chipx);                                             // чипы в одной колонке
+      expect(c.nx).toBe(cols[0].nx);
+      expect(c.align).toBe('right');
+    }
+    expect(await card.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  });
+
   test('итог партии: «Добавить в очередь повторов» только записывает ситуацию (без дублей), итог остаётся открытым', async ({ page }) => {
     await page.evaluate(() => localStorage.clear());
     await loseByWrongDudo(page);

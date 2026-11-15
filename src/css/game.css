@@ -848,9 +848,9 @@
 .result-card {
   margin-bottom: var(--space-3);
   padding: var(--space-3);
-  border: 1px solid var(--gold-a35);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-m);
-  background: var(--gold-bg-2);
+  background: transparent;   /* общий фон окна, без отдельного кремового тона */
 }
 
 .result-card p {
@@ -1513,6 +1513,9 @@
 }
 .key-moment p {
   margin: 4px 0;
+}
+.key-moment p .chip {
+  vertical-align: middle;   /* чип в строке текста не рвёт базовую линию */
 }
 .key-moment-replay {
   width: 100%;
