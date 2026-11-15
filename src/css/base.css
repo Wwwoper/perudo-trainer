@@ -10,6 +10,18 @@
   --radius-l: 16px;
   --tap: 44px;
 
+  /* Шкала размеров текста. Размер шрифта пишется только через эти токены (проверяет tests/css.test.js);
+     относительные значения (%, em, calc от переменной) допустимы там, где размер зависит от контекста. */
+  --fs-caption: 12px;   /* подписи, мелкие метки */
+  --fs-small: 13px;     /* вторичный текст, подсказки */
+  --fs-ui: 14px;        /* компактный интерфейс: вкладки, малые кнопки */
+  --fs-body: 16px;      /* основной текст, кнопки, поля */
+  --fs-lead: 18px;      /* вопросы, подзаголовки */
+  --fs-title: 20px;     /* заголовки окон и блоков */
+  --fs-number: 28px;    /* крупные числа и значки */
+  --fs-display: 36px;
+  --fs-hero: 48px;
+
   /* Правая колонка (панель ставки, панель партии): общая ширина и верхняя точка.
      68px = отступ страницы 16 + шапка 40 + зазор 12. Высота колонки считается от этой точки. */
   --dock-w: 360px;
@@ -40,7 +52,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font: 16px system-ui, sans-serif;
+  font: var(--fs-body) system-ui, sans-serif;
 }
 
 main {
@@ -59,7 +71,7 @@ main {
 
 .app-header h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--fs-title);
   white-space: nowrap;
 }
 
@@ -224,7 +236,7 @@ button:disabled {
 
 label {
   color: var(--mut);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .chip {
@@ -236,12 +248,12 @@ label {
   border-radius: 10px;
   padding: 3px 10px 3px 12px;
   font-weight: 700;
-  font-size: 20px;
+  font-size: var(--fs-title);
   white-space: nowrap;
 }
 
 .chip.xl {
-  font-size: 30px;
+  font-size: var(--fs-number);
   padding: 6px 16px;
 }
 
@@ -252,7 +264,7 @@ label {
 }
 
 .chip.lg {
-  font-size: 22px;
+  font-size: var(--fs-title);
   padding: 2px 10px 2px 12px;
 }
 
@@ -263,7 +275,7 @@ label {
 }
 
 .chip.xs {
-  font-size: 13px;
+  font-size: var(--fs-small);
   padding: 0 6px 0 8px;
   gap: 4px;
   border-radius: 8px;
@@ -330,7 +342,7 @@ tr.dead td {
 }
 
 .big {
-  font-size: 20px;
+  font-size: var(--fs-title);
   font-weight: 700;
 }
 
@@ -371,7 +383,7 @@ small {
   background: var(--surface-3);
   border-radius: 6px;
   color: var(--mut);
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 
 .log-row {
@@ -384,7 +396,7 @@ small {
 }
 
 .log-row .chip {
-  font-size: 16px;
+  font-size: var(--fs-body);
   padding: 1px 8px 1px 10px;
 }
 
@@ -438,7 +450,7 @@ small {
 
 .log-row.log-result {
   color: var(--mut);
-  font-size: 14px;
+  font-size: var(--fs-ui);
   padding: 2px 2px 6px 11px;
   border-left: 3px solid var(--bad);
   margin: 0 0 4px;
@@ -447,7 +459,7 @@ small {
 .log-row.log-loss,
 .log-row.log-gain {
   color: var(--mut);
-  font-size: 14px;
+  font-size: var(--fs-ui);
   padding-left: 10px;
 }
 
@@ -528,7 +540,7 @@ small {
 }
 
 .review-row .chip {
-  font-size: 15px;
+  font-size: var(--fs-body);
   padding: 1px 6px 1px 8px;
 }
 

@@ -164,3 +164,40 @@ test('themes.css подключён первым среди стилей', () =>
   const hrefs = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map((m) => m[1]);
   assert.equal(hrefs[0], 'src/css/themes.css');
 });
+
+// ---------- Шкала размеров текста (волна 15) ----------
+
+const FS_TOKENS = [...stripComments(read('src/css/base.css')).matchAll(/--(fs-[a-z]+)\s*:\s*(\d+)px/g)].map((m) => ({ name: m[1], px: +m[2] }));
+
+test('шкала размеров текста определена в base.css: девять ступеней по возрастанию', () => {
+  assert.equal(FS_TOKENS.length, 9);
+  const px = FS_TOKENS.map((t) => t.px);
+  assert.deepEqual(px, [...px].sort((a, b) => a - b));
+  assert.equal(new Set(px).size, px.length);
+});
+
+test('font-size пишется только токеном --fs-* или относительным значением, не числом в px', () => {
+  for (const f of cssFiles) {
+    for (const m of stripComments(read(f)).matchAll(/font-size\s*:\s*([^;}]+)/g)) {
+      const v = m[1].trim();
+      const ok = /^var\(--fs-[a-z]+\)$/.test(v) || /^\d+(\.\d+)?(%|em|rem)$/.test(v) || /^calc\(var\(--[a-z-]+\)\s*[*/]\s*[\d.]+\)$/.test(v) || v === 'inherit';
+      assert.ok(ok, `${f}: font-size: ${v} — используйте токен --fs-*`);
+    }
+  }
+});
+
+test('в font-шорткате размер тоже через токен, и каждый токен --fs-* определён', () => {
+  const defined = new Set(FS_TOKENS.map((t) => `--${t.name}`));
+  for (const f of cssFiles) {
+    const css = stripComments(read(f));
+    for (const m of css.matchAll(/font\s*:\s*(?!inherit)([^;}]+)/g)) {
+      assert.ok(!/\b\d+px\b/.test(m[1]), `${f}: font: ${m[1].trim()} — размер через токен`);
+    }
+    for (const m of css.matchAll(/var\((--fs-[a-z]+)\)/g)) assert.ok(defined.has(m[1]), `${f}: нет токена ${m[1]}`);
+  }
+});
+
+test('каждый токен шкалы текста где-то используется', () => {
+  const css = cssFiles.map((f) => stripComments(read(f))).join('\n');
+  for (const t of FS_TOKENS) assert.ok(css.includes(`var(--${t.name})`), `токен --${t.name} не используется`);
+});

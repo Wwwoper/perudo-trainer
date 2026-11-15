@@ -19,7 +19,7 @@
 
   .drill-tab {
     padding: 0 2px;
-    font-size: 12px;
+    font-size: var(--fs-caption);
   }
 }
 
@@ -32,7 +32,7 @@
   background: var(--surface-1);
   border-radius: 8px;
   margin-bottom: 14px;
-  font-size: 14px;
+  font-size: var(--fs-ui);
   line-height: 1.5;
 }
 
@@ -46,7 +46,7 @@
 .drill-label {
   display: block;
   color: var(--mut);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: .04em;
   margin: 12px 0 4px;
@@ -57,7 +57,7 @@
   width: 100%;
   min-height: var(--tap);
   padding: 12px 14px;
-  font-size: 18px;
+  font-size: var(--fs-lead);
   text-align: center;
   border-radius: 10px;
   background: var(--surface-1);
@@ -75,7 +75,7 @@
 /* Свёрнутая формула */
 .drill-hint {
   margin-top: 12px;
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 
 .drill-hint>summary {
@@ -131,7 +131,7 @@
   padding: 10px 12px;
   border-radius: 8px;
   background: var(--surface-1);
-  font-size: 14px;
+  font-size: var(--fs-ui);
   line-height: 1.45;
 }
 
@@ -157,7 +157,7 @@
 
   .drill-input {
     padding: 12px;
-    font-size: 20px;
+    font-size: var(--fs-title);
   }
 
   .drill-question {
@@ -182,7 +182,7 @@
 .read-task,
 .read-empty {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: var(--fs-small);
   line-height: 1.45;
 }
 
@@ -202,7 +202,7 @@
   padding: 4px 10px;
   border-radius: 8px;
   background: var(--surface-1);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .read-bid.is-me {
@@ -223,7 +223,7 @@
 
 .read-bid-act {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-caption);
 }
 
 .read-bid.is-asked {
@@ -237,7 +237,7 @@
   border-radius: 999px;
   background: var(--acc);
   color: var(--on-accent);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 600;
 }
 
@@ -255,19 +255,19 @@
   flex-wrap: wrap;
   gap: 6px;
   margin: 0 0 2px;
-  font-size: 17px;
+  font-size: var(--fs-lead);
   font-weight: 700;
   line-height: 1.3;
 }
 
 .read-q-bid {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 
 .read-how {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: var(--fs-small);
   line-height: 1.45;
 }
 
@@ -301,7 +301,7 @@
   padding: 6px 10px;
   border-radius: 8px;
   background: var(--surface-1);
-  font-size: 13px;
+  font-size: var(--fs-small);
   line-height: 1.5;
 }
 
@@ -310,7 +310,7 @@
   align-items: center;
   gap: 8px;
   min-height: var(--tap);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .read-prior {
@@ -352,7 +352,7 @@
 
 .read-yn-btn {
   min-height: var(--tap);
-  font-size: 16px;
+  font-size: var(--fs-body);
   font-weight: 600;
 }
 
@@ -362,7 +362,7 @@
 
 .read-hint {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 
 .read-series {
@@ -400,7 +400,7 @@
   padding: 6px 10px;
   border-radius: 8px;
   background: var(--surface-2);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .read-q-verdict {
@@ -411,7 +411,7 @@
 /* Ступени упражнений: подсказка над полями ответа, пока у игрока мало попыток */
 .drill-scaffold {
   margin: var(--space-1) 0 var(--space-2);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .drill-scaffold[hidden] {
@@ -487,7 +487,7 @@
   height: 22px;
   border: 2px solid var(--line);
   border-radius: 50%;
-  font-size: 13px;
+  font-size: var(--fs-small);
   line-height: 1;
 }
 
@@ -579,7 +579,7 @@
 
 .quiz-q {
   margin: 8px 0;
-  font-size: 17px;
+  font-size: var(--fs-lead);
   font-weight: 600;
 }
 
@@ -594,7 +594,7 @@
 }
 
 .quiz-table-no {
-  font-size: 20px;
+  font-size: var(--fs-title);
   font-weight: 700;
 }
 
@@ -615,7 +615,7 @@
 }
 
 .quiz-hands-title {
-  font-size: 13px;
+  font-size: var(--fs-small);
   font-weight: 600;
 }
 
@@ -640,7 +640,7 @@
 
 .quiz-call {
   min-height: 48px;
-  font-size: 16px;
+  font-size: var(--fs-body);
 }
 
 .quiz-why {
@@ -678,7 +678,7 @@
   border-radius: 999px;
   background: var(--surface-2);
   color: var(--mut);
-  font-size: 13px;
+  font-size: var(--fs-small);
   line-height: 1.3;
 }
 
@@ -687,13 +687,13 @@
 }
 
 .quiz-hint-i {
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
 }
 
 .quiz-legend {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: var(--fs-small);
   color: var(--mut);
 }
 
@@ -749,7 +749,7 @@
 .quiz-plus {
   min-height: var(--tap-lg);
   min-width: var(--tap-lg);
-  font-size: 18px;
+  font-size: var(--fs-lead);
   font-weight: 600;
 }
 
@@ -768,7 +768,7 @@
 .quiz-num {
   min-width: 56px;
   text-align: center;
-  font-size: 32px;
+  font-size: var(--fs-number);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -791,7 +791,7 @@
 }
 
 .quiz-end-text {
-  font-size: 18px;
+  font-size: var(--fs-lead);
   font-weight: 600;
 }
 
@@ -810,7 +810,7 @@
   width: 100%;
   min-height: var(--tap-lg);
   margin-top: 12px;
-  font-size: 18px;
+  font-size: var(--fs-lead);
 }
 
 .quiz-resume {
@@ -841,7 +841,7 @@
 
 .quiz-start-title {
   margin: 0 0 8px;
-  font-size: 22px;
+  font-size: var(--fs-title);
 }
 
 .quiz-facts {
@@ -857,7 +857,7 @@
   padding: 4px 12px;
   border-radius: 999px;
   background: var(--surface-2);
-  font-size: 14px;
+  font-size: var(--fs-ui);
   font-weight: 600;
 }
 
@@ -913,7 +913,7 @@
   padding: 2px 10px;
   border-radius: 999px;
   background: var(--surface-2);
-  font-size: 14px;
+  font-size: var(--fs-ui);
   white-space: nowrap;
 }
 
@@ -945,7 +945,7 @@
 
 .quiz-kind-note {
   grid-column: 1 / -1;
-  font-size: 12px;
+  font-size: var(--fs-caption);
 }
 
 /* У «Серии» своя панель: нижний блок «Проверить / Новое» скрыт */

@@ -64,6 +64,12 @@
       <p style="margin:0"><b class="text-bad">Не верю!</b> · <b class="warn">Calza!</b> · <span class="c0">Вы</span> · <span class="c1">Бот</span> · <span class="c2">Бот</span></p></div>
   </section>
 
+  <section class="dx-sec" id="dx-scale">
+    <h2>Шкала размеров текста</h2>
+    <p class="dx-why">Девять токенов <code>--fs-*</code> в base.css. Размер шрифта в стилях пишется только через них; число в px тест не пропустит.</p>
+    <div class="dx-cell" id="dxScale"></div>
+  </section>
+
   <section class="dx-sec" id="dx-buttons">
     <h2>Кнопки и управляющие элементы</h2>
     <p class="dx-why">Сгруппировано по типу взаимодействия: сравнивайте элементы внутри группы.</p>
@@ -199,6 +205,19 @@
   });
   const TOKENS = ['bg', 'card', 'fg', 'mut', 'acc', 'on-accent', 'ok', 'warn', 'bad', 'bad-text', 'surface-1', 'surface-2', 'surface-3',
     'surface-4', 'line', 'line-2', 'line-soft', 'tint-soft', 'tint-faint', 'selected', 'info-bg', 'ok-bg', 'warn-bg', 'bad-bg', 'gold'];
+  const SCALE = [['caption', 'подписи, мелкие метки'], ['small', 'вторичный текст, подсказки'], ['ui', 'компактный интерфейс: вкладки'],
+    ['body', 'основной текст, кнопки, поля'], ['lead', 'вопросы, подзаголовки'], ['title', 'заголовки окон и блоков'],
+    ['number', 'крупные числа и значки'], ['display', 'крупный показатель'], ['hero', 'главный показатель']];
+  const scale = document.getElementById('dxScale');
+  for (const [name, role] of SCALE) {
+    const row = document.createElement('div');
+    row.style.fontSize = `var(--fs-${name})`;
+    row.textContent = `Перудо 3×5 · ${role}`;
+    const cap = document.createElement('span');
+    cap.className = 'dx-cap';
+    cap.textContent = `--fs-${name} · ${getComputedStyle(root).getPropertyValue(`--fs-${name}`).trim()}`;
+    scale.append(cap, row);
+  }
   const box = document.getElementById('dxSwatches');
   for (const t of TOKENS) {
     const d = document.createElement('div');

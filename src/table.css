@@ -121,14 +121,14 @@
 
 .table-bid-empty {
   color: var(--table-text-mut);
-  font-size: 15px;
+  font-size: var(--fs-body);
 }
 
 .bid-by {
   display: block;
   margin-top: 6px;
   color: var(--table-text-mut-2);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 500;
 }
 
@@ -137,7 +137,7 @@
   border-radius: 4px;
   background: var(--gold-chip);
   color: var(--gold-chip-fg);
-  font-size: 10px;
+  font-size: var(--fs-caption);
   font-weight: 900;
 }
 
@@ -190,7 +190,7 @@
 }
 
 .seat-crown {
-  font-size: 12px;
+  font-size: var(--fs-caption);
 }
 
 .seat.eliminated {
@@ -245,7 +245,7 @@
   border-radius: 50%;
   background: var(--die-face);
   box-shadow: 0 1px 4px var(--black-a35);
-  font-size: 11px;
+  font-size: var(--fs-caption);
   line-height: 1;
 }
 
@@ -259,7 +259,7 @@
 
 .seat-name {
   overflow: hidden;
-  font-size: 13px;
+  font-size: var(--fs-small);
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -270,7 +270,7 @@
   align-items: center;
   gap: 6px;
   color: var(--table-text-mut-3);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   white-space: nowrap;
 }
 
@@ -293,14 +293,14 @@
   }
 
   .seat-name {
-    font-size: 11px;
+    font-size: var(--fs-caption);
   }
 
   .seat-meta {
     flex-wrap: wrap;
     justify-content: center;
     gap: 2px 4px;
-    font-size: 11px;
+    font-size: var(--fs-caption);
   }
 
   .table-felt {

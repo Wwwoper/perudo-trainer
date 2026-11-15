@@ -26,7 +26,7 @@ test('все классы образца определены в стилях п
 });
 
 test('в образце есть все разделы: текст, кнопки, поля, чипы, карточки, строки, цвета', () => {
-  for (const id of ['dx-type', 'dx-buttons', 'dx-fields', 'dx-chips', 'dx-cards', 'dx-rows', 'dx-colors']) {
+  for (const id of ['dx-type', 'dx-scale', 'dx-buttons', 'dx-fields', 'dx-chips', 'dx-cards', 'dx-rows', 'dx-colors']) {
     assert.ok(page.includes(`id="${id}"`), `нет раздела ${id}`);
   }
 });
@@ -58,4 +58,11 @@ test('у состояний «выбран / недоступен» пары п�
   for (const frag of ['class="drill-tab on"', 'aria-selected="true"', 'class="face-btn sel"', 'class="mode-btn is-on"', 'class="btn-primary" disabled', 'class="bad" disabled']) {
     assert.ok(page.includes(frag), `нет состояния ${frag}`);
   }
+});
+
+test('образец показывает все ступени шкалы текста из base.css', () => {
+  const base = readFileSync(join(ROOT, 'src/css/base.css'), 'utf8');
+  const names = [...base.matchAll(/--fs-([a-z]+)\s*:\s*\d+px/g)].map((m) => m[1]);
+  const shown = [...page.matchAll(/\['([a-z]+)',\s*'[^']+'\]/g)].map((m) => m[1]);
+  for (const n of names) assert.ok(shown.includes(n), `в образце нет ступени --fs-${n}`);
 });

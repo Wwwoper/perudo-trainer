@@ -35,7 +35,7 @@
 
 .setup-title {
   margin: 0 0 var(--space-1);
-  font-size: 22px;
+  font-size: var(--fs-title);
 }
 
 .setup-head .muted {
@@ -134,12 +134,12 @@
 }
 
 .hud-status .big {
-  font-size: 18px;
+  font-size: var(--fs-lead);
   line-height: 1.2;
 }
 
 .hud-status .muted {
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 
 .hud-actions {
@@ -153,14 +153,14 @@
   padding: 0 10px;
   display: inline-grid;
   place-items: center;
-  font-size: 18px;
+  font-size: var(--fs-lead);
 }
 
 .icon-btn-text {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--fs-ui);
   font-weight: 700;
 }
 
@@ -173,11 +173,11 @@
   min-height: 24px;
   padding: 0 var(--space-2);
   color: var(--mut);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .game-ticker .chip {
-  font-size: 14px;
+  font-size: var(--fs-ui);
   padding: 0 6px 0 8px;
 }
 
@@ -216,7 +216,7 @@
 
 .dock-label {
   color: var(--mut);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: .04em;
 }
@@ -236,7 +236,7 @@
 .stepper button {
   min-height: var(--tap-lg);
   padding: 0;
-  font-size: 22px;
+  font-size: var(--fs-title);
 }
 
 .stepper button:first-child {
@@ -253,7 +253,7 @@
   padding: 0;
   border-radius: 0;
   text-align: center;
-  font-size: 20px;
+  font-size: var(--fs-title);
   font-weight: 700;
   -moz-appearance: textfield;
   appearance: textfield;
@@ -288,7 +288,7 @@
 
 .dock-error {
   color: var(--bad);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .dock-buttons {
@@ -319,7 +319,7 @@
 
 .btn-sub {
   opacity: .8;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 500;
 }
 
@@ -632,7 +632,7 @@
 .set-label {
   margin: 0 0 var(--space-2);
   color: var(--fg);
-  font-size: 12px;
+  font-size: var(--fs-caption);
   font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -669,7 +669,7 @@
 
 .rule-text {
   color: var(--mut);
-  font-size: 13px;
+  font-size: var(--fs-small);
   line-height: 1.4;
 }
 
@@ -684,7 +684,7 @@
   display: flex;
   align-items: center;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .help-more > summary::after {
@@ -699,7 +699,7 @@
 .help-list {
   margin: 0;
   padding-left: var(--space-4);
-  font-size: 13px;
+  font-size: var(--fs-small);
   line-height: 1.5;
 }
 
@@ -732,7 +732,7 @@
   border: 0;
   background: none;
   color: var(--mut);
-  font-size: 14px;
+  font-size: var(--fs-ui);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -780,7 +780,7 @@
 }
 
 .result-banner-text b {
-  font-size: 18px;
+  font-size: var(--fs-lead);
   line-height: 1.25;
 }
 
@@ -824,7 +824,7 @@
 }
 
 .result-card table {
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 
 .result-card td,
@@ -849,7 +849,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-s);
   background: var(--surface-4);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .result-stand li > span:last-child {
@@ -890,7 +890,7 @@
 
 .reveal-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--fs-title);
   line-height: 1.25;
 }
 
@@ -917,7 +917,7 @@
   padding: 6px 10px;
   border-radius: var(--radius-s);
   background: var(--surface-4);
-  font-size: 14px;
+  font-size: var(--fs-ui);
 }
 
 .reveal-row.is-loser {
@@ -934,7 +934,7 @@
 .reveal-name small {
   display: block;
   color: var(--mut);
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 400;
 }
 
@@ -966,7 +966,7 @@
 
 .reveal-verdict {
   margin: 0 0 2px;
-  font-size: 18px;
+  font-size: var(--fs-lead);
   font-weight: 800;
 }
 
@@ -1060,7 +1060,7 @@
 
 .dc-sub {
   grid-column: 1;
-  font-size: 13px;
+  font-size: var(--fs-small);
   font-weight: 400;
   color: var(--mut);
 }
@@ -1070,7 +1070,7 @@
   content: 'Показать ▾';
   grid-column: 2;
   grid-row: 1 / span 2;
-  font-size: 13px;
+  font-size: var(--fs-small);
   font-weight: 600;
   color: var(--acc);
   white-space: nowrap;
@@ -1099,7 +1099,7 @@
   align-items: baseline;
   padding: 6px 0;
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 
 .said-who {
@@ -1114,7 +1114,7 @@
 .said-tag {
   padding: 0 6px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 700;
   background: var(--info-bg-2);
   color: var(--info-fg);
@@ -1134,7 +1134,7 @@
 .reveal-decision {
   margin: 0;
   padding: 6px 12px 10px;
-  font-size: 12px;
+  font-size: var(--fs-caption);
   line-height: 1.45;
 }
 
@@ -1180,13 +1180,13 @@
 }
 
 .result-icon {
-  font-size: 48px;
+  font-size: var(--fs-hero);
   line-height: 1.1;
 }
 
 .result-dialog h2 {
   margin: 4px 0;
-  font-size: 24px;
+  font-size: var(--fs-title);
   line-height: 1.2;
 }
 
@@ -1487,7 +1487,7 @@
   width: 100%;
   min-height: var(--tap);
   margin-top: var(--space-2);
-  font-size: 16px;
+  font-size: var(--fs-body);
 }
 
 /* Итог партии: напоминание про резервную копию */
@@ -1506,7 +1506,7 @@
 }
 .backup-reminder-actions button {
   min-height: var(--tap);
-  font-size: 16px;
+  font-size: var(--fs-body);
 }
 
 
@@ -1540,13 +1540,13 @@
 
 .opp-style {
   color: var(--mut);
-  font-size: 13px;
+  font-size: var(--fs-small);
 }
 
 .opp-lines {
   margin: 4px 0 0;
   padding-left: 18px;
-  font-size: 14px;
+  font-size: var(--fs-ui);
   line-height: 1.45;
 }
 
@@ -1593,7 +1593,7 @@
 
 .chart-tick {
   fill: var(--mut);
-  font-size: 10px;
+  font-size: var(--fs-caption);
 }
 
 .chart-line {
@@ -1607,7 +1607,7 @@
 }
 
 .chart-name {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   stroke: none;
 }
 
