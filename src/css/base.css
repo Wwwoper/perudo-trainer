@@ -344,8 +344,6 @@ small {
   border-radius: 6px;
   color: var(--mut);
   font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: .04em;
 }
 
 .log-row {
@@ -362,11 +360,60 @@ small {
   padding: 1px 8px 1px 10px;
 }
 
-.log-row.dudo {
-  background: var(--bad-bg-2);
-  border-radius: 6px;
-  padding: 6px 8px;
-  margin: 3px 0;
+/* Строка ставки и вызова: имя | чип | пометка в трёх колонках, чип одной ширины при любом числе точек */
+.log-row:has(> .log-name) {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 7rem) 5rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  flex-wrap: nowrap;
+  border-left: 3px solid transparent;   /* место под полосу вызова: колонки не сдвигаются */
+  padding-left: 8px;
+}
+
+.log-name {
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.log-chip {
+  display: flex;
+  justify-content: center;
+}
+
+.log-chip .chip {
+  box-sizing: border-box;
+  width: 100%;
+  justify-content: center;
+}
+
+.log-note {
+  font-weight: 600;
+}
+
+/* Вызов: цветная полоса слева, без отдельного розового блока; итог проверки отдельной строкой ниже */
+.log-row.dudo,
+.log-row.calza {
+  border-left-color: var(--bad);
+  margin: 3px 0 0;
+  border-bottom: 0;
+}
+
+.log-row.calza {
+  border-left-color: var(--warn);
+}
+
+.log-row.calza + .log-row.log-result {
+  border-left-color: var(--warn);
+}
+
+.log-row.log-result {
+  color: var(--mut);
+  font-size: 14px;
+  padding: 2px 2px 6px 11px;
+  border-left: 3px solid var(--bad);
+  margin: 0 0 4px;
 }
 
 .log-row.log-loss,

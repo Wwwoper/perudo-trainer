@@ -185,6 +185,13 @@
   min-width: 0;
 }
 
+.game-ticker .log-name,
+.game-ticker .log-chip,
+.game-ticker .log-note {
+  display: inline-block;
+  margin-right: 6px;
+}
+
 /* ===== Панель действий ===== */
 .action-dock {
   display: grid;

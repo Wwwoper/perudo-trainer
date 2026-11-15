@@ -532,6 +532,52 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gHistory')).toContainText(/Проверка/i);
   });
 
+  test('журнал: имя, чип и пометка в колонках; «Не верю!» одной строкой с полосой, итог отдельной строкой', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 2 });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2]);
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
+    await page.locator('#gRaise').click();
+    await waitBotBid(page);
+    await page.locator('#gDudo').click();
+    await openTab(page, 'tabLog');
+    const rows = page.locator('#gHistory .log-row:has(> .log-name)');
+    await expect.poll(() => rows.count()).toBeGreaterThanOrEqual(3);
+    const boxes = await rows.evaluateAll((els) => els.map((e) => {
+      const n = e.querySelector('.log-name').getBoundingClientRect();
+      const c = e.querySelector('.log-chip .chip').getBoundingClientRect();
+      return { nx: Math.round(n.x), cx: Math.round(c.x), cw: Math.round(c.width) };
+    }));
+    for (const b of boxes) {                                                          // колонки не «пляшут»
+      expect(b.cx).toBe(boxes[0].cx);
+      expect(b.cw).toBe(boxes[0].cw);
+      expect(b.nx).toBe(boxes[0].nx);
+    }
+    const dudo = page.locator('#gHistory .log-row.dudo').first();
+    await expect(dudo.locator('.log-note')).toHaveText('Не верю!');
+    expect(await dudo.evaluate((e) => getComputedStyle(e).borderLeftStyle)).toBe('solid');
+    expect(await dudo.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgba(0, 0, 0, 0)');  // без розового блока
+    expect(await dudo.innerText()).not.toMatch(/[()]/);                                // без скобок вокруг чипа
+    await expect(page.locator('#gHistory .log-row.log-result').first()).toContainText('Проверка: на столе');
+  });
+
+  test('журнал: заголовок раунда обычным регистром и без украшающих тире', async ({ page }) => {
+    await startGame(page, { bots: 1, dice: 2 });
+    await waitMyTurn(page);
+    await rigBots(page, [2, 2]);
+    await setQuantity(page, 1);
+    await page.locator('#gPick button').nth(1).click();
+    await page.locator('#gRaise').click();
+    await waitBotBid(page);
+    await page.locator('#gDudo').click();
+    await openTab(page, 'tabLog');
+    const head = page.locator('#gHistory .round-head').first();
+    await expect(head).toContainText(/Раунд \d/);
+    expect(await head.evaluate((e) => getComputedStyle(e).textTransform)).toBe('none');
+    expect(await head.innerText()).not.toContain('—');
+  });
+
   test('вскрытие кубиков: окно показывается после «Не верю» и закрывается', async ({ page }) => {
     await startGame(page, { bots: 1, dice: 2, reveal: true });
     await waitMyTurn(page);

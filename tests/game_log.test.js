@@ -1,7 +1,7 @@
 // game_log.test.js — строки журнала по событиям движка.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { describeRoundEvents } from '../src/game_log.js';
+import { describeRoundEvents, logRowHtml, noteHtml, checkText, roundHeadText } from '../src/game_log.js';
 import { createGame, startGame, applyAction } from '../src/engine.js';
 
 const players = [
@@ -61,5 +61,34 @@ describe('с настоящим движком', () => {
     const elim = lines.find((l) => l.type === 'elim');
     assert.ok(elim, JSON.stringify(lines));
     assert.match(elim.text, /выбыва/);
+  });
+});
+
+describe('строки журнала: единый шаблон', () => {
+  it('ставка и вызов — три колонки: имя, чип, пометка', () => {
+    const raise = logRowHtml({ name: 'Ирина', color: 2, chip: '<span class="chip">3</span>' });
+    assert.equal(raise, '<span class="log-name c2">Ирина</span><span class="log-chip"><span class="chip">3</span></span><span class="log-note"></span>');
+    const dudo = logRowHtml({ name: 'Вы', color: 0, chip: '<span class="chip">3</span>', kind: 'dudo' });
+    assert.match(dudo, /<span class="log-note"><b class="text-bad">Не верю!<\/b><\/span>$/);
+    assert.doesNotMatch(dudo, /\(|НЕ ВЕРЮ/);               // без скобок и заглавных
+  });
+  it('имя экранируется, цвет ограничен', () => {
+    const r = logRowHtml({ name: '<b>x</b>', color: 99 });
+    assert.match(r, /class="log-name c0">&lt;b&gt;x&lt;\/b&gt;</);
+  });
+  it('пометки', () => {
+    assert.equal(noteHtml('raise'), '');
+    assert.match(noteHtml('calza'), /Calza!/);
+  });
+  it('проверка и заголовок раунда без заглавных и тире', () => {
+    assert.equal(checkText(4, 3, true), 'Проверка: на столе 4 из 3 — ставка верна.');
+    assert.equal(checkText(1, 3, false), 'Проверка: на столе 1 из 3 — ставка ложна.');
+    const h = roundHeadText({ round: 2, total: 14, starter: 'Вы', palifico: true });
+    assert.equal(h, 'Раунд 2 · кубиков на столе: 14 · начинает: Вы · Палифико');
+    assert.doesNotMatch(h, /—/);
+  });
+  it('результат Calza — тип result', () => {
+    const r = describeRoundEvents([{ type: 'DICE_REVEALED', kind: 'calza', actualCount: 4, bid: { q: 4, f: 2 }, calzaExact: true }], players);
+    assert.equal(r[0].type, 'result');
   });
 });

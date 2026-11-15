@@ -40,7 +40,6 @@
   /* Состояния и плашки */
   --selected: #32406a;
   --info-bg: #26304a;
-  --bad-bg-2: #2d2330;
   --bad-text: #ff8b8b;
   --info-fg: #d8e2f5;
   --ok-bg: #1e3a2c;
@@ -166,7 +165,6 @@
   --warn-fg: #7a4a00;
   --bad-bg: #fbe1e4;
   --bad-fg: #a3243f;
-  --bad-bg-2: #fbe9ec;
   --bad-text: #b3261e;
 
   /* Текст и метки */

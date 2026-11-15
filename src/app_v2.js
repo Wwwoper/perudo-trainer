@@ -6,7 +6,7 @@ import { createGame, startGame, applyAction, canCalza as engineCanCalza }
 import { legal, minLegal } from './rules.js';
 import { createAssistConfig, getClassification, effectiveExplain } from './assist.js';
 import { readInfo, readNote } from './table_read.js';
-import { describeRoundEvents } from './game_log.js';
+import { describeRoundEvents, logRowHtml, checkText, roundHeadText } from './game_log.js';
 import { getRounds, updateStats, addGame, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
 import { describeSnapshot } from './saved_game.js';
 import { BOT_STYLES, generateCharacters, botDecide } from './bots.js';
@@ -359,13 +359,13 @@ function startNewGame() {
 
 // ----- Журнал и разбор -----
 
-const LOG_ROW_CLASS = { dudo: 'dudo', round: 'round-head', loss: 'log-loss', gain: 'log-gain', elim: 'log-elim' };
+const LOG_ROW_CLASS = { dudo: 'dudo', calza: 'calza', result: 'log-result', round: 'round-head', loss: 'log-loss', gain: 'log-gain', elim: 'log-elim' };
 
 /** Кто потерял кубик, кто выбыл, результат Calza — после «Проверка: …». Строка внизу стола остаётся прежней. */
 function logRoundEffects(events) {
   if (!game) return;
   for (const l of describeRoundEvents(events, game.players, 'human')) {
-    if (l.type === 'round') addGameLog('round', escapeHtml(l.text));
+    if (l.type === 'result') addGameLog('result', escapeHtml(l.text));
     else addGameLog(l.type, escapeHtml(l.text), { feed: false });
   }
 }
@@ -761,9 +761,7 @@ function renderGame() {
     if (game.round > 1) {
       const totalNow = totalDice();
       const starterName = escapeHtml(game.players[game.currentPlayer]?.name || '');
-      addGameLog('round',
-        `— Раунд ${game.round} · кубиков на столе: ${totalNow} · начинает: ${starterName}` +
-        (game.palifico ? ' · ПАЛИФИКО' : '') + ' —');
+      addGameLog('round', roundHeadText({ round: game.round, total: totalNow, starter: starterName, palifico: game.palifico }));
     }
   }
 
@@ -987,7 +985,7 @@ function onPlayerRaise() {
   playCue('bidYou');
   recordDecision({ ...before, kind: 'raise', played: { q, f }, p, code: entry.v.code });
 
-  addGameLog('', `<span class="player-name c0">Вы</span> ${renderBid(q, f)}`);
+  addGameLog('', logRowHtml({ name: 'Вы', color: 0, chip: renderBid(q, f) }));
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
   if (game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
@@ -1022,12 +1020,8 @@ function onPlayerDudo() {
       (revealed.bidSuccessful ? 'ставка верна' : 'ставка ложна') + '.';
   }
 
-  addGameLog('dudo', `<b class="text-bad">НЕ ВЕРЮ</b> (${renderBid(q, f)})`);
-  if (revealed) {
-    addGameLog('round',
-      `Проверка: на столе ${revealed.actualCount} из ${q} — ` +
-      (revealed.bidSuccessful ? 'ставка верна' : 'ставка ложна') + '.');
-  }
+  addGameLog('dudo', logRowHtml({ name: 'Вы', color: 0, chip: renderBid(q, f), kind: 'dudo' }));
+  if (revealed) addGameLog('result', checkText(revealed.actualCount, q, revealed.bidSuccessful));
   logRoundEffects(res.events);
 
   if (game.state === 'round_resolving') game.state = 'active';
@@ -1064,7 +1058,7 @@ function onPlayerCalza() {
       (revealed.calzaExact ? 'точно' : 'мимо') + '.';
   }
 
-  addGameLog('dudo', `<b class="warn">CALZA</b> (${renderBid(q, f)})`);
+  addGameLog('calza', logRowHtml({ name: 'Вы', color: 0, chip: renderBid(q, f), kind: 'calza' }));
   logRoundEffects(res.events);
   if (game.state === 'round_resolving') game.state = 'active';
   renderGame();
@@ -1178,20 +1172,20 @@ function runBotTurn() {
   if (action.type !== 'raise') { markRoundOutcome(res.events, roundBefore); roundRec = recordRound(roundSnap, res.events); }
   if (action.type === 'raise') playCue('bidBot'); else cueResolution(action.type, res.events);
 
-  let desc;
-  if (action.type === 'raise') desc = renderBid(action.quantity, action.face);
-  else if (action.type === 'dudo') desc = '<b class="text-bad">НЕ ВЕРЮ</b>';
-  else desc = '<b class="warn">CALZA</b>';
-  addGameLog('', `<span class="player-name c${idx}">${bot.name}</span> ${desc}`);
+  // у вызова в строке стоит проверяемая ставка: берём её из события вскрытия
+  const shown = res.events.find((e) => e.type === 'DICE_REVEALED')?.bid;
+  const chip = action.type === 'raise'
+    ? renderBid(action.quantity, action.face)
+    : (shown ? renderBid(shown.q ?? shown.quantity, shown.f ?? shown.face) : '');
+  addGameLog(action.type === 'raise' ? '' : action.type === 'dudo' ? 'dudo' : 'calza',
+    logRowHtml({ name: bot.name, color: idx, chip, kind: action.type }));
 
   if (action.type === 'dudo') {
     observeReveal(res.events, game);
     const revealed = res.events.find((e) => e.type === 'DICE_REVEALED');
     if (revealed) {
       const bidQ = revealed.bid?.q ?? revealed.bid?.quantity;
-      addGameLog('round',
-        `Проверка: на столе ${revealed.actualCount} из ${bidQ} — ` +
-        (revealed.bidSuccessful ? 'ставка верна' : 'ставка ложна') + '.');
+      addGameLog('result', checkText(revealed.actualCount, bidQ, revealed.bidSuccessful));
     }
   }
   if (action.type !== 'raise') logRoundEffects(res.events);

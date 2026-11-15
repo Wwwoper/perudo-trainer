@@ -40,7 +40,7 @@ const TEXT = [
   ['acc', 'bg'], ['acc', 'card'], ['acc', 'info-bg'], ['ok', 'bg'], ['ok', 'card'], ['bad', 'bg'], ['bad', 'card'], ['warn', 'bg'], ['warn', 'card'],
   ['on-accent', 'acc'], ['on-accent', 'bad'], ['on-accent', 'warn'],
   ['info-fg', 'info-bg'], ['info-fg', 'info-bg-2'], ['ok-fg', 'ok-bg'], ['warn-fg', 'warn-bg'], ['bad-fg', 'bad-bg'],
-  ['bad-text', 'card'], ['bad-text', 'bad-bg-2'], ['bad-text', 'surface-1'],
+  ['bad-text', 'card'], ['bad-text', 'surface-1'],
   ['hue-pink', 'card'], ['hue-violet', 'card'], ['hue-orange', 'card'],
 ];
 // Известные пары тёмной темы ниже 4,5 (так было до появления тем); ниже указанной границы опускаться нельзя.
