@@ -1,7 +1,7 @@
 // situation_card.test.js — карточка «Картина стола»: когда видна, разметка, подсказка плана только по кнопке.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { shouldShowCard, situationCardHtml, TYPE_LABELS } from '../src/ui/situation_card.js';
+import { shouldShowCard, situationCardHtml, TYPE_LABELS, GUESS_WHY } from '../src/ui/situation_card.js';
 
 const lines = [
   { id: 'phase', type: 'fact', text: 'Начало партии: на столе 20 кубиков.' },
@@ -69,5 +69,24 @@ describe('situationCardHtml', () => {
   it('нет плана — нет и кнопки', () => {
     assert.ok(!situationCardHtml({ lines, plan: [] }).includes('gPlanBtn'));
     assert.ok(!situationCardHtml({ lines }).includes('gPlanBtn'));
+  });
+});
+
+describe('блок догадки: зачем она и подтверждение', () => {
+  const base = { lines: [], plan: [] };
+  const g = (chosen) => ({ who: 'Лис', q: 3, f: 4, chosen });
+  it('до выбора есть строка про проверку и статистику «чтение ставок», подтверждения нет', () => {
+    const html = situationCardHtml({ ...base, guess: g(null) });
+    assert.match(html, /Проверим после вскрытия и учтём в статистике «чтение ставок»/);
+    assert.equal(GUESS_WHY.endsWith('.'), true);
+    assert.ok(!html.includes('sit-guess-ok'));
+  });
+  it('после выбора появляется подтверждение с названием ответа', () => {
+    const html = situationCardHtml({ ...base, guess: g('has') });
+    assert.match(html, /<div class="sit-guess-ok" role="status">Записали: «Цифра в руке есть»\./);
+    assert.match(situationCardHtml({ ...base, guess: g('none') }), /Записали: «Цифры в руке нет»/);
+  });
+  it('без догадки блока нет', () => {
+    assert.ok(!situationCardHtml({ ...base }).includes('sit-guess'));
   });
 });

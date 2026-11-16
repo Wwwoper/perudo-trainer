@@ -42,6 +42,9 @@ function showResultDialog(game) {
   // Первая партия: главным действием становится переход к задачам, остальное уходит на второй план
   const first = isTaskMode(getDeviceState().onboarding);
   dlg.classList.toggle('is-first', first);
+  $('#gResultAgain')?.classList.toggle('btn-primary', !first);      // в первой партии «Сыграть ещё» и «Посмотреть стол» — тихие действия
+  $('#gResultAgain')?.classList.toggle('quiet-btn', first);
+  $('#gResultView')?.classList.toggle('quiet-btn', first);
   const tasksBtn = $('#gResultTasks');
   if (tasksBtn) tasksBtn.hidden = !first;
   resultOpener = document.activeElement;

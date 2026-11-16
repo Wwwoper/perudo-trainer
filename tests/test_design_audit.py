@@ -177,7 +177,7 @@ class BrowserTest(unittest.TestCase):
         page.goto(self.base + "/docs/dev/design.html")
         js = """(sel) => { const s = getComputedStyle(document.querySelector(sel));
                 return { r: s.borderTopLeftRadius, b: s.borderTopWidth, bs: s.borderTopStyle, h: document.querySelector(sel).getBoundingClientRect().height,
-                         fs: s.fontSize, fw: s.fontWeight, td: s.textDecorationLine, bg: s.backgroundColor, bc: s.borderTopColor }; }"""
+                         fs: s.fontSize, fw: s.fontWeight, td: s.textDecorationLine, c: s.color, bg: s.backgroundColor, bc: s.borderTopColor }; }"""
         for theme in ("light", "dark"):
             page.evaluate("t => document.documentElement.setAttribute('data-theme', t)", theme)
             base = page.evaluate(js, "#dx-actions + p + .dx-row button:not(.on):not(:disabled)")
@@ -190,9 +190,12 @@ class BrowserTest(unittest.TestCase):
                 g = page.evaluate(js, sel)
                 self.assertEqual(g["fw"], "700", f"{theme}: {sel} должна быть жирной")
                 self.assertEqual(g["bc"], g["bg"], f"{theme}: {sel}: цвет рамки совпадает с фоном")
-            link = page.evaluate(js, ".link-btn")
-            self.assertEqual(link["td"], "underline")                     # текстовая ссылка, не кнопка
+            link = page.evaluate(js, ".quiet-btn:not(.is-danger)")
+            self.assertEqual(link["td"], "none")                          # тихое действие: без подчёркивания и рамки
             self.assertEqual(link["b"], "0px")
+            self.assertGreaterEqual(link["h"], 44)
+            danger = page.evaluate(js, ".quiet-btn.is-danger")
+            self.assertNotEqual(danger["c"], link["c"])                   # опасный вариант другого цвета
             self.assertEqual(page.evaluate(js, "a.btn")["td"], "none")
 
     def test_link_and_button_selectors_are_defined_once(self):
@@ -201,7 +204,7 @@ class BrowserTest(unittest.TestCase):
             with open(os.path.join(ROOT, rel), encoding="utf-8") as f:
                 files[rel] = f.read()
         dup = da.duplicate_selectors({k: v for k, v in files.items() if not k.endswith("themes.css")})
-        for sel in (".link-btn", ".btn", ".btn-primary", "button.bad", "button.calza", ".quiz-secondary"):
+        for sel in (".quiet-btn", ".btn", ".btn-primary", "button.bad", "button.calza", ".quiz-secondary"):
             self.assertNotIn(sel, dup, f"{sel} определён в нескольких файлах: {dup.get(sel)}")
 
     def test_disclosure_blocks_share_form_and_roles(self):

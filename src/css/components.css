@@ -266,6 +266,13 @@
   overflow-wrap: anywhere;
 }
 
+.sit-guess-why,
+.sit-guess-ok {
+  margin-top: var(--space-1);
+  color: var(--mut);
+  font-size: var(--fs-small);
+}
+
 .sit-guess-btns {
   display: flex;
   flex-wrap: wrap;

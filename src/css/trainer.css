@@ -138,18 +138,6 @@
   font-size: var(--fs-small);
 }
 
-/* Опасное и редкое действие — не кнопка, а ссылка */
-.link-danger {
-  min-height: var(--tap);
-  padding: var(--space-1) var(--space-2);
-  border: 0;
-  background: none;
-  color: var(--bad-text);
-  font-size: var(--fs-ui);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 /* Теги с контекстом */
 .trainer-chips {
   display: flex;

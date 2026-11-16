@@ -728,24 +728,6 @@
   min-height: var(--tap);
 }
 
-/* Кнопка-ссылка «Сбросить к стандартным настройкам» под «Начать партию» */
-.link-btn {
-  display: block;
-  min-height: var(--tap);
-  margin: 0 auto;
-  padding: var(--space-1) var(--space-2);
-  border: 0;
-  background: none;
-  color: var(--mut);
-  font-size: var(--fs-ui);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.link-btn[hidden] {
-  display: none;
-}
-
 #gConfigSummary {
   display: block;
   margin-top: var(--space-1);
@@ -1220,7 +1202,7 @@
   outline: none;
 }
 
-/* Первая партия: «Перейти к задачам» главная, «Разобрать партию» второстепенная, остальное — текстовые действия */
+/* Первая партия: «Перейти к задачам» главная, «Разобрать партию» второстепенная, остальное — тихие действия (.quiet-btn) */
 .result-dialog.is-first .result-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1237,11 +1219,6 @@
 .result-dialog.is-first .result-actions #gResultView {
   order: 2;
   min-height: var(--tap);
-  border: 0;
-  background: none;
-  color: var(--acc);
-  font-weight: 400;
-  text-decoration: underline;
 }
 
 /* Телефон в альбомной ориентации: три кнопки в ряд, чтобы окно итогов помещалось без прокрутки */
@@ -1637,3 +1614,9 @@
 .chart-s3.chart-line { stroke-dasharray: 2 3; }
 .chart-s4.chart-line { stroke-dasharray: 8 3 2 3; }
 .chart-s5.chart-line { stroke-dasharray: 1 4; }
+
+/* «Сбросить к стандартным настройкам» стоит по центру под «Начать партию» */
+#gSettingsReset:not([hidden]) {
+  display: flex;
+  margin: var(--space-2) auto 0;
+}

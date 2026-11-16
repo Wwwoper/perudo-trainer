@@ -20,7 +20,7 @@
 
 ### Отступы (padding, margin, gap)
 
-Значений через токены: **506**; чисел в px: **47**, разных чисел: **4**.
+Значений через токены: **508**; чисел в px: **47**, разных чисел: **4**.
 
 | px | раз |
 |---:|---:|
@@ -31,7 +31,7 @@
 
 ### Минимальная высота
 
-Значений через токены: **97**; чисел в px: **23**, разных чисел: **12**.
+Значений через токены: **96**; чисел в px: **23**, разных чисел: **12**.
 
 | px | раз |
 |---:|---:|
@@ -72,8 +72,8 @@
 - `.hud-tab-btn` — `src/css/game.css`
 - `.icon-btn` — `src/css/game.css`
 - `.icon-btn-text` — `src/css/game.css`
-- `.link-btn` — `src/css/game.css`
 - `.mode-btn` — `src/css/trainer.css`
+- `.quiet-btn` — `src/css/base.css`
 - `.read-yn-btn` — `src/css/drill.css`
 - `.series-buttons` — `src/css/drill.css`
 - `.sit-guess-btn` — `src/css/components.css`

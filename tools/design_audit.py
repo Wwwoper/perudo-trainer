@@ -139,7 +139,7 @@ def button_classes(files):
 SNAPSHOT_JS = r"""
 () => {
   const kinds = {
-    button: 'button:not(.die):not(.tab-btn), [role=button], a.link-btn',
+    button: 'button:not(.die):not(.tab-btn), [role=button], a.quiet-btn',
     heading: 'h1, h2, h3, h4, summary',
     field: 'input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea',
     chip: '.chip, .badge',

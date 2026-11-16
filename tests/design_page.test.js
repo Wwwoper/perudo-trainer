@@ -49,7 +49,7 @@ test('ссылки блока «Пары для сравнения» ведут 
 test('кнопки сгруппированы по типу взаимодействия, у каждого примера подпись «роль · класс»', () => {
   for (const id of ['dx-actions', 'dx-links', 'dx-switch', 'dx-game']) assert.ok(page.includes(`id="${id}"`), `нет группы ${id}`);
   const caps = [...page.matchAll(/<span class="dx-cap">([^<]+)<\/span>/g)].map((m) => m[1]);
-  const buttons = caps.filter((c) => /\.(btn-primary|bad|calza|link-btn|btn|icon-btn|drill-tab|stats-tab|face-btn|mode-btn|quiz-secondary)/.test(c));
+  const buttons = caps.filter((c) => /\.(btn-primary|bad|calza|quiet-btn|btn|icon-btn|drill-tab|stats-tab|face-btn|mode-btn|quiz-secondary)/.test(c));
   assert.ok(buttons.length >= 10);
   for (const c of buttons) assert.match(c, /^[^·]+ · /, `нет роли в подписи: ${c}`);
 });

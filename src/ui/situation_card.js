@@ -42,13 +42,19 @@ function linesHtml(lines) {
  * Необязательная догадка: была ли у автора ставки нужная цифра в руке. Ответ можно сменить до вашего хода.
  * @param {{who: string, q: number, f: number, chosen: string|null}|null} g
  */
+/** Зачем нужна догадка: коротко, до выбора. */
+export const GUESS_WHY = 'Проверим после вскрытия и учтём в статистике «чтение ставок».';
+
 function guessBlock(g) {
   if (!g) return '';
+  const confirm = GUESS_LABELS[g.chosen]
+    ? `<div class="sit-guess-ok" role="status">Записали: «${GUESS_LABELS[g.chosen]}». Ответ можно сменить до вашего хода.</div>` : '';
   const btns = GUESS_ANSWERS.map((a) =>
     `<button type="button" class="sit-guess-btn" data-guess="${a}" aria-pressed="${g.chosen === a ? 'true' : 'false'}">${GUESS_LABELS[a]}</button>`).join('');
   return `<div class="sit-guess" role="group" aria-label="Ваша догадка">
     <div class="sit-guess-q">Ваша догадка (необязательно): ставка ${esc(g.q)}×${esc(g.f)}, автор — ${esc(g.who)}.</div>
-    <div class="sit-guess-btns">${btns}</div>
+    <div class="sit-guess-why">${GUESS_WHY}</div>
+    <div class="sit-guess-btns">${btns}</div>${confirm}
   </div>`;
 }
 
