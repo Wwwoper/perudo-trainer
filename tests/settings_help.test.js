@@ -50,14 +50,21 @@ describe('пояснения к объяснениям', () => {
   it('у каждого значения есть пояснение', () => {
     assert.deepStrictEqual(Object.keys(EXPLAIN_HELP).sort(), ['after', 'full', 'off']);
   });
-  it('«авто» называет, что получится в выбранном режиме помощи', () => {
-    assert.match(explainHelpText('novice', 'auto'), /^Сейчас: до и после хода\./);
-    assert.match(explainHelpText('training', 'auto'), /^Сейчас: после хода\./);
-    assert.match(explainHelpText('game', 'auto'), /^Сейчас: выключены\./);
+  it('«авто» показывает, что получится в выбранном режиме помощи, без повтора «Сейчас»', () => {
+    assert.strictEqual(explainHelpText('novice', 'auto'), EXPLAIN_HELP.full);
+    assert.strictEqual(explainHelpText('training', 'auto'), EXPLAIN_HELP.after);
+    assert.match(explainHelpText('game', 'auto'), /^Разбора ходов не будет/);
+    assert.ok(!explainHelpText('novice', 'auto').startsWith('Сейчас'));
   });
-  it('явный выбор пояснён без слова «Сейчас»', () => {
-    assert.ok(!explainHelpText('training', 'full').startsWith('Сейчас'));
-    assert.match(explainHelpText('training', 'off'), /выключены/);
+  it('явный выбор пояснён тем же текстом', () => {
+    assert.strictEqual(explainHelpText('training', 'full'), EXPLAIN_HELP.full);
+    assert.match(explainHelpText('training', 'off'), /Разбора ходов не будет/);
+  });
+  it('подсказки режимов не называют сам режим и не обрываются', () => {
+    for (const t of [...Object.values(ASSIST_HELP), ...Object.values(EXPLAIN_HELP)]) {
+      assert.ok(!/^(Новичок|Тренировка|Игра):/.test(t), t);
+      assert.match(t, /[.]$/);
+    }
   });
   it('в режиме «Игра» с включёнными объяснениями есть оговорка про конец партии', () => {
     assert.match(explainHelpText('game', 'full'), /после окончания партии/);
@@ -72,5 +79,11 @@ describe('переключатель «Показывать стили бото�
     assert.match(html, /<input id="gShowStylesOpt" type="checkbox">/);
     assert.ok(!/id="gShowStylesOpt"[^>]*checked/.test(html));
     assert.match(html, /id="gShowStylesInfo"[^>]*>[^<]*раскроются в конце партии/);
+  });
+});
+
+describe('подсказка к «Показывать вскрытие кубиков»', () => {
+  it('стоит сразу под переключателем', () => {
+    assert.match(html, /id="gRevealOpt"[^>]*>[^<]*<\/label>\s*<small id="gRevealInfo" class="game-settings-help">[^<]*Calza[^<]*<\/small>/);
   });
 });

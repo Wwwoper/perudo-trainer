@@ -400,11 +400,11 @@ test.describe('Покерный стол в партии', () => {
   test('«Объяснения»: выбор запоминается после партии и перезагрузки, пояснение меняется с режимом помощи', async ({ page }) => {
     await expect(page.locator('#gExplain')).toHaveValue('auto');
     await expect(page.locator('#gExplainDepth')).toHaveValue('short');
-    await expect(page.locator('#gExplainHelp')).toContainText('Сейчас: после хода');   // Тренировка по умолчанию
+    await expect(page.locator('#gExplainHelp')).toContainText('После вашего хода');   // Тренировка по умолчанию
     await page.locator('#gAssist').selectOption('novice');
-    await expect(page.locator('#gExplainHelp')).toContainText('Сейчас: до и после хода');
+    await expect(page.locator('#gExplainHelp')).toContainText('Перед ходом');
     await page.locator('#gAssist').selectOption('game');
-    await expect(page.locator('#gExplainHelp')).toContainText('Сейчас: выключены');
+    await expect(page.locator('#gExplainHelp')).toContainText('Разбора ходов не будет');
     await page.locator('#gExplain').selectOption('full');
     await expect(page.locator('#gExplainHelp')).toContainText('после окончания партии');
     await page.locator('#gExplainDepth').selectOption('detailed');

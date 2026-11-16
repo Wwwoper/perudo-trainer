@@ -757,6 +757,33 @@ class LayoutTest(unittest.TestCase):
             main = page.locator("#calc .learn-main").bounding_box()
             self.assertGreaterEqual(dock["x"], main["x"] + main["width"] - 1, f"{w}x{h}")
 
+    def test_select_has_custom_arrow_with_symmetric_offset(self):
+        page = self.open_calc(1366, 768)
+        st = page.evaluate("""() => {
+          const s = document.querySelector('select'); const c = getComputedStyle(s);
+          return {app: c.appearance, pl: parseFloat(c.paddingLeft), pr: parseFloat(c.paddingRight),
+                  pos: c.backgroundPosition, img: c.backgroundImage};
+        }""")
+        self.assertEqual(st["app"], "none")
+        self.assertIn("gradient", st["img"])
+        self.assertGreater(st["pr"], st["pl"] + 8)                          # место под стрелку
+
+    def test_situation_tag_does_not_overlap_text(self):
+        for w in (360, 421, 768):
+            ctx = self.browser.new_context(viewport={"width": w, "height": 700})
+            page = ctx.new_page()
+            self.addCleanup(ctx.close)
+            page.goto(self.url)
+            page.evaluate("""() => { const d = document.createElement('div'); d.id = 'zzSit';
+              d.innerHTML = '<ul class="sit-lines"><li class="sit-line"><span class="sit-tag">Предположение</span><span class="sit-text">Текст строки</span></li></ul>';
+              document.body.prepend(d); }""")
+            tag = page.locator("#zzSit .sit-tag").bounding_box()
+            txt = page.locator("#zzSit .sit-text").bounding_box()
+            if w > 420:
+                self.assertLessEqual(tag["x"] + tag["width"], txt["x"], f"{w}")
+            else:
+                self.assertLessEqual(tag["y"] + tag["height"], txt["y"] + 1, f"{w}")
+
     # ---------- Тренажёр ----------
 
     def open_trainer(self, w, h):
@@ -1558,7 +1585,7 @@ class LayoutTest(unittest.TestCase):
                     card.locator(".rule-text").click()
                 self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
                 help_text = page.locator("#gAssistHelp").inner_text()
-                self.assertIn("Тренировка", help_text)
+                self.assertIn("без советов", help_text)
                 page.select_option("#gAssist", "novice")
                 self.assertIn("советует", page.locator("#gAssistHelp").inner_text())
                 for sel in ("#gExplain", "#gExplainDepth"):
@@ -1568,9 +1595,9 @@ class LayoutTest(unittest.TestCase):
                     body = page.locator(".side-body").bounding_box()
                     self.assertGreaterEqual(box["x"], body["x"] - 1, sel)
                     self.assertLessEqual(box["x"] + box["width"], body["x"] + body["width"] + 1, f"{sel}: шире панели")
-                self.assertIn("до и после хода", page.locator("#gExplainHelp").inner_text())
+                self.assertIn("Перед ходом", page.locator("#gExplainHelp").inner_text())
                 page.select_option("#gExplain", "off")
-                self.assertIn("выключены", page.locator("#gExplainHelp").inner_text())
+                self.assertIn("Разбора ходов не будет", page.locator("#gExplainHelp").inner_text())
                 self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
 
     def test_dialog_names_winner_and_opens_once(self):
