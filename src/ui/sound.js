@@ -44,13 +44,14 @@ export function currentSoundMode() {
 function refreshSoundControls() {
   const group = $('#gSound');
   if (group) {
-    group.title = describeSoundMode(mode);
     group.querySelectorAll('[data-sound]').forEach((btn) => {
       const on = btn.dataset.sound === mode;
       btn.setAttribute('aria-checked', String(on));
       btn.tabIndex = on ? 0 : -1;
     });
   }
+  const help = $('#gSoundHelp');
+  if (help) help.textContent = describeSoundMode(mode);
   const test = $('#gSoundTest');
   if (test) test.hidden = mode === 'off';
 }
@@ -59,7 +60,7 @@ export function setupSoundControls() {
   const group = $('#gSound');
   const buttons = group ? [...group.querySelectorAll('[data-sound]')] : [];
   buttons.forEach((btn) => {
-    btn.innerHTML = soundIconSvg(btn.dataset.sound);
+    btn.insertAdjacentHTML('afterbegin', soundIconSvg(btn.dataset.sound));
     btn.addEventListener('click', () => {
       changeSoundMode(btn.dataset.sound);
       if (mode !== 'off' && engine) { engine.unlock(); engine.cue('turn'); }     // выбор режима — сразу слышно, как он звучит

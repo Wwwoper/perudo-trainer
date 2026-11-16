@@ -960,9 +960,11 @@ class LayoutTest(unittest.TestCase):
                 self.assertEqual(page.locator("#gSound button").count(), 3)
                 self.assertFalse(page.locator(".setup-card:has(#gSound):has(#gAssist)").count(),
                                  "звуки должны быть в своей карточке, а не внутри «Помощь и темп»")
-                self.assertEqual(card.locator("h3.set-label").inner_text().strip().lower(), "звуки")
+                self.assertEqual(card.locator("h3.set-label").inner_text().strip().lower(), "звук приложения")
                 sel.scroll_into_view_if_needed()
                 self.assertFalse(page.locator("#gSoundTest").is_visible())
+                rules = page.locator("#gRulesLabel").bounding_box()
+                self.assertLess(rules["y"], sel.bounding_box()["y"], "«Звук приложения» ниже «Дополнительных правил»")
                 box = sel.bounding_box()
                 self.assertGreaterEqual(box["height"], 40)
                 self.assertLessEqual(box["x"] + box["width"], w + 1)
@@ -970,7 +972,7 @@ class LayoutTest(unittest.TestCase):
                     bb = b.bounding_box()
                     self.assertGreaterEqual(bb["height"], 44)
                     self.assertGreaterEqual(bb["width"], 44)
-                    self.assertEqual(b.inner_text().strip(), "")                  # без надписей, только значок
+                    self.assertIn(b.inner_text().strip(), ("Выкл.", "Тихо", "Обычно"))      # значок и подпись
                     self.assertEqual(b.locator("svg").count(), 1)
                 page.locator('#gSound [data-sound="quiet"]').click()
                 self.assertEqual(page.locator('#gSound [aria-checked="true"]').get_attribute("data-sound"), "quiet")

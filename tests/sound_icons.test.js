@@ -31,13 +31,18 @@ describe('значки звука', () => {
   });
 });
 
-describe('переключатель звука в index.html', () => {
-  it('три кнопки-радио с подписью для читалок и без видимого текста', () => {
+describe('раздел звука в index.html', () => {
+  it('три кнопки-радио со словами «Выкл.», «Тихо», «Обычно»; значок добавляет скрипт', () => {
     const group = html.match(/<div id="gSound"[^>]*role="radiogroup"[\s\S]*?<\/div>/)[0];
-    const buttons = [...group.matchAll(/<button[^>]*data-sound="(\w+)"[^>]*aria-label="([^"]+)"[^>]*><\/button>/g)];
+    const buttons = [...group.matchAll(/<button[^>]*data-sound="(\w+)"[^>]*>\s*<span class="sound-label">([^<]+)<\/span>\s*<\/button>/g)];
     assert.deepStrictEqual(buttons.map((b) => b[1]), [...SOUND_ICON_MODES]);
-    assert.ok(buttons.every((b) => b[2].length > 3));
-    assert.ok(!/id="gSoundHelp"/.test(html));
+    assert.deepStrictEqual(buttons.map((b) => b[2]), ['Выкл.', 'Тихо', 'Обычно']);
+    assert.match(html, /<h3 class="set-label" id="gSoundLabel">Звук приложения<\/h3>/);
+    assert.match(html, /<small id="gSoundHelp" class="game-settings-help"><\/small>/);
     assert.ok(!/<select id="gSound"/.test(html));
+  });
+  it('«Звук приложения» идёт после «Дополнительных правил»', () => {
+    assert.ok(html.indexOf('id="gRulesLabel"') < html.indexOf('id="gSoundLabel"'));
+    assert.ok(html.indexOf('id="gSoundLabel"') < html.indexOf('class="btn-primary side-start"'));
   });
 });

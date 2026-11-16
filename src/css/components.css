@@ -384,14 +384,17 @@
   }
 }
 
-.sound-switch {
-  flex: 1;
-  max-width: 14rem;
+.sound-switch [role="radio"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--tap-lg);
 }
 
-.sound-switch .icon {
-  display: block;
-  margin: 0 auto;
+.sound-label {
+  font-size: var(--fs-small);
 }
 
 /* Раскрывающиеся блоки. Одна форма: стрелка ▸ слева, поворот на 90° при открытии, высота не ниже --tap.

@@ -636,17 +636,6 @@
               </div>
               </section>
 
-              <section class="setup-card" aria-labelledby="gSoundLabel">
-              <h3 class="set-label" id="gSoundLabel">Звуки</h3>
-              <div class="field-row">
-                <div id="gSound" class="sound-switch" role="radiogroup" aria-label="Режим звука">
-                  <button type="button" role="radio" data-sound="off" aria-checked="true" aria-label="Звуки выключены" title="Звуки выключены"></button>
-                  <button type="button" role="radio" data-sound="quiet" aria-checked="false" aria-label="Звуки тихие" title="Звуки тихие"></button>
-                  <button type="button" role="radio" data-sound="normal" aria-checked="false" aria-label="Звуки обычные" title="Звуки обычные"></button>
-                </div>
-                <button type="button" id="gSoundTest" hidden>Проверить звук</button>
-              </div>
-              </section>
 
               <section class="setup-card">
               <div class="rules-group" role="group" aria-labelledby="gRulesLabel">
@@ -674,6 +663,19 @@
 
               <label class="check"><input id="gRevealOpt" type="checkbox" checked> Показывать вскрытие кубиков</label>
               <small id="gRevealInfo" class="game-settings-help">После «Не верю» и Calza кубики всех игроков открываются, и видно, кто был прав.</small>
+              </section>
+
+              <section class="setup-card" aria-labelledby="gSoundLabel">
+              <h3 class="set-label" id="gSoundLabel">Звук приложения</h3>
+              <div id="gSound" class="sound-switch" role="radiogroup" aria-labelledby="gSoundLabel">
+                <button type="button" role="radio" data-sound="off" aria-checked="true"><span class="sound-label">Выкл.</span></button>
+                <button type="button" role="radio" data-sound="quiet" aria-checked="false"><span class="sound-label">Тихо</span></button>
+                <button type="button" role="radio" data-sound="normal" aria-checked="false"><span class="sound-label">Обычно</span></button>
+              </div>
+              <small id="gSoundHelp" class="game-settings-help"></small>
+              <div class="field-row">
+                <button type="button" id="gSoundTest" hidden>Проверить звук</button>
+              </div>
               </section>
 
               <button type="button" class="btn-primary side-start" data-action="new-game">Начать новую партию</button>

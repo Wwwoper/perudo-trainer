@@ -126,12 +126,12 @@ test.describe('Звуки', () => {
     const pick = (mode) => page.locator(`#gSound [data-sound="${mode}"]`);
     await expect(pick('off')).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#gSoundTest')).toBeHidden();
-    await expect(page.locator('#gSound')).toHaveAttribute('title', 'Звуки выключены.');
+    await expect(page.locator('#gSoundHelp')).toHaveText('Звуки выключены.');
     await pick('normal').click();
     await expect.poll(() => freqs(page)).toContain(FREQ.turn);          // выбор режима сразу слышно
     await expect(page.locator('#gSoundTest')).toBeVisible();
     await expect(pick('normal')).toHaveAttribute('aria-checked', 'true');
-    await expect(page.locator('#gSound')).toHaveAttribute('title', /быстром темпе/);
+    await expect(page.locator('#gSoundHelp')).toContainText('быстром темпе');
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode)).toBe('normal');
     const before = (await freqs(page)).length;
     await page.locator('#gSoundTest').click();
