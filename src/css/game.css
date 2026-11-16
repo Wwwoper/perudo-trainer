@@ -3,7 +3,7 @@
 .game-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, var(--dock-w));
-  gap: 12px;
+  gap: var(--space-3);
   align-items: start;
 }
 
@@ -144,13 +144,13 @@
 
 .hud-actions {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .icon-btn {
   min-width: var(--tap);
   min-height: var(--tap);
-  padding: 0 10px;
+  padding: 0 var(--space-2);
   display: inline-grid;
   place-items: center;
   font-size: var(--fs-lead);
@@ -159,7 +159,7 @@
 .icon-btn-text {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   font-size: var(--fs-ui);
   font-weight: 700;
 }
@@ -169,7 +169,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   min-height: 24px;
   padding: 0 var(--space-2);
   color: var(--mut);
@@ -178,7 +178,7 @@
 
 .game-ticker .chip {
   font-size: var(--fs-ui);
-  padding: 0 6px 0 8px;
+  padding: 0 var(--space-2) 0 var(--space-2);
 }
 
 .game-ticker .player-name {
@@ -189,7 +189,7 @@
 .game-ticker .log-chip,
 .game-ticker .log-note {
   display: inline-block;
-  margin-right: 6px;
+  margin-right: var(--space-2);
 }
 
 /* ===== Панель действий ===== */
@@ -224,7 +224,7 @@
 .dock-hand .die {
   width: var(--die-hand);
   height: var(--die-hand);
-  padding: 5px;
+  padding: var(--space-1);
   margin: 0 2px 0 0;
 }
 
@@ -268,7 +268,7 @@
 .face-pick {
   display: grid;
   grid-template-columns: repeat(6, var(--tap));
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .face-pick .face-btn {
@@ -303,7 +303,7 @@
 
 .dock-buttons button {
   min-height: var(--tap-lg);
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -359,7 +359,7 @@
   }
 
   .game-hud {
-    padding: 6px var(--space-3);
+    padding: var(--space-1) var(--space-3);   /* телефон: каждый пиксель высоты нужен столу */
   }
 
   .icon-btn-text span {
@@ -372,7 +372,7 @@
     z-index: 20;
     margin-inline: calc(var(--space-2) * -1);
     margin-bottom: calc(var(--space-2) * -1);   /* гасит нижний padding main */
-    padding: 10px var(--space-3) calc(10px + env(safe-area-inset-bottom));
+    padding: var(--space-3) var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom));
     border-radius: var(--radius-l) var(--radius-l) 0 0;
     box-shadow: var(--shadow-dock);
   }
@@ -567,7 +567,7 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   flex: 1;
   min-width: 0;
 }
@@ -598,7 +598,7 @@
 .check {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-height: var(--tap);
   color: var(--fg);
 }
@@ -618,7 +618,7 @@
 
 .game-settings-help {
   display: block;
-  margin-top: 6px;
+  margin-top: var(--space-2);
   line-height: 1.4;
 }
 
@@ -728,7 +728,7 @@
   display: block;
   min-height: var(--tap);
   margin: 0 auto;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 0;
   background: none;
   color: var(--mut);
@@ -743,7 +743,7 @@
 
 #gConfigSummary {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 #gSummary:empty {
@@ -820,7 +820,7 @@
 }
 
 .result-card p {
-  margin: 4px 0 8px;
+  margin: var(--space-1) 0 var(--space-2);
 }
 
 .result-card table {
@@ -829,12 +829,12 @@
 
 .result-card td,
 .result-card th {
-  padding: 3px 6px;
+  padding: var(--space-1) var(--space-2);
 }
 
 .result-stand {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
   margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
@@ -845,7 +845,7 @@
   display: flex;
   justify-content: space-between;
   gap: var(--space-2);
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius-s);
   background: var(--surface-4);
@@ -898,12 +898,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 4px 0 var(--space-3);
+  margin: var(--space-1) 0 var(--space-3);
 }
 
 .reveal-rows {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -914,7 +914,7 @@
   grid-template-columns: minmax(64px, 96px) 1fr auto;
   align-items: center;
   gap: var(--space-2);
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-s);
   background: var(--surface-4);
   font-size: var(--fs-ui);
@@ -941,7 +941,7 @@
 .reveal-hand {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: var(--space-1);
 }
 
 .reveal-hand .die {
@@ -987,7 +987,7 @@
   height: 3px;
   margin-top: var(--space-3);
   margin-bottom: var(--space-3);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--surface-6);
   overflow: hidden;
 }
@@ -1029,13 +1029,13 @@
 .reveal-more {
   margin-top: var(--space-2);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: var(--surface-1);
 }
 
 .reveal-more > summary {
   min-height: 44px;
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 /* Раскрывающиеся блоки (подсказки вскрытия, ключевые моменты): видно, что это кнопка — заголовок, пояснение и «Показать ▾» справа */
@@ -1089,15 +1089,15 @@
 .reveal-said {
   list-style: none;
   margin: 0;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
 }
 
 .said-row {
   display: grid;
   grid-template-columns: minmax(4.5em, auto) 1fr auto;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: baseline;
-  padding: 6px 0;
+  padding: var(--space-2) 0;
   border-top: 1px solid var(--line);
   font-size: var(--fs-small);
 }
@@ -1112,8 +1112,8 @@
 }
 
 .said-tag {
-  padding: 0 6px;
-  border-radius: 4px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
   font-size: var(--fs-caption);
   font-weight: 700;
   background: var(--info-bg-2);
@@ -1133,13 +1133,13 @@
 .reveal-note,
 .reveal-decision {
   margin: 0;
-  padding: 6px 12px 10px;
+  padding: var(--space-2) var(--space-3) var(--space-3);
   font-size: var(--fs-caption);
   line-height: 1.45;
 }
 
 .reveal-decision p {
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-2);
 }
 
 @media (max-width: 719px) {
@@ -1185,7 +1185,7 @@
 }
 
 .result-dialog h2 {
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   font-size: var(--fs-title);
   line-height: 1.2;
 }
@@ -1283,7 +1283,7 @@
 
   #gSummary .card {
     border-radius: var(--radius-l) var(--radius-l) 0 0;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
     box-shadow: var(--shadow-dock);
   }
 }
@@ -1322,7 +1322,7 @@
     max-height: 82vh;
     max-height: 82dvh;
     padding-bottom: env(safe-area-inset-bottom);
-    border-radius: 20px 20px 0 0;
+    border-radius: var(--radius-l) var(--radius-l) 0 0;
     box-shadow: var(--shadow-dock);
     transform: translateY(105%);
     visibility: hidden;
@@ -1411,7 +1411,7 @@
     z-index: 70;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--space-1);
     padding: var(--space-2);
     overflow: visible;
     border-radius: var(--radius-m);
@@ -1461,7 +1461,7 @@
   min-height: var(--tap);
 }
 .key-moments-summary {
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   color: var(--warn);
 }
 .key-moment {
@@ -1478,7 +1478,7 @@
   border-left-color: var(--warn);
 }
 .key-moment p {
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 .key-moment p .chip {
   vertical-align: middle;   /* чип в строке текста не рвёт базовую линию */
@@ -1512,7 +1512,7 @@
 
 /* ===== Вкладка «Стол»: наблюдения за соперниками ===== */
 .opp-row {
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1522,12 +1522,12 @@
 
 /* «Как вы отвечали разным стилям» в итоге партии */
 .style-matchup {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 /* Блок «Как читают вас» стоит последним и отделён от соперников */
 .opp-me {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   border-top: 1px solid var(--line);
 }
 
@@ -1535,7 +1535,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .opp-style {
@@ -1544,15 +1544,15 @@
 }
 
 .opp-lines {
-  margin: 4px 0 0;
-  padding-left: 18px;
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
   font-size: var(--fs-ui);
   line-height: 1.45;
 }
 
 #gOppNote {
   display: block;
-  margin-top: 8px;
+  margin-top: var(--space-2);
   color: var(--mut);
 }
 
@@ -1581,8 +1581,8 @@
 }
 
 .picture-lines {
-  margin: 6px 0;
-  padding-left: 18px;
+  margin: var(--space-2) 0;
+  padding-left: var(--space-4);
   line-height: 1.45;
 }
 

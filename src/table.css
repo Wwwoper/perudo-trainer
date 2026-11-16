@@ -97,7 +97,7 @@
      Ширину даёт aspect-ratio. */
   height: min(220px, calc(100% - 2 * var(--seat-h) - 8px));
   aspect-ratio: 1 / 1;
-  padding: 12px;
+  padding: var(--space-3);
   transform: translate(-50%, -50%);
   border: 2px solid var(--plate-ring);
   border-radius: 50%;
@@ -110,7 +110,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .table-bid {
@@ -126,15 +126,15 @@
 
 .bid-by {
   display: block;
-  margin-top: 6px;
+  margin-top: var(--space-2);
   color: var(--table-text-mut-2);
   font-size: var(--fs-caption);
   font-weight: 500;
 }
 
 .palifico-badge {
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-xs);
   background: var(--gold-chip);
   color: var(--gold-chip-fg);
   font-size: var(--fs-caption);
@@ -158,10 +158,10 @@
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2);
   border: 2px solid transparent;
-  border-radius: 14px;
+  border-radius: var(--radius-l);
   background: var(--seat-bg);
   transition:
     border-color .25s ease,
@@ -268,7 +268,7 @@
 .seat-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--table-text-mut-3);
   font-size: var(--fs-caption);
   white-space: nowrap;
@@ -282,8 +282,8 @@
     --py: var(--my);
     flex-direction: column;
     justify-content: center;
-    gap: 3px;
-    padding: 4px;
+    gap: var(--space-1);
+    padding: var(--space-1);
     text-align: center;
   }
 
@@ -299,7 +299,7 @@
   .seat-meta {
     flex-wrap: wrap;
     justify-content: center;
-    gap: 2px 4px;
+    gap: 2px var(--space-1);
     font-size: var(--fs-caption);
   }
 
@@ -309,7 +309,7 @@
 
   .table-center {
     height: min(128px, calc(100% - 2 * var(--seat-h) - 8px));
-    padding: 8px;
+    padding: var(--space-2);
   }
 }
 

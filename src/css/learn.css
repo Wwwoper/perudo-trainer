@@ -84,20 +84,20 @@
 .pad-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  gap: var(--space-2);
   margin: var(--space-2) 0;
 }
 
 .btn-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .pad-grid button,
 .btn-row button {
   min-height: var(--tap);
-  padding: 4px 6px;
+  padding: var(--space-1) var(--space-2);
   font-size: var(--fs-body);
 }
 
@@ -119,7 +119,7 @@
 
 .table-scroll th,
 .table-scroll td {
-  padding: 6px 4px;
+  padding: var(--space-2) var(--space-1);
 }
 
 .table-scroll th:first-child,
@@ -157,7 +157,7 @@
 /* Подсказка под полем ввода */
 .field-hint {
   display: block;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-size: var(--fs-caption);
   font-weight: 400;
   line-height: 1.35;
@@ -350,13 +350,13 @@
 .duel-moves {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 6px;
+  gap: var(--space-2);
   margin: var(--space-2) 0;
 }
 
 .duel-moves button {
   min-height: var(--tap);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
 }
 
 .duel-log {
@@ -364,7 +364,7 @@
 }
 
 .duel-fb {
-  margin-top: 6px;
+  margin-top: var(--space-2);
 }
 
 /* Таблица равновесия: столбцов много, прокручивается внутри карточки */
@@ -540,7 +540,7 @@
 
 .stats-table th,
 .stats-table td {
-  padding: 6px 4px;
+  padding: var(--space-2) var(--space-1);
   white-space: nowrap;
 }
 
@@ -557,7 +557,7 @@
 
   .stats-table th,
   .stats-table td {
-    padding: 6px 2px;
+    padding: var(--space-2) 2px;
   }
 }
 
@@ -625,7 +625,7 @@
 
 .sim-out th,
 .sim-out td {
-  padding: 6px 4px;
+  padding: var(--space-2) var(--space-1);
 }
 
 /* Статистика: «Что дальше» */
@@ -736,7 +736,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
   color: var(--mut);
 }
@@ -959,9 +959,9 @@
 
 .badge {
   display: inline-block;
-  margin-left: 8px;
-  padding: 1px 8px;
-  border-radius: 999px;
+  margin-left: var(--space-2);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
   font-size: var(--fs-caption);
   font-weight: 600;
   color: var(--info-fg);
@@ -976,7 +976,7 @@
   min-width: var(--tap);
   min-height: var(--tap);
   border: 1px solid var(--line-2);
-  border-radius: 8px;
+  border-radius: var(--radius-s);
   background: var(--surface-2);
   color: var(--fg);
   font-weight: 700;
@@ -1013,7 +1013,7 @@
     display: flex;
     align-items: center;
     min-height: 48px;
-    padding: 0 12px;
+    padding: 0 var(--space-3);
     font-weight: 400;
   }
 }
@@ -1040,7 +1040,7 @@ body[data-welcome] main > section:not(#welcome) {
   display: grid;
   gap: var(--space-4);   /* один вертикальный ритм между всеми блоками карточки */
   width: min(100%, 520px);
-  padding: 20px;
+  padding: var(--space-4);
 }
 
 .welcome-title {
@@ -1117,7 +1117,7 @@ body[data-welcome] main > section:not(#welcome) {
   min-height: var(--tap);
   padding: 0 var(--space-2);
   border: 1px solid var(--line-2);
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--surface-2);
   color: var(--fg);
   font: inherit;

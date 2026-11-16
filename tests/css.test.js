@@ -201,3 +201,48 @@ test('каждый токен шкалы текста где-то использ
   const css = cssFiles.map((f) => stripComments(read(f))).join('\n');
   for (const t of FS_TOKENS) assert.ok(css.includes(`var(--${t.name})`), `токен --${t.name} не используется`);
 });
+
+// ---------- Шкалы отступов и скруглений (волна 15) ----------
+
+const BASE_TOKENS = stripComments(read('src/css/base.css'));
+const spaceTokens = [...BASE_TOKENS.matchAll(/--(space-\d+)\s*:\s*(\d+)px/g)].map((m) => +m[2]);
+const radiusTokens = [...BASE_TOKENS.matchAll(/--(radius-[a-z]+)\s*:\s*(\d+)px/g)].map((m) => ({ name: m[1], px: +m[2] }));
+
+test('шкала отступов и скруглений определена в base.css', () => {
+  assert.deepEqual(spaceTokens, [4, 8, 12, 16]);
+  assert.deepEqual(radiusTokens.map((t) => t.name), ['radius-xs', 'radius-s', 'radius-m', 'radius-l', 'radius-pill']);
+  assert.deepEqual(radiusTokens.map((t) => t.px), [4, 8, 12, 16, 999]);
+});
+
+/** Значения свойств по всем стилям: [{файл, свойство, значение}]. */
+function declarations(propRe) {
+  const out = [];
+  for (const f of cssFiles) {
+    if (f.endsWith('themes.css')) continue;
+    for (const m of stripComments(read(f)).matchAll(new RegExp(`(?<![\\w-])(${propRe})\\s*:\\s*([^;}{]+)`, 'g'))) out.push({ f, prop: m[1], v: m[2].trim() });
+  }
+  return out;
+}
+
+test('border-radius — только токен --radius-*, 0, 50% или calc от токена', () => {
+  for (const { f, prop, v } of declarations('border(?:-(?:top|bottom)-(?:left|right))?-radius')) {
+    const bare = v.replace(/var\(--radius-[a-z]+\)/g, '').replace(/calc\([^)]*\)/g, '');
+    assert.ok(!/\d+px/.test(bare), `${f}: ${prop}: ${v} — используйте токен --radius-*`);
+  }
+});
+
+test('padding, margin и gap — токены --space-*; числом только 0, 1px и 2px', () => {
+  for (const { f, prop, v } of declarations('(?:padding|margin)(?:-(?:top|right|bottom|left))?|gap|row-gap|column-gap')) {
+    const bare = v.replace(/var\([^)]*\)/g, '').replace(/calc\((?:[^()]|\([^)]*\))*\)/g, '');
+    for (const m of bare.matchAll(/(?<![\w.-])(-?\d+)px\b/g)) {
+      assert.ok([0, 1, 2, -1, -2].includes(+m[1]), `${f}: ${prop}: ${v} — используйте токен --space-*`);
+    }
+  }
+});
+
+test('каждый токен скруглений и отступов где-то используется', () => {
+  const css = cssFiles.map((f) => stripComments(read(f))).join('\n');
+  for (const n of ['space-1', 'space-2', 'space-3', 'space-4', 'radius-xs', 'radius-s', 'radius-m', 'radius-l', 'radius-pill']) {
+    assert.ok(css.includes(`var(--${n})`), `токен --${n} не используется`);
+  }
+});

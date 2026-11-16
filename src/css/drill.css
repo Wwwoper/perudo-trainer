@@ -1,7 +1,7 @@
 /* ============ Упражнения: мобильный лэйаут ============ */
 
 .drill-top {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 /* Общая форма вкладок — в components.css (сегментный переключатель). Здесь только то, что зависит от содержимого. */
@@ -24,14 +24,14 @@
 }
 
 .drill-board {
-  padding: 14px;
+  padding: var(--space-3);
 }
 
 .drill-question {
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   background: var(--surface-1);
-  border-radius: 8px;
-  margin-bottom: 14px;
+  border-radius: var(--radius-s);
+  margin-bottom: var(--space-3);
   font-size: var(--fs-ui);
   line-height: 1.5;
 }
@@ -39,7 +39,7 @@
 .drill-question .die {
   width: 28px;
   height: 28px;
-  padding: 4px;
+  padding: var(--space-1);
   margin: 2px;
 }
 
@@ -49,17 +49,17 @@
   font-size: var(--fs-caption);
   text-transform: uppercase;
   letter-spacing: .04em;
-  margin: 12px 0 4px;
+  margin: var(--space-3) 0 var(--space-1);
 }
 
 .drill-input {
   display: block;
   width: 100%;
   min-height: var(--tap);
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3);
   font-size: var(--fs-lead);
   text-align: center;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--surface-1);
   border: 1px solid var(--line);
   color: var(--fg);
@@ -74,7 +74,7 @@
 
 /* Свёрнутая формула */
 .drill-hint {
-  margin-top: 12px;
+  margin-top: var(--space-3);
   font-size: var(--fs-small);
 }
 
@@ -97,7 +97,7 @@
 .drill-hint>summary::before {
   content: "▸";
   display: inline-block;
-  margin-right: 6px;
+  margin-right: var(--space-2);
   transition: transform .15s ease;
 }
 
@@ -106,16 +106,16 @@
 }
 
 .drill-hint-body {
-  margin-top: 6px;
-  padding: 10px 12px;
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-3);
   background: var(--surface-1);
-  border-radius: 8px;
+  border-radius: var(--radius-s);
   line-height: 1.55;
   color: var(--text-soft);
 }
 
 .drill-hint-body p {
-  margin: 6px 0;
+  margin: var(--space-2) 0;
 }
 
 .drill-hint-body b {
@@ -128,15 +128,15 @@
 }
 
 .drill-feedback {
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius-s);
   background: var(--surface-1);
   font-size: var(--fs-ui);
   line-height: 1.45;
 }
 
 .drill-feedback p {
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 
 .drill-feedback .text-ok,
@@ -147,26 +147,26 @@
 /* ===== Мобильная оптимизация ===== */
 @media (max-width: 719px) {
   .drill-layout .card {
-    padding: 10px;
-    margin-bottom: 8px;
+    padding: var(--space-3);
+    margin-bottom: var(--space-2);
   }
 
   .drill-board {
-    padding: 12px;
+    padding: var(--space-3);
   }
 
   .drill-input {
-    padding: 12px;
+    padding: var(--space-3);
     font-size: var(--fs-title);
   }
 
   .drill-question {
-    padding: 8px 10px;
-    margin-bottom: 10px;
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-3);
   }
 
   .drill-label {
-    margin: 10px 0 3px;
+    margin: var(--space-3) 0 var(--space-1);
   }
 
   /* Подробный разбор прокручивается внутри панели, а не растягивает страницу */
@@ -181,26 +181,26 @@
 .read-intro,
 .read-task,
 .read-empty {
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-3);
   font-size: var(--fs-small);
   line-height: 1.45;
 }
 
 .read-bids {
   list-style: none;
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .read-bid {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-s);
   background: var(--surface-1);
   font-size: var(--fs-ui);
 }
@@ -233,8 +233,8 @@
 }
 
 .read-bid-tag {
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
   background: var(--acc);
   color: var(--on-accent);
   font-size: var(--fs-caption);
@@ -242,10 +242,10 @@
 }
 
 .read-q {
-  margin: 0 0 10px;
-  padding: 8px 10px;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-s);
   min-width: 0;
 }
 
@@ -253,7 +253,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0 0 2px;
   font-size: var(--fs-lead);
   font-weight: 700;
@@ -261,12 +261,12 @@
 }
 
 .read-q-bid {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   font-size: var(--fs-small);
 }
 
 .read-how {
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-3);
   font-size: var(--fs-small);
   line-height: 1.45;
 }
@@ -281,7 +281,7 @@
 
 .read-how summary::before {
   content: '▸';
-  margin-right: 6px;
+  margin-right: var(--space-2);
 }
 
 .read-how[open] summary::before {
@@ -297,9 +297,9 @@
 }
 
 .read-know {
-  margin: 0 0 8px;
-  padding: 6px 10px;
-  border-radius: 8px;
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-s);
   background: var(--surface-1);
   font-size: var(--fs-small);
   line-height: 1.5;
@@ -308,14 +308,14 @@
 .read-beginner {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: var(--tap);
   font-size: var(--fs-ui);
 }
 
 .read-prior {
   display: none;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--mut);
 }
 
@@ -329,7 +329,7 @@
 
 .read-mine-row {
   display: inline-flex;
-  gap: 3px;
+  gap: var(--space-1);
   vertical-align: middle;
 }
 
@@ -340,14 +340,14 @@
 
 .read-mine.is-match {
   opacity: 1;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   box-shadow: 0 0 0 2px var(--acc);
 }
 
 .read-yn {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .read-yn-btn {
@@ -361,32 +361,32 @@
 }
 
 .read-hint {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   font-size: var(--fs-small);
 }
 
 .read-series {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
   border-top: 1px solid var(--line-soft);
 }
 
 .read-lines {
-  margin: 4px 0;
-  padding-left: 18px;
+  margin: var(--space-1) 0;
+  padding-left: var(--space-4);
 }
 
 .read-hands {
-  margin-top: 6px;
+  margin-top: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .read-hand-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -396,15 +396,15 @@
 }
 
 .read-sim {
-  margin: 8px 0 0;
-  padding: 6px 10px;
-  border-radius: 8px;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-s);
   background: var(--surface-2);
   font-size: var(--fs-ui);
 }
 
 .read-q-verdict {
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
   font-weight: 600;
 }
 
@@ -422,7 +422,7 @@
 .timer-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .timer-wrap.hide {
@@ -432,7 +432,7 @@
 .timer-opt {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-height: var(--tap);
   color: var(--mut);
 }
@@ -447,12 +447,12 @@
 .series-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
 }
 
 .series-pick-label {
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
 }
 
 .series-buttons[hidden] {
@@ -475,8 +475,8 @@
 .series-dots {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .series-dot {
@@ -512,10 +512,10 @@
 
 /* Разбор ответа: полоса цвета и значок; исход не равен качеству решения, поэтому «не совпало» янтарное, а не красное */
 .series-ans {
-  margin: 8px 0;
-  padding: 10px 12px;
+  margin: var(--space-2) 0;
+  padding: var(--space-3) var(--space-3);
   border-left: 4px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-s);
   background: var(--surface-1);
 }
 
@@ -536,15 +536,15 @@
 }
 
 .series-ans-note {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .series-summary {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .series-summary p {
-  margin: 6px 0;
+  margin: var(--space-2) 0;
 }
 
 .series-score {
@@ -561,15 +561,15 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .quiz-bar {
   display: block;
   width: 100%;
   height: 8px;
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-3);
 }
 
 .quiz-points {
@@ -578,7 +578,7 @@
 }
 
 .quiz-q {
-  margin: 8px 0;
+  margin: var(--space-2) 0;
   font-size: var(--fs-lead);
   font-weight: 600;
 }
@@ -588,8 +588,8 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 4px 12px;
-  padding-bottom: 8px;
+  gap: var(--space-1) var(--space-3);
+  padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--line);
 }
 
@@ -606,11 +606,11 @@
 .quiz-hands {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 12px 0;
-  padding: 10px 12px;
+  gap: var(--space-1);
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-3);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--surface-1);
 }
 
@@ -623,7 +623,7 @@
   display: grid;
   grid-template-columns: minmax(72px, 34%) 1fr;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .quiz-hand-who {
@@ -658,24 +658,24 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 12px;
-  margin: 8px 0;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-2) 0;
 }
 
 .quiz-mine-dice {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 /* Подсказка: значок ⓘ и приглушённый текст на светлой плашке */
 .quiz-hint {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin: 0 0 8px;
-  padding: 3px 10px;
-  border-radius: 999px;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
   color: var(--mut);
   font-size: var(--fs-small);
@@ -692,7 +692,7 @@
 }
 
 .quiz-legend {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: var(--fs-small);
   color: var(--mut);
 }
@@ -702,7 +702,7 @@
 }
 
 .quiz-legend p {
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
 }
 
 .quiz-mark {
@@ -714,8 +714,8 @@
 .quiz-seats {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
-  margin: 8px 0;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-2) 0;
 }
 
 .quiz-seat {
@@ -725,14 +725,14 @@
 }
 
 .quiz-seat-name {
-  margin-right: 4px;
+  margin-right: var(--space-1);
   font-weight: 600;
 }
 
 .quiz-opts {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .quiz-opts-two {
@@ -761,8 +761,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin: 8px 0;
+  gap: var(--space-4);
+  margin: var(--space-2) 0;
 }
 
 .quiz-num {
@@ -774,11 +774,11 @@
 }
 
 .quiz-fb {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .quiz-verdict {
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-1);
   font-weight: 700;
 }
 
@@ -809,15 +809,15 @@
   align-items: center;
   width: 100%;
   min-height: var(--tap-lg);
-  margin-top: 12px;
+  margin-top: var(--space-3);
   font-size: var(--fs-lead);
 }
 
 .quiz-resume {
-  margin: 0 0 4px;
-  padding: 12px;
+  margin: 0 0 var(--space-1);
+  padding: var(--space-3);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--surface-1);
 }
 
@@ -840,38 +840,38 @@
 }
 
 .quiz-start-title {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   font-size: var(--fs-title);
 }
 
 .quiz-facts {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
   padding: 0;
   list-style: none;
 }
 
 .quiz-fact {
-  padding: 4px 12px;
-  border-radius: 999px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
   font-size: var(--fs-ui);
   font-weight: 600;
 }
 
 .quiz-last {
-  margin: 0 0 12px;
-  padding: 10px 12px;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3) var(--space-3);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-m);
   background: var(--surface-1);
   font-weight: 600;
 }
 
 .quiz-recap {
-  margin: 8px 0;
+  margin: var(--space-2) 0;
   padding: 0;
   list-style: none;
   display: flex;
@@ -879,7 +879,7 @@
 }
 
 .quiz-ans {
-  padding: 10px 0 10px 12px;
+  padding: var(--space-3) 0 var(--space-3) var(--space-3);
   border-left: 4px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -905,13 +905,13 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 4px 12px;
+  gap: var(--space-1) var(--space-3);
 }
 
 .quiz-ans-head .quiz-verdict {
   margin: 0;
-  padding: 2px 10px;
-  border-radius: 999px;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
   background: var(--surface-2);
   font-size: var(--fs-ui);
   white-space: nowrap;
@@ -923,17 +923,17 @@
 
 .quiz-kinds {
   list-style: none;
-  margin: 8px 0;
+  margin: var(--space-2) 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .quiz-kind {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 2px 8px;
+  gap: 2px var(--space-2);
   align-items: baseline;
 }
 
