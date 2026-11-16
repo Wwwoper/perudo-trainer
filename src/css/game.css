@@ -587,6 +587,16 @@
   min-height: var(--tap);
 }
 
+.field-row.is-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  align-items: start;
+}
+
+.field-col {
+  min-width: 0;
+}
+
 /* Строка с длинными подписями: поля друг под другом на всю ширину панели */
 .side-body .field-row.is-stacked,
 .setup-screen .field-row.is-stacked {
@@ -616,10 +626,22 @@
   font-weight: 700;
 }
 
-.game-settings-help {
+/* Единый вид пояснений: серый мелкий текст со значком ⓘ (подзаголовок экрана подготовки — тот же стиль) */
+.game-settings-help,
+.setup-head .muted {
   display: block;
-  margin-top: var(--space-2);
+  color: var(--mut);
+  font-size: var(--fs-small);
   line-height: 1.4;
+}
+
+.game-settings-help {
+  margin-top: var(--space-2);
+}
+
+.game-settings-help:not(:empty)::before,
+.setup-head .muted::before {
+  content: "ⓘ ";
 }
 
 /* Дополнительные правила: карточки с переключателем и объяснением */

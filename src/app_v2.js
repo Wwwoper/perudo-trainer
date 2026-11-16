@@ -41,6 +41,7 @@ import { profileLines, meLines, ME_TITLE, ME_NOTE, TABLE_EMPTY, TABLE_NOTE } fro
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp } from './ui/settings_help.js';
+import { setupConfigSummary } from './config_summary.js';
 import { setupTheme, setupThemeControls, changeThemeMode } from './ui/theme.js';
 import { setupSound, setupSoundControls, playCue, resetSound, changeSoundMode } from './ui/sound.js';
 import { setupGameSettings, rememberGameSettings, refreshFirstPreset } from './ui/game_settings_ui.js';
@@ -140,6 +141,7 @@ function setupGame() {
 
   setupBotStyles();
   setupSettingsHelp();
+  setupConfigSummary();
   setupTheme();
   setupThemeControls();
   setupSound({ getSpeed: () => $('#gSpeed')?.value || 'normal' });

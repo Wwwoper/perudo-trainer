@@ -171,7 +171,7 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gCalzaOpt')).toBeChecked();
     await expect(page.locator('#gPalificoOpt')).toBeChecked();
     await expect(page.locator('#gRevealOpt')).not.toBeChecked();
-    await expect(page.locator('#gConfigSummary')).toContainText('4×3');       // сводка «Сейчас: …» тоже обновилась
+    await expect(page.locator('#gConfigSummary')).toContainText('4 кубика · 2 бота · Игра · Быстро · Calza и Палифико');       // сводка под «Начать партию» тоже обновилась
     await expect(page.locator('#gAssistHelp')).toContainText('без шансов');   // пояснение к режиму помощи тоже
 
     await page.locator('#gSetup .side-start').click();                         // и партия действительно идёт по ним

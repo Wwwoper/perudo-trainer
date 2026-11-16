@@ -5,6 +5,7 @@
 
 import { createSoundEngine } from '../sound_engine.js';
 import { sanitizeSoundMode, describeSoundMode } from '../sound_plan.js';
+import { soundIconSvg } from './icons.js';
 import { $ } from './common.js';
 import { getSoundMode, setSoundMode } from '../storage.js';
 
@@ -41,18 +42,37 @@ export function currentSoundMode() {
 
 /** Переключатель «Звуки» в настройках партии: показывает режим, меняет его, кнопка «Проверить звук». */
 function refreshSoundControls() {
-  const sel = $('#gSound');
-  if (sel && sel.value !== mode) sel.value = mode;
-  const help = $('#gSoundHelp');
-  if (help) help.textContent = describeSoundMode(mode);
+  const group = $('#gSound');
+  if (group) {
+    group.title = describeSoundMode(mode);
+    group.querySelectorAll('[data-sound]').forEach((btn) => {
+      const on = btn.dataset.sound === mode;
+      btn.setAttribute('aria-checked', String(on));
+      btn.tabIndex = on ? 0 : -1;
+    });
+  }
   const test = $('#gSoundTest');
   if (test) test.hidden = mode === 'off';
 }
 
 export function setupSoundControls() {
-  $('#gSound')?.addEventListener('change', (e) => {
-    changeSoundMode(e.target.value);
-    if (mode !== 'off' && engine) { engine.unlock(); engine.cue('turn'); }     // выбор режима — сразу слышно, как он звучит
+  const group = $('#gSound');
+  const buttons = group ? [...group.querySelectorAll('[data-sound]')] : [];
+  buttons.forEach((btn) => {
+    btn.innerHTML = soundIconSvg(btn.dataset.sound);
+    btn.addEventListener('click', () => {
+      changeSoundMode(btn.dataset.sound);
+      if (mode !== 'off' && engine) { engine.unlock(); engine.cue('turn'); }     // выбор режима — сразу слышно, как он звучит
+    });
+  });
+  group?.addEventListener('keydown', (e) => {                                  // стрелки переключают режим, как у радиокнопок
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const i = buttons.findIndex((b) => b.dataset.sound === mode);
+    const next = buttons[(i + step + buttons.length) % buttons.length];
+    next.click();
+    next.focus();
   });
   $('#gSoundTest')?.addEventListener('click', () => {
     if (!engine) return;

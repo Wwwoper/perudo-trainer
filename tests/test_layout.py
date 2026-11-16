@@ -957,6 +957,7 @@ class LayoutTest(unittest.TestCase):
                 self.goto_tab(page, "game")
                 sel = page.locator("#gSound")
                 card = page.locator(".setup-card:has(#gSound)")
+                self.assertEqual(page.locator("#gSound button").count(), 3)
                 self.assertFalse(page.locator(".setup-card:has(#gSound):has(#gAssist)").count(),
                                  "звуки должны быть в своей карточке, а не внутри «Помощь и темп»")
                 self.assertEqual(card.locator("h3.set-label").inner_text().strip().lower(), "звуки")
@@ -965,13 +966,53 @@ class LayoutTest(unittest.TestCase):
                 box = sel.bounding_box()
                 self.assertGreaterEqual(box["height"], 40)
                 self.assertLessEqual(box["x"] + box["width"], w + 1)
-                page.select_option("#gSound", "quiet")
+                for b in page.locator("#gSound button").all():
+                    bb = b.bounding_box()
+                    self.assertGreaterEqual(bb["height"], 44)
+                    self.assertGreaterEqual(bb["width"], 44)
+                    self.assertEqual(b.inner_text().strip(), "")                  # без надписей, только значок
+                    self.assertEqual(b.locator("svg").count(), 1)
+                page.locator('#gSound [data-sound="quiet"]').click()
+                self.assertEqual(page.locator('#gSound [aria-checked="true"]').get_attribute("data-sound"), "quiet")
                 btn = page.locator("#gSoundTest")
                 btn.scroll_into_view_if_needed()
                 self.assertTrue(btn.is_visible())
                 bb = btn.bounding_box()
                 self.assertGreaterEqual(bb["height"], 44)
                 self.assertLessEqual(bb["x"] + bb["width"], w + 1)
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+
+    def test_settings_pairs_hints_and_summary(self):
+        """Настройки: пары «Режим помощи | Темп» и «Объяснения | Подробность», подсказка под своим полем,
+        «Что значат стили ботов» в карточке «Соперники», полная строка под «Начать партию»."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                for left, right, lh, rh in [("gAssist", "gSpeed", "gAssistHelp", "gSpeedHelp"),
+                                            ("gExplain", "gExplainDepth", "gExplainHelp", "gDepthHelp")]:
+                    boxes = {k: page.locator("#" + k).bounding_box() for k in (left, right, lh, rh)}
+                    for field, help_ in ((left, lh), (right, rh)):
+                        f, hb = boxes[field], boxes[help_]
+                        self.assertGreaterEqual(hb["y"], f["y"] + f["height"] - 1, f"{help_} под полем")
+                        self.assertLessEqual(hb["y"] - (f["y"] + f["height"]), 24, f"{help_} вплотную к полю")
+                        self.assertGreaterEqual(hb["x"], f["x"] - 1)
+                        self.assertLessEqual(hb["x"] + hb["width"], f["x"] + f["width"] + 1, f"{help_} шире поля")
+                    side_by_side = abs(boxes[left]["y"] - boxes[right]["y"]) < 4
+                    if w >= 720 and h >= 600:                                  # широкий экран подготовки; в ландшафте телефона панель узкая
+                        self.assertTrue(side_by_side, f"{left}|{right} в одну строку при {w}px")
+                self.assertEqual(page.locator(".setup-card:has(#gShowStylesOpt) #gStyleHelp").count(), 1)
+                self.assertEqual(page.locator("#gStyleHelp").locator("xpath=ancestor::details").count(), 1)
+                self.assertEqual(page.locator("#gConfigSummary").inner_text().strip(),
+                                 "5 кубиков · 3 бота · Тренировка · Нормально · без Calza и Палифико")
+                page.select_option("#gSpeed", "fast")
+                page.locator("#gCalzaOpt").check()
+                self.assertEqual(page.locator("#gConfigSummary").inner_text().strip(),
+                                 "5 кубиков · 3 бота · Тренировка · Быстро · только Calza")
+                self.assertIn("почти сразу", page.locator("#gSpeedHelp").inner_text())
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
     def test_theme_card_in_stats_player_tab_fits(self):
@@ -1502,13 +1543,15 @@ class LayoutTest(unittest.TestCase):
                         const st = getComputedStyle(s);
                         probe.font = st.fontSize + ' ' + st.fontFamily;
                         const longest = Math.max(...[...s.options].map(o => probe.measureText(o.text).width));
-                        return { id: s.id, width: s.getBoundingClientRect().width, inner, longest,
+                        return { id: s.id, width: s.getBoundingClientRect().width, inner, longest, paired: !!s.closest('.is-pair'),
                                  pad: parseFloat(st.paddingLeft) + parseFloat(st.paddingRight) + 28 };
                     }); }""")
                 self.assertTrue(res, "в настройках нет списков")
                 for r in res:
                     self.assertGreaterEqual(r["width"], r["longest"] + r["pad"], f"{r['id']}: подпись обрезана")
-                    if r["id"] != "gBots":
+                    if r["paired"]:                                              # пара полей в строке: каждое — не уже трети панели
+                        self.assertGreaterEqual(r["width"], r["inner"] / 3, f"{r['id']}: список слишком узкий")
+                    elif r["id"] != "gBots":
                         self.assertGreaterEqual(r["width"], r["inner"] - 2, f"{r['id']}: список не на всю ширину")
 
     def test_trainer_settings_panel_layout(self):

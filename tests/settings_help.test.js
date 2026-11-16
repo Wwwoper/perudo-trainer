@@ -2,7 +2,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { ASSIST_HELP, EXPLAIN_HELP, explainHelpText } from '../src/ui/settings_help.js';
+import { ASSIST_HELP, EXPLAIN_HELP, PACE_HELP, DEPTH_HELP, explainHelpText } from '../src/ui/settings_help.js';
 import { createAssistConfig } from '../src/assist.js';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -85,5 +85,19 @@ describe('переключатель «Показывать стили бото�
 describe('подсказка к «Показывать вскрытие кубиков»', () => {
   it('стоит сразу под переключателем', () => {
     assert.match(html, /id="gRevealOpt"[^>]*>[^<]*<\/label>\s*<small id="gRevealInfo" class="game-settings-help">[^<]*Calza[^<]*<\/small>/);
+  });
+});
+
+describe('подсказки к темпу и подробности', () => {
+  const values = (id) => [...html.matchAll(new RegExp(`<select id="${id}">([\\s\\S]*?)</select>`, 'g'))][0][1]
+    .match(/value="(\w+)"/g).map((v) => v.slice(7, -1));
+  it('есть для каждого значения списка', () => {
+    assert.deepStrictEqual(Object.keys(PACE_HELP).sort(), values('gSpeed').sort());
+    assert.deepStrictEqual(Object.keys(DEPTH_HELP).sort(), values('gExplainDepth').sort());
+  });
+  it('каждая подсказка стоит сразу под своим полем в одной колонке', () => {
+    for (const [sel, help] of [['gAssist', 'gAssistHelp'], ['gSpeed', 'gSpeedHelp'], ['gExplain', 'gExplainHelp'], ['gExplainDepth', 'gDepthHelp']]) {
+      assert.match(html, new RegExp(`<select id="${sel}">[\\s\\S]*?</select>\\s*</label>\\s*<small id="${help}" class="game-settings-help"></small>\\s*</div>`), sel);
+    }
   });
 });

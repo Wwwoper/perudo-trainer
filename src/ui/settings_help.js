@@ -17,6 +17,20 @@ export const EXPLAIN_HELP = {
   full: 'Перед ходом: факты о ситуации за столом. После хода: разбор.',
 };
 
+/** Темп: когда ходят боты (задержки совпадают с BOT_DELAYS в bot_pace.js). */
+export const PACE_HELP = {
+  step: 'Бот ходит, когда вы нажмёте кнопку.',
+  slow: 'Бот ходит примерно через 3 секунды.',
+  normal: 'Бот ходит примерно через секунду.',
+  fast: 'Бот ходит почти сразу.',
+};
+
+/** Подробность объяснений. */
+export const DEPTH_HELP = {
+  short: 'Главные факты о ситуации и ходе.',
+  detailed: 'Ещё сравнение с другими ходами и ход ставок за раунд.',
+};
+
 /** Как в режиме «Игра» объяснения работают независимо от выбора. */
 export const EXPLAIN_GAME_NOTE = 'В режиме «Игра» объяснения появятся только после окончания партии.';
 
@@ -34,6 +48,22 @@ export function setupSettingsHelp() {
   const update = () => { help.textContent = ASSIST_HELP[sel.value] || ''; };
   sel.addEventListener('change', update);
   update();
+
+  const pace = $('#gSpeed');
+  const paceHelp = $('#gSpeedHelp');
+  if (pace && paceHelp) {
+    const updatePace = () => { paceHelp.textContent = PACE_HELP[pace.value] || ''; };
+    pace.addEventListener('change', updatePace);
+    updatePace();
+  }
+
+  const depth = $('#gExplainDepth');
+  const depthHelp = $('#gDepthHelp');
+  if (depth && depthHelp) {
+    const updateDepth = () => { depthHelp.textContent = DEPTH_HELP[depth.value] || ''; };
+    depth.addEventListener('change', updateDepth);
+    updateDepth();
+  }
 
   const ex = $('#gExplain');
   const exHelp = $('#gExplainHelp');

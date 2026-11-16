@@ -123,14 +123,15 @@ test.describe('Звуки', () => {
 
   test('переключатель в настройках: выбор режима звучит, запоминается, кнопка проверки появляется', async ({ page }) => {
     await setup(page);
-    const sel = page.locator('#gSound');
-    await expect(sel).toHaveValue('off');
+    const pick = (mode) => page.locator(`#gSound [data-sound="${mode}"]`);
+    await expect(pick('off')).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('#gSoundTest')).toBeHidden();
-    await expect(page.locator('#gSoundHelp')).toHaveText('Звуки выключены.');
-    await sel.selectOption('normal');
+    await expect(page.locator('#gSound')).toHaveAttribute('title', 'Звуки выключены.');
+    await pick('normal').click();
     await expect.poll(() => freqs(page)).toContain(FREQ.turn);          // выбор режима сразу слышно
     await expect(page.locator('#gSoundTest')).toBeVisible();
-    await expect(page.locator('#gSoundHelp')).toContainText('быстром темпе');
+    await expect(pick('normal')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('#gSound')).toHaveAttribute('title', /быстром темпе/);
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode)).toBe('normal');
     const before = (await freqs(page)).length;
     await page.locator('#gSoundTest').click();
@@ -138,8 +139,8 @@ test.describe('Звуки', () => {
     await page.reload();
     await page.waitForFunction(() => Boolean(window.__perudo_v2));
     await openTab(page, 'game');
-    await expect(page.locator('#gSound')).toHaveValue('normal');
-    await sel.selectOption('off');
+    await expect(pick('normal')).toHaveAttribute('aria-checked', 'true');
+    await pick('off').click();
     await expect(page.locator('#gSoundTest')).toBeHidden();
   });
 

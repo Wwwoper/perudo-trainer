@@ -576,6 +576,10 @@
               <small id="gMemoryInfo" class="game-settings-help"></small>
               <label class="check"><input id="gShowStylesOpt" type="checkbox"> Показывать стили ботов</label>
               <small id="gShowStylesInfo" class="game-settings-help">Выключено: значка стиля у аватара нет, как за настоящим столом. Стили раскроются в конце партии.</small>
+              <details class="help-more">
+                <summary>Что значат стили ботов</summary>
+                <ul id="gStyleHelp" class="help-list"></ul>
+              </details>
               <div class="field-row">
                 <button type="button" id="gMemoryReset">Забыть мою игру</button>
               </div>
@@ -584,60 +588,64 @@
 
               <section class="setup-card" aria-labelledby="gHelpLabel">
               <h3 class="set-label" id="gHelpLabel">Помощь и темп</h3>
-              <div class="field-row is-stacked">
-                <label class="field">Режим помощи
-                  <select id="gAssist">
-                    <option value="novice">Новичок</option>
-                    <option value="training" selected>Тренировка</option>
-                    <option value="game">Игра (без подсказок)</option>
-                  </select>
-                </label>
-                <label class="field">Темп
-                  <select id="gSpeed">
-                    <option value="step">Пошагово</option>
-                    <option value="slow">Медленно</option>
-                    <option value="normal" selected>Нормально</option>
-                    <option value="fast">Быстро</option>
-                  </select>
-                </label>
+              <div class="field-row is-pair">
+                <div class="field-col">
+                  <label class="field">Режим помощи
+                    <select id="gAssist">
+                      <option value="novice">Новичок</option>
+                      <option value="training" selected>Тренировка</option>
+                      <option value="game">Игра (без подсказок)</option>
+                    </select>
+                  </label>
+                  <small id="gAssistHelp" class="game-settings-help"></small>
+                </div>
+                <div class="field-col">
+                  <label class="field">Темп
+                    <select id="gSpeed">
+                      <option value="step">Пошагово</option>
+                      <option value="slow">Медленно</option>
+                      <option value="normal" selected>Нормально</option>
+                      <option value="fast">Быстро</option>
+                    </select>
+                  </label>
+                  <small id="gSpeedHelp" class="game-settings-help"></small>
+                </div>
               </div>
 
-              <small id="gAssistHelp" class="game-settings-help"></small>
-
-              <div class="field-row is-stacked">
-                <label class="field">Объяснения
-                  <select id="gExplain">
-                    <option value="auto" selected>Как у режима помощи</option>
-                    <option value="off">Выключены</option>
-                    <option value="after">После хода</option>
-                    <option value="full">До и после хода</option>
-                  </select>
-                </label>
-                <label class="field">Подробность
-                  <select id="gExplainDepth">
-                    <option value="short" selected>Коротко</option>
-                    <option value="detailed">Подробно</option>
-                  </select>
-                </label>
+              <div class="field-row is-pair">
+                <div class="field-col">
+                  <label class="field">Объяснения
+                    <select id="gExplain">
+                      <option value="auto" selected>Как у режима помощи</option>
+                      <option value="off">Выключены</option>
+                      <option value="after">После хода</option>
+                      <option value="full">До и после хода</option>
+                    </select>
+                  </label>
+                  <small id="gExplainHelp" class="game-settings-help"></small>
+                </div>
+                <div class="field-col">
+                  <label class="field">Подробность
+                    <select id="gExplainDepth">
+                      <option value="short" selected>Коротко</option>
+                      <option value="detailed">Подробно</option>
+                    </select>
+                  </label>
+                  <small id="gDepthHelp" class="game-settings-help"></small>
+                </div>
               </div>
-              <small id="gExplainHelp" class="game-settings-help"></small>
               </section>
 
               <section class="setup-card" aria-labelledby="gSoundLabel">
               <h3 class="set-label" id="gSoundLabel">Звуки</h3>
               <div class="field-row">
-                <label class="field">Режим звука
-                  <select id="gSound">
-                    <option value="off" selected>Выключены</option>
-                    <option value="quiet">Тихо</option>
-                    <option value="normal">Обычно</option>
-                  </select>
-                </label>
-              </div>
-              <div class="field-row">
+                <div id="gSound" class="sound-switch" role="radiogroup" aria-label="Режим звука">
+                  <button type="button" role="radio" data-sound="off" aria-checked="true" aria-label="Звуки выключены" title="Звуки выключены"></button>
+                  <button type="button" role="radio" data-sound="quiet" aria-checked="false" aria-label="Звуки тихие" title="Звуки тихие"></button>
+                  <button type="button" role="radio" data-sound="normal" aria-checked="false" aria-label="Звуки обычные" title="Звуки обычные"></button>
+                </div>
                 <button type="button" id="gSoundTest" hidden>Проверить звук</button>
               </div>
-              <small id="gSoundHelp" class="game-settings-help"></small>
               </section>
 
               <section class="setup-card">
@@ -674,10 +682,6 @@
 
               <small class="game-settings-help">Настройки применяются, когда вы начинаете новую партию.</small>
 
-              <details class="help-more">
-                <summary>Что значат стили ботов</summary>
-                <ul id="gStyleHelp" class="help-list"></ul>
-              </details>
               <details class="help-more">
                 <summary>Как повышать ставку</summary>
                 <p class="game-settings-help">Единицы — джокеры, кроме ставок на единицы. С обычной цифры на единицы —
@@ -923,49 +927,6 @@
 
   <!-- app_v2.js — ES-модуль, подтянет engine/rules/assist/storage/table -->
   <script type="module" src="src/app_v2.js"></script>
-
-  <!-- Сводка настроек партии «5×4 · Тренировка · Calza» -->
-  <script>
-    (function () {
-      function init() {
-        const summary = document.getElementById('gConfigSummary');
-        if (!summary) return;
-
-        const dice = document.getElementById('gDice');
-        const bots = document.getElementById('gBots');
-        const assist = document.getElementById('gAssist');
-        const calza = document.getElementById('gCalzaOpt');
-        const pal = document.getElementById('gPalificoOpt');
-
-        const labels = { novice: 'Новичок', training: 'Тренировка', game: 'Игра' };
-
-        function update() {
-          const d = dice?.value || '5';
-          const b = bots?.value || '3';
-          const a = labels[assist?.value || 'training'] || 'Тренировка';
-
-          const extras = [];
-          if (calza?.checked) extras.push('Calza');
-          if (pal?.checked) extras.push('Палифико');
-
-          const players = (Number(b) || 3) + 1;
-          summary.textContent =
-            `Сейчас: ${d}×${players} · ${a}` + (extras.length ? ` · ${extras.join(', ')}` : '');
-        }
-
-        [dice, bots, assist, calza, pal].forEach(function (el) {
-          if (el) el.addEventListener('change', update);
-        });
-        update();
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-      } else {
-        init();
-      }
-    })();
-  </script>
 </body>
 
 </html>
