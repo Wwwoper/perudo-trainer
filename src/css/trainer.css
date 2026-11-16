@@ -338,41 +338,7 @@
   border-top: 1px solid var(--line);
 }
 
-.trainer-all summary {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-  cursor: pointer;
-  color: var(--mut);
-}
-
 /* Статистика — свёрнута */
-.trainer-stats-card>summary {
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  min-height: var(--tap);
-  font-weight: 700;
-  padding: var(--space-1) 0;
-  color: var(--fg);
-}
-
-.trainer-stats-card>summary::-webkit-details-marker {
-  display: none;
-}
-
-.trainer-stats-card>summary::before {
-  content: "▸";
-  display: inline-block;
-  margin-right: var(--space-2);
-  transition: transform .15s ease;
-}
-
-.trainer-stats-card[open]>summary::before {
-  transform: rotate(90deg);
-}
-
 .trainer-stats-card[open]>summary {
   margin-bottom: var(--space-2);
 }

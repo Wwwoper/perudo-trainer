@@ -204,6 +204,36 @@ class BrowserTest(unittest.TestCase):
         for sel in (".link-btn", ".btn", ".btn-primary", "button.bad", "button.calza", ".quiz-secondary"):
             self.assertNotIn(sel, dup, f"{sel} определён в нескольких файлах: {dup.get(sel)}")
 
+    def test_disclosure_blocks_share_form_and_roles(self):
+        """Раскрывающиеся блоки: одна форма, три роли; внутри роли вид совпадает."""
+        page = self.browser.new_context(viewport={"width": 1000, "height": 800}).new_page()
+        page.goto(self.base + "/docs/dev/design.html")
+        js = """(sel) => { const e = document.querySelector(sel); const s = getComputedStyle(e);
+                const b = getComputedStyle(e, '::before');
+                return { fs: s.fontSize, fw: s.fontWeight, c: s.color, h: e.getBoundingClientRect().height >= 44,
+                         d: s.display, arrow: b.content, ls: s.listStyleType }; }"""
+        roles = {
+            "подсказка": ["calc-hint", "drill-hint", "read-how", "quiz-legend", "help-more"],
+            "раздел": ["dock-more", "trainer-stats-card", "game-picture"],
+            "тихий": ["trainer-all"],
+        }
+        for theme in ("light", "dark"):
+            page.evaluate("t => document.documentElement.setAttribute('data-theme', t)", theme)
+            seen = {}
+            for role, names in roles.items():
+                got = [page.evaluate(js, f"#dxDisc .{n} > summary") for n in names]
+                for n, g in zip(names, got):
+                    self.assertTrue(g["h"], f"{theme}: .{n} ниже 44 px")
+                    self.assertEqual(g["arrow"], '"▸"', f"{theme}: .{n} без стрелки ▸")
+                    self.assertEqual(g["ls"], "none", f"{theme}: .{n} показывает маркер")
+                    self.assertEqual({k: g[k] for k in ("fs", "fw", "c")}, {k: got[0][k] for k in ("fs", "fw", "c")},
+                                     f"{theme}: .{n} отличается от других в роли «{role}»")
+                seen[role] = got[0]
+            # роли различаются, а не совпадают
+            self.assertNotEqual((seen["подсказка"]["fw"], seen["подсказка"]["c"]), (seen["раздел"]["fw"], seen["раздел"]["c"]))
+        sit = page.evaluate(js, "#dxDisc .sit-summary")
+        self.assertEqual((sit["fs"], sit["fw"]), ("16px", "700"))
+
     def test_live_collection_covers_every_kind(self):
         snaps = da.collect_live(browser=self.browser)
         kinds = da.group_signatures(snaps)

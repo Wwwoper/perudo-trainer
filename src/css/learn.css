@@ -283,24 +283,6 @@
 }
 
 /* Свёрнутый дополнительный блок в панели (Калькулятор: «Чтение чужих ставок») */
-.dock-more > summary {
-  min-height: var(--tap);
-  display: flex;
-  align-items: center;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.dock-more > summary::after {
-  content: "▾";
-  margin-left: auto;
-  color: var(--mut);
-}
-
-.dock-more[open] > summary::after {
-  transform: rotate(180deg);
-}
-
 .dock-more .field-row {
   flex-direction: column;
   align-items: stretch;

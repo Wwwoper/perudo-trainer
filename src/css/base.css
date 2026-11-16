@@ -508,7 +508,7 @@ small {
   border-radius: var(--radius-s);
   margin: var(--space-1) 0;
   background: var(--surface-5);
-  border-left: 4px solid var(--line-2);
+  border-left: 3px solid var(--line-2);
   align-items: flex-start;
 }
 

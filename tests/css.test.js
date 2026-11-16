@@ -246,3 +246,12 @@ test('каждый токен скруглений и отступов где-т
     assert.ok(css.includes(`var(--${n})`), `токен --${n} не используется`);
   }
 });
+
+// ---------- Панели и полосы (волна 15) ----------
+
+test('цветная полоса слева (border-left от 3px) везде ровно 3px', () => {
+  for (const { f, v } of declarations('border-left')) {
+    const m = /^(\d+)px\s+solid/.exec(v);
+    if (m && +m[1] >= 3) assert.equal(+m[1], 3, `${f}: border-left: ${v} — полоса 3px`);
+  }
+});

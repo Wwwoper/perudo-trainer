@@ -84,32 +84,6 @@
   font-size: var(--fs-ui);
 }
 
-.calc-hint>summary {
-  display: flex;
-  align-items: center;
-  min-height: var(--tap);
-  cursor: pointer;
-  color: var(--acc);
-  user-select: none;
-  list-style: none;
-  font-weight: 600;
-}
-
-.calc-hint>summary::-webkit-details-marker {
-  display: none;
-}
-
-.calc-hint>summary::before {
-  content: "▸";
-  display: inline-block;
-  margin-right: var(--space-2);
-  transition: transform .15s ease;
-}
-
-.calc-hint[open]>summary::before {
-  transform: rotate(90deg);
-}
-
 .calc-hint-body {
   margin-top: var(--space-2);
   line-height: 1.5;
@@ -221,17 +195,6 @@
   color: var(--text-soft);
   font-size: var(--fs-small);
   line-height: 1.5;
-}
-
-.sit-summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  cursor: pointer;
-  font-weight: 700;
-  color: var(--acc);
 }
 
 .sit-body {
@@ -414,4 +377,106 @@
     padding: 0 var(--space-1);
     font-size: var(--fs-small);
   }
+}
+
+/* Раскрывающиеся блоки. Одна форма: стрелка ▸ слева, поворот на 90° при открытии, высота не ниже --tap.
+   Три роли, которые различаются только весом и цветом:
+   подсказка («как это считать») — акцентный, 14 px, жирность 600;
+   раздел (карточка, которую можно свернуть) — основной цвет, 16 px, 700;
+   тихий (дополнительные варианты) — серый, 14 px.
+   Блоки с заголовком, пояснением и «Показать ▾» (.reveal-more, .key-moments) и «таблетка» настроек тренажёра
+   (.trainer-settings-more) — отдельные компоненты со своими стилями. */
+.calc-hint > summary,
+.drill-hint > summary,
+.read-how > summary,
+.quiz-legend > summary,
+.help-more > summary,
+.dock-more > summary,
+.trainer-stats-card > summary,
+.game-picture > summary,
+.sit-summary,
+.trainer-all > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.calc-hint > summary::-webkit-details-marker,
+.drill-hint > summary::-webkit-details-marker,
+.read-how > summary::-webkit-details-marker,
+.quiz-legend > summary::-webkit-details-marker,
+.help-more > summary::-webkit-details-marker,
+.dock-more > summary::-webkit-details-marker,
+.trainer-stats-card > summary::-webkit-details-marker,
+.game-picture > summary::-webkit-details-marker,
+.sit-summary::-webkit-details-marker,
+.trainer-all > summary::-webkit-details-marker {
+  display: none;
+}
+
+.calc-hint > summary::before,
+.drill-hint > summary::before,
+.read-how > summary::before,
+.quiz-legend > summary::before,
+.help-more > summary::before,
+.dock-more > summary::before,
+.trainer-stats-card > summary::before,
+.game-picture > summary::before,
+.sit-summary::before,
+.trainer-all > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: var(--space-2);
+  transition: transform .15s ease;
+}
+
+.calc-hint[open] > summary::before,
+.drill-hint[open] > summary::before,
+.read-how[open] > summary::before,
+.quiz-legend[open] > summary::before,
+.help-more[open] > summary::before,
+.dock-more[open] > summary::before,
+.trainer-stats-card[open] > summary::before,
+.game-picture[open] > summary::before,
+.sit-card[open] > .sit-summary::before,
+.trainer-all[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+/* подсказка */
+.calc-hint > summary,
+.drill-hint > summary,
+.read-how > summary,
+.quiz-legend > summary,
+.help-more > summary {
+  color: var(--acc);
+  font-size: var(--fs-ui);
+  font-weight: 600;
+}
+
+/* раздел */
+.dock-more > summary,
+.trainer-stats-card > summary,
+.game-picture > summary,
+.sit-summary {
+  color: var(--fg);
+  font-size: var(--fs-body);
+  font-weight: 700;
+}
+
+.sit-summary {
+  padding: 0 var(--space-3);
+}
+
+/* тихий */
+.trainer-all > summary {
+  color: var(--mut);
+  font-size: var(--fs-ui);
+}
+
+.trainer-stats-card[open] > summary {
+  margin-bottom: var(--space-2);
 }

@@ -26,7 +26,7 @@ test('все классы образца определены в стилях п
 });
 
 test('в образце есть все разделы: текст, кнопки, поля, чипы, карточки, строки, цвета', () => {
-  for (const id of ['dx-type', 'dx-scale', 'dx-buttons', 'dx-fields', 'dx-chips', 'dx-cards', 'dx-rows', 'dx-colors']) {
+  for (const id of ['dx-type', 'dx-scale', 'dx-buttons', 'dx-fields', 'dx-chips', 'dx-disclosure', 'dx-cards', 'dx-rows', 'dx-colors']) {
     assert.ok(page.includes(`id="${id}"`), `нет раздела ${id}`);
   }
 });

@@ -45,6 +45,7 @@
     <li>Вкладки: <a href="#dx-switch">.drill-tab и .stats-tab</a></li>
     <li>Выбор значения: <a href="#dx-game">.face-btn, .mode-btn и чипы</a>, <a href="#dx-chips">размеры чипов</a></li>
     <li>Поля: <a href="#dx-fields">input и .drill-input</a></li>
+    <li>Раскрывающиеся блоки: <a href="#dx-disclosure">подсказка, раздел, тихий</a></li>
     <li>Поверхности: <a href="#dx-cards">.card, .result-card, .key-moment</a></li>
     <li>Строки: <a href="#dx-rows">.log-row и .trainer-option</a></li>
     <li>Цвета: <a href="#dx-colors">токены и их пары</a></li>
@@ -142,6 +143,28 @@
       <div class="dx-cell"><span class="dx-cap">ставка, крупный · .chip.lg</span><span class="chip lg">3<em>×</em></span></div>
       <div class="dx-cell"><span class="dx-cap">ставка, самый крупный · .chip.xl</span><span class="chip xl">3<em>×</em></span></div>
       <div class="dx-cell"><span class="dx-cap">метка · .badge</span><span class="badge">Продвинутый режим</span></div>
+    </div>
+  </section>
+
+  <section class="dx-sec" id="dx-disclosure">
+    <h2>Раскрывающиеся блоки</h2>
+    <p class="dx-why">Одна форма: стрелка ▸ слева, высота не ниже 44 px. Три роли, различаются только весом и цветом. Блоки с «Показать ▾» (.reveal-more, .key-moments) и «таблетка» настроек тренажёра — отдельные компоненты, их видно ниже.</p>
+    <div class="dx-narrow" id="dxDisc">
+      <h3 class="dx-h">Подсказка (акцентный, 14 px, 600)</h3>
+      <details class="calc-hint"><summary>Как это посчитать · .calc-hint</summary><p class="muted">Текст.</p></details>
+      <details class="drill-hint"><summary>Как прикинуть в уме · .drill-hint</summary><p class="muted">Текст.</p></details>
+      <details class="read-how"><summary>Как это решать · .read-how</summary><p class="muted">Текст.</p></details>
+      <details class="quiz-legend"><summary>Как считаются баллы · .quiz-legend</summary><p class="muted">Текст.</p></details>
+      <details class="help-more"><summary>Что значат стили ботов · .help-more</summary><p class="muted">Текст.</p></details>
+      <h3 class="dx-h">Раздел (основной цвет, 16 px, 700)</h3>
+      <details class="dock-more"><summary>Чтение чужих ставок · .dock-more</summary><p class="muted">Текст.</p></details>
+      <details class="card trainer-stats-card"><summary>📊 Статистика · .trainer-stats-card</summary><p class="muted">Текст.</p></details>
+      <details class="game-picture"><summary>Картина партии · .game-picture</summary><p class="muted">Текст.</p></details>
+      <details class="sit-card"><summary class="sit-summary"><span aria-hidden="true">🧭</span> Картина стола · .sit-summary</summary><p class="muted">Текст.</p></details>
+      <h3 class="dx-h">Тихий (серый, 14 px)</h3>
+      <details class="trainer-all"><summary>Все варианты по шансу · .trainer-all</summary><p class="muted">Текст.</p></details>
+      <h3 class="dx-h">Отдельные компоненты</h3>
+      <details class="trainer-settings-more"><summary>⚙️ Классика · порог 0.50</summary><p class="muted">Текст.</p></details>
     </div>
   </section>
 

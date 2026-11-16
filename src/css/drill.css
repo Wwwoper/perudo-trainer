@@ -78,33 +78,6 @@
   font-size: var(--fs-small);
 }
 
-.drill-hint>summary {
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  min-height: var(--tap);
-  padding: 0;
-  color: var(--acc);
-  font-weight: 600;
-  user-select: none;
-}
-
-.drill-hint>summary::-webkit-details-marker {
-  display: none;
-}
-
-.drill-hint>summary::before {
-  content: "▸";
-  display: inline-block;
-  margin-right: var(--space-2);
-  transition: transform .15s ease;
-}
-
-.drill-hint[open]>summary::before {
-  transform: rotate(90deg);
-}
-
 .drill-hint-body {
   margin-top: var(--space-2);
   padding: var(--space-3) var(--space-3);
@@ -269,23 +242,6 @@
   margin: 0 0 var(--space-3);
   font-size: var(--fs-small);
   line-height: 1.45;
-}
-
-.read-how summary {
-  min-height: var(--tap);
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.read-how summary::before {
-  content: '▸';
-  margin-right: var(--space-2);
-}
-
-.read-how[open] summary::before {
-  content: '▾';
 }
 
 .read-q.is-ok {
@@ -514,7 +470,8 @@
 .series-ans {
   margin: var(--space-2) 0;
   padding: var(--space-3) var(--space-3);
-  border-left: 4px solid var(--line);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
   border-radius: var(--radius-s);
   background: var(--surface-1);
 }
@@ -697,10 +654,6 @@
   color: var(--mut);
 }
 
-.quiz-legend summary {
-  cursor: pointer;
-}
-
 .quiz-legend p {
   margin: var(--space-2) 0 0;
 }
@@ -880,7 +833,7 @@
 
 .quiz-ans {
   padding: var(--space-3) 0 var(--space-3) var(--space-3);
-  border-left: 4px solid var(--line);
+  border-left: 3px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
