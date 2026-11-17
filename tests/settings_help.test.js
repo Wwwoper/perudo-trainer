@@ -108,7 +108,7 @@ describe('подсказки к чекбоксам соперников меня
     assert.match(stylesHelpText(false), /^Выключено: .*раскроются в конце партии/);
   });
   it('«Боты запоминают»: выключено, мало данных, достаточно данных, сразу после «Забыть»', () => {
-    assert.match(memoryHelpText(false, { challenged: 9, bluffPct: 40 }), /^Выключено: .*не запоминают\. Накопленное не стирается/);
+    assert.match(memoryHelpText(false, { challenged: 9, bluffPct: 40 }), /^Выключено: .*не запоминают, накопленное сохраняется/);
     assert.match(memoryHelpText(true, { challenged: 1, bluffPct: 40 }), /присматриваются.*проверено ставок — 1\./);
     assert.match(memoryHelpText(true, { challenged: 10, bluffPct: 40 }), /Проверено ставок: 10, ложных ≈ 40%/);
     assert.strictEqual(memoryHelpText(true, { challenged: 0, bluffPct: 30 }, true), 'Готово: боты забыли вашу игру.');

@@ -101,13 +101,6 @@
   background: var(--card);
 }
 
-/* Стили ботов на экране подготовки — по два в ряд */
-.setup-screen #gBotStyles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  column-gap: var(--space-3);
-}
-
 #panSettings button {
   min-height: var(--tap);
 }
@@ -619,6 +612,7 @@
 /* Числовое поле остаётся источником значения для настроек, но глазу не показывается */
 .count-field {
   position: relative;
+  margin-bottom: var(--space-3);
 }
 
 .count-input {
@@ -638,7 +632,17 @@
   color: var(--mut);
 }
 
-/* Стиль бота: имя слева, список справа; на узкой панели список переносится под имя на всю ширину */
+/* Стили ботов: всегда одна колонка строк «Бот N | список» одной ширины, от числа ботов вид не зависит.
+   Блок не шире 28rem; на узкой панели список переносится под имя на всю ширину (у всех строк одинаково). */
+#gBotStyles {
+  margin-bottom: var(--space-4);
+}
+
+#gBotStyles,
+.field-row.is-narrow {
+  max-width: 28rem;
+}
+
 .bot-row {
   display: flex;
   flex-wrap: wrap;
@@ -648,13 +652,14 @@
 }
 
 .bot-row select {
-  flex: 1 1 15rem;
+  flex: 1 1 18rem;
   min-width: 0;
-  font-size: var(--fs-small);
+  min-height: var(--tap);
+  font-size: var(--fs-body);
 }
 
 .bot-name {
-  flex: 0 0 3.5em;
+  flex: 0 0 4em;
   font-weight: 600;
 }
 
@@ -1669,6 +1674,16 @@
 .chart-s5.chart-line { stroke-dasharray: 1 4; }
 
 /* «Сбросить к стандартным настройкам» стоит по центру под «Начать партию» */
+/* «Забыть мою игру» выровнена по левому краю текста, а не по внутреннему отступу кнопки */
+#gMemoryReset {
+  margin-left: calc(var(--space-3) * -1);
+}
+
+/* Подсказка стоит вплотную к своему чекбоксу (у чекбокса высота 44 px, текст по центру) */
+.field-col > .check + .game-settings-help {
+  margin-top: 0;
+}
+
 #gSettingsReset:not([hidden]) {
   display: flex;
   margin: var(--space-2) auto 0;

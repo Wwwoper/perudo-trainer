@@ -1088,6 +1088,64 @@ class LayoutTest(unittest.TestCase):
                 # скрытое поле не занимает места и не перехватывает касания
                 self.assertEqual(page.evaluate("getComputedStyle(document.querySelector('#gDice')).opacity"), "0")
 
+    def test_opponents_block_looks_the_same_for_any_bot_count(self):
+        """«Соперники»: от числа ботов (1…5) вид строк не зависит; текст в списках не обрезан; все списки одного размера;
+        «Забыть мою игру» выровнена по тексту подсказки."""
+        measure = """() => {
+            const probe = document.createElement('canvas').getContext('2d');
+            const rows = [...document.querySelectorAll('#gBotStyles .bot-row')].map((r) => {
+                const n = r.querySelector('.bot-name').getBoundingClientRect(), s = r.querySelector('select');
+                const b = s.getBoundingClientRect(), st = getComputedStyle(s);
+                probe.font = st.fontWeight + ' ' + st.fontSize + ' ' + st.fontFamily;
+                const longest = Math.max(...[...s.options].map((o) => probe.measureText(o.text).width));
+                return { nx: n.x, ny: n.y, nb: n.bottom, sx: b.x, sy: b.y, sw: b.width, sh: b.height, top: r.getBoundingClientRect().top,
+                         need: longest + parseFloat(st.paddingLeft) + parseFloat(st.paddingRight), font: st.fontSize };
+            });
+            const lvl = document.querySelector('#gBotLevel'), ls = getComputedStyle(lvl);
+            return { rows, lvlFont: ls.fontSize, lvlH: lvl.getBoundingClientRect().height };
+        }"""
+        for w, h in VIEWPORTS + [(1500, 900)]:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                first = None
+                for n in range(1, 6):
+                    page.locator("#gBotsPick button").nth(n - 1).click()
+                    m = page.evaluate(measure)
+                    rows = m["rows"]
+                    self.assertEqual(len(rows), n)
+                    if first is None:
+                        first = rows[0]
+                    for i, r in enumerate(rows):
+                        ctxmsg = f"N={n}, бот {i + 1}"
+                        self.assertAlmostEqual(r["nx"], first["nx"], delta=1, msg=ctxmsg + ": x имени")
+                        self.assertAlmostEqual(r["sx"], first["sx"], delta=1, msg=ctxmsg + ": x списка")
+                        self.assertAlmostEqual(r["sw"], first["sw"], delta=1, msg=ctxmsg + ": ширина списка")
+                        self.assertEqual(r["sy"] > r["nb"] - 1, first["sy"] > first["nb"] - 1, ctxmsg + ": одинаковая раскладка строк")
+                        self.assertGreaterEqual(r["sw"], r["need"], ctxmsg + f": текст обрезан ({r['sw']:.0f} < {r['need']:.0f})")
+                        self.assertGreaterEqual(r["sh"], 44, ctxmsg)
+                        self.assertEqual(r["font"], m["lvlFont"], ctxmsg + ": тот же шрифт, что у «Уровня ботов»")
+                    if n > 1:
+                        pitches = {round(rows[i + 1]["top"] - rows[i]["top"]) for i in range(n - 1)}
+                        self.assertEqual(len(pitches), 1, f"N={n}: шаг строк одинаковый {pitches}")
+                    gap = rows[0]["top"] - page.locator("#gBotsPick").bounding_box()["y"] - page.locator("#gBotsPick").bounding_box()["height"]
+                    self.assertTrue(8 <= gap <= 32, f"N={n}: отступ от кнопок до строк {gap:.0f}")
+                self.assertAlmostEqual(first["sh"], page.evaluate(measure)["lvlH"], delta=1, msg="высота списков")
+                if w >= 1000:
+                    self.assertLessEqual(first["sw"], 448, "список не растягивается на всю карточку")
+                    right = page.evaluate("""() => [document.querySelector('#gBotStyle0'), document.querySelector('#gBotLevel')]
+                        .map((e) => e.getBoundingClientRect().right)""")
+                    self.assertAlmostEqual(right[0], right[1], delta=1, msg="правые края списков стилей и «Уровня ботов» совпадают")
+                forget, hint = page.locator("#gMemoryReset").bounding_box(), page.locator("#gMemoryInfo").bounding_box()
+                text_left = page.evaluate("""() => { const b = document.querySelector('#gMemoryReset'); const st = getComputedStyle(b);
+                    return b.getBoundingClientRect().x + parseFloat(st.paddingLeft); }""")
+                self.assertAlmostEqual(text_left, hint["x"], delta=2, msg="«Забыть» выровнена по тексту подсказки")
+                self.assertEqual(page.evaluate("getComputedStyle(document.querySelector('#gMemoryReset')).opacity"), "1")
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+
     def test_theme_card_in_stats_player_tab_fits(self):
         """«Оформление» на вкладке «Статистика» → «Игрок»: три крупных варианта помещаются, выбор работает."""
         for w, h in VIEWPORTS:
@@ -1617,7 +1675,7 @@ class LayoutTest(unittest.TestCase):
                         probe.font = st.fontSize + ' ' + st.fontFamily;
                         const longest = Math.max(...[...s.options].map(o => probe.measureText(o.text).width));
                         return { id: s.id, width: s.getBoundingClientRect().width, inner, longest, paired: !!s.closest('.is-pair, .bot-row'),
-                                 pad: parseFloat(st.paddingLeft) + parseFloat(st.paddingRight) + 28 };
+                                 pad: parseFloat(st.paddingLeft) + parseFloat(st.paddingRight) + 4 };      // правый отступ уже включает место под стрелку
                     }); }""")
                 self.assertTrue(res, "в настройках нет списков")
                 for r in res:
@@ -1625,7 +1683,7 @@ class LayoutTest(unittest.TestCase):
                     if r["paired"]:                                              # пара полей в строке: каждое — не уже трети панели
                         self.assertGreaterEqual(r["width"], r["inner"] / 3, f"{r['id']}: список слишком узкий")
                     elif r["id"] != "gBots":
-                        self.assertGreaterEqual(r["width"], r["inner"] - 2, f"{r['id']}: список не на всю ширину")
+                        self.assertGreaterEqual(r["width"], min(r["inner"] - 2, 446), f"{r['id']}: список не на всю ширину")
 
     def test_trainer_settings_panel_layout(self):
         """Настройки тренажёра: плитки режимов и степпер крупные, всё помещается без горизонтальной прокрутки."""

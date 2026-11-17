@@ -196,6 +196,11 @@ button {
   display: none;
 }
 
+.quiet-btn:disabled {
+  color: var(--mut);
+  opacity: 1;
+}
+
 @media (hover: hover) {
   .quiet-btn:hover {
     background: color-mix(in srgb, currentColor 12%, transparent);
