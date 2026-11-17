@@ -333,8 +333,7 @@
    что зависит от содержимого (число вкладок, иконка, точка-подсказка). */
 .side-tabs,
 .drill-tabs,
-.stats-tabs,
-.sound-switch {
+.stats-tabs {
   display: flex;
   gap: var(--space-1);
   padding: var(--space-1);
@@ -343,7 +342,6 @@
 }
 
 .side-tabs [role="tab"],
-.sound-switch [role="radio"],
 .drill-tab,
 .stats-tab {
   flex: 1;
@@ -360,14 +358,12 @@
 }
 
 .side-tabs [role="tab"]:hover,
-.sound-switch [role="radio"]:hover,
 .drill-tab:hover,
 .stats-tab:hover {
   color: var(--fg);
 }
 
 .side-tabs [role="tab"][aria-selected="true"],
-.sound-switch [role="radio"][aria-checked="true"],
 .drill-tab.on,
 .stats-tab[aria-selected="true"] {
   background: var(--acc);
@@ -375,7 +371,6 @@
 }
 
 .side-tabs [role="tab"]:focus-visible,
-.sound-switch [role="radio"]:focus-visible,
 .drill-tab:focus-visible,
 .stats-tab:focus-visible {
   outline: 2px solid var(--acc);
@@ -391,17 +386,17 @@
   }
 }
 
-.sound-switch [role="radio"] {
-  display: flex;
-  flex-direction: column;
+.sound-toggle {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
-  min-height: var(--tap-lg);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
 }
 
-.sound-label {
-  font-size: var(--fs-small);
+.sound-toggle[aria-pressed="true"] {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--on-accent);
 }
 
 /* Раскрывающиеся блоки. Одна форма: стрелка ▸ слева, поворот на 90° при открытии, высота не ниже --tap.

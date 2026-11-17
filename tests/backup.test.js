@@ -269,7 +269,7 @@ describe('buildBackup: проверка перед экспортом и отп�
     assert.deepStrictEqual(b.data['perudo.games'], [gameRec(1)]);
     assert.strictEqual(b.data['perudo.userProfile'].n, 0);
     assert.ok(!('evil' in b.data['perudo.userProfile']));
-    assert.deepStrictEqual(b.data['perudo.settings'], { soundMode: 'quiet' });
+    assert.deepStrictEqual(b.data['perudo.settings'], { soundMode: 'on' });      // «тихо» из старой копии читается как «вкл»
   });
   it('результат разбирается без потерь: сборка → разбор → те же данные, dropped = 0', () => {
     const b = buildBackup(reader({ 'perudo.games': [gameRec(1), null], 'perudo.duelStats': { games: 2, wins: 5 } }), 1);

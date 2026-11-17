@@ -95,15 +95,14 @@ describe('движок звука', () => {
     assert.ok(Math.abs(o.started - 10) < 1e-9);
     assert.ok(o.stopped > o.started);
   });
-  it('громкость нот зависит от режима: «тихо» тише, чем «обычно», в пропорции 0,35 : 0,7', () => {
+  it('громкость нот одна на все включённые режимы (0,7); прежний «тихо» звучит так же', () => {
     const peak = (mode) => {
       const { engine, audio } = engineWith({}, mode);
       engine.unlock(); engine.cue('bidYou');
       return Math.max(...audio.log.gains.flatMap((g) => g.calls.filter((c) => c[0] === 'lin').map((c) => c[1])));
     };
-    const loud = peak('normal'); const quiet = peak('quiet');
-    assert.ok(quiet < loud);
-    assert.ok(Math.abs(quiet / loud - 0.5) < 1e-9, `отношение ${quiet / loud}`);
+    const loud = peak('on'); const legacy = peak('quiet');
+    assert.ok(Math.abs(legacy / loud - 1) < 1e-9, `отношение ${legacy / loud}`);
     assert.ok(loud <= 1, 'громкость не выше 1: звук не должен искажаться');
   });
   it('режим «выкл» молчит даже после жеста', () => {

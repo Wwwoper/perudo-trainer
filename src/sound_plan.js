@@ -9,11 +9,11 @@
 
 import { BOT_SPEEDS } from './game_settings.js';
 
-export const SOUND_MODES = Object.freeze(['off', 'quiet', 'normal']);
+export const SOUND_MODES = Object.freeze(['off', 'on']);
 export const DEFAULT_SOUND_MODE = 'off';
 
-/** Громкость (0…1) по режиму. */
-export const MODE_VOLUME = Object.freeze({ quiet: 0.35, normal: 0.7 });
+/** Громкость (0…1) по режиму. Общую громкость игрок регулирует на устройстве, поэтому режима «тихо» нет. */
+export const MODE_VOLUME = Object.freeze({ on: 0.7 });
 
 /**
  * События игры и их звуки.
@@ -50,8 +50,9 @@ const BOT_BID_STEP_GAIN = 0.6;
 /** Важное событие ждёт окончания предыдущего звука, но не дольше этого (иначе звук отстанет от игры). */
 export const MAX_DELAY_MS = 600;
 
-/** Режим из хранилища или формы; мусор = «выкл». */
+/** Режим из хранилища или формы; мусор = «выкл». Прежние «тихо» и «обычно» теперь просто «включено». */
 export function sanitizeSoundMode(v) {
+  if (v === 'quiet' || v === 'normal') return 'on';
   return SOUND_MODES.includes(v) ? v : DEFAULT_SOUND_MODE;
 }
 
@@ -105,7 +106,7 @@ export function createCuePlanner() {
   };
 }
 
-/** Пояснение под переключателем «Звуки» в настройках. */
+/** Пояснение под кнопкой «Звук» в настройках. */
 export function describeSoundMode(mode) {
   if (sanitizeSoundMode(mode) === 'off') return 'Звуки выключены.';
   return 'Звучат ваш ход, «Не верю!», потеря кубика и конец партии. На быстром темпе ставки ботов и раздача не озвучиваются, чтобы звуки не сливались.';

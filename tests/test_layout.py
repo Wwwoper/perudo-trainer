@@ -946,8 +946,8 @@ class LayoutTest(unittest.TestCase):
                 btn.click()
                 self.assertFalse(page.locator("#gSettingsReset").is_visible())
 
-    def test_prestart_sound_select_and_test_button_fit(self):
-        """«Звуки»: переключатель и кнопка «Проверить звук» помещаются на экране, кнопка крупная и видна только при включённых звуках."""
+    def test_prestart_sound_toggle_fits(self):
+        """«Звук приложения»: одна кнопка-переключатель со значком и подписью, зона нажатия не меньше 44 px, без «Проверить звук»."""
         for w, h in VIEWPORTS:
             with self.subTest(w=w, h=h):
                 ctx = self.browser.new_context(viewport={"width": w, "height": h})
@@ -955,33 +955,29 @@ class LayoutTest(unittest.TestCase):
                 self.addCleanup(ctx.close)
                 page.goto(self.url)
                 self.goto_tab(page, "game")
-                sel = page.locator("#gSound")
+                btn = page.locator("#gSound")
                 card = page.locator(".setup-card:has(#gSound)")
-                self.assertEqual(page.locator("#gSound button").count(), 3)
                 self.assertFalse(page.locator(".setup-card:has(#gSound):has(#gAssist)").count(),
                                  "звуки должны быть в своей карточке, а не внутри «Помощь и темп»")
                 self.assertEqual(card.locator("h3.set-label").inner_text().strip().lower(), "звук приложения")
-                sel.scroll_into_view_if_needed()
-                self.assertFalse(page.locator("#gSoundTest").is_visible())
-                rules = page.locator("#gRulesLabel").bounding_box()
-                self.assertLess(rules["y"], sel.bounding_box()["y"], "«Звук приложения» ниже «Дополнительных правил»")
-                box = sel.bounding_box()
-                self.assertGreaterEqual(box["height"], 40)
-                self.assertLessEqual(box["x"] + box["width"], w + 1)
-                for b in page.locator("#gSound button").all():
-                    bb = b.bounding_box()
-                    self.assertGreaterEqual(bb["height"], 44)
-                    self.assertGreaterEqual(bb["width"], 44)
-                    self.assertIn(b.inner_text().strip(), ("Выкл.", "Тихо", "Обычно"))      # значок и подпись
-                    self.assertEqual(b.locator("svg").count(), 1)
-                page.locator('#gSound [data-sound="quiet"]').click()
-                self.assertEqual(page.locator('#gSound [aria-checked="true"]').get_attribute("data-sound"), "quiet")
-                btn = page.locator("#gSoundTest")
+                self.assertEqual(page.locator("#gSoundTest").count(), 0)
                 btn.scroll_into_view_if_needed()
-                self.assertTrue(btn.is_visible())
-                bb = btn.bounding_box()
-                self.assertGreaterEqual(bb["height"], 44)
-                self.assertLessEqual(bb["x"] + bb["width"], w + 1)
+                rules = page.locator("#gRulesLabel").bounding_box()
+                self.assertLess(rules["y"], btn.bounding_box()["y"], "«Звук приложения» ниже «Дополнительных правил»")
+                box = btn.bounding_box()
+                self.assertGreaterEqual(box["height"], 44)
+                self.assertLessEqual(box["x"] + box["width"], w + 1)
+                self.assertEqual(btn.locator("svg").count(), 1)
+                self.assertEqual(btn.get_attribute("aria-pressed"), "false")
+                self.assertIn("выключен", btn.inner_text())
+                btn.click()
+                self.assertEqual(btn.get_attribute("aria-pressed"), "true")
+                self.assertIn("включён", btn.inner_text())
+                self.assertEqual(btn.locator("svg").count(), 1)                 # значок заменяется, не дублируется
+                on_bg = page.evaluate("getComputedStyle(document.querySelector('#gSound')).backgroundColor")
+                btn.click()
+                off_bg = page.evaluate("getComputedStyle(document.querySelector('#gSound')).backgroundColor")
+                self.assertNotEqual(on_bg, off_bg, "включённое и выключенное состояния различаются")
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
     def test_settings_pairs_hints_and_summary(self):

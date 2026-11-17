@@ -101,11 +101,16 @@ test.describe('Звуки', () => {
 
   test('режим запоминается между перезагрузками', async ({ page }) => {
     await setup(page);
-    await page.evaluate(() => window.__perudo_v2.setSoundMode('quiet'));
+    await page.evaluate(() => window.__perudo_v2.setSoundMode('on'));
     await page.reload();
     await page.waitForFunction(() => Boolean(window.__perudo_v2));
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode);
-    expect(saved).toBe('quiet');
+    expect(saved).toBe('on');
+    await page.evaluate(() => localStorage.setItem('perudo.settings', JSON.stringify({ soundMode: 'quiet' })));   // сохранено до перехода на «вкл/выкл»
+    await page.reload();
+    await page.waitForFunction(() => Boolean(window.__perudo_v2));
+    await openTab(page, 'game');
+    await expect(page.locator('#gSound')).toHaveAttribute('aria-pressed', 'true');
     await page.evaluate(() => window.__perudo_v2.setSoundMode('мусор'));
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode)).toBe('off');
   });
@@ -113,7 +118,7 @@ test.describe('Звуки', () => {
   test('если звук недоступен, игра работает без ошибок', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
-    await setup(page, { mode: 'normal', speed: 'fast', stub: 'window.AudioContext = function () { throw new Error("нет звука"); };' });
+    await setup(page, { mode: 'on', speed: 'fast', stub: 'window.AudioContext = function () { throw new Error("нет звука"); };' });
     await start(page);
     await humanTurn(page);
     await page.locator('#gRaise').click();
@@ -121,27 +126,28 @@ test.describe('Звуки', () => {
     expect(errors).toEqual([]);
   });
 
-  test('переключатель в настройках: выбор режима звучит, запоминается, кнопка проверки появляется', async ({ page }) => {
+  test('кнопка «Звук» в настройках: включение звучит, запоминается, перечёркнутый значок при выключении', async ({ page }) => {
     await setup(page);
-    const pick = (mode) => page.locator(`#gSound [data-sound="${mode}"]`);
-    await expect(pick('off')).toHaveAttribute('aria-checked', 'true');
-    await expect(page.locator('#gSoundTest')).toBeHidden();
+    const btn = page.locator('#gSound');
+    await expect(btn).toHaveAttribute('aria-pressed', 'false');
+    await expect(btn).toContainText('Звук выключен');
     await expect(page.locator('#gSoundHelp')).toHaveText('Звуки выключены.');
-    await pick('normal').click();
-    await expect.poll(() => freqs(page)).toContain(FREQ.turn);          // выбор режима сразу слышно
-    await expect(page.locator('#gSoundTest')).toBeVisible();
-    await expect(pick('normal')).toHaveAttribute('aria-checked', 'true');
+    const arcs = () => btn.locator('svg path').count();
+    expect(await arcs()).toBe(2);                                           // динамик и крест
+    await btn.click();
+    await expect.poll(() => freqs(page)).toContain(FREQ.turn);              // включение сразу слышно
+    await expect(btn).toHaveAttribute('aria-pressed', 'true');
+    await expect(btn).toContainText('Звук включён');
     await expect(page.locator('#gSoundHelp')).toContainText('быстром темпе');
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode)).toBe('normal');
-    const before = (await freqs(page)).length;
-    await page.locator('#gSoundTest').click();
-    await expect.poll(async () => (await freqs(page)).length).toBeGreaterThan(before);
+    expect(await arcs()).toBe(3);                                           // динамик и две дуги
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode)).toBe('on');
     await page.reload();
     await page.waitForFunction(() => Boolean(window.__perudo_v2));
     await openTab(page, 'game');
-    await expect(pick('normal')).toHaveAttribute('aria-checked', 'true');
-    await pick('off').click();
-    await expect(page.locator('#gSoundTest')).toBeHidden();
+    await expect(btn).toHaveAttribute('aria-pressed', 'true');
+    await btn.click();
+    await expect(btn).toHaveAttribute('aria-pressed', 'false');
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode)).toBe('off');
   });
 
   test('лаборатория звуков: открывается, играет, проверяет и копирует рецепт', async ({ page }) => {

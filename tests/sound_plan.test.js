@@ -7,7 +7,7 @@ import {
 } from '../src/sound_plan.js';
 import { BOT_SPEEDS } from '../src/game_settings.js';
 
-const ctx = (over = {}) => ({ mode: 'normal', speed: 'normal', now: 1000, ...over });
+const ctx = (over = {}) => ({ mode: 'on', speed: 'normal', now: 1000, ...over });
 
 describe('данные', () => {
   it('у каждого события есть звук, длительность и приоритет 1–3; звуки короткие', () => {
@@ -67,10 +67,13 @@ describe('планировщик: режим, громкость, темп', () 
     const p = createCuePlanner();
     for (const e of EVENTS) for (const sp of BOT_SPEEDS) assert.strictEqual(p.plan(e, ctx({ mode: 'off', speed: sp, now: 1e6 + Math.random() * 1e6 })), null);
   });
-  it('громкость по режиму: тихо меньше, чем обычно', () => {
-    assert.ok(MODE_VOLUME.quiet < MODE_VOLUME.normal);
-    assert.strictEqual(createCuePlanner().plan('turn', ctx({ mode: 'quiet' })).volume, MODE_VOLUME.quiet);
-    assert.strictEqual(createCuePlanner().plan('turn', ctx({ mode: 'normal' })).volume, MODE_VOLUME.normal);
+  it('режимов два: «вкл» звучит с одной громкостью, прежние «тихо» и «обычно» читаются как «вкл»', () => {
+    assert.deepStrictEqual([...SOUND_MODES], ['off', 'on']);
+    for (const m of ['on', 'quiet', 'normal']) {
+      assert.strictEqual(sanitizeSoundMode(m), 'on', m);
+      assert.strictEqual(createCuePlanner().plan('turn', ctx({ mode: m })).volume, MODE_VOLUME.on);
+    }
+    assert.ok(MODE_VOLUME.on > 0 && MODE_VOLUME.on <= 1);
   });
   it('на быстром темпе ставка бота молчит, на обычном звучит', () => {
     assert.strictEqual(createCuePlanner().plan('bidBot', ctx({ speed: 'fast' })), null);
@@ -166,7 +169,7 @@ describe('свойство: звуки никогда не накладываю�
     for (let run = 0; run < 2000; run++) {
       const p = createCuePlanner();
       const speed = BOT_SPEEDS[Math.floor(rnd() * BOT_SPEEDS.length)];
-      const mode = rnd() < 0.5 ? 'quiet' : 'normal';
+      const mode = rnd() < 0.5 ? 'quiet' : 'on';
       let now = 0;
       const played = [];
       for (let i = 0; i < 40; i++) {

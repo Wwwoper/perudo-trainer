@@ -298,8 +298,12 @@ describe('режим звука', () => {
     assert.strictEqual(getSoundMode(), 'off');
     mockStorage['perudo.settings'] = '{не json';
     assert.strictEqual(getSoundMode(), 'off');
-    setSoundMode('quiet');
-    assert.strictEqual(getSoundMode(), 'quiet');
+    setSoundMode('on');
+    assert.strictEqual(getSoundMode(), 'on');
+    mockStorage['perudo.settings'] = JSON.stringify({ soundMode: 'quiet' });      // сохранённое до перехода на «вкл/выкл»
+    assert.strictEqual(getSoundMode(), 'on');
+    mockStorage['perudo.settings'] = JSON.stringify({ soundMode: 'normal' });
+    assert.strictEqual(getSoundMode(), 'on');
     setSoundMode('что-то');
     assert.strictEqual(getSoundMode(), 'off');
   });
@@ -307,9 +311,9 @@ describe('режим звука', () => {
     const { getSoundMode, setSoundMode } = await import('../src/storage.js');
     delete mockStorage['perudo.settings'];
     setSettings({ animations: 'off' });
-    setSoundMode('normal');
+    setSoundMode('on');
     assert.strictEqual(getSettings().animations, 'off');
-    assert.strictEqual(getSoundMode(), 'normal');
+    assert.strictEqual(getSoundMode(), 'on');
   });
 });
 

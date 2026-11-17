@@ -309,7 +309,7 @@ describe('sanitizeSettings', () => {
   it('нет данных, не объект, годные настройки', () => {
     assert.deepStrictEqual(sanitizeSettings(null), { value: {}, dropped: 0 });
     assert.deepStrictEqual(sanitizeSettings([]), { value: {}, dropped: 1 });
-    const ok = { assistMode: 'game', botSpeed: 'fast', animations: 'normal', calzaEnabled: true, palificoEnabled: false, soundMode: 'quiet', theme: 'system', practiceTimer: true, beginnerMode: true };
+    const ok = { assistMode: 'game', botSpeed: 'fast', animations: 'normal', calzaEnabled: true, palificoEnabled: false, soundMode: 'on', theme: 'system', practiceTimer: true, beginnerMode: true };
     assert.deepStrictEqual(sanitizeSettings(ok), { value: ok, dropped: 0 });
   });
   it('недопустимые значения и неизвестные поля отбрасываются', () => {
@@ -324,7 +324,7 @@ describe('sanitizeSettings', () => {
     assert.ok(r.value.lastGame.bots <= 10);
   });
   it('идемпотентна', () => {
-    const v = sanitizeSettings({ assistMode: 'game', soundMode: 'normal', lastGame: { bots: 3 } }).value;
+    const v = sanitizeSettings({ assistMode: 'game', soundMode: 'on', lastGame: { bots: 3 } }).value;
     assert.deepStrictEqual(sanitizeSettings(v), { value: v, dropped: 0 });
   });
 });

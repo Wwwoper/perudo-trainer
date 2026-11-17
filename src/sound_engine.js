@@ -37,7 +37,7 @@ export function playNotes(ctx, recipe, volume, startAt) {
 /**
  * @param {object} deps
  * @param {Function|null} deps.AudioContextCtor  конструктор AudioContext (или null, если звука нет)
- * @param {() => string} deps.getMode            режим звука: off | quiet | normal
+ * @param {() => string} deps.getMode            режим звука: off | on (прежние quiet и normal читаются как on)
  * @param {() => string} deps.getSpeed           темп ботов: step | slow | normal | fast
  * @param {() => number} [deps.now]              время в мс (для тестов можно подменить)
  * @param {object} [deps.recipes]                рецепты звуков (по умолчанию из sound_recipes.js; лаборатория подставляет свои)

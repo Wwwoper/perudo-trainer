@@ -40,46 +40,25 @@ export function currentSoundMode() {
   return mode;
 }
 
-/** Переключатель «Звуки» в настройках партии: показывает режим, меняет его, кнопка «Проверить звук». */
+/** Кнопка «Звук» в настройках партии: значок и подпись показывают состояние, нажатие переключает. */
 function refreshSoundControls() {
-  const group = $('#gSound');
-  if (group) {
-    group.querySelectorAll('[data-sound]').forEach((btn) => {
-      const on = btn.dataset.sound === mode;
-      btn.setAttribute('aria-checked', String(on));
-      btn.tabIndex = on ? 0 : -1;
-    });
+  const btn = $('#gSound');
+  if (btn) {
+    const on = mode !== 'off';
+    btn.setAttribute('aria-pressed', String(on));
+    btn.querySelector('svg')?.remove();
+    btn.insertAdjacentHTML('afterbegin', soundIconSvg(mode));
+    const label = btn.querySelector('.sound-label');
+    if (label) label.textContent = on ? 'Звук включён' : 'Звук выключен';
   }
   const help = $('#gSoundHelp');
   if (help) help.textContent = describeSoundMode(mode);
-  const test = $('#gSoundTest');
-  if (test) test.hidden = mode === 'off';
 }
 
 export function setupSoundControls() {
-  const group = $('#gSound');
-  const buttons = group ? [...group.querySelectorAll('[data-sound]')] : [];
-  buttons.forEach((btn) => {
-    btn.insertAdjacentHTML('afterbegin', soundIconSvg(btn.dataset.sound));
-    btn.addEventListener('click', () => {
-      changeSoundMode(btn.dataset.sound);
-      if (mode !== 'off' && engine) { engine.unlock(); engine.cue('turn'); }     // выбор режима — сразу слышно, как он звучит
-    });
-  });
-  group?.addEventListener('keydown', (e) => {                                  // стрелки переключают режим, как у радиокнопок
-    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (!step) return;
-    e.preventDefault();
-    const i = buttons.findIndex((b) => b.dataset.sound === mode);
-    const next = buttons[(i + step + buttons.length) % buttons.length];
-    next.click();
-    next.focus();
-  });
-  $('#gSoundTest')?.addEventListener('click', () => {
-    if (!engine) return;
-    engine.unlock();                                                          // клик — жест игрока: звук разрешён
-    engine.reset();
-    engine.cue('turn');
+  $('#gSound')?.addEventListener('click', () => {
+    changeSoundMode(mode === 'off' ? 'on' : 'off');
+    if (mode !== 'off' && engine) { engine.unlock(); engine.cue('turn'); }    // включили — сразу слышно, что звук работает
   });
   refreshSoundControls();
 }

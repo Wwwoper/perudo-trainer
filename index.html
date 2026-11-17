@@ -671,15 +671,8 @@
 
               <section class="setup-card" aria-labelledby="gSoundLabel">
               <h3 class="set-label" id="gSoundLabel">Звук приложения</h3>
-              <div id="gSound" class="sound-switch" role="radiogroup" aria-labelledby="gSoundLabel">
-                <button type="button" role="radio" data-sound="off" aria-checked="true"><span class="sound-label">Выкл.</span></button>
-                <button type="button" role="radio" data-sound="quiet" aria-checked="false"><span class="sound-label">Тихо</span></button>
-                <button type="button" role="radio" data-sound="normal" aria-checked="false"><span class="sound-label">Обычно</span></button>
-              </div>
+              <button type="button" id="gSound" class="sound-toggle" aria-pressed="false"><span class="sound-label">Звук выключен</span></button>
               <small id="gSoundHelp" class="game-settings-help"></small>
-              <div class="field-row">
-                <button type="button" id="gSoundTest" hidden>Проверить звук</button>
-              </div>
               </section>
 
               <button type="button" class="btn-primary side-start" data-action="new-game">Начать новую партию</button>

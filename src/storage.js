@@ -123,7 +123,7 @@ export function clearQuizSeries() {
   try { localStorage.removeItem(KEYS.QUIZ_SERIES); } catch (e) {}
 }
 
-// Звуки: режим «выкл / тихо / обычно». Хранится в perudo.settings.soundMode; по умолчанию выключены.
+// Звуки: режим «выкл / вкл» (прежние «тихо» и «обычно» читаются как «вкл»). Хранится в perudo.settings.soundMode; по умолчанию выключены.
 export function getSoundMode() {
   const s = get(KEYS.SETTINGS, null);
   return sanitizeSoundMode(s && typeof s === 'object' ? s.soundMode : null);
