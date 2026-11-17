@@ -1017,6 +1017,38 @@ class LayoutTest(unittest.TestCase):
                 self.assertIn("почти сразу", page.locator("#gSpeedHelp").inner_text())
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
+    def test_opponent_checks_pair_with_hints_and_quiet_forget_button(self):
+        """«Память | Стили»: подсказка под своим чекбоксом, «Забыть» — тихое действие, не во всю ширину."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                box = lambda sel: page.locator(sel).bounding_box()
+                for chk, info in (("#gMemoryOpt", "#gMemoryInfo"), ("#gShowStylesOpt", "#gShowStylesInfo")):
+                    c = page.locator(chk).locator("xpath=ancestor::label").bounding_box()
+                    i = box(info)
+                    self.assertGreaterEqual(i["y"], c["y"] + c["height"] - 1, f"{info} под чекбоксом")
+                    self.assertGreater(len(page.locator(info).inner_text()), 20)
+                m, st = page.locator("#gMemoryOpt").locator("xpath=ancestor::label").bounding_box(), page.locator("#gShowStylesOpt").locator("xpath=ancestor::label").bounding_box()
+                if w >= 720 and h >= 600:
+                    self.assertLess(abs(m["y"] - st["y"]), 4, "чекбоксы в одну строку на широком экране")
+                else:
+                    self.assertGreater(st["y"], m["y"], "на узком экране друг под другом")
+                btn = box("#gMemoryReset")
+                self.assertGreaterEqual(btn["height"], 44)
+                self.assertLess(btn["width"], 260, "кнопка не растянута на всю ширину")
+                self.assertEqual(page.evaluate("getComputedStyle(document.querySelector('#gMemoryReset')).borderTopWidth"), "0px")
+                self.assertTrue(page.locator("#gMemoryReset").is_disabled(), "нечего забывать при пустой памяти")
+                page.locator("#gMemoryOpt").uncheck()
+                self.assertIn("не запоминают", page.locator("#gMemoryInfo").inner_text())
+                page.locator("#gShowStylesOpt").check()
+                self.assertIn("Включено", page.locator("#gShowStylesInfo").inner_text())
+                self.assertIn("(", page.locator("#gBotStyle0 option").first.inner_text())   # «По умолчанию (стиль)»
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+
     def test_theme_card_in_stats_player_tab_fits(self):
         """«Оформление» на вкладке «Статистика» → «Игрок»: три крупных варианта помещаются, выбор работает."""
         for w, h in VIEWPORTS:

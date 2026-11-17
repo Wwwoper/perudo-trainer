@@ -93,13 +93,13 @@
 | 9 | 16 · 400 · 4/8 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | calc | button «+1»; button «+2»; button «+3» |
 | 6 | 14 · 400 · 4/12 · 999 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | train | button.mode-btn «Палифико»; button.mode-btn «Эндшпиль»; button.mode-btn «Большой стол» |
 | 4 | 14 · 600 · 0/8 · 6 · 0 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | drill, game, game (настройки), stats | button «Выкл.»; button#tabLog «Журнал»; button.drill-tab.on «Оценка в уме» |
-| 4 | 16 · 400 · 8/12 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | duel, game (настройки), stats | button#gFirstPreset «Первая учебная партия»; button#gMemoryReset «Забыть мою игру»; button#dSolve «Рассчитать равновесие» |
 | 4 | 16 · 700 · 8/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 52 | drill, game, sim, train | button#gRaise.btn-primary «Ставлю 1×2шанс 100.0%»; button#tRaise.btn-primary «Ставлю»; button#dACheck.btn-primary «Проверить» |
 | 4 | 20 · 400 · 0/0 · 0 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 52 | calc, game, train | button#gPlus «+»; button#tTPlus «+»; button#tPlus «+» |
 | 4 | 20 · 400 · 0/0 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 52 | calc, game, train | button#gMinus «−»; button#tTMinus «−»; button#tMinus «−» |
 | 3 | 16 · 400 · 0/0 · 12 · 1 · rgb(219, 230, 251) · rgb(26, 31, 43) · 44 | calc, game, train | button.face-btn.sel |
+| 3 | 16 · 400 · 8/12 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | duel, game (настройки), stats | button#gFirstPreset «Первая учебная партия»; button#dSolve «Рассчитать равновесие»; button «Открыть тренажёр» |
 | 3 | 16 · 700 · 8/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | duel, game (настройки), stats | button.btn-primary.side-start «Начать партию»; button#dStart.btn-primary.duel-start «Играть против оптимально»; button.btn-primary «Сыграть партию» |
-| 2 | 16 · 700 · 8/12 · 8 · 1 · rgb(198, 47, 47) · rgb(255, 255, 255) · 52 | game, train | button#gDudo.bad «Не верю!»; button#tDudo.bad «Не верю!» |
+| 2 | 16 · 400 · 4/12 · 8 · 0 · rgba(0, 0, 0, 0) · rgb(179, 38, 30) · 44 | game (настройки), train | button#gMemoryReset.quiet-btn.is-danger «Забыть мою игру»; button#tReset.quiet-btn.is-danger «Сбросить статистику» |
 | … | ещё подписей: 6 | | |
 
 ### Заголовки и «summary»: 19 шт., разных подписей — 5
@@ -116,7 +116,7 @@
 
 | раз | подпись | вкладки | примеры |
 |---:|---|---|---|
-| 8 | 16 · 400 · 8/34 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | select#gBotStyle0 «По умолчанию🎲 Случайный»; select#gBotStyle1 «По умолчанию🎲 Случайный»; select#gBotStyle2 «По умолчанию🎲 Случайный» |
+| 8 | 16 · 400 · 8/34 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | select#gBotStyle0 «По умолчанию (🛡️ Осторо»; select#gBotStyle1 «По умолчанию (🎭 Блефующ»; select#gBotStyle2 «По умолчанию (🧠 Умный)�» |
 | 7 | 16 · 400 · 8/12 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | calc, game (настройки), sim | input#gDice «5»; input#gBots «3»; input#cN «15» |
 | 4 | 20 · 700 · 0/0 · 0 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 52 | calc, game, train | input#gQ «1»; input#tT «0.5»; input#tQ «2» |
 | 2 | 18 · 400 · 12/12 · 12 · 1 · rgb(238, 241, 246) · rgb(26, 31, 43) · 47 | drill | input#dA1.drill-input; input#dA2.drill-input |

@@ -3,7 +3,8 @@
 
 import { getBotMemory, setBotMemory } from '../storage.js';
 import { DEFAULT_BOT_LEVEL, noiseForLevel } from '../bots.js';
-import { createMemory, normalizeMemory, observeEvent, opponentModel, describeMemory } from '../memory.js';
+import { createMemory, normalizeMemory, observeEvent, opponentModel, memoryStats } from '../memory.js';
+import { memoryHelpText } from './settings_help.js';
 import { $ } from './common.js';
 
 // Что боты помнят об игроке (между партиями, в localStorage).
@@ -12,20 +13,25 @@ let botMemory = normalizeMemory(getBotMemory());
 let gameBotLevel = DEFAULT_BOT_LEVEL;
 let gameMemoryOn = true;
 
-function renderMemoryInfo() {
+/** Подсказка памяти и кнопка «Забыть»: forgot — сразу после сброса. Забывать нечего, пока ничего не накоплено. */
+function renderMemoryInfo(forgot = false) {
+  const stats = memoryStats(botMemory);
   const info = $('#gMemoryInfo');
-  if (info) info.textContent = describeMemory(botMemory);
+  if (info) info.textContent = memoryHelpText($('#gMemoryOpt') ? $('#gMemoryOpt').checked : true, stats, forgot);
+  const btn = $('#gMemoryReset');
+  if (btn) btn.disabled = stats.challenged === 0;
 }
 
 /** Забыть игрока: пустая память, сохранение и обновление подписи. */
 export function resetBotMemory() {
   botMemory = createMemory();
   setBotMemory(botMemory);
-  renderMemoryInfo();
+  renderMemoryInfo(true);
 }
 
 export function setupBotMind() {
   $('#gMemoryReset')?.addEventListener('click', resetBotMemory);
+  $('#gMemoryOpt')?.addEventListener('change', () => renderMemoryInfo());
   renderMemoryInfo();
 }
 

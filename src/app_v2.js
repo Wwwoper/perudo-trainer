@@ -40,7 +40,7 @@ import { diceChartSvg } from './dice_chart.js';
 import { profileLines, meLines, ME_TITLE, ME_NOTE, TABLE_EMPTY, TABLE_NOTE } from './opponents_text.js';
 import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
-import { setupSettingsHelp } from './ui/settings_help.js';
+import { setupSettingsHelp, setupStylesHelp } from './ui/settings_help.js';
 import { setupConfigSummary } from './config_summary.js';
 import { setupTheme, setupThemeControls, changeThemeMode } from './ui/theme.js';
 import { setupSound, setupSoundControls, playCue, resetSound, changeSoundMode } from './ui/sound.js';
@@ -141,6 +141,7 @@ function setupGame() {
 
   setupBotStyles();
   setupSettingsHelp();
+  setupStylesHelp();
   setupConfigSummary();
   setupTheme();
   setupThemeControls();

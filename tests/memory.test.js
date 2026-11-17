@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createMemory, normalizeMemory, recordChallenge, bluffRate, opponentModel,
-  observeEvent, describeMemory, PRIOR_RATE, MAX_SAMPLES,
+  observeEvent, memoryStats, PRIOR_RATE, MAX_SAMPLES,
 } from '../src/memory.js';
 import { createGame, startGame, applyAction } from '../src/engine.js';
 
@@ -61,12 +61,14 @@ test('observeEvent учитывает только проверку «Не ве�
   assert.equal(observeEvent(m, null, 'human'), m);
 });
 
-test('describeMemory: пока мало данных — так и пишет, потом показывает процент', () => {
-  assert.match(describeMemory(createMemory()), /присматриваются/);
+test('memoryStats: число проверенных ставок и процент ложных', () => {
+  assert.deepEqual(memoryStats(createMemory()), { challenged: 0, bluffPct: memoryStats(createMemory()).bluffPct });
   let m = createMemory();
   for (let i = 0; i < 10; i++) m = recordChallenge(m, i < 4);
-  assert.match(describeMemory(m), /Проверено ваших ставок: 10/);
-  assert.match(describeMemory(m), /%/);
+  const st = memoryStats(m);
+  assert.equal(st.challenged, 10);
+  assert.ok(st.bluffPct > 0 && st.bluffPct < 100);
+  assert.deepEqual(memoryStats(null).challenged, 0);       // испорченные данные не ломают подсказку
 });
 
 test('интеграция с движком: память строится из настоящих событий', () => {

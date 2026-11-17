@@ -64,6 +64,12 @@ const MEMORY_BASE_RATE = 0.3;      // доля блефа, при которой
 export const STYLE_AUTO = 'auto';
 export const STYLE_RANDOM = 'random';
 
+/** Подпись пункта «По умолчанию» для бота с номером index (с нуля): какой стиль он получит на самом деле. */
+export function autoStyleLabel(index) {
+  const st = BOT_STYLES[DEFAULT_STYLE_CYCLE[index % DEFAULT_STYLE_CYCLE.length]];
+  return `По умолчанию (${st.icon} ${st.name})`;
+}
+
 /**
  * Превращает выбор пользователя в список стилей для `count` ботов.
  * choices[i]: id стиля | 'auto' (по умолчанию, по кругу) | 'random' (любой из всех).

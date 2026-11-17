@@ -1208,7 +1208,8 @@ test.describe('Покерный стол в партии', () => {
     await openSettings(page);
     await page.locator('#gMemoryReset').click();
     expect(await readMemory(page)).toMatchObject({ challenged: 0, bluffs: 0 });
-    await expect(page.locator('#gMemoryInfo')).toContainText('проверено ставок — 0');
+    await expect(page.locator('#gMemoryInfo')).toContainText('забыли вашу игру');
+    await expect(page.locator('#gMemoryReset')).toBeDisabled();            // забывать больше нечего
   });
 
   test('при выключенной памяти боты ничего не запоминают', async ({ page }) => {

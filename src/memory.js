@@ -60,9 +60,8 @@ export function observeEvent(memory, event, humanId) {
   return recordChallenge(memory, event.bidSuccessful === false);
 }
 
-/** Короткое описание для настроек: «Наблюдений: 12, блеф ≈ 40%». */
-export function describeMemory(memory) {
+/** Сводка для подсказки в настройках: сколько ваших ставок проверено и какая доля из них ложных (в процентах). */
+export function memoryStats(memory) {
   const m = normalizeMemory(memory);
-  if (m.challenged < 3) return `Боты пока присматриваются: проверено ставок — ${m.challenged}.`;
-  return `Проверено ваших ставок: ${m.challenged}, из них ложных ≈ ${Math.round(bluffRate(m) * 100)}%.`;
+  return { challenged: m.challenged, bluffPct: Math.round(bluffRate(m) * 100) };
 }

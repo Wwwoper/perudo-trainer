@@ -31,6 +31,21 @@ export const DEPTH_HELP = {
   detailed: 'Ещё сравнение с другими ходами и ход ставок за раунд.',
 };
 
+/** Подсказка к «Боты запоминают мою игру»: зависит от переключателя и от накопленного; `forgot` — сразу после «Забыть». */
+export function memoryHelpText(on, stats, forgot = false) {
+  if (forgot) return 'Готово: боты забыли вашу игру.';
+  if (!on) return 'Выключено: боты играют по своему характеру и вашу игру не запоминают. Накопленное не стирается.';
+  if (stats.challenged < 3) return `Боты присматриваются к вашей игре: проверено ставок — ${stats.challenged}.`;
+  return `Боты учитывают, как часто вы блефуете. Проверено ставок: ${stats.challenged}, ложных ≈ ${stats.bluffPct}%.`;
+}
+
+/** Подсказка к «Показывать стили ботов». */
+export function stylesHelpText(shown) {
+  return shown
+    ? 'Включено: рядом с аватаром виден значок стиля бота.'
+    : 'Выключено: значка стиля у аватара нет, как за настоящим столом. Стили раскроются в конце партии.';
+}
+
 /** Как в режиме «Игра» объяснения работают независимо от выбора. */
 export const EXPLAIN_GAME_NOTE = 'В режиме «Игра» объяснения появятся только после окончания партии.';
 
@@ -72,4 +87,14 @@ export function setupSettingsHelp() {
   sel.addEventListener('change', updateExplain);
   ex.addEventListener('change', updateExplain);
   updateExplain();
+}
+
+/** Подсказка к «Показывать стили ботов» меняется вместе с переключателем. */
+export function setupStylesHelp() {
+  const box = $('#gShowStylesOpt');
+  const info = $('#gShowStylesInfo');
+  if (!box || !info) return;
+  const update = () => { info.textContent = stylesHelpText(box.checked); };
+  box.addEventListener('change', update);
+  update();
 }
