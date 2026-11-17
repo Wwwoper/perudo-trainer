@@ -67,7 +67,7 @@ export const STYLE_RANDOM = 'random';
 /** Подпись пункта «По умолчанию» для бота с номером index (с нуля): какой стиль он получит на самом деле. */
 export function autoStyleLabel(index) {
   const st = BOT_STYLES[DEFAULT_STYLE_CYCLE[index % DEFAULT_STYLE_CYCLE.length]];
-  return `По умолчанию (${st.icon} ${st.name})`;
+  return `По умолчанию (${st.name})`;
 }
 
 /**

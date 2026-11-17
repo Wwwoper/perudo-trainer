@@ -549,15 +549,21 @@
             </div>
 
             <div role="tabpanel" id="panSettings" aria-labelledby="tabSettings" hidden>
+              <section class="setup-card" aria-labelledby="gDiceLabel">
+              <h3 class="set-label" id="gDiceLabel">Кубики</h3>
+              <div class="field count-field">
+                <span class="field-name" id="gDiceName">Сколько кубиков у каждого игрока</span>
+                <div id="gDicePick" class="count-picker" aria-labelledby="gDiceName"></div>
+                <input id="gDice" class="count-input" type="number" min="1" max="10" value="5" inputmode="numeric" tabindex="-1" aria-hidden="true">
+              </div>
+              </section>
+
               <section class="setup-card" aria-labelledby="gOppLabel">
               <h3 class="set-label" id="gOppLabel">Соперники</h3>
-              <div class="field-row">
-                <label class="field">Кубиков каждому
-                  <input id="gDice" type="number" min="1" max="10" value="5" inputmode="numeric">
-                </label>
-                <label class="field">Ботов
-                  <input id="gBots" type="number" min="1" max="5" value="3" inputmode="numeric">
-                </label>
+              <div class="field count-field">
+                <span class="field-name" id="gBotsName">Количество ботов</span>
+                <div id="gBotsPick" class="count-picker" aria-labelledby="gBotsName"></div>
+                <input id="gBots" class="count-input" type="number" min="1" max="5" value="3" inputmode="numeric" tabindex="-1" aria-hidden="true">
               </div>
 
               <!-- Стиль каждого бота: поля строит setupBotStyles() в app_v2.js -->

@@ -42,6 +42,7 @@ import { keyMomentsHtml, setupKeyMoments } from './ui/key_moments.js';
 import { botCountSetting, setupBotStyles, chosenBotStyles } from './ui/bot_styles.js';
 import { setupSettingsHelp, setupStylesHelp } from './ui/settings_help.js';
 import { setupConfigSummary } from './config_summary.js';
+import { setupCountPickers } from './ui/count_picker.js';
 import { setupTheme, setupThemeControls, changeThemeMode } from './ui/theme.js';
 import { setupSound, setupSoundControls, playCue, resetSound, changeSoundMode } from './ui/sound.js';
 import { setupGameSettings, rememberGameSettings, refreshFirstPreset } from './ui/game_settings_ui.js';
@@ -139,6 +140,7 @@ function setupGame() {
   // закрыла бы панель действий.
   if ($('#gQ') && window.matchMedia?.('(pointer: coarse)').matches) $('#gQ').readOnly = true;
 
+  setupCountPickers();
   setupBotStyles();
   setupSettingsHelp();
   setupStylesHelp();

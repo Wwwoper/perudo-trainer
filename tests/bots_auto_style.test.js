@@ -8,7 +8,7 @@ describe('autoStyleLabel', () => {
     const real = pickBotStyles(5, []);
     for (let i = 0; i < 5; i++) {
       const st = BOT_STYLES[real[i]];
-      assert.equal(autoStyleLabel(i), `По умолчанию (${st.icon} ${st.name})`);
+      assert.equal(autoStyleLabel(i), `По умолчанию (${st.name})`);
     }
   });
   it('первые три бота получают Осторожного, Блефующего и Умного', () => {

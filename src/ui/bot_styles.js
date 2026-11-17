@@ -33,7 +33,7 @@ export function setupBotStyles() {
     const n = botCountSetting();
     let html = '';
     for (let j = 0; j < n; j++) {
-      html += `<div class="field-row is-stacked"><label class="field">Бот ${j + 1}<select id="gBotStyle${j}" data-bot-style>${optionsFor(j)}</select></label></div>`;
+      html += `<label class="bot-row"><span class="bot-name">Бот ${j + 1}</span><select id="gBotStyle${j}" data-bot-style>${optionsFor(j)}</select></label>`;
     }
     box.innerHTML = html;
     box.querySelectorAll('select').forEach((sel, i) => { if (prev[i]) sel.value = prev[i]; });

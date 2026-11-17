@@ -1045,6 +1045,49 @@ class LayoutTest(unittest.TestCase):
                 self.assertIn("(", page.locator("#gBotStyle0 option").first.inner_text())   # «По умолчанию (стиль)»
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
+    def test_dice_and_bots_pickers_layout(self):
+        """«Кубики» — отдельная карточка; кнопки 1–5 и 1–10 не уже 44 px, кубики сеткой 5 × 2; стили ботов строками «Бот N | список»."""
+        for w, h in VIEWPORTS:
+            with self.subTest(w=w, h=h):
+                ctx = self.browser.new_context(viewport={"width": w, "height": h})
+                page = ctx.new_page()
+                self.addCleanup(ctx.close)
+                page.goto(self.url)
+                self.goto_tab(page, "game")
+                self.assertEqual(page.locator(".setup-card:has(#gDicePick):has(#gBotsPick)").count(), 0, "кубики и боты в разных карточках")
+                self.assertEqual(page.locator(".setup-card:has(#gDicePick) h3").inner_text().strip().lower(), "кубики")
+                dice = page.locator("#gDicePick button")
+                bots = page.locator("#gBotsPick button")
+                self.assertEqual((dice.count(), bots.count()), (10, 5))
+                ys = sorted({round(b.bounding_box()["y"]) for b in dice.all()})
+                self.assertEqual(len(ys), 2, "кубики в два ряда")
+                for b in dice.all() + bots.all():
+                    bb = b.bounding_box()
+                    self.assertGreaterEqual(bb["width"], 44, b.inner_text())
+                    self.assertGreaterEqual(bb["height"], 44)
+                self.assertEqual(len({round(b.bounding_box()["y"]) for b in bots.all()}), 1, "боты в один ряд")
+                self.assertEqual(page.locator('#gDicePick [aria-checked="true"]').inner_text(), "5")
+                self.assertEqual(page.locator('#gBotsPick [aria-checked="true"]').inner_text(), "3")
+                # выбор кнопкой меняет скрытое поле, число строк стилей и сводку
+                bots.nth(1).click()
+                self.assertEqual(page.input_value("#gBots"), "2")
+                self.assertEqual(page.locator("#gBotStyles .bot-row").count(), 2)
+                dice.nth(6).click()
+                self.assertEqual(page.input_value("#gDice"), "7")
+                self.assertTrue(page.locator("#gConfigSummary").inner_text().startswith("7 кубиков · 2 бота"))
+                # строка бота: имя слева, список справа; на узкой панели список под именем на всю ширину
+                row = page.locator("#gBotStyles .bot-row").first
+                name, sel = row.locator(".bot-name").bounding_box(), row.locator("select").bounding_box()
+                if sel["y"] < name["y"] + name["height"]:
+                    self.assertLess(abs((name["y"] + name["height"] / 2) - (sel["y"] + sel["height"] / 2)), 6)
+                    self.assertLessEqual(name["x"] + name["width"], sel["x"] + 1)
+                else:
+                    self.assertGreaterEqual(sel["width"], name["width"] * 4, "под именем список на всю ширину")
+                self.assertLessEqual(sel["x"] + sel["width"], w + 1)
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
+                # скрытое поле не занимает места и не перехватывает касания
+                self.assertEqual(page.evaluate("getComputedStyle(document.querySelector('#gDice')).opacity"), "0")
+
     def test_theme_card_in_stats_player_tab_fits(self):
         """«Оформление» на вкладке «Статистика» → «Игрок»: три крупных варианта помещаются, выбор работает."""
         for w, h in VIEWPORTS:
@@ -1573,7 +1616,7 @@ class LayoutTest(unittest.TestCase):
                         const st = getComputedStyle(s);
                         probe.font = st.fontSize + ' ' + st.fontFamily;
                         const longest = Math.max(...[...s.options].map(o => probe.measureText(o.text).width));
-                        return { id: s.id, width: s.getBoundingClientRect().width, inner, longest, paired: !!s.closest('.is-pair'),
+                        return { id: s.id, width: s.getBoundingClientRect().width, inner, longest, paired: !!s.closest('.is-pair, .bot-row'),
                                  pad: parseFloat(st.paddingLeft) + parseFloat(st.paddingRight) + 28 };
                     }); }""")
                 self.assertTrue(res, "в настройках нет списков")

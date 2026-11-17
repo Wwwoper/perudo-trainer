@@ -597,12 +597,65 @@
   min-width: 0;
 }
 
-/* Строка с длинными подписями: поля друг под другом на всю ширину панели */
-.side-body .field-row.is-stacked,
-.setup-screen .field-row.is-stacked {
+/* Выбор числа кнопками: боты 1–5 в один ряд, кубики 1–10 сеткой 5 × 2 (кнопка не уже 44 px) */
+.count-picker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.count-picker button {
+  min-width: 0;
+  padding: 0;
+  font-weight: 600;
+}
+
+.count-picker button[aria-checked="true"] {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--on-accent);
+}
+
+/* Числовое поле остаётся источником значения для настроек, но глазу не показывается */
+.count-field {
+  position: relative;
+}
+
+.count-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.field-name {
+  font-size: var(--fs-small);
+  color: var(--mut);
+}
+
+/* Стиль бота: имя слева, список справа; на узкой панели список переносится под имя на всю ширину */
+.bot-row {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.bot-row select {
+  flex: 1 1 15rem;
+  min-width: 0;
+  font-size: var(--fs-small);
+}
+
+.bot-name {
+  flex: 0 0 3.5em;
+  font-weight: 600;
 }
 
 .check {
