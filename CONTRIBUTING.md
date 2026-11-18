@@ -2,7 +2,7 @@
 
 Приложение написано на чистых **HTML, CSS и JavaScript (ES-модули)**: без сборки и фреймворков, весь код работает прямо в браузере; для запуска приложения ничего устанавливать не нужно. Node.js и npm-пакеты `@playwright/test` и `playwright` (в `devDependencies`) нужны только для тестов.
 
-Устройство кода, слои и API движка — в [docs/dev/architecture.md](docs/dev/architecture.md), руководство для новичков — в [docs/dev/guide.md](docs/dev/guide.md), правила адаптивной вёрстки — в [docs/dev/layout.md](docs/dev/layout.md), публикация на GitHub Pages — в [docs/dev/publishing.md](docs/dev/publishing.md). Что нового в каждой версии, смотрите в [CHANGELOG.md](CHANGELOG.md): текущая версия записана в `package.json`, а тест `changelog.test.js` следит, чтобы верхняя запись истории совпадала с ней. Эмуляторы партий на Python описаны в [tools/README.md](tools/README.md).
+Устройство кода, слои и API движка — в [docs/dev/architecture.md](docs/dev/architecture.md), руководство для новичков — в [docs/dev/guide.md](docs/dev/guide.md), правила адаптивной вёрстки — в [docs/dev/layout.md](docs/dev/layout.md), принципы построения интерфейса и чек-лист проверки изменений интерфейса — в [docs/dev/ui-principles.md](docs/dev/ui-principles.md), публикация на GitHub Pages — в [docs/dev/publishing.md](docs/dev/publishing.md). Что нового в каждой версии, смотрите в [CHANGELOG.md](CHANGELOG.md): текущая версия записана в `package.json`, а тест `changelog.test.js` следит, чтобы верхняя запись истории совпадала с ней. Эмуляторы партий на Python описаны в [tools/README.md](tools/README.md).
 
 ## Запуск локально
 
