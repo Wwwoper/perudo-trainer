@@ -41,9 +41,6 @@ export const BOT_STYLES = {
 
 export const BOT_STYLE_IDS = Object.freeze(Object.keys(BOT_STYLES));
 
-// Раздача стилей по умолчанию: три базовых по кругу (как было до выбора вручную).
-export const DEFAULT_STYLE_CYCLE = Object.freeze(['careful', 'bluffer', 'smart']);
-
 // Уровень ботов = во сколько раз умножается размах ошибок `noise` стиля.
 export const BOT_LEVELS = Object.freeze({
   easy: { id: 'easy', name: 'Лёгкий', desc: 'часто ошибаются в расчётах', noise: 2.5 },
@@ -61,28 +58,21 @@ export function noiseForLevel(level) {
 export const MAX_MEMORY_SHIFT = 0.25;
 const MEMORY_BASE_RATE = 0.3;      // доля блефа, при которой поправки нет (= PRIOR_RATE из memory.js)
 
-export const STYLE_AUTO = 'auto';
+/** Выбор стиля «любой из всех»: он же стоит у каждого бота по умолчанию. Предсказуемой раздачи нет, иначе стили можно угадать по номеру бота. */
 export const STYLE_RANDOM = 'random';
-
-/** Подпись пункта «По умолчанию» для бота с номером index (с нуля): какой стиль он получит на самом деле. */
-export function autoStyleLabel(index) {
-  const st = BOT_STYLES[DEFAULT_STYLE_CYCLE[index % DEFAULT_STYLE_CYCLE.length]];
-  return `По умолчанию (${st.name})`;
-}
 
 /**
  * Превращает выбор пользователя в список стилей для `count` ботов.
- * choices[i]: id стиля | 'auto' (по умолчанию, по кругу) | 'random' (любой из всех).
- * Незнакомое значение или его отсутствие считается 'auto', поэтому
+ * choices[i]: id стиля | 'random' (любой из всех).
+ * Незнакомое значение или его отсутствие считается 'random', поэтому
  * испорченные настройки не ломают создание партии.
  */
 export function pickBotStyles(count, choices = [], rng = Math.random) {
   const out = [];
   for (let i = 0; i < count; i++) {
     const c = choices[i];
-    if (c === STYLE_RANDOM) out.push(BOT_STYLE_IDS[Math.floor(rng() * BOT_STYLE_IDS.length)]);
-    else if (BOT_STYLES[c]) out.push(c);
-    else out.push(DEFAULT_STYLE_CYCLE[i % DEFAULT_STYLE_CYCLE.length]);
+    if (BOT_STYLES[c]) out.push(c);
+    else out.push(BOT_STYLE_IDS[Math.floor(rng() * BOT_STYLE_IDS.length)]);
   }
   return out;
 }

@@ -35,10 +35,17 @@ async function setQuantity(page, n) {
  * Вскрытие кубиков по умолчанию выключаем: модальное окно блокирует клики
  * и ставит ботов на паузу (его проверяет отдельный тест).
  */
-async function startGame(page, { bots, dice, assist, calza, reveal = false, styles, level, memory, showStyles, explain, explainDepth, speed } = {}) {
+async function startGame(page, { bots, dice, assist, calza, reveal = false, styles, randomStyles = false, level, memory, showStyles, explain, explainDepth, speed } = {}) {
   await openSettings(page);
   if (bots !== undefined) await page.locator('#gBots').fill(String(bots));
-  // Стили ботов: массив id по порядку ботов ('skeptic', 'random', 'auto' …).
+  // Стили ботов: массив id по порядку ботов ('skeptic', 'random' …). Без `styles` ставим прежний порядок
+  // «осторожный, блефующий, умный», чтобы партии с заданными руками оставались предсказуемыми;
+  // `randomStyles: true` оставляет настоящее значение по умолчанию («Случайный»).
+  if (!styles && !randomStyles) {
+    const cycle = ['careful', 'bluffer', 'smart'];
+    const n = await page.locator('#gBotStyles select').count();
+    for (let i = 0; i < n; i++) await page.selectOption(`#gBotStyle${i}`, cycle[i % cycle.length]);
+  }
   if (styles) {
     for (let i = 0; i < styles.length; i++) await page.selectOption(`#gBotStyle${i}`, styles[i]);
   }
@@ -1136,10 +1143,16 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gameTable .seat-style')).toHaveText(['🧐']);
   });
 
-  test('по умолчанию стили раздаются по кругу: осторожный, блефующий, умный', async ({ page }) => {
-    await startGame(page, { bots: 3, dice: 3 });
+  test('по умолчанию у каждого бота «Случайный», в партию попадают известные стили', async ({ page }) => {
+    await openSettings(page);
+    await page.locator('#gBots').fill('5');
+    for (let i = 0; i < 5; i++) await expect(page.locator(`#gBotStyle${i}`)).toHaveValue('random');
+    await expect(page.locator('#gBotStyle0 option').first()).toHaveText('🎲 Случайный');
+    await expect(page.locator('#gBotStyle0 option')).toHaveCount(6);      // «Случайный» и пять стилей, «по умолчанию» больше нет
+    await startGame(page, { bots: 5, dice: 2, randomStyles: true });
     const styles = await page.evaluate(() => window.__perudo_v2.game.players.slice(1).map((p) => p.style));
-    expect(styles).toEqual(['careful', 'bluffer', 'smart']);
+    expect(styles).toHaveLength(5);
+    for (const st of styles) expect(['careful', 'bluffer', 'smart', 'aggressor', 'skeptic']).toContain(st);
   });
 
   test('полей выбора стиля столько же, сколько ботов, выбор сохраняется при смене числа', async ({ page }) => {
@@ -1153,7 +1166,7 @@ test.describe('Покерный стол в партии', () => {
     await page.locator('#gBots').fill('5');
     await expect(page.locator('#gBotStyles select')).toHaveCount(5);
     await expect(page.locator('#gBotStyle0')).toHaveValue('skeptic');
-    await expect(page.locator('#gBotStyle4')).toHaveValue('auto');
+    await expect(page.locator('#gBotStyle4')).toHaveValue('random');
   });
 
   test('«Случайный» стиль даёт одного из известных стилей', async ({ page }) => {

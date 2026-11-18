@@ -1042,7 +1042,7 @@ class LayoutTest(unittest.TestCase):
                 self.assertIn("не запоминают", page.locator("#gMemoryInfo").inner_text())
                 page.locator("#gShowStylesOpt").check()
                 self.assertIn("Включено", page.locator("#gShowStylesInfo").inner_text())
-                self.assertIn("(", page.locator("#gBotStyle0 option").first.inner_text())   # «По умолчанию (стиль)»
+                self.assertIn("Случайный", page.locator("#gBotStyle0 option").first.inner_text())   # по умолчанию у бота «Случайный»
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
     def test_dice_and_bots_pickers_layout(self):

@@ -1,6 +1,6 @@
 // src/ui/bot_styles.js — настройки партии: число ботов и стиль каждого бота.
 
-import { BOT_STYLES, BOT_STYLE_IDS, DEFAULT_STYLE_CYCLE, STYLE_AUTO, STYLE_RANDOM, pickBotStyles, autoStyleLabel } from '../bots.js';
+import { BOT_STYLES, BOT_STYLE_IDS, STYLE_RANDOM, pickBotStyles } from '../bots.js';
 import { $ } from './common.js';
 
 export function botCountSetting() {
@@ -18,12 +18,11 @@ export function setupBotStyles() {
     help.innerHTML = BOT_STYLE_IDS
       .map((id) => `<li><b>${BOT_STYLES[id].icon} ${BOT_STYLES[id].name}</b> — ${BOT_STYLES[id].desc}</li>`)
       .join('')
-      + `<li><b>По умолчанию</b> — стили по кругу: ${DEFAULT_STYLE_CYCLE.map((id) => BOT_STYLES[id].name).join(', ')}, дальше снова с первого.</li>`;
+      + '<li><b>🎲 Случайный</b> — стоит у всех по умолчанию: каждому боту выпадает любой стиль, и по номеру бота его не угадать.</li>';
   }
 
-  // «По умолчанию» подписано стилем, который бот с этим номером получит на самом деле
-  const optionsFor = (index) => [
-    `<option value="${STYLE_AUTO}">${autoStyleLabel(index)}</option>`,
+  // «Случайный» первым: он выбран у каждого бота, пока игрок не решит иначе
+  const optionsFor = () => [
     `<option value="${STYLE_RANDOM}">🎲 Случайный</option>`,
     ...BOT_STYLE_IDS.map((id) => `<option value="${id}">${BOT_STYLES[id].icon} ${BOT_STYLES[id].name}</option>`),
   ].join('');
@@ -33,7 +32,7 @@ export function setupBotStyles() {
     const n = botCountSetting();
     let html = '';
     for (let j = 0; j < n; j++) {
-      html += `<label class="bot-row"><span class="bot-name">Бот ${j + 1}</span><select id="gBotStyle${j}" data-bot-style>${optionsFor(j)}</select></label>`;
+      html += `<label class="bot-row"><span class="bot-name">Бот ${j + 1}</span><select id="gBotStyle${j}" data-bot-style>${optionsFor()}</select></label>`;
     }
     box.innerHTML = html;
     box.querySelectorAll('select').forEach((sel, i) => { if (prev[i]) sel.value = prev[i]; });

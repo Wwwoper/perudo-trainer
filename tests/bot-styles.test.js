@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  BOT_STYLES, BOT_STYLE_IDS, DEFAULT_STYLE_CYCLE, STYLE_AUTO, STYLE_RANDOM,
+  BOT_STYLES, BOT_STYLE_IDS, STYLE_RANDOM,
   pickBotStyles, botDecide, generateCharacter,
 } from '../src/bots.js';
 
@@ -32,14 +32,26 @@ test('Calza умеет только «Умный»', () => {
 
 // ---------- pickBotStyles ----------
 
-test('pickBotStyles: без выбора — три базовых стиля по кругу, как раньше', () => {
-  assert.deepEqual(pickBotStyles(5), ['careful', 'bluffer', 'smart', 'careful', 'bluffer']);
-  assert.deepEqual(pickBotStyles(2, [STYLE_AUTO, STYLE_AUTO]), ['careful', 'bluffer']);
-  assert.deepEqual(DEFAULT_STYLE_CYCLE, ['careful', 'bluffer', 'smart']);
+test('pickBotStyles: без выбора стили случайные, по номеру бота их не угадать', () => {
+  const seq = [0, 0.25, 0.5, 0.75, 0.99];
+  let k = 0;
+  const rng = () => seq[k++ % seq.length];
+  const out = pickBotStyles(5, [], rng);
+  assert.equal(out.length, 5);
+  assert.ok(out.every((id) => BOT_STYLE_IDS.includes(id)));
+  assert.deepEqual(out, seq.map((r) => BOT_STYLE_IDS[Math.floor(r * BOT_STYLE_IDS.length)]));
+  // с настоящим генератором раздача не одна и та же: за 200 попыток выпадает больше одного порядка
+  const orders = new Set(Array.from({ length: 200 }, () => pickBotStyles(3).join()));
+  assert.ok(orders.size > 1);
 });
 
-test('pickBotStyles: явный выбор уважается, остальные — по умолчанию', () => {
-  assert.deepEqual(pickBotStyles(3, ['skeptic', STYLE_AUTO, 'aggressor']), ['skeptic', 'bluffer', 'aggressor']);
+test('pickBotStyles: «random» и незнакомые значения дают случайный стиль из известных', () => {
+  const out = pickBotStyles(3, [STYLE_RANDOM, 'ghost', 7], () => 0);
+  assert.deepEqual(out, Array(3).fill(BOT_STYLE_IDS[0]));
+});
+
+test('pickBotStyles: явный выбор уважается, остальные — случайные', () => {
+  assert.deepEqual(pickBotStyles(3, ['skeptic', STYLE_RANDOM, 'aggressor'], () => 0).map((s, i) => (i === 1 ? 'x' : s)), ['skeptic', 'x', 'aggressor']);
   assert.deepEqual(pickBotStyles(5, Array(5).fill('skeptic')), Array(5).fill('skeptic'));
 });
 
@@ -52,7 +64,9 @@ test('pickBotStyles: «случайный» берёт стиль из всех,
 });
 
 test('pickBotStyles: незнакомые и пустые значения не ломают раздачу', () => {
-  assert.deepEqual(pickBotStyles(3, ['nope', null, undefined]), ['careful', 'bluffer', 'smart']);
+  const out = pickBotStyles(3, ['nope', null, undefined]);
+  assert.equal(out.length, 3);
+  assert.ok(out.every((id) => BOT_STYLE_IDS.includes(id)));
   assert.deepEqual(pickBotStyles(0, ['smart']), []);
   assert.equal(pickBotStyles(4, ['smart']).length, 4, 'длина всегда равна числу ботов');
 });

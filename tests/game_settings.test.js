@@ -28,7 +28,7 @@ describe('sanitizeGameSettings', () => {
   });
   it('корректные значения сохраняются как есть', () => {
     const s = {
-      dice: 6, bots: 4, botStyles: ['careful', 'random', 'auto', 'bluffer'], botLevel: 'hard',
+      dice: 6, bots: 4, botStyles: ['careful', 'random', 'smart', 'bluffer'], botLevel: 'hard',
       memory: false, assist: 'game', speed: 'fast', calza: true, palifico: true, reveal: false,
       explain: 'full', explainDepth: 'detailed', hideStyles: false,
     };
@@ -58,10 +58,10 @@ describe('sanitizeGameSettings', () => {
     const s = sanitizeGameSettings({ memory: 'no', calza: 1, palifico: 'true', reveal: null });
     assert.deepStrictEqual([s.memory, s.calza, s.palifico, s.reveal], [true, false, false, true]);
   });
-  it('стили ботов: лишние обрезаются, незнакомые становятся «по умолчанию»', () => {
-    const s = sanitizeGameSettings({ botStyles: ['careful', 'ghost', 7, null, 'smart', 'bluffer', 'random'] });
+  it('стили ботов: лишние обрезаются, незнакомые и прежнее «auto» становятся «случайным»', () => {
+    const s = sanitizeGameSettings({ botStyles: ['careful', 'ghost', 7, 'auto', 'smart', 'bluffer', 'random'] });
     assert.strictEqual(s.botStyles.length, 5);
-    assert.deepStrictEqual(s.botStyles.slice(0, 5), ['careful', 'auto', 'auto', 'auto', 'smart']);
+    assert.deepStrictEqual(s.botStyles.slice(0, 5), ['careful', 'random', 'random', 'random', 'smart']);
     assert.deepStrictEqual(sanitizeGameSettings({ botStyles: 'careful' }).botStyles, []);
   });
   it('идемпотентна и не меняет исходный объект', () => {
@@ -82,8 +82,9 @@ describe('isDefaultGameSettings и describeGameSettings', () => {
     assert.ok(isDefaultGameSettings(defaultGameSettings()));
     assert.ok(isDefaultGameSettings(null));
     assert.ok(!isDefaultGameSettings({ ...defaultGameSettings(), calza: true }));
-    assert.ok(isDefaultGameSettings({ ...defaultGameSettings(), botStyles: ['auto', 'auto', 'auto'] }));
-    assert.ok(!isDefaultGameSettings({ ...defaultGameSettings(), botStyles: ['auto', 'smart', 'auto'] }));
+    assert.ok(isDefaultGameSettings({ ...defaultGameSettings(), botStyles: ['random', 'random', 'random'] }));
+    assert.ok(isDefaultGameSettings({ ...defaultGameSettings(), botStyles: ['auto', 'auto'] }));        // прежнее «по умолчанию» читается как «случайный»
+    assert.ok(!isDefaultGameSettings({ ...defaultGameSettings(), botStyles: ['random', 'smart', 'random'] }));
   });
   it('сводка с правильными склонениями', () => {
     assert.strictEqual(describeGameSettings(defaultGameSettings()), '5 кубиков · 3 бота · Тренировка · Нормально');
@@ -99,7 +100,7 @@ describe('хранилище настроек последней партии', 
     assert.strictEqual(getLastGameSettings(), null);
   });
   it('сохраняется и читается обратно', () => {
-    const s = { ...defaultGameSettings(), dice: 4, bots: 2, calza: true, botStyles: ['smart', 'auto'] };
+    const s = { ...defaultGameSettings(), dice: 4, bots: 2, calza: true, botStyles: ['smart', 'random'] };
     setLastGameSettings(s);
     assert.deepStrictEqual(getLastGameSettings(), s);
   });

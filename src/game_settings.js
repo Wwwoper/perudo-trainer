@@ -8,7 +8,7 @@
 // Всё, что пришло извне (старая копия, ручная правка, повреждённые данные), проходит sanitizeGameSettings:
 // числа зажимаются в допустимые пределы, неизвестные значения заменяются стандартными.
 
-import { BOT_STYLE_IDS, BOT_LEVELS, DEFAULT_BOT_LEVEL, STYLE_AUTO, STYLE_RANDOM } from './bots.js';
+import { BOT_STYLE_IDS, BOT_LEVELS, DEFAULT_BOT_LEVEL, STYLE_RANDOM } from './bots.js';
 
 /**
  * Версия набора полей. 2: добавлены explain, explainDepth, hideStyles. Отдельного номера в данных нет:
@@ -27,7 +27,7 @@ export const BOT_SPEEDS = Object.freeze(['step', 'slow', 'normal', 'fast']);
 export const EXPLAIN_MODES = Object.freeze(['auto', 'off', 'after', 'full']);
 export const EXPLAIN_DEPTHS = Object.freeze(['short', 'detailed']);
 
-const VALID_STYLES = new Set([STYLE_AUTO, STYLE_RANDOM, ...BOT_STYLE_IDS]);
+const VALID_STYLES = new Set([STYLE_RANDOM, ...BOT_STYLE_IDS]);
 
 /** Значения «как в первый запуск». Каждый вызов возвращает новый объект. */
 export function defaultGameSettings() {
@@ -71,7 +71,7 @@ export function sanitizeGameSettings(raw) {
   return {
     dice: clampInt(raw.dice, DICE_MIN, DICE_MAX, d.dice),
     bots: clampInt(raw.bots, BOTS_MIN, BOTS_MAX, d.bots),
-    botStyles: styles.map((s) => (typeof s === 'string' && VALID_STYLES.has(s) ? s : STYLE_AUTO)),
+    botStyles: styles.map((s) => (typeof s === 'string' && VALID_STYLES.has(s) ? s : STYLE_RANDOM)),
     botLevel: oneOf(raw.botLevel, Object.keys(BOT_LEVELS), d.botLevel),
     memory: bool(raw.memory, d.memory),
     assist: oneOf(raw.assist, ASSIST_MODES, d.assist),
@@ -88,7 +88,7 @@ export function sanitizeGameSettings(raw) {
 /** Совпадают ли настройки со стандартными (для кнопки «Сбросить»). */
 export function isDefaultGameSettings(s) {
   const v = sanitizeGameSettings(s);
-  if (v.botStyles.every((x) => x === STYLE_AUTO)) v.botStyles = [];   // «по умолчанию» у всех = ничего не выбрано
+  if (v.botStyles.every((x) => x === STYLE_RANDOM)) v.botStyles = [];   // «случайный» у всех = выбор по умолчанию
   return JSON.stringify(v) === JSON.stringify(defaultGameSettings());
 }
 

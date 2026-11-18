@@ -116,7 +116,7 @@
 
 | раз | подпись | вкладки | примеры |
 |---:|---|---|---|
-| 8 | 16 · 400 · 8/34 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | select#gBotStyle0 «По умолчанию (Осторожный»; select#gBotStyle1 «По умолчанию (Блефующий)»; select#gBotStyle2 «По умолчанию (Умный)🎲 С» |
+| 8 | 16 · 400 · 8/34 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | select#gBotStyle0 «🎲 Случайный🛡️ Осторожн»; select#gBotStyle1 «🎲 Случайный🛡️ Осторожн»; select#gBotStyle2 «🎲 Случайный🛡️ Осторожн» |
 | 5 | 16 · 400 · 8/12 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | calc, sim | input#cN «15»; input#cT «0.5»; input#cK «0» |
 | 4 | 20 · 700 · 0/0 · 0 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 52 | calc, game, train | input#gQ «1»; input#tT «0.5»; input#tQ «2» |
 | 2 | 16 · 400 · 0/0 · 8 · 0 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | input#gDice.count-input «5»; input#gBots.count-input «3» |
