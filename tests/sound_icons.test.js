@@ -30,16 +30,21 @@ describe('значки звука', () => {
   });
 });
 
-describe('раздел звука в index.html', () => {
-  it('одна кнопка-переключатель с aria-pressed и подписью; списка, трёх режимов и «Проверить звук» нет', () => {
-    assert.match(html, /<button type="button" id="gSound" class="sound-toggle" aria-pressed="false"><span class="sound-label">Звук выключен<\/span><\/button>/);
-    assert.match(html, /<h3 class="set-label" id="gSoundLabel">Звук приложения<\/h3>/);
-    assert.match(html, /<small id="gSoundHelp" class="game-settings-help"><\/small>/);
-    assert.ok(!/gSoundTest|data-sound=/.test(html));
-    assert.ok(!/class="sound-switch"/.test(html));
+describe('переключатель звука в index.html', () => {
+  it('значок в шапке: кнопка с aria-pressed и подписью для читалок, стоит перед «?»', () => {
+    const m = html.match(/<button type="button" id="gSound" class="icon-btn sound-btn" data-sound-toggle aria-pressed="false" aria-label="Звук приложения: выключен"><\/button>/);
+    assert.ok(m, 'нет кнопки #gSound в шапке');
+    assert.ok(html.indexOf('id="gSound"') < html.indexOf('id="helpLink"'));
+    assert.ok(html.indexOf('id="gSound"') > html.indexOf('</nav>'));
   });
-  it('«Звук приложения» идёт после «Дополнительных правил»', () => {
-    assert.ok(html.indexOf('id="gRulesLabel"') < html.indexOf('id="gSoundLabel"'));
-    assert.ok(html.indexOf('id="gSoundLabel"') < html.indexOf('class="btn-primary side-start"'));
+  it('пункт меню ☰ для телефона: внутри nav, перед «Справкой по разделу»', () => {
+    const m = html.match(/<button type="button" id="gSoundMenu" class="sound-menu-item" data-sound-toggle aria-pressed="false"><span class="sound-label">Звук выключен<\/span><\/button>/);
+    assert.ok(m, 'нет пункта #gSoundMenu');
+    assert.ok(html.indexOf('id="gSoundMenu"') < html.indexOf('id="helpLinkMenu"'));
+    assert.ok(html.indexOf('id="gSoundMenu"') > html.indexOf('id="mainNav"'));
+  });
+  it('из меню партии раздел «Звук приложения», подсказка и «Проверить звук» убраны', () => {
+    assert.ok(!/gSoundLabel|gSoundHelp|gSoundTest|data-sound=|class="sound-toggle"|sound-switch/.test(html));
+    assert.ok(!html.includes('Звук приложения</h3>'));
   });
 });

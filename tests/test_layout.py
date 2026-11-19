@@ -663,7 +663,7 @@ class LayoutTest(unittest.TestCase):
                     self.assertLessEqual(page.locator(".app-header h1").bounding_box()["width"], 2,
                                          "заголовок торчит из-под HUD")
                 else:
-                    ys = [round(b["y"]) for b in self.boxes(page, ".app-header nav button")]
+                    ys = [round(b["y"]) for b in self.boxes(page, ".app-header nav .tab-btn")]
                     self.assertEqual(len(ys), 7)
                     self.assertLessEqual(max(ys) - min(ys), 1, "вкладки перенеслись на вторую строку")
                     self.assertLessEqual(page.locator(".app-header").bounding_box()["height"], 56)
@@ -674,7 +674,7 @@ class LayoutTest(unittest.TestCase):
         for w, h in [(768, 1024), (1366, 768), (1920, 1080)]:
             with self.subTest(w=w, h=h):
                 page = self.open_game(w, h, 3)
-                boxes = self.boxes(page, ".app-header nav button")
+                boxes = self.boxes(page, ".app-header nav .tab-btn")
                 self.assertEqual(len(boxes), 7)
                 for b in boxes:
                     self.assertGreaterEqual(b["height"], 44)
@@ -946,8 +946,9 @@ class LayoutTest(unittest.TestCase):
                 btn.click()
                 self.assertFalse(page.locator("#gSettingsReset").is_visible())
 
-    def test_prestart_sound_toggle_fits(self):
-        """«Звук приложения»: одна кнопка-переключатель со значком и подписью, зона нажатия не меньше 44 px, без «Проверить звук»."""
+    def test_sound_toggle_lives_in_header_or_menu(self):
+        """Звук приложения: значок рядом с «?» на широком экране, пункт меню ☰ на телефоне; в настройках партии его нет.
+        Зона нажатия не меньше 44 px, значок заменяется, а не дублируется, состояния различаются."""
         for w, h in VIEWPORTS:
             with self.subTest(w=w, h=h):
                 ctx = self.browser.new_context(viewport={"width": w, "height": h})
@@ -955,29 +956,40 @@ class LayoutTest(unittest.TestCase):
                 self.addCleanup(ctx.close)
                 page.goto(self.url)
                 self.goto_tab(page, "game")
-                btn = page.locator("#gSound")
-                card = page.locator(".setup-card:has(#gSound)")
-                self.assertFalse(page.locator(".setup-card:has(#gSound):has(#gAssist)").count(),
-                                 "звуки должны быть в своей карточке, а не внутри «Помощь и темп»")
-                self.assertEqual(card.locator("h3.set-label").inner_text().strip().lower(), "звук приложения")
-                self.assertEqual(page.locator("#gSoundTest").count(), 0)
-                btn.scroll_into_view_if_needed()
-                rules = page.locator("#gRulesLabel").bounding_box()
-                self.assertLess(rules["y"], btn.bounding_box()["y"], "«Звук приложения» ниже «Дополнительных правил»")
+                self.assertEqual(page.locator("#gSoundLabel").count(), 0, "в настройках партии звука больше нет")
+                self.assertEqual(page.locator("#gSetup #gSound, #gSetup #gSoundMenu").count(), 0)
+                if self.is_compact(w, h):
+                    self.assertFalse(page.locator("#gSound").is_visible(), "значок в шапке только на широком экране")
+                    page.locator(".hud-menu:visible").click()
+                    btn = page.locator("#gSoundMenu")
+                    self.assertTrue(btn.is_visible(), "на телефоне звук лежит в меню ☰")
+                else:
+                    self.assertFalse(page.locator("#gSoundMenu").is_visible())
+                    btn = page.locator("#gSound")
+                    self.assertTrue(btn.is_visible())
+                    help_box = page.locator("#helpLink").bounding_box()
+                    box = btn.bounding_box()
+                    self.assertLess(box["x"] + box["width"], help_box["x"] + 1, "значок стоит левее «?»")
+                    self.assertLessEqual(abs(box["y"] - help_box["y"]), 2, "значок и «?» в одной строке")
+                    if w >= 1100:
+                        self.assertTrue(page.evaluate(
+                            "(() => { const n = document.querySelector('.app-header nav'); return n.scrollWidth <= n.clientWidth + 1; })()"),
+                            "после добавления значка звука вкладки перестали помещаться без прокрутки")
                 box = btn.bounding_box()
                 self.assertGreaterEqual(box["height"], 44)
+                self.assertGreaterEqual(box["width"], 44)
                 self.assertLessEqual(box["x"] + box["width"], w + 1)
                 self.assertEqual(btn.locator("svg").count(), 1)
                 self.assertEqual(btn.get_attribute("aria-pressed"), "false")
-                self.assertIn("выключен", btn.inner_text())
                 btn.click()
                 self.assertEqual(btn.get_attribute("aria-pressed"), "true")
-                self.assertIn("включён", btn.inner_text())
+                self.assertEqual(page.locator("#gSound").get_attribute("aria-label"), "Звук приложения: включён")
+                self.assertIn("включён", page.locator("#gSoundMenu").inner_text())
                 self.assertEqual(btn.locator("svg").count(), 1)                 # значок заменяется, не дублируется
-                on_bg = page.evaluate("getComputedStyle(document.querySelector('#gSound')).backgroundColor")
+                on_color = btn.evaluate("e => getComputedStyle(e).color")
                 btn.click()
-                off_bg = page.evaluate("getComputedStyle(document.querySelector('#gSound')).backgroundColor")
-                self.assertNotEqual(on_bg, off_bg, "включённое и выключенное состояния различаются")
+                off_color = btn.evaluate("e => getComputedStyle(e).color")
+                self.assertNotEqual(on_color, off_color, "включённое и выключенное состояния различаются")
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
     def test_settings_pairs_hints_and_summary(self):

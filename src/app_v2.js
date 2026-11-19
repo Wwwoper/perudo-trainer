@@ -1331,7 +1331,7 @@ window.__perudo_v2 = {
   startNewGame,
   renderGame,
   setThemeMode: changeThemeMode,   // __perudo_v2.setThemeMode('light'): то же, что выбор темы в интерфейсе
-  setSoundMode: changeSoundMode,   // то же, что кнопка «Звук» в настройках: __perudo_v2.setSoundMode('on')
+  setSoundMode: changeSoundMode,   // то же, что значок звука в шапке: __perudo_v2.setSoundMode('on')
   solveNow,
   startDuel,
   moveDuel,

@@ -126,24 +126,33 @@ test.describe('Звуки', () => {
     expect(errors).toEqual([]);
   });
 
-  test('кнопка «Звук» в настройках: включение звучит, запоминается, перечёркнутый значок при выключении', async ({ page }) => {
+  /** Переключатель звука: значок в шапке на широком экране, на телефоне пункт меню ☰. */
+  const soundToggle = async (page) => {
+    const header = page.locator('#gSound');
+    if (await header.isVisible()) return header;
+    await page.locator('.hud-menu:visible').click();
+    return page.locator('#gSoundMenu');
+  };
+
+  test('значок звука в шапке: включение звучит, запоминается, перечёркнутый значок при выключении', async ({ page }) => {
     await setup(page);
-    const btn = page.locator('#gSound');
+    let btn = await soundToggle(page);
     await expect(btn).toHaveAttribute('aria-pressed', 'false');
-    await expect(btn).toContainText('Звук выключен');
-    await expect(page.locator('#gSoundHelp')).toHaveText('Звуки выключены.');
+    await expect(page.locator('#gSound')).toHaveAttribute('aria-label', 'Звук приложения: выключен');
+    await expect(page.locator('#gSoundMenu')).toContainText('Звук выключен');
     const arcs = () => btn.locator('svg path').count();
     expect(await arcs()).toBe(2);                                           // динамик и крест
     await btn.click();
     await expect.poll(() => freqs(page)).toContain(FREQ.turn);              // включение сразу слышно
     await expect(btn).toHaveAttribute('aria-pressed', 'true');
-    await expect(btn).toContainText('Звук включён');
-    await expect(page.locator('#gSoundHelp')).toContainText('быстром темпе');
+    await expect(page.locator('#gSound')).toHaveAttribute('aria-label', 'Звук приложения: включён');
+    await expect(page.locator('#gSoundMenu')).toContainText('Звук включён');   // оба переключателя показывают одно состояние
     expect(await arcs()).toBe(3);                                           // динамик и две дуги
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.settings')).soundMode)).toBe('on');
     await page.reload();
     await page.waitForFunction(() => Boolean(window.__perudo_v2));
     await openTab(page, 'game');
+    btn = await soundToggle(page);
     await expect(btn).toHaveAttribute('aria-pressed', 'true');
     await btn.click();
     await expect(btn).toHaveAttribute('aria-pressed', 'false');

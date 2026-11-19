@@ -55,9 +55,13 @@
         <button class="tab-btn" data-t="duel">Дуэль (CFR)</button>
         <button class="tab-btn" data-t="sim">Симуляция</button>
         <button class="tab-btn" data-t="stats">Статистика</button>
+        <button type="button" id="gSoundMenu" class="sound-menu-item" data-sound-toggle aria-pressed="false"><span class="sound-label">Звук выключен</span></button>
         <a id="helpLinkMenu" class="help-link help-link-menu" href="docs/guide/calculator.html" target="_blank" rel="noopener">Справка по разделу</a>
       </nav>
-      <a id="helpLink" class="help-link help-link-header" href="docs/guide/calculator.html" target="_blank" rel="noopener" aria-label="Справка по разделу «Калькулятор»">?</a>
+      <div class="header-tools">
+        <button type="button" id="gSound" class="icon-btn sound-btn" data-sound-toggle aria-pressed="false" aria-label="Звук приложения: выключен"></button>
+        <a id="helpLink" class="help-link help-link-header" href="docs/guide/calculator.html" target="_blank" rel="noopener" aria-label="Справка по разделу «Калькулятор»">?</a>
+      </div>
     </header>
 
     <!-- Уведомление: в потоке страницы под шапкой, ничего не перекрывает; закрывается кнопкой и Esc -->
@@ -674,12 +678,6 @@
 
               <label class="check"><input id="gRevealOpt" type="checkbox" checked> Показывать вскрытие кубиков</label>
               <small id="gRevealInfo" class="game-settings-help">После «Не верю» и Calza кубики всех игроков открываются, и видно, кто был прав.</small>
-              </section>
-
-              <section class="setup-card" aria-labelledby="gSoundLabel">
-              <h3 class="set-label" id="gSoundLabel">Звук приложения</h3>
-              <button type="button" id="gSound" class="sound-toggle" aria-pressed="false"><span class="sound-label">Звук выключен</span></button>
-              <small id="gSoundHelp" class="game-settings-help"></small>
               </section>
 
               <button type="button" class="btn-primary side-start" data-action="new-game">Начать новую партию</button>

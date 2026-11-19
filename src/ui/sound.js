@@ -4,9 +4,9 @@
 // клавиша), поэтому AudioContext создаётся при первом таком жесте; кнопка «Начать партию» его уже обеспечивает.
 
 import { createSoundEngine } from '../sound_engine.js';
-import { sanitizeSoundMode, describeSoundMode } from '../sound_plan.js';
+import { sanitizeSoundMode } from '../sound_plan.js';
 import { soundIconSvg } from './icons.js';
-import { $ } from './common.js';
+import { $$ } from './common.js';
 import { getSoundMode, setSoundMode } from '../storage.js';
 
 let engine = null;
@@ -40,26 +40,30 @@ export function currentSoundMode() {
   return mode;
 }
 
-/** Кнопка «Звук» в настройках партии: значок и подпись показывают состояние, нажатие переключает. */
+/** Переключатели звука (значок в шапке и пункт меню ☰): значок, подпись и aria-pressed показывают состояние. */
 function refreshSoundControls() {
-  const btn = $('#gSound');
-  if (btn) {
-    const on = mode !== 'off';
+  const on = mode !== 'off';
+  const state = on ? 'включён' : 'выключен';
+  for (const btn of $$('[data-sound-toggle]')) {
     btn.setAttribute('aria-pressed', String(on));
     btn.querySelector('svg')?.remove();
     btn.insertAdjacentHTML('afterbegin', soundIconSvg(mode));
     const label = btn.querySelector('.sound-label');
-    if (label) label.textContent = on ? 'Звук включён' : 'Звук выключен';
+    if (label) label.textContent = `Звук ${state}`;
+    else {
+      btn.setAttribute('aria-label', `Звук приложения: ${state}`);
+      btn.title = `Звук приложения: ${state}`;
+    }
   }
-  const help = $('#gSoundHelp');
-  if (help) help.textContent = describeSoundMode(mode);
 }
 
 export function setupSoundControls() {
-  $('#gSound')?.addEventListener('click', () => {
-    changeSoundMode(mode === 'off' ? 'on' : 'off');
-    if (mode !== 'off' && engine) { engine.unlock(); engine.cue('turn'); }    // включили — сразу слышно, что звук работает
-  });
+  for (const btn of $$('[data-sound-toggle]')) {
+    btn.addEventListener('click', () => {
+      changeSoundMode(mode === 'off' ? 'on' : 'off');
+      if (mode !== 'off' && engine) { engine.unlock(); engine.cue('turn'); }    // включили — сразу слышно, что звук работает
+    });
+  }
   refreshSoundControls();
 }
 
