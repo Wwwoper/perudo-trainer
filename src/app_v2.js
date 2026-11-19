@@ -8,7 +8,7 @@ import { createAssistConfig, getClassification, effectiveExplain } from './assis
 import { readInfo, readNote } from './table_read.js';
 import { describeRoundEvents, logRowHtml, checkText, roundHeadText } from './game_log.js';
 import { getRounds, updateStats, addGame, migrateIfNeeded, get, set, getPlayer, getStats, getDeviceState, setDeviceState, getActiveGame, setActiveGame, clearActiveGame } from './storage.js';
-import { describeSnapshot } from './saved_game.js';
+import { describeSnapshot, DISCARD_CONFIRM } from './saved_game.js';
 import { BOT_STYLES, generateCharacters, botDecide } from './bots.js';
 import { visibleStyle, renderTable, renderDie, renderHand, renderBid, escapeHtml, renderPlayerAvatar } from './table.js';
 import { buildGameResult, resultHeadline } from './result.js';
@@ -273,8 +273,9 @@ function resumeGame() {
   if (game.state === 'active' && game.currentPlayer !== 0) scheduleBotTurn();
 }
 
-/** «Начать заново»: сохранённая партия стирается, остаются обычные настройки. */
+/** «Отбросить партию»: после подтверждения сохранённая партия стирается, остаются обычные настройки. */
 function discardSavedGame() {
+  if (!window.confirm(DISCARD_CONFIRM)) return;
   clearActiveGame();
   savedGame = null;
   refreshResume();

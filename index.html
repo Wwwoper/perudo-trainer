@@ -445,19 +445,20 @@
               <h2 class="setup-title" id="gSetupTitle">Новая партия</h2>
               <p class="muted">Выберите соперников, помощь и правила. Настройки запоминаются: в следующий раз достаточно одной кнопки.</p>
             </div>
-            <div class="preset-row">
-              <button type="button" id="gFirstPreset">Первая учебная партия</button>
-              <small id="gFirstPresetHint" class="game-settings-help">Один бот «Осторожный», режим «Новичок», темп «Медленно», стили ботов показаны, без Calza и Палифико.</small>
-            </div>
             <!-- Если страницу перезагрузили посреди партии, предлагаем её продолжить -->
             <section id="gResume" class="setup-card resume-card" aria-labelledby="gResumeTitle" hidden>
               <h3 class="set-label" id="gResumeTitle">Незавершённая партия</h3>
               <p id="gResumeInfo" class="muted"></p>
               <div class="resume-actions">
-                <button type="button" id="gResumeBtn" class="btn-primary">Продолжить партию</button>
-                <button type="button" id="gResumeDrop">Начать заново</button>
+                <button type="button" id="gResumeBtn" class="btn-primary">Продолжить</button>
+                <button type="button" id="gResumeDrop" class="quiet-btn is-danger">Отбросить партию</button>
               </div>
+              <small id="gResumeNote" class="game-settings-help">Если начать новую партию, эта будет заменена: вернуться к ней потом не получится.</small>
             </section>
+            <div class="preset-row">
+              <button type="button" id="gFirstPreset">Первая учебная партия</button>
+              <small id="gFirstPresetHint" class="game-settings-help">Один бот «Осторожный», режим «Новичок», темп «Медленно», стили ботов показаны, без Calza и Палифико.</small>
+            </div>
           </section>
 
           <div id="gameTable" class="table-stage" aria-label="Игровой стол"></div>

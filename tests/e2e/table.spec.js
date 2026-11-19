@@ -279,11 +279,23 @@ test.describe('Покерный стол в партии', () => {
     }).toPass({ timeout: 15_000 });
   });
 
-  test('«Начать заново» стирает снимок; «Начать партию» тоже заменяет его', async ({ page }) => {
+  test('«Отбросить партию» спрашивает подтверждение, потом стирает снимок; «Начать партию» тоже заменяет его', async ({ page }) => {
     await startFastGame(page);
     const firstId = (await activeSaved(page)).game.id;
     await reloadToSetup(page);
     await expect(page.locator('#gResume')).toBeVisible();
+    await expect(page.locator('#gResumeNote')).toContainText('будет заменена');
+
+    // отказ в окне подтверждения: партия остаётся
+    let asked = '';
+    page.once('dialog', (d) => { asked = d.message(); d.dismiss(); });
+    await page.locator('#gResumeDrop').click();
+    expect(asked).toContain('история ходов');
+    await expect(page.locator('#gResume')).toBeVisible();
+    expect((await activeSaved(page)).game.id).toBe(firstId);
+
+    // согласие: снимок стёрт
+    page.once('dialog', (d) => d.accept());
     await page.locator('#gResumeDrop').click();
     await expect(page.locator('#gResume')).toBeHidden();
     expect(await activeSaved(page)).toBeNull();

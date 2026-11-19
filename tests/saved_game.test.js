@@ -12,7 +12,7 @@ global.localStorage = {
 const { createGame, startGame, applyAction, getLegalActions } = await import('../src/engine.js');
 const { generateCharacters } = await import('../src/bots.js');
 const {
-  makeSnapshot, restoreSnapshot, sanitizeGame, safeHtml, describeSnapshot, SAVE_VERSION, MAX_AGE_MS,
+  makeSnapshot, restoreSnapshot, sanitizeGame, safeHtml, describeSnapshot, SAVE_VERSION, MAX_AGE_MS, DISCARD_CONFIRM,
 } = await import('../src/saved_game.js');
 const { getActiveGame, setActiveGame, clearActiveGame } = await import('../src/storage.js');
 const { BACKUP_KEYS } = await import('../src/backup.js');
@@ -329,5 +329,11 @@ describe('описание и хранилище', () => {
   });
   it('снимок партии не входит в резервную копию и облако', () => {
     assert.ok(!BACKUP_KEYS.includes('perudo.activeGame'));
+  });
+  it('подтверждение «Отбросить партию» называет, что будет потеряно', () => {
+    assert.match(DISCARD_CONFIRM, /Отбросить незавершённую партию\?/);
+    for (const part of ['раунд', 'кубики всех игроков', 'история ходов', 'не получится']) {
+      assert.ok(DISCARD_CONFIRM.includes(part), `в тексте нет «${part}»`);
+    }
   });
 });

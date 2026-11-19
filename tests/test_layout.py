@@ -1192,6 +1192,15 @@ class LayoutTest(unittest.TestCase):
                     self.assertGreaterEqual(b["height"], 44, sel)
                     self.assertGreaterEqual(b["width"], 44, sel)
                     self.assertLessEqual(b["x"] + b["width"], w + 1, sel)
+                self.assertEqual(page.locator("#gResumeBtn").inner_text(), "Продолжить")
+                self.assertEqual(page.locator("#gResumeDrop").inner_text(), "Отбросить партию")
+                self.assertIn("будет заменена", page.locator("#gResumeNote").inner_text())
+                # карточка стоит первой на экране подготовки, выше пресета
+                self.assertLess(card.bounding_box()["y"], page.locator("#gFirstPreset").bounding_box()["y"])
+                # отказ в подтверждении оставляет партию
+                page.once("dialog", lambda d: d.dismiss())
+                page.locator("#gResumeDrop").click()
+                self.assertTrue(page.locator("#gResume").is_visible())
                 page.locator("#gResumeBtn").click()
                 self.assertEqual(page.locator(".seat").count(), 4)
                 self.assertFalse(page.locator("#gResume").is_visible())
