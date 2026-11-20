@@ -2,6 +2,7 @@
 
 import { $ } from './common.js';
 import { effectiveExplain } from '../assist.js';
+import { BOT_DELAYS } from '../bot_pace.js';
 
 /** Что делает каждый режим помощи (совпадает с createAssistConfig в assist.js). Название режима не повторяется: оно уже в списке. */
 export const ASSIST_HELP = {
@@ -17,13 +18,26 @@ export const EXPLAIN_HELP = {
   full: 'Перед ходом: факты о ситуации за столом. После хода: разбор.',
 };
 
-/** Темп: когда ходят боты (задержки совпадают с BOT_DELAYS в bot_pace.js). */
-export const PACE_HELP = {
-  step: 'Бот ходит, когда вы нажмёте кнопку.',
-  slow: 'Бот ходит примерно через 3 секунды.',
-  normal: 'Бот ходит примерно через секунду.',
-  fast: 'Бот ходит почти сразу.',
-};
+/** Названия темпа ходов ботов. */
+export const PACE_NAMES = { step: 'Пошагово', slow: 'Медленно', normal: 'Нормально', fast: 'Быстро' };
+
+/** Секунды вида «1,1 с» из задержки в мс (задержки — те же BOT_DELAYS, что двигают ходы ботов). */
+export function secondsText(ms) {
+  return `${(Math.round(ms / 100) / 10).toString().replace('.', ',')} с`;
+}
+
+/** Текст кнопки темпа: «Шаг» или время хода бота, например «1,1 с». */
+export function paceButtonText(speed) {
+  if (speed === 'step') return 'Шаг';
+  return secondsText(BOT_DELAYS[speed] ?? BOT_DELAYS.normal);
+}
+
+/** Подпись выбранного темпа: «Нормально — около 1,1 с на ход». */
+export function paceCaption(speed) {
+  const key = Object.hasOwn(PACE_NAMES, speed) ? speed : 'normal';
+  const how = key === 'step' ? 'ход бота по кнопке' : `около ${secondsText(BOT_DELAYS[key])} на ход`;
+  return `${PACE_NAMES[key]} — ${how}`;
+}
 
 /** Подробность объяснений. */
 export const DEPTH_HELP = {
@@ -63,14 +77,6 @@ export function setupSettingsHelp() {
   const update = () => { help.textContent = ASSIST_HELP[sel.value] || ''; };
   sel.addEventListener('change', update);
   update();
-
-  const pace = $('#gSpeed');
-  const paceHelp = $('#gSpeedHelp');
-  if (pace && paceHelp) {
-    const updatePace = () => { paceHelp.textContent = PACE_HELP[pace.value] || ''; };
-    pace.addEventListener('change', updatePace);
-    updatePace();
-  }
 
   const depth = $('#gExplainDepth');
   const depthHelp = $('#gDepthHelp');

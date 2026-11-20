@@ -597,6 +597,31 @@
   gap: var(--space-2);
 }
 
+/* Кнопки выбора компактные, одного размера (3rem; темп шире, 4.5rem). Кубики: десять в одну строку,
+   когда карточка достаточно широка; на узкой карточке (телефон, боковая панель) — два ряда по пять. */
+.count-picker.is-bots {
+  grid-template-columns: repeat(5, minmax(0, 3rem));
+}
+
+.count-picker.is-dice {
+  grid-template-columns: repeat(10, minmax(0, 3rem));
+}
+
+.count-picker.is-speed {
+  grid-template-columns: repeat(4, minmax(0, 4.5rem));
+}
+
+@container (max-width: 35rem) {
+  .count-picker.is-bots,
+  .count-picker.is-dice {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .count-picker.is-speed {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .count-picker button {
   min-width: 0;
   padding: 0;
@@ -612,7 +637,13 @@
 /* Числовое поле остаётся источником значения для настроек, но глазу не показывается */
 .count-field {
   position: relative;
+  container-type: inline-size;
   margin-bottom: var(--space-3);
+}
+
+.count-field b {
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .count-input {

@@ -2,7 +2,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { ASSIST_HELP, EXPLAIN_HELP, PACE_HELP, DEPTH_HELP, explainHelpText, memoryHelpText, stylesHelpText } from '../src/ui/settings_help.js';
+import { ASSIST_HELP, EXPLAIN_HELP, PACE_NAMES, paceButtonText, paceCaption, secondsText, DEPTH_HELP, explainHelpText, memoryHelpText, stylesHelpText } from '../src/ui/settings_help.js';
 import { createAssistConfig } from '../src/assist.js';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -89,14 +89,14 @@ describe('подсказка к «Показывать вскрытие куби
 });
 
 describe('подсказки к темпу и подробности', () => {
-  const values = (id) => [...html.matchAll(new RegExp(`<select id="${id}">([\\s\\S]*?)</select>`, 'g'))][0][1]
+  const values = (id) => [...html.matchAll(new RegExp(`<select id="${id}"[^>]*>([\\s\\S]*?)</select>`, 'g'))][0][1]
     .match(/value="(\w+)"/g).map((v) => v.slice(7, -1));
   it('есть для каждого значения списка', () => {
-    assert.deepStrictEqual(Object.keys(PACE_HELP).sort(), values('gSpeed').sort());
+    assert.deepStrictEqual(Object.keys(PACE_NAMES).sort(), values('gSpeed').sort());
     assert.deepStrictEqual(Object.keys(DEPTH_HELP).sort(), values('gExplainDepth').sort());
   });
   it('каждая подсказка стоит сразу под своим полем в одной колонке', () => {
-    for (const [sel, help] of [['gAssist', 'gAssistHelp'], ['gSpeed', 'gSpeedHelp'], ['gExplain', 'gExplainHelp'], ['gExplainDepth', 'gDepthHelp']]) {
+    for (const [sel, help] of [['gAssist', 'gAssistHelp'], ['gExplain', 'gExplainHelp'], ['gExplainDepth', 'gDepthHelp']]) {
       assert.match(html, new RegExp(`<select id="${sel}">[\\s\\S]*?</select>\\s*</label>\\s*<small id="${help}" class="game-settings-help"></small>\\s*</div>`), sel);
     }
   });
@@ -116,5 +116,24 @@ describe('подсказки к чекбоксам соперников меня
   });
   it('в разметке чекбоксы стоят парой, а «Забыть» — тихое красное действие в колонке памяти', () => {
     assert.match(html, /<div class="field-row is-pair">\s*<div class="field-col">\s*<label class="check"><input id="gMemoryOpt"[^>]*>[^<]*<\/label>\s*<small id="gMemoryInfo"[^>]*><\/small>\s*<button type="button" id="gMemoryReset" class="quiet-btn is-danger">Забыть мою игру<\/button>\s*<\/div>\s*<div class="field-col">\s*<label class="check"><input id="gShowStylesOpt"/);
+  });
+});
+
+describe('темп: кнопки и подпись считаются из реальных задержек ботов', () => {
+  it('секунды: округление до десятых, запятая', () => {
+    assert.equal(secondsText(1100), '1,1 с');
+    assert.equal(secondsText(2600), '2,6 с');
+    assert.equal(secondsText(320), '0,3 с');
+    assert.equal(secondsText(1000), '1 с');
+  });
+  it('тексты кнопок: «Шаг» и время хода бота', () => {
+    assert.deepEqual(Object.keys(PACE_NAMES).map(paceButtonText), ['Шаг', '2,6 с', '1,1 с', '0,3 с']);
+  });
+  it('подпись выбранного темпа называет режим и время; неизвестное значение — как «Нормально»', () => {
+    assert.equal(paceCaption('step'), 'Пошагово — ход бота по кнопке');
+    assert.equal(paceCaption('slow'), 'Медленно — около 2,6 с на ход');
+    assert.equal(paceCaption('normal'), 'Нормально — около 1,1 с на ход');
+    assert.equal(paceCaption('fast'), 'Быстро — около 0,3 с на ход');
+    assert.equal(paceCaption('zzz'), paceCaption('normal'));
   });
 });

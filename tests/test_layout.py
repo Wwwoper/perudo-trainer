@@ -993,7 +993,7 @@ class LayoutTest(unittest.TestCase):
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
     def test_settings_pairs_hints_and_summary(self):
-        """Настройки: пары «Режим помощи | Темп» и «Объяснения | Подробность», подсказка под своим полем,
+        """Настройки: пара «Объяснения | Подробность» и «Режим помощи», подсказка под своим полем,
         «Что значат стили ботов» в карточке «Соперники», полная строка под «Начать партию»."""
         for w, h in VIEWPORTS:
             with self.subTest(w=w, h=h):
@@ -1002,7 +1002,7 @@ class LayoutTest(unittest.TestCase):
                 self.addCleanup(ctx.close)
                 page.goto(self.url)
                 self.goto_tab(page, "game")
-                for left, right, lh, rh in [("gAssist", "gSpeed", "gAssistHelp", "gSpeedHelp"),
+                for left, right, lh, rh in [("gAssist", "gAssist", "gAssistHelp", "gAssistHelp"),
                                             ("gExplain", "gExplainDepth", "gExplainHelp", "gDepthHelp")]:
                     boxes = {k: page.locator("#" + k).bounding_box() for k in (left, right, lh, rh)}
                     for field, help_ in ((left, lh), (right, rh)):
@@ -1012,17 +1012,18 @@ class LayoutTest(unittest.TestCase):
                         self.assertGreaterEqual(hb["x"], f["x"] - 1)
                         self.assertLessEqual(hb["x"] + hb["width"], f["x"] + f["width"] + 1, f"{help_} шире поля")
                     side_by_side = abs(boxes[left]["y"] - boxes[right]["y"]) < 4
-                    if w >= 720 and h >= 600:                                  # широкий экран подготовки; в ландшафте телефона панель узкая
+                    if w >= 720 and h >= 600 and left != right:                                  # широкий экран подготовки; в ландшафте телефона панель узкая
                         self.assertTrue(side_by_side, f"{left}|{right} в одну строку при {w}px")
                 self.assertEqual(page.locator(".setup-card:has(#gShowStylesOpt) #gStyleHelp").count(), 1)
                 self.assertEqual(page.locator("#gStyleHelp").locator("xpath=ancestor::details").count(), 1)
                 self.assertEqual(page.locator("#gConfigSummary").inner_text().strip(),
                                  "5 кубиков · 3 бота · Тренировка · Нормально · без Calza и Палифико")
-                page.select_option("#gSpeed", "fast")
+                page.locator('#gSpeedPick [data-value="fast"]').click()
                 page.locator("#gCalzaOpt").check()
                 self.assertEqual(page.locator("#gConfigSummary").inner_text().strip(),
                                  "5 кубиков · 3 бота · Тренировка · Быстро · только Calza")
-                self.assertIn("почти сразу", page.locator("#gSpeedHelp").inner_text())
+                self.assertEqual(page.locator("#gSpeedNow").inner_text(), "Быстро — около 0,3 с на ход")
+                self.assertEqual(page.locator("#gSpeedHelp").count(), 0, "подсказки под темпом больше нет: расшифровка в подписи")
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
     def test_opponent_checks_pair_with_hints_and_quiet_forget_button(self):
@@ -1058,35 +1059,50 @@ class LayoutTest(unittest.TestCase):
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
     def test_dice_and_bots_pickers_layout(self):
-        """«Кубики» — отдельная карточка; кнопки 1–5 и 1–10 не уже 44 px, кубики сеткой 5 × 2; стили ботов строками «Бот N | список»."""
-        for w, h in VIEWPORTS:
+        """«Параметры партии»: боты, кубики и темп в одной карточке компактными кнопками одного размера;
+        кубики в одну строку, пока карточка шире 35rem, и по 5 в два ряда на узкой; темп из четырёх кнопок в один ряд."""
+        for w, h in VIEWPORTS + [(1500, 900)]:
             with self.subTest(w=w, h=h):
                 ctx = self.browser.new_context(viewport={"width": w, "height": h})
                 page = ctx.new_page()
                 self.addCleanup(ctx.close)
                 page.goto(self.url)
                 self.goto_tab(page, "game")
-                self.assertEqual(page.locator(".setup-card:has(#gDicePick):has(#gBotsPick)").count(), 0, "кубики и боты в разных карточках")
-                self.assertEqual(page.locator(".setup-card:has(#gDicePick) h3").inner_text().strip().lower(), "кубики")
+                self.assertEqual(page.locator(".setup-card:has(#gDicePick):has(#gBotsPick):has(#gSpeedPick)").count(), 1,
+                                 "боты, кубики и темп в одной карточке")
+                self.assertEqual(page.locator(".setup-card:has(#gDicePick) h3").inner_text().strip().lower(), "параметры партии")
+                self.assertEqual(page.locator(".setup-card:has(#gBotStyles) h3").inner_text().strip().lower(), "соперники")
                 dice = page.locator("#gDicePick button")
                 bots = page.locator("#gBotsPick button")
-                self.assertEqual((dice.count(), bots.count()), (10, 5))
-                ys = sorted({round(b.bounding_box()["y"]) for b in dice.all()})
-                self.assertEqual(len(ys), 2, "кубики в два ряда")
-                for b in dice.all() + bots.all():
+                speed = page.locator("#gSpeedPick button")
+                self.assertEqual((dice.count(), bots.count(), speed.count()), (10, 5, 4))
+                self.assertEqual([b.inner_text() for b in speed.all()], ["Шаг", "2,6 с", "1,1 с", "0,3 с"])
+                for b in dice.all() + bots.all() + speed.all():
                     bb = b.bounding_box()
                     self.assertGreaterEqual(bb["width"], 44, b.inner_text())
                     self.assertGreaterEqual(bb["height"], 44)
+                width = page.locator("#gDicePick").bounding_box()["width"]
+                rows = len({round(b.bounding_box()["y"]) for b in dice.all()})
+                self.assertEqual(rows, 1 if width > 560 else 2, f"кубики: рядов {rows} при ширине карточки {width:.0f}")
+                if rows == 1:
+                    self.assertLessEqual(dice.first.bounding_box()["width"], 52, "кнопки компактные, не растянуты")
                 self.assertEqual(len({round(b.bounding_box()["y"]) for b in bots.all()}), 1, "боты в один ряд")
+                self.assertEqual(len({round(b.bounding_box()["y"]) for b in speed.all()}), 1, "темп в один ряд")
                 self.assertEqual(page.locator('#gDicePick [aria-checked="true"]').inner_text(), "5")
                 self.assertEqual(page.locator('#gBotsPick [aria-checked="true"]').inner_text(), "3")
-                # выбор кнопкой меняет скрытое поле, число строк стилей и сводку
+                self.assertEqual(page.locator('#gSpeedPick [aria-checked="true"]').inner_text(), "1,1 с")
+                self.assertEqual(page.locator("#gSpeedNow").inner_text(), "Нормально — около 1,1 с на ход")
+                # выбор кнопкой меняет скрытое поле, число строк стилей, подпись темпа и сводку
                 bots.nth(1).click()
                 self.assertEqual(page.input_value("#gBots"), "2")
                 self.assertEqual(page.locator("#gBotStyles .bot-row").count(), 2)
                 dice.nth(6).click()
                 self.assertEqual(page.input_value("#gDice"), "7")
+                speed.nth(0).click()
+                self.assertEqual(page.input_value("#gSpeed"), "step")
+                self.assertEqual(page.locator("#gSpeedNow").inner_text(), "Пошагово — ход бота по кнопке")
                 self.assertTrue(page.locator("#gConfigSummary").inner_text().startswith("7 кубиков · 2 бота"))
+                self.assertIn("Пошагово", page.locator("#gConfigSummary").inner_text())
                 # строка бота: имя слева, список справа; на узкой панели список под именем на всю ширину
                 row = page.locator("#gBotStyles .bot-row").first
                 name, sel = row.locator(".bot-name").bounding_box(), row.locator("select").bounding_box()
@@ -1143,8 +1159,9 @@ class LayoutTest(unittest.TestCase):
                     if n > 1:
                         pitches = {round(rows[i + 1]["top"] - rows[i]["top"]) for i in range(n - 1)}
                         self.assertEqual(len(pitches), 1, f"N={n}: шаг строк одинаковый {pitches}")
-                    gap = rows[0]["top"] - page.locator("#gBotsPick").bounding_box()["y"] - page.locator("#gBotsPick").bounding_box()["height"]
-                    self.assertTrue(8 <= gap <= 32, f"N={n}: отступ от кнопок до строк {gap:.0f}")
+                    head = page.locator("#gOppLabel").bounding_box()
+                    gap = rows[0]["top"] - head["y"] - head["height"]
+                    self.assertTrue(4 <= gap <= 32, f"N={n}: отступ от заголовка до строк {gap:.0f}")
                 self.assertAlmostEqual(first["sh"], page.evaluate(measure)["lvlH"], delta=1, msg="высота списков")
                 if w >= 1000:
                     self.assertLessEqual(first["sw"], 448, "список не растягивается на всю карточку")

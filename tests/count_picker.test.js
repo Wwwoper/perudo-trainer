@@ -18,20 +18,29 @@ describe('clampCount', () => {
   });
 });
 
-describe('разметка «Кубики» и «Соперники»', () => {
-  it('«Кубики» — отдельная карточка перед «Соперниками»', () => {
-    assert.ok(html.indexOf('id="gDiceLabel"') > 0);
-    assert.ok(html.indexOf('id="gDiceLabel"') < html.indexOf('id="gOppLabel"'));
-    assert.ok(html.indexOf('id="gOppLabel"') < html.indexOf('id="gBotStyles"'));
+describe('разметка «Параметры партии» и «Соперники»', () => {
+  it('«Параметры партии» — первая карточка: боты, кубики, темп; «Соперники» идут после неё', () => {
+    const order = ['id="gParamsLabel"', 'id="gBotsPick"', 'id="gDicePick"', 'id="gSpeedPick"', 'id="gOppLabel"', 'id="gBotStyles"']
+      .map((k) => html.indexOf(k));
+    assert.ok(order.every((i) => i > 0));
+    assert.deepEqual([...order].sort((a, b) => a - b), order);
+    assert.ok(!html.includes('id="gDiceLabel"'), 'отдельной карточки «Кубики» больше нет');
   });
-  it('у каждого выбора есть кнопки-контейнер и скрытое числовое поле с прежним id', () => {
-    for (const [pick, input, min, max] of [['gDicePick', 'gDice', 1, 10], ['gBotsPick', 'gBots', 1, 5]]) {
-      assert.match(html, new RegExp(`id="${pick}" class="count-picker"`));
+  it('у каждого выбора есть контейнер кнопок и скрытое поле с прежним id', () => {
+    for (const [pick, input, min, max, cls] of [['gDicePick', 'gDice', 1, 10, 'is-dice'], ['gBotsPick', 'gBots', 1, 5, 'is-bots']]) {
+      assert.match(html, new RegExp(`id="${pick}" class="count-picker ${cls}"`));
       assert.match(html, new RegExp(`<input id="${input}" class="count-input" type="number" min="${min}" max="${max}"[^>]*tabindex="-1" aria-hidden="true">`));
     }
+    assert.match(html, /id="gSpeedPick" class="count-picker is-speed"/);
+    assert.match(html, /<select id="gSpeed" class="count-input" tabindex="-1" aria-hidden="true">/);
   });
-  it('в «Соперниках» порядок: число ботов → стили → уровень → пара памяти/стилей', () => {
-    const order = ['id="gBotsPick"', 'id="gBotStyles"', 'id="gBotLevel"', 'id="gMemoryOpt"'].map((k) => html.indexOf(k));
+  it('подпись кубиков говорит, что кубики у каждого игрока в начале партии', () => {
+    assert.match(html, /id="gDiceName">Кубиков у каждого игрока в начале партии</);
+  });
+  it('в «Соперниках» порядок: стили → уровень → пара памяти/стилей; числа ботов там уже нет', () => {
+    const opp = html.slice(html.indexOf('id="gOppLabel"'), html.indexOf('id="gHelpLabel"'));
+    assert.ok(!opp.includes('gBotsPick'));
+    const order = ['id="gBotStyles"', 'id="gBotLevel"', 'id="gMemoryOpt"'].map((k) => opp.indexOf(k));
     assert.deepEqual([...order].sort((a, b) => a - b), order);
     assert.ok(order.every((i) => i > 0));
   });

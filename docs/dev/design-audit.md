@@ -20,7 +20,7 @@
 
 ### Отступы (padding, margin, gap)
 
-Значений через токены: **511**; чисел в px: **47**, разных чисел: **4**.
+Значений через токены: **513**; чисел в px: **47**, разных чисел: **4**.
 
 | px | раз |
 |---:|---:|
@@ -79,19 +79,21 @@
 - `.sit-guess-btn` — `src/css/components.css`
 - `.sit-guess-btns` — `src/css/components.css`
 - `.sit-plan-btn` — `src/css/components.css`
+- `.sound-btn` — `src/css/learn.css`
 
 ## 2. Живой интерфейс
 
 Подпись элемента: шрифт · вес · отступы · скругление · рамка · фон · цвет · высота. Чем больше разных подписей у одного вида, тем сильнее он разъехался.
 
-### Кнопки: 88 шт., разных подписей — 22
+### Кнопки: 99 шт., разных подписей — 22
 
 | раз | подпись | вкладки | примеры |
 |---:|---|---|---|
+| 16 | 16 · 600 · 0/0 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | button «1»; button «2»; button «4» |
 | 15 | 16 · 400 · 0/0 · 12 · 1 · rgba(0, 0, 0, 0) · rgb(26, 31, 43) · 44 | calc, game, train | button.face-btn |
-| 13 | 16 · 600 · 0/0 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | button «1»; button «2»; button «3» |
 | 9 | 14 · 600 · 0/8 · 6 · 0 · rgba(0, 0, 0, 0) · rgb(86, 96, 116) · 44 | drill, game, stats | button#tabCalc.has-hint «Расчёт»; button#tabReview «Разбор»; button#tabOpp «Стол» |
 | 9 | 16 · 400 · 4/8 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | calc | button «+1»; button «+2»; button «+3» |
+| 8 | 18 · 400 · 0/8 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | calc, drill, duel, game, game (настройки), sim, stats, train | button#gSound.icon-btn.sound-btn |
 | 6 | 14 · 400 · 4/12 · 999 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | train | button.mode-btn «Палифико»; button.mode-btn «Эндшпиль»; button.mode-btn «Большой стол» |
 | 4 | 16 · 700 · 8/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 52 | drill, game, sim, train | button#gRaise.btn-primary «Ставлю 1×2шанс 100.0%»; button#tRaise.btn-primary «Ставлю»; button#dACheck.btn-primary «Проверить» |
 | 4 | 20 · 400 · 0/0 · 0 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 52 | calc, game, train | button#gPlus «+»; button#tTPlus «+»; button#tPlus «+» |
@@ -99,15 +101,14 @@
 | 3 | 14 · 600 · 0/8 · 6 · 0 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | drill, game, stats | button#tabLog «Журнал»; button.drill-tab.on «Оценка в уме»; button#stTabResults.stats-tab «Результаты» |
 | 3 | 16 · 400 · 0/0 · 12 · 1 · rgb(219, 230, 251) · rgb(26, 31, 43) · 44 | calc, game, train | button.face-btn.sel |
 | 3 | 16 · 400 · 8/12 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | duel, game (настройки), stats | button#gFirstPreset «Первая учебная партия»; button#dSolve «Рассчитать равновесие»; button «Открыть тренажёр» |
-| 3 | 16 · 700 · 8/12 · 8 · 1 · rgb(33, 89, 189) · rgb(255, 255, 255) · 44 | duel, game (настройки), stats | button.btn-primary.side-start «Начать партию»; button#dStart.btn-primary.duel-start «Играть против оптимально»; button.btn-primary «Сыграть партию» |
 | … | ещё подписей: 10 | | |
 
-### Заголовки и «summary»: 20 шт., разных подписей — 5
+### Заголовки и «summary»: 19 шт., разных подписей — 5
 
 | раз | подпись | вкладки | примеры |
 |---:|---|---|---|
 | 9 | 20 · 700 · 0/0 · 0 · 0 · rgba(0, 0, 0, 0) · rgb(26, 31, 43) · 24 | calc, drill, duel, game, game (настройки), sim, stats, train | h1 «🎲 Перудо»; h2#gSetupTitle.setup-title «Новая партия» |
-| 5 | 12 · 700 · 0/0 · 0 · 0 · rgba(0, 0, 0, 0) · rgb(26, 31, 43) · 15 | game (настройки) | h3#gDiceLabel.set-label «Кубики»; h3#gOppLabel.set-label «Соперники»; h3#gHelpLabel.set-label «Помощь и темп» |
+| 4 | 12 · 700 · 0/0 · 0 · 0 · rgba(0, 0, 0, 0) · rgb(26, 31, 43) · 15 | game (настройки) | h3#gParamsLabel.set-label «Параметры партии»; h3#gOppLabel.set-label «Соперники»; h3#gHelpLabel.set-label «Помощь» |
 | 3 | 14 · 600 · 0/0 · 0 · 0 · rgba(0, 0, 0, 0) · rgb(33, 89, 189) · 44 | drill, game (настройки) | summary «Что значат стили ботов»; summary «Как повышать ставку»; summary «Как прикинуть в уме» |
 | 2 | 16 · 700 · 0/0 · 0 · 0 · rgba(0, 0, 0, 0) · rgb(26, 31, 43) · 44 | calc, train | summary «📊 Статистика»; summary «Чтение чужих ставок» |
 | 1 | 14 · 400 · 4/12 · 999 · 0 · rgb(234, 238, 244) · rgb(86, 96, 116) · 44 | train | summary «⚙️ Классика · порог 0.50» |
@@ -116,10 +117,10 @@
 
 | раз | подпись | вкладки | примеры |
 |---:|---|---|---|
-| 8 | 16 · 400 · 8/34 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | select#gBotStyle0 «🎲 Случайный🛡️ Осторожн»; select#gBotStyle1 «🎲 Случайный🛡️ Осторожн»; select#gBotStyle2 «🎲 Случайный🛡️ Осторожн» |
+| 7 | 16 · 400 · 8/34 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | select#gBotStyle0 «🎲 Случайный🛡️ Осторожн»; select#gBotStyle1 «🎲 Случайный🛡️ Осторожн»; select#gBotStyle2 «🎲 Случайный🛡️ Осторожн» |
 | 5 | 16 · 400 · 8/12 · 8 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | calc, sim | input#cN «15»; input#cT «0.5»; input#cK «0» |
 | 4 | 20 · 700 · 0/0 · 0 · 1 · rgb(231, 235, 242) · rgb(26, 31, 43) · 52 | calc, game, train | input#gQ «1»; input#tT «0.5»; input#tQ «2» |
-| 2 | 16 · 400 · 0/0 · 8 · 0 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | input#gDice.count-input «5»; input#gBots.count-input «3» |
+| 3 | 16 · 400 · 0/0 · 8 · 0 · rgb(231, 235, 242) · rgb(26, 31, 43) · 44 | game (настройки) | input#gBots.count-input «3»; input#gDice.count-input «5»; select#gSpeed.count-input «Пошагово Медленно Нормал» |
 | 2 | 18 · 400 · 12/12 · 12 · 1 · rgb(238, 241, 246) · rgb(26, 31, 43) · 47 | drill | input#dA1.drill-input; input#dA2.drill-input |
 
 ### Чипы и значки: 3 шт., разных подписей — 2

@@ -554,22 +554,32 @@
             </div>
 
             <div role="tabpanel" id="panSettings" aria-labelledby="tabSettings" hidden>
-              <section class="setup-card" aria-labelledby="gDiceLabel">
-              <h3 class="set-label" id="gDiceLabel">Кубики</h3>
+              <section class="setup-card" aria-labelledby="gParamsLabel">
+              <h3 class="set-label" id="gParamsLabel">Параметры партии</h3>
               <div class="field count-field">
-                <span class="field-name" id="gDiceName">Сколько кубиков у каждого игрока</span>
-                <div id="gDicePick" class="count-picker" aria-labelledby="gDiceName"></div>
+                <span class="field-name" id="gBotsName">Количество ботов</span>
+                <div id="gBotsPick" class="count-picker is-bots" aria-labelledby="gBotsName"></div>
+                <input id="gBots" class="count-input" type="number" min="1" max="5" value="3" inputmode="numeric" tabindex="-1" aria-hidden="true">
+              </div>
+              <div class="field count-field">
+                <span class="field-name" id="gDiceName">Кубиков у каждого игрока в начале партии</span>
+                <div id="gDicePick" class="count-picker is-dice" aria-labelledby="gDiceName"></div>
                 <input id="gDice" class="count-input" type="number" min="1" max="10" value="5" inputmode="numeric" tabindex="-1" aria-hidden="true">
+              </div>
+              <div class="field count-field">
+                <span class="field-name" id="gSpeedName">Темп ходов ботов: <b id="gSpeedNow"></b></span>
+                <div id="gSpeedPick" class="count-picker is-speed" aria-labelledby="gSpeedName"></div>
+                <select id="gSpeed" class="count-input" tabindex="-1" aria-hidden="true">
+                  <option value="step">Пошагово</option>
+                  <option value="slow">Медленно</option>
+                  <option value="normal" selected>Нормально</option>
+                  <option value="fast">Быстро</option>
+                </select>
               </div>
               </section>
 
               <section class="setup-card" aria-labelledby="gOppLabel">
               <h3 class="set-label" id="gOppLabel">Соперники</h3>
-              <div class="field count-field">
-                <span class="field-name" id="gBotsName">Количество ботов</span>
-                <div id="gBotsPick" class="count-picker" aria-labelledby="gBotsName"></div>
-                <input id="gBots" class="count-input" type="number" min="1" max="5" value="3" inputmode="numeric" tabindex="-1" aria-hidden="true">
-              </div>
 
               <!-- Стиль каждого бота: поля строит setupBotStyles() в app_v2.js -->
               <div id="gBotStyles"></div>
@@ -602,7 +612,7 @@
               </section>
 
               <section class="setup-card" aria-labelledby="gHelpLabel">
-              <h3 class="set-label" id="gHelpLabel">Помощь и темп</h3>
+              <h3 class="set-label" id="gHelpLabel">Помощь</h3>
               <div class="field-row is-pair">
                 <div class="field-col">
                   <label class="field">Режим помощи
@@ -613,17 +623,6 @@
                     </select>
                   </label>
                   <small id="gAssistHelp" class="game-settings-help"></small>
-                </div>
-                <div class="field-col">
-                  <label class="field">Темп
-                    <select id="gSpeed">
-                      <option value="step">Пошагово</option>
-                      <option value="slow">Медленно</option>
-                      <option value="normal" selected>Нормально</option>
-                      <option value="fast">Быстро</option>
-                    </select>
-                  </label>
-                  <small id="gSpeedHelp" class="game-settings-help"></small>
                 </div>
               </div>
 
