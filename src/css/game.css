@@ -663,15 +663,27 @@
   color: var(--mut);
 }
 
-/* Стили ботов: всегда одна колонка строк «Бот N | список» одной ширины, от числа ботов вид не зависит.
-   Блок не шире 28rem; на узкой панели список переносится под имя на всю ширину (у всех строк одинаково). */
-#gBotStyles {
-  margin-bottom: var(--space-4);
+/* «Соперники»: слева стили ботов, справа уровень; подписи колонок и первые поля стоят на одной высоте
+   (обе колонки устроены одинаково: подпись, затем поле). На узкой карточке колонки идут друг под другом.
+   Строки стилей — «Бот N | список» одной ширины, от числа ботов вид не зависит; в очень узкой колонке
+   (боковая панель) список переносится под имя на всю ширину (у всех строк одинаково). */
+.opp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  align-items: start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
-#gBotStyles,
-.field-row.is-narrow {
-  max-width: 28rem;
+.opp-col {
+  min-width: 0;
+}
+
+/* Подпись и строки стилей: тот же промежуток, что у подписи и поля «Уровня ботов» (.field) */
+.opp-styles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .bot-row {
@@ -683,7 +695,7 @@
 }
 
 .bot-row select {
-  flex: 1 1 18rem;
+  flex: 1 1 12rem;
   min-width: 0;
   min-height: var(--tap);
   font-size: var(--fs-body);

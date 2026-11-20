@@ -581,17 +581,22 @@
               <section class="setup-card" aria-labelledby="gOppLabel">
               <h3 class="set-label" id="gOppLabel">Соперники</h3>
 
-              <!-- Стиль каждого бота: поля строит setupBotStyles() в app_v2.js -->
-              <div id="gBotStyles"></div>
-
-              <div class="field-row is-narrow">
-                <label class="field">Уровень ботов
-                  <select id="gBotLevel">
-                    <option value="easy">Лёгкий — часто ошибаются</option>
-                    <option value="normal" selected>Обычный — иногда ошибаются</option>
-                    <option value="hard">Сильный — без ошибок</option>
-                  </select>
-                </label>
+              <div class="opp-grid">
+                <!-- Стиль каждого бота: поля строит setupBotStyles() в app_v2.js -->
+                <div class="opp-col opp-styles">
+                  <span class="field-name" id="gStylesName">Стиль каждого бота</span>
+                  <div id="gBotStyles" role="group" aria-labelledby="gStylesName"></div>
+                </div>
+                <div class="opp-col">
+                  <label class="field"><span class="field-name">Уровень ботов</span>
+                    <select id="gBotLevel">
+                      <option value="easy">Лёгкий — часто ошибаются</option>
+                      <option value="normal" selected>Обычный — иногда ошибаются</option>
+                      <option value="hard">Сильный — без ошибок</option>
+                    </select>
+                  </label>
+                  <small id="gLevelHelp" class="game-settings-help">Как точно боты считают шансы. Манеру игры задаёт стиль.</small>
+                </div>
               </div>
               <div class="field-row is-pair">
                 <div class="field-col">

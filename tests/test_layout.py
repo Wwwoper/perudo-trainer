@@ -1159,15 +1159,25 @@ class LayoutTest(unittest.TestCase):
                     if n > 1:
                         pitches = {round(rows[i + 1]["top"] - rows[i]["top"]) for i in range(n - 1)}
                         self.assertEqual(len(pitches), 1, f"N={n}: шаг строк одинаковый {pitches}")
-                    head = page.locator("#gOppLabel").bounding_box()
+                    head = page.locator("#gStylesName").bounding_box()
                     gap = rows[0]["top"] - head["y"] - head["height"]
-                    self.assertTrue(4 <= gap <= 32, f"N={n}: отступ от заголовка до строк {gap:.0f}")
+                    self.assertTrue(0 <= gap <= 12, f"N={n}: отступ от подписи «Стиль каждого бота» до строк {gap:.0f}")
                 self.assertAlmostEqual(first["sh"], page.evaluate(measure)["lvlH"], delta=1, msg="высота списков")
+                # две колонки «Стиль каждого бота | Уровень ботов»: подписи и первые поля на одной высоте;
+                # на узкой карточке колонки друг под другом
+                caps = [page.locator("#gStylesName").bounding_box(), page.locator("#gBotLevel").locator("xpath=..").locator(".field-name").bounding_box()]
+                firsts = [page.locator("#gBotStyle0").bounding_box(), page.locator("#gBotLevel").bounding_box()]
+                if abs(caps[0]["y"] - caps[1]["y"]) < 4:
+                    self.assertAlmostEqual(caps[0]["y"], caps[1]["y"], delta=1, msg="подписи колонок на одной высоте")
+                    self.assertAlmostEqual(firsts[0]["y"], firsts[1]["y"], delta=1, msg="первые поля колонок на одной высоте")
+                    self.assertAlmostEqual(firsts[0]["height"], firsts[1]["height"], delta=1)
+                    self.assertLess(firsts[0]["x"] + firsts[0]["width"], firsts[1]["x"], "уровень правее стилей")
+                    self.assertGreaterEqual(w, 720, "две колонки только на широкой карточке")
+                else:
+                    self.assertGreater(caps[1]["y"], firsts[0]["y"], "на узкой карточке уровень ниже стилей")
                 if w >= 1000:
-                    self.assertLessEqual(first["sw"], 448, "список не растягивается на всю карточку")
-                    right = page.evaluate("""() => [document.querySelector('#gBotStyle0'), document.querySelector('#gBotLevel')]
-                        .map((e) => e.getBoundingClientRect().right)""")
-                    self.assertAlmostEqual(right[0], right[1], delta=1, msg="правые края списков стилей и «Уровня ботов» совпадают")
+                    self.assertAlmostEqual(caps[0]["y"], caps[1]["y"], delta=1, msg="на широком экране колонки рядом")
+                self.assertEqual(page.locator("#gLevelHelp").inner_text().strip(), "Как точно боты считают шансы. Манеру игры задаёт стиль.")
                 forget, hint = page.locator("#gMemoryReset").bounding_box(), page.locator("#gMemoryInfo").bounding_box()
                 text_left = page.evaluate("""() => { const b = document.querySelector('#gMemoryReset'); const st = getComputedStyle(b);
                     return b.getBoundingClientRect().x + parseFloat(st.paddingLeft); }""")
@@ -1712,7 +1722,7 @@ class LayoutTest(unittest.TestCase):
                         const st = getComputedStyle(s);
                         probe.font = st.fontSize + ' ' + st.fontFamily;
                         const longest = Math.max(...[...s.options].map(o => probe.measureText(o.text).width));
-                        return { id: s.id, width: s.getBoundingClientRect().width, inner, longest, paired: !!s.closest('.is-pair, .bot-row'),
+                        return { id: s.id, width: s.getBoundingClientRect().width, inner, longest, paired: !!s.closest('.is-pair, .bot-row, .opp-col'),
                                  pad: parseFloat(st.paddingLeft) + parseFloat(st.paddingRight) + 4 };      // правый отступ уже включает место под стрелку
                     }); }""")
                 self.assertTrue(res, "в настройках нет списков")

@@ -44,6 +44,13 @@ describe('разметка «Параметры партии» и «Соперн
     assert.deepEqual([...order].sort((a, b) => a - b), order);
     assert.ok(order.every((i) => i > 0));
   });
+  it('«Соперники»: две колонки — стили слева, уровень с пояснением справа; пояснений под списками стилей нет', () => {
+    const opp = html.slice(html.indexOf('id="gOppLabel"'), html.indexOf('id="gHelpLabel"'));
+    assert.match(opp, /<div class="opp-grid">\s*<!--[^>]*-->\s*<div class="opp-col opp-styles">\s*<span class="field-name" id="gStylesName">Стиль каждого бота<\/span>\s*<div id="gBotStyles" role="group" aria-labelledby="gStylesName"><\/div>/);
+    assert.match(opp, /<span class="field-name">Уровень ботов<\/span>/);
+    assert.match(opp, /<small id="gLevelHelp" class="game-settings-help">Как точно боты считают шансы\. Манеру игры задаёт стиль\.<\/small>/);
+    assert.ok(opp.indexOf('id="gStylesName"') < opp.indexOf('id="gBotLevel"'));
+  });
   it('«Кубиков каждому» и «Ботов» полями ввода больше не показываются', () => {
     assert.ok(!/<label class="field">Кубиков каждому/.test(html));
     assert.ok(!/<label class="field">Ботов/.test(html));
