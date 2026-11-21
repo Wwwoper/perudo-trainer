@@ -1048,7 +1048,13 @@ class LayoutTest(unittest.TestCase):
                     self.assertGreater(st["y"], m["y"], "на узком экране друг под другом")
                 btn = box("#gMemoryReset")
                 self.assertGreaterEqual(btn["height"], 44)
-                self.assertLess(btn["width"], 260, "кнопка не растянута на всю ширину")
+                self.assertLess(btn["width"], 360, "кнопка по ширине подписи, не растянута")
+                note = box("#gMemoryResetNote")
+                self.assertGreaterEqual(note["y"], btn["y"] + btn["height"] - 1, "пояснение под кнопкой сброса")
+                self.assertIn("не меняются", page.locator("#gMemoryResetNote").inner_text())
+                page.locator("#gMemoryMore summary").click()
+                self.assertIn("Старые наблюдения", page.locator("#gMemoryStats").inner_text())
+                self.assertGreaterEqual(box("#gMemoryStats")["y"], box("#gMemoryMore summary")["y"], "подробности под заголовком раскрытия")
                 self.assertEqual(page.evaluate("getComputedStyle(document.querySelector('#gMemoryReset')).borderTopWidth"), "0px")
                 self.assertTrue(page.locator("#gMemoryReset").is_disabled(), "нечего забывать при пустой памяти")
                 page.locator("#gMemoryOpt").uncheck()
@@ -1118,7 +1124,7 @@ class LayoutTest(unittest.TestCase):
 
     def test_opponents_block_looks_the_same_for_any_bot_count(self):
         """«Соперники»: от числа ботов (1…5) вид строк не зависит; текст в списках не обрезан; все списки одного размера;
-        «Забыть мою игру» выровнена по тексту подсказки."""
+        «Сбросить память» выровнена по тексту подсказки."""
         measure = """() => {
             const probe = document.createElement('canvas').getContext('2d');
             const rows = [...document.querySelectorAll('#gBotStyles .bot-row')].map((r) => {

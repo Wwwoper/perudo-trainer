@@ -2,7 +2,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { ASSIST_HELP, EXPLAIN_HELP, PACE_NAMES, paceButtonText, paceCaption, secondsText, DEPTH_HELP, explainHelpText, memoryHelpText, stylesHelpText } from '../src/ui/settings_help.js';
+import { ASSIST_HELP, EXPLAIN_HELP, PACE_NAMES, paceButtonText, paceCaption, secondsText, DEPTH_HELP, explainHelpText, memoryHelpText, memoryDetailsText, stylesHelpText } from '../src/ui/settings_help.js';
 import { createAssistConfig } from '../src/assist.js';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -107,15 +107,19 @@ describe('подсказки к чекбоксам соперников меня
     assert.match(stylesHelpText(true), /^Включено: .*значок стиля/);
     assert.match(stylesHelpText(false), /^Выключено: .*раскроются в конце партии/);
   });
-  it('«Боты запоминают»: выключено, мало данных, достаточно данных, сразу после «Забыть»', () => {
-    assert.match(memoryHelpText(false, { challenged: 9, bluffPct: 40 }), /^Выключено: .*не запоминают, накопленное сохраняется/);
-    assert.match(memoryHelpText(true, { challenged: 1, bluffPct: 40 }), /присматриваются.*проверено ставок — 1\./);
-    assert.match(memoryHelpText(true, { challenged: 10, bluffPct: 40 }), /Проверено ставок: 10, ложных ≈ 40%/);
-    assert.strictEqual(memoryHelpText(true, { challenged: 0, bluffPct: 30 }, true), 'Готово: боты забыли вашу игру.');
-    assert.strictEqual(memoryHelpText(false, { challenged: 0, bluffPct: 30 }, true), 'Готово: боты забыли вашу игру.');
+  it('«Боты запоминают»: короткая подпись для включено, выключено и сразу после сброса', () => {
+    assert.strictEqual(memoryHelpText(true), 'Боты подстраиваются под то, как вы блефуете.');
+    assert.match(memoryHelpText(false), /^Выключено: .*не запоминают, накопленное сохраняется/);
+    assert.strictEqual(memoryHelpText(true, true), 'Готово: боты забыли ваши ставки.');
+    assert.strictEqual(memoryHelpText(false, true), 'Готово: боты забыли ваши ставки.');
   });
-  it('в разметке чекбоксы стоят парой, а «Забыть» — тихое красное действие в колонке памяти', () => {
-    assert.match(html, /<div class="field-row is-pair">\s*<div class="field-col">\s*<label class="check"><input id="gMemoryOpt"[^>]*>[^<]*<\/label>\s*<small id="gMemoryInfo"[^>]*><\/small>\s*<button type="button" id="gMemoryReset" class="quiet-btn is-danger">Забыть мою игру<\/button>\s*<\/div>\s*<div class="field-col">\s*<label class="check"><input id="gShowStylesOpt"/);
+  it('«Подробнее о памяти»: пусто, мало данных, достаточно данных', () => {
+    assert.match(memoryDetailsText({ challenged: 0, bluffPct: 30 }), /ни одна ваша ставка не проверена/);
+    assert.match(memoryDetailsText({ challenged: 2, bluffPct: 40 }), /Проверено ставок: 2, данных пока мало\. Старые наблюдения теряют вес\./);
+    assert.match(memoryDetailsText({ challenged: 10, bluffPct: 40 }), /Проверено ставок: 10, ложных ≈ 40%\. Старые наблюдения теряют вес\./);
+  });
+  it('в разметке колонка памяти: подпись, «Подробнее о памяти», сброс и пояснение к нему; рядом «Показывать стили»', () => {
+    assert.match(html, /<div class="field-row is-pair">\s*<div class="field-col">\s*<label class="check"><input id="gMemoryOpt"[^>]*>[^<]*<\/label>\s*<small id="gMemoryInfo"[^>]*><\/small>\s*<details class="help-more" id="gMemoryMore">\s*<summary>Подробнее о памяти<\/summary>\s*<p id="gMemoryStats"[^>]*><\/p>\s*<\/details>\s*<button type="button" id="gMemoryReset" class="quiet-btn is-danger">Сбросить память ботов о моих ставках<\/button>\s*<small id="gMemoryResetNote"[^>]*>Остальные настройки и статистика не меняются\.<\/small>\s*<\/div>\s*<div class="field-col">\s*<label class="check"><input id="gShowStylesOpt"/);
   });
 });
 

@@ -1210,7 +1210,8 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gBotLevel')).toHaveValue('normal');
     await expect(page.locator('#gBotLevel option')).toHaveCount(3);
     await expect(page.locator('#gMemoryOpt')).toBeChecked();
-    await expect(page.locator('#gMemoryInfo')).toContainText('присматриваются');
+    await expect(page.locator('#gMemoryInfo')).toContainText('подстраиваются');
+    await expect(page.locator('#gMemoryStats')).toContainText('ни одна ваша ставка не проверена');
   });
 
   test('бот запоминает, что проверил ложную ставку человека, и помнит это после перезагрузки', async ({ page }) => {
@@ -1222,10 +1223,11 @@ test.describe('Покерный стол в партии', () => {
     await page.waitForFunction(() => Boolean(window.__perudo_v2));
     await goTab(page, 'game');
     await openSettings(page);
-    await expect(page.locator('#gMemoryInfo')).toContainText('проверено ставок — 1');
+    await page.locator('#gMemoryMore summary').click();
+    await expect(page.locator('#gMemoryStats')).toContainText('Проверено ставок: 1');
   });
 
-  test('«Забыть мою игру» очищает память', async ({ page }) => {
+  test('«Сбросить память ботов о моих ставках» очищает память', async ({ page }) => {
     await startGame(page, { bots: 1, dice: 2 });
     await bluffAndGetChecked(page);
     expect(await readMemory(page)).toMatchObject({ challenged: 1 });
@@ -1233,7 +1235,7 @@ test.describe('Покерный стол в партии', () => {
     await openSettings(page);
     await page.locator('#gMemoryReset').click();
     expect(await readMemory(page)).toMatchObject({ challenged: 0, bluffs: 0 });
-    await expect(page.locator('#gMemoryInfo')).toContainText('забыли вашу игру');
+    await expect(page.locator('#gMemoryInfo')).toContainText('забыли ваши ставки');
     await expect(page.locator('#gMemoryReset')).toBeDisabled();            // забывать больше нечего
   });
 

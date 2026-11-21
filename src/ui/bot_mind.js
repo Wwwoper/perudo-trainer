@@ -4,7 +4,7 @@
 import { getBotMemory, setBotMemory } from '../storage.js';
 import { DEFAULT_BOT_LEVEL, noiseForLevel } from '../bots.js';
 import { createMemory, normalizeMemory, observeEvent, opponentModel, memoryStats } from '../memory.js';
-import { memoryHelpText } from './settings_help.js';
+import { memoryHelpText, memoryDetailsText } from './settings_help.js';
 import { $ } from './common.js';
 
 // Что боты помнят об игроке (между партиями, в localStorage).
@@ -13,11 +13,13 @@ let botMemory = normalizeMemory(getBotMemory());
 let gameBotLevel = DEFAULT_BOT_LEVEL;
 let gameMemoryOn = true;
 
-/** Подсказка памяти и кнопка «Забыть»: forgot — сразу после сброса. Забывать нечего, пока ничего не накоплено. */
+/** Подпись памяти, подробности и кнопка сброса: forgot — сразу после сброса. Забывать нечего, пока ничего не накоплено. */
 function renderMemoryInfo(forgot = false) {
   const stats = memoryStats(botMemory);
   const info = $('#gMemoryInfo');
-  if (info) info.textContent = memoryHelpText($('#gMemoryOpt') ? $('#gMemoryOpt').checked : true, stats, forgot);
+  if (info) info.textContent = memoryHelpText($('#gMemoryOpt') ? $('#gMemoryOpt').checked : true, forgot);
+  const more = $('#gMemoryStats');
+  if (more) more.textContent = memoryDetailsText(stats);
   const btn = $('#gMemoryReset');
   if (btn) btn.disabled = stats.challenged === 0;
 }

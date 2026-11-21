@@ -602,7 +602,12 @@
                 <div class="field-col">
                   <label class="check"><input id="gMemoryOpt" type="checkbox" checked> Боты запоминают мою игру</label>
                   <small id="gMemoryInfo" class="game-settings-help"></small>
-                  <button type="button" id="gMemoryReset" class="quiet-btn is-danger">Забыть мою игру</button>
+                  <details class="help-more" id="gMemoryMore">
+                    <summary>Подробнее о памяти</summary>
+                    <p id="gMemoryStats" class="game-settings-help"></p>
+                  </details>
+                  <button type="button" id="gMemoryReset" class="quiet-btn is-danger">Сбросить память ботов о моих ставках</button>
+                  <small id="gMemoryResetNote" class="game-settings-help">Остальные настройки и статистика не меняются.</small>
                 </div>
                 <div class="field-col">
                   <label class="check"><input id="gShowStylesOpt" type="checkbox"> Показывать стили ботов</label>
