@@ -663,25 +663,29 @@
 
               <section class="setup-card">
               <div class="rules-group" role="group" aria-labelledby="gRulesLabel">
-                <h3 class="set-label" id="gRulesLabel">Дополнительные правила</h3>
+                <h3 class="set-label" id="gRulesLabel">Правила</h3>
                 <label class="rule-card">
                   <input id="gCalzaOpt" type="checkbox">
                   <span class="rule-body">
                     <b>Calza</b>
-                    <span class="rule-text">Вместо «Не верю!» можно сказать «Calza»: «на столе ровно столько, сколько заявлено».
-                      Угадали — получаете кубик обратно, ошиблись — теряете кубик. Доступна, пока за столом осталось
-                      не меньше половины начальных кубиков.</span>
+                    <span class="rule-text">Вместо «Не верю!» можно сказать «на столе ровно столько, сколько заявлено»: угадали — получаете кубик, ошиблись — теряете.</span>
                   </span>
                 </label>
+                <details class="help-more" id="gCalzaMore">
+                  <summary>Условия Calza</summary>
+                  <p class="game-settings-help">Доступна, пока за столом осталось не меньше половины начальных кубиков.</p>
+                </details>
                 <label class="rule-card">
                   <input id="gPalificoOpt" type="checkbox">
                   <span class="rule-body">
                     <b>Палифико</b>
-                    <span class="rule-text">Когда у игрока остаётся один кубик, раунд идёт по особым правилам: единицы больше
-                      не джокеры, цифру менять нельзя, можно только повышать количество. Один раз на игрока, пока за столом
-                      больше двух игроков.</span>
+                    <span class="rule-text">Когда у игрока остаётся один кубик, раунд идёт по особым правилам.</span>
                   </span>
                 </label>
+                <details class="help-more" id="gPalificoMore">
+                  <summary>Что меняется в Палифико</summary>
+                  <p class="game-settings-help">Единицы больше не джокеры, цифру менять нельзя, можно только повышать количество. Один раз на игрока, пока за столом больше двух игроков.</p>
+                </details>
                 <small class="game-settings-help">Для первой партии оба правила можно оставить выключенными.</small>
               </div>
 

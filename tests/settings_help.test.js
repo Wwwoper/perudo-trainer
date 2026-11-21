@@ -55,6 +55,21 @@ describe('карточки Calza и Палифико', () => {
       assert.match(c, key, `${id}: объяснение`);
     }
   });
+  it('карточка — одна строка про суть, условия и отличия лежат в раскрытии сразу под ней', () => {
+    for (const [id, more, summary, detail, banned] of [
+      ['gCalzaOpt', 'gCalzaMore', 'Условия Calza', /не меньше половины начальных кубиков/, /половины/],
+      ['gPalificoOpt', 'gPalificoMore', 'Что меняется в Палифико', /Единицы больше не джокеры/, /джокер/],
+    ]) {
+      const c = card(id);
+      assert.ok(!banned.test(c), `${id}: подробности не в карточке`);
+      assert.match(html, new RegExp(`id="${id}"[\\s\\S]*?</label>\\s*<details class="help-more" id="${more}">\\s*<summary>${summary}</summary>\\s*<p class="game-settings-help">[^<]*</p>\\s*</details>`), `${id}: раскрытие под карточкой`);
+      assert.match(html.match(new RegExp(`id="${more}">[\\s\\S]*?</details>`))[0], detail, `${id}: подробности`);
+    }
+  });
+  it('заголовок карточки — «Правила»', () => {
+    assert.match(html, /id="gRulesLabel">Правила<\/h3>/);
+    assert.ok(!html.includes('Дополнительные правила</h3>'));
+  });
   it('чекбоксы остаются выключенными по умолчанию, а совет для первой партии есть', () => {
     assert.ok(!/id="gCalzaOpt"[^>]*checked/.test(html));
     assert.ok(!/id="gPalificoOpt"[^>]*checked/.test(html));
