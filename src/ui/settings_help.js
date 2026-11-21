@@ -6,9 +6,9 @@ import { BOT_DELAYS } from '../bot_pace.js';
 
 /** Что делает каждый режим помощи (совпадает с createAssistConfig в assist.js). Название режима не повторяется: оно уже в списке. */
 export const ASSIST_HELP = {
-  novice: 'На вашем ходу видны шансы ставок, и приложение советует ход.',
-  training: 'На вашем ходу видны шансы ставок, но ход вы выбираете сами, без советов.',
-  game: 'Как за настоящим столом: без шансов и подсказок.',
+  novice: 'Видны шансы и совет, как сходить. Лучше всего для знакомства с игрой.',
+  training: 'Видны шансы по вашим кубикам, решения вы принимаете сами.',
+  game: 'Как за настоящим столом: без шансов и подсказок во время партии.',
 };
 
 /** Что значит каждое значение «Объяснений». */
@@ -17,6 +17,17 @@ export const EXPLAIN_HELP = {
   after: 'После вашего хода: что вы выбрали, чем это закончилось и что стоило заметить.',
   full: 'Перед ходом: факты о ситуации за столом. После хода: разбор.',
 };
+
+/** Что значит «По режиму» для каждого режима помощи (совпадает с effectiveExplain). */
+export const AUTO_EXPLAIN_NAMES = { off: 'выключены', after: 'после хода', full: 'до и после хода' };
+
+/** Текст пункта «По режиму — …» в списке «Объяснения ходов». */
+export function autoExplainLabel(assist) {
+  return `По режиму — ${AUTO_EXPLAIN_NAMES[effectiveExplain(assist, 'auto')]}`;
+}
+
+/** Почему «Подробность объяснений» недоступна, когда объяснений не будет. */
+export const DEPTH_OFF_NOTE = 'Недоступно: объяснения выключены.';
 
 /** Названия темпа ходов ботов. */
 export const PACE_NAMES = { step: 'Пошагово', slow: 'Медленно', normal: 'Нормально', fast: 'Быстро' };
@@ -88,15 +99,25 @@ export function setupSettingsHelp() {
   const depth = $('#gExplainDepth');
   const depthHelp = $('#gDepthHelp');
   if (depth && depthHelp) {
-    const updateDepth = () => { depthHelp.textContent = DEPTH_HELP[depth.value] || ''; };
+    const updateDepth = () => {
+      const off = effectiveExplain(sel.value, $('#gExplain')?.value) === 'off';
+      depth.disabled = off;
+      depthHelp.textContent = off ? DEPTH_OFF_NOTE : (DEPTH_HELP[depth.value] || '');
+    };
     depth.addEventListener('change', updateDepth);
+    sel.addEventListener('change', updateDepth);
+    $('#gExplain')?.addEventListener('change', updateDepth);
     updateDepth();
   }
 
   const ex = $('#gExplain');
   const exHelp = $('#gExplainHelp');
   if (!ex || !exHelp) return;
-  const updateExplain = () => { exHelp.textContent = explainHelpText(sel.value, ex.value); };
+  const auto = ex.querySelector('option[value="auto"]');
+  const updateExplain = () => {
+    exHelp.textContent = explainHelpText(sel.value, ex.value);
+    if (auto) auto.textContent = autoExplainLabel(sel.value);
+  };
   sel.addEventListener('change', updateExplain);
   ex.addEventListener('change', updateExplain);
   updateExplain();

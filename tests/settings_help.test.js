@@ -2,7 +2,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { ASSIST_HELP, EXPLAIN_HELP, PACE_NAMES, paceButtonText, paceCaption, secondsText, DEPTH_HELP, explainHelpText, memoryHelpText, memoryDetailsText, stylesHelpText } from '../src/ui/settings_help.js';
+import { ASSIST_HELP, autoExplainLabel, DEPTH_OFF_NOTE, EXPLAIN_HELP, PACE_NAMES, paceButtonText, paceCaption, secondsText, DEPTH_HELP, explainHelpText, memoryHelpText, memoryDetailsText, stylesHelpText } from '../src/ui/settings_help.js';
 import { createAssistConfig } from '../src/assist.js';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -15,11 +15,33 @@ describe('пояснения к режимам помощи', () => {
   });
   it('совпадают с настройками: шансы и прямой совет', () => {
     assert.ok(createAssistConfig('novice').showDirectAdvice);
-    assert.match(ASSIST_HELP.novice, /советует/);
+    assert.match(ASSIST_HELP.novice, /совет/);
     assert.ok(!createAssistConfig('training').showDirectAdvice && createAssistConfig('training').showCurrentBidOdds);
     assert.match(ASSIST_HELP.training, /шансы/);
+    assert.match(ASSIST_HELP.training, /сами/);
     assert.ok(!createAssistConfig('game').showCurrentBidOdds);
-    assert.match(ASSIST_HELP.game, /без шансов/);
+    assert.match(ASSIST_HELP.game, /без шансов и подсказок/);
+  });
+});
+
+describe('подписи режимов помощи и «По режиму»', () => {
+  const labels = (id) => [...html.matchAll(new RegExp(`<select id="${id}">([\\s\\S]*?)</select>`, 'g'))][0][1]
+    .match(/<option[^>]*>([^<]*)<\/option>/g).map((o) => o.replace(/<[^>]*>/g, ''));
+  it('режимы названы вместе с тем, что они дают', () => {
+    assert.deepStrictEqual(labels('gAssist'), ['Новичок — советы и шансы', 'Тренировка — шансы без советов', 'Игра — без подсказок']);
+  });
+  it('вместо «Как у режима помощи» в разметке стоит «По режиму — …», и такого оборота больше нет', () => {
+    assert.ok(labels('gExplain').includes('По режиму — после хода'));
+    assert.ok(!html.includes('Как у режима помощи'));
+  });
+  it('«По режиму» называет то, что получится на самом деле', () => {
+    assert.strictEqual(autoExplainLabel('novice'), 'По режиму — до и после хода');
+    assert.strictEqual(autoExplainLabel('training'), 'По режиму — после хода');
+    assert.strictEqual(autoExplainLabel('game'), 'По режиму — выключены');
+    assert.strictEqual(autoExplainLabel('что-то'), 'По режиму — после хода');
+  });
+  it('у недоступной «Подробности» короткая причина', () => {
+    assert.match(DEPTH_OFF_NOTE, /^Недоступно: объяснения выключены\.$/);
   });
 });
 

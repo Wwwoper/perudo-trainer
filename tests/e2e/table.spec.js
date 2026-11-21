@@ -439,6 +439,28 @@ test.describe('Покерный стол в партии', () => {
     await expect(page.locator('#gExplainDepth')).toHaveValue('short');
   });
 
+  test('«Подробность объяснений» недоступна, пока объяснений не будет, и говорит почему; «По режиму» следует за режимом', async ({ page }) => {
+    const depth = page.locator('#gExplainDepth');
+    const auto = page.locator('#gExplain option[value="auto"]');
+    await expect(auto).toHaveText('По режиму — после хода');
+    await expect(depth).toBeEnabled();
+    await page.locator('#gAssist').selectOption('novice');
+    await expect(auto).toHaveText('По режиму — до и после хода');
+    await page.locator('#gAssist').selectOption('game');
+    await expect(auto).toHaveText('По режиму — выключены');
+    await expect(depth).toBeDisabled();
+    await expect(page.locator('#gDepthHelp')).toHaveText('Недоступно: объяснения выключены.');
+    await page.locator('#gExplain').selectOption('after');
+    await expect(depth).toBeEnabled();
+    await expect(page.locator('#gDepthHelp')).not.toContainText('Недоступно');
+    await page.locator('#gExplain').selectOption('off');
+    await expect(depth).toBeDisabled();
+    await page.locator('#gAssist').selectOption('training');
+    await expect(depth).toBeDisabled();            // явное «Выключены» сильнее режима
+    await page.locator('#gExplain').selectOption('auto');
+    await expect(depth).toBeEnabled();
+  });
+
   test('повреждённые сохранённые настройки не ломают страницу: берутся стандартные', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));

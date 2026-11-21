@@ -1813,9 +1813,9 @@ class LayoutTest(unittest.TestCase):
                     card.locator(".rule-text").click()
                 self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
                 help_text = page.locator("#gAssistHelp").inner_text()
-                self.assertIn("без советов", help_text)
+                self.assertIn("решения вы принимаете сами", help_text)
                 page.select_option("#gAssist", "novice")
-                self.assertIn("советует", page.locator("#gAssistHelp").inner_text())
+                self.assertIn("совет, как сходить", page.locator("#gAssistHelp").inner_text())
                 for sel in ("#gExplain", "#gExplainDepth"):
                     box = page.locator(sel).bounding_box()
                     self.assertIsNotNone(box, sel)
