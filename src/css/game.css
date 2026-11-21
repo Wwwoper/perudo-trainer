@@ -796,6 +796,21 @@
   line-height: 1.4;
 }
 
+/* «Отображение»: образец того, как бот выглядит у стола */
+.style-sample-row {
+  margin: var(--space-1) 0 var(--space-3);
+}
+
+.style-sample {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
 /* Свёрнутые пояснения внизу настроек */
 .help-more {
   margin-top: var(--space-2);

@@ -609,10 +609,6 @@
                   <button type="button" id="gMemoryReset" class="quiet-btn is-danger">Сбросить память ботов о моих ставках</button>
                   <small id="gMemoryResetNote" class="game-settings-help">Остальные настройки и статистика не меняются.</small>
                 </div>
-                <div class="field-col">
-                  <label class="check"><input id="gShowStylesOpt" type="checkbox"> Показывать стили ботов</label>
-                  <small id="gShowStylesInfo" class="game-settings-help"></small>
-                </div>
               </div>
               <details class="help-more">
                 <summary>Что значат стили ботов</summary>
@@ -689,8 +685,17 @@
                 <small class="game-settings-help">Для первой партии оба правила можно оставить выключенными.</small>
               </div>
 
-              <label class="check"><input id="gRevealOpt" type="checkbox" checked> Показывать вскрытие кубиков</label>
-              <small id="gRevealInfo" class="game-settings-help">После «Не верю» и Calza кубики всех игроков открываются, и видно, кто был прав.</small>
+              </section>
+
+              <section class="setup-card" aria-labelledby="gShowLabel">
+                <h3 class="set-label" id="gShowLabel">Отображение</h3>
+                <div class="field-col">
+                  <label class="check"><input id="gShowStylesOpt" type="checkbox"> Показывать стили ботов за столом</label>
+                  <small id="gShowStylesInfo" class="game-settings-help"></small>
+                  <p class="game-settings-help style-sample-row">У стола: <span class="style-sample" id="gStyleSample">Бот 1<span id="gStyleSampleIcon" aria-hidden="true"> 🛡️</span></span></p>
+                </div>
+                <label class="check"><input id="gRevealOpt" type="checkbox" checked> Показывать вскрытие кубиков после «Не верю» и Calza</label>
+                <small id="gRevealInfo" class="game-settings-help">Кубики всех игроков открываются, и видно, кто был прав.</small>
               </section>
 
               <button type="button" class="btn-primary side-start" data-action="new-game">Начать новую партию</button>
@@ -699,11 +704,7 @@
 
               <small class="game-settings-help">Настройки применяются, когда вы начинаете новую партию.</small>
 
-              <details class="help-more">
-                <summary>Как повышать ставку</summary>
-                <p class="game-settings-help">Единицы — джокеры, кроме ставок на единицы. С обычной цифры на единицы —
-                  половина количества с округлением вверх, с единиц на обычную цифру — больше удвоенного.</p>
-              </details>
+              <p class="game-settings-help">Правила повышения ставки — <a href="docs/guide/rules.html#raise" target="_blank" rel="noopener">в справке</a>.</p>
             </div>
 
           </div>

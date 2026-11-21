@@ -128,7 +128,11 @@ export function setupStylesHelp() {
   const box = $('#gShowStylesOpt');
   const info = $('#gShowStylesInfo');
   if (!box || !info) return;
-  const update = () => { info.textContent = stylesHelpText(box.checked); };
+  const icon = $('#gStyleSampleIcon');
+  const update = () => {
+    info.textContent = stylesHelpText(box.checked);
+    if (icon) icon.hidden = !box.checked;   // образец: значок стиля виден только когда стили показаны
+  };
   box.addEventListener('change', update);
   update();
 }

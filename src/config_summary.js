@@ -22,6 +22,9 @@ export function rulesText(calza, palifico) {
   return 'без Calza и Палифико';
 }
 
+/** Подпись перед сводкой: в ней не все параметры (нет стилей, уровня, объяснений и т. д.). */
+export const SUMMARY_PREFIX = 'Кратко (не все параметры): ';
+
 /**
  * @param {{dice: number|string, bots: number|string, assist: string, speed: string, calza: boolean, palifico: boolean}} c
  */
@@ -44,7 +47,7 @@ export function setupConfigSummary(doc = document) {
   const el = (id) => doc.getElementById(id);
   const ids = ['gDice', 'gBots', 'gAssist', 'gSpeed', 'gCalzaOpt', 'gPalificoOpt'];
   const update = () => {
-    out.textContent = configSummary({
+    out.textContent = SUMMARY_PREFIX + configSummary({
       dice: el('gDice')?.value, bots: el('gBots')?.value, assist: el('gAssist')?.value,
       speed: el('gSpeed')?.value, calza: el('gCalzaOpt')?.checked, palifico: el('gPalificoOpt')?.checked,
     });

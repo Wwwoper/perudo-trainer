@@ -1014,20 +1014,20 @@ class LayoutTest(unittest.TestCase):
                     side_by_side = abs(boxes[left]["y"] - boxes[right]["y"]) < 4
                     if w >= 720 and h >= 600 and left != right:                                  # широкий экран подготовки; в ландшафте телефона панель узкая
                         self.assertTrue(side_by_side, f"{left}|{right} в одну строку при {w}px")
-                self.assertEqual(page.locator(".setup-card:has(#gShowStylesOpt) #gStyleHelp").count(), 1)
+                self.assertEqual(page.locator(".setup-card:has(#gBotStyles) #gStyleHelp").count(), 1)
                 self.assertEqual(page.locator("#gStyleHelp").locator("xpath=ancestor::details").count(), 1)
                 self.assertEqual(page.locator("#gConfigSummary").inner_text().strip(),
-                                 "5 кубиков · 3 бота · Тренировка · Нормально · без Calza и Палифико")
+                                 "Кратко (не все параметры): 5 кубиков · 3 бота · Тренировка · Нормально · без Calza и Палифико")
                 page.locator('#gSpeedPick [data-value="fast"]').click()
                 page.locator("#gCalzaOpt").check()
                 self.assertEqual(page.locator("#gConfigSummary").inner_text().strip(),
-                                 "5 кубиков · 3 бота · Тренировка · Быстро · только Calza")
+                                 "Кратко (не все параметры): 5 кубиков · 3 бота · Тренировка · Быстро · только Calza")
                 self.assertEqual(page.locator("#gSpeedNow").inner_text(), "Быстро — около 0,3 с на ход")
                 self.assertEqual(page.locator("#gSpeedHelp").count(), 0, "подсказки под темпом больше нет: расшифровка в подписи")
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
     def test_opponent_checks_pair_with_hints_and_quiet_forget_button(self):
-        """«Память | Стили»: подсказка под своим чекбоксом, «Забыть» — тихое действие, не во всю ширину."""
+        """«Память» в «Соперниках» и «Стили» в «Отображении»: подсказка под своим чекбоксом, «Сбросить память» — тихое действие."""
         for w, h in VIEWPORTS:
             with self.subTest(w=w, h=h):
                 ctx = self.browser.new_context(viewport={"width": w, "height": h})
@@ -1042,10 +1042,9 @@ class LayoutTest(unittest.TestCase):
                     self.assertGreaterEqual(i["y"], c["y"] + c["height"] - 1, f"{info} под чекбоксом")
                     self.assertGreater(len(page.locator(info).inner_text()), 20)
                 m, st = page.locator("#gMemoryOpt").locator("xpath=ancestor::label").bounding_box(), page.locator("#gShowStylesOpt").locator("xpath=ancestor::label").bounding_box()
-                if w >= 720 and h >= 600:
-                    self.assertLess(abs(m["y"] - st["y"]), 4, "чекбоксы в одну строку на широком экране")
-                else:
-                    self.assertGreater(st["y"], m["y"], "на узком экране друг под другом")
+                self.assertGreater(st["y"], m["y"], "«Показывать стили» в карточке «Отображение», ниже «Соперников»")
+                self.assertEqual(page.locator(".setup-card:has(#gShowStylesOpt) #gShowLabel").count(), 1)
+                self.assertEqual(page.locator(".setup-card:has(#gShowStylesOpt) #gRevealOpt").count(), 1)
                 btn = box("#gMemoryReset")
                 self.assertGreaterEqual(btn["height"], 44)
                 self.assertLess(btn["width"], 360, "кнопка по ширине подписи, не растянута")
@@ -1061,6 +1060,11 @@ class LayoutTest(unittest.TestCase):
                 self.assertIn("не запоминают", page.locator("#gMemoryInfo").inner_text())
                 page.locator("#gShowStylesOpt").check()
                 self.assertIn("Включено", page.locator("#gShowStylesInfo").inner_text())
+                self.assertTrue(page.locator("#gStyleSampleIcon").is_visible(), "образец со значком при включённых стилях")
+                self.assertIn("Бот 1", page.locator("#gStyleSample").inner_text())
+                page.locator("#gShowStylesOpt").uncheck()
+                self.assertFalse(page.locator("#gStyleSampleIcon").is_visible(), "образец без значка при выключенных")
+                page.locator("#gShowStylesOpt").check()
                 self.assertIn("Случайный", page.locator("#gBotStyle0 option").first.inner_text())   # по умолчанию у бота «Случайный»
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), w)
 
@@ -1107,7 +1111,7 @@ class LayoutTest(unittest.TestCase):
                 speed.nth(0).click()
                 self.assertEqual(page.input_value("#gSpeed"), "step")
                 self.assertEqual(page.locator("#gSpeedNow").inner_text(), "Пошагово — ход бота по кнопке")
-                self.assertTrue(page.locator("#gConfigSummary").inner_text().startswith("7 кубиков · 2 бота"))
+                self.assertTrue(page.locator("#gConfigSummary").inner_text().startswith("Кратко (не все параметры): 7 кубиков · 2 бота"))
                 self.assertIn("Пошагово", page.locator("#gConfigSummary").inner_text())
                 # строка бота: имя слева, список справа; на узкой панели список под именем на всю ширину
                 row = page.locator("#gBotStyles .bot-row").first

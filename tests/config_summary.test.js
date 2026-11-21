@@ -1,7 +1,7 @@
 // config_summary.test.js — строка под «Начать партию».
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { configSummary, plural, rulesText } from '../src/config_summary.js';
+import { configSummary, plural, rulesText, SUMMARY_PREFIX } from '../src/config_summary.js';
 
 describe('plural', () => {
   it('склоняет кубики и ботов', () => {
@@ -17,6 +17,12 @@ describe('rulesText', () => {
     assert.strictEqual(rulesText(true, false), 'только Calza');
     assert.strictEqual(rulesText(false, true), 'только Палифико');
     assert.strictEqual(rulesText(true, true), 'Calza и Палифико');
+  });
+});
+
+describe('SUMMARY_PREFIX', () => {
+  it('честно говорит, что показаны не все параметры', () => {
+    assert.strictEqual(SUMMARY_PREFIX, 'Кратко (не все параметры): ');
   });
 });
 

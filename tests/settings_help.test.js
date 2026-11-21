@@ -119,9 +119,28 @@ describe('переключатель «Показывать стили бото�
   });
 });
 
+describe('карточка «Отображение»', () => {
+  const card = html.match(/<section class="setup-card" aria-labelledby="gShowLabel">[\s\S]*?<\/section>/)?.[0] ?? '';
+  it('в ней стили ботов с образцом «Бот 1 🛡️» и вскрытие кубиков', () => {
+    assert.match(card, /id="gShowLabel">Отображение<\/h3>/);
+    assert.match(card, /id="gShowStylesOpt"/);
+    assert.match(card, /id="gStyleSample">Бот 1<span id="gStyleSampleIcon"[^>]*> 🛡️<\/span>/);
+    assert.match(card, /id="gRevealOpt"/);
+  });
+  it('«Показывать стили» больше не стоит в карточке «Соперники»', () => {
+    const opp = html.match(/<section class="setup-card" aria-labelledby="gOppLabel">[\s\S]*?<\/section>/)[0];
+    assert.ok(!opp.includes('gShowStylesOpt'));
+  });
+  it('«Как повышать ставку» убрано из настроек, вместо него ссылка на справку', () => {
+    assert.ok(!html.includes('Как повышать ставку'));
+    assert.match(html, /Правила повышения ставки — <a href="docs\/guide\/rules\.html#raise"/);
+    assert.match(readFileSync(new URL('../docs/guide/rules.html', import.meta.url), 'utf8'), /<h2 id="raise">Ставка<\/h2>/);
+  });
+});
+
 describe('подсказка к «Показывать вскрытие кубиков»', () => {
   it('стоит сразу под переключателем', () => {
-    assert.match(html, /id="gRevealOpt"[^>]*>[^<]*<\/label>\s*<small id="gRevealInfo" class="game-settings-help">[^<]*Calza[^<]*<\/small>/);
+    assert.match(html, /id="gRevealOpt"[^>]*>[^<]*<\/label>\s*<small id="gRevealInfo" class="game-settings-help">[^<]*открываются[^<]*<\/small>/);
   });
 });
 
@@ -155,8 +174,8 @@ describe('подсказки к чекбоксам соперников меня
     assert.match(memoryDetailsText({ challenged: 2, bluffPct: 40 }), /Проверено ставок: 2, данных пока мало\. Старые наблюдения теряют вес\./);
     assert.match(memoryDetailsText({ challenged: 10, bluffPct: 40 }), /Проверено ставок: 10, ложных ≈ 40%\. Старые наблюдения теряют вес\./);
   });
-  it('в разметке колонка памяти: подпись, «Подробнее о памяти», сброс и пояснение к нему; рядом «Показывать стили»', () => {
-    assert.match(html, /<div class="field-row is-pair">\s*<div class="field-col">\s*<label class="check"><input id="gMemoryOpt"[^>]*>[^<]*<\/label>\s*<small id="gMemoryInfo"[^>]*><\/small>\s*<details class="help-more" id="gMemoryMore">\s*<summary>Подробнее о памяти<\/summary>\s*<p id="gMemoryStats"[^>]*><\/p>\s*<\/details>\s*<button type="button" id="gMemoryReset" class="quiet-btn is-danger">Сбросить память ботов о моих ставках<\/button>\s*<small id="gMemoryResetNote"[^>]*>Остальные настройки и статистика не меняются\.<\/small>\s*<\/div>\s*<div class="field-col">\s*<label class="check"><input id="gShowStylesOpt"/);
+  it('в разметке колонка памяти: подпись, «Подробнее о памяти», сброс и пояснение к нему; дальше «Что значат стили ботов»', () => {
+    assert.match(html, /<div class="field-row is-pair">\s*<div class="field-col">\s*<label class="check"><input id="gMemoryOpt"[^>]*>[^<]*<\/label>\s*<small id="gMemoryInfo"[^>]*><\/small>\s*<details class="help-more" id="gMemoryMore">\s*<summary>Подробнее о памяти<\/summary>\s*<p id="gMemoryStats"[^>]*><\/p>\s*<\/details>\s*<button type="button" id="gMemoryReset" class="quiet-btn is-danger">Сбросить память ботов о моих ставках<\/button>\s*<small id="gMemoryResetNote"[^>]*>Остальные настройки и статистика не меняются\.<\/small>\s*<\/div>\s*<\/div>\s*<details class="help-more">\s*<summary>Что значат стили ботов/);
   });
 });
 
