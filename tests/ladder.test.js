@@ -5,7 +5,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import {
-  buildLadder, ladderChances, ladderLines, ladderOpponents, gradeDudo, gradeRaise, sanitizeLadder,
+  buildLadder, ladderChances, ladderLines, ladderOpponents, gradeLadder, sanitizeLadder,
   LADDER_MIN_BIDS, LADDER_MAX_BIDS, addLadderResult,
 } from '../src/ladder.js';
 import { legal } from '../src/rules.js';
@@ -88,13 +88,49 @@ describe('ladderLines и оценка решения', () => {
     assert.match(ladderLines(s, { ...ladderChances(s, P), named: 2, opps: 3 }).join(' '), /2 из 3 соперников/);
     assert.match(ladderLines(s, { ...ladderChances(s, P), named: 2, opps: 2 }).join(' '), /2 из 2 соперников|2 из 2 соперника/);
   });
-  it('«Не верю» хорошо при шансе ниже порога, повышение — при шансе не ниже порога', () => {
+  it('«Не верю» хорошо при шансе ставки ниже порога, повышение — при шансе не ниже порога', () => {
     const s = fixed();
     const ch = ladderChances(s, P);
-    assert.equal(gradeDudo(ch, ch.pRead + 0.01), true);
-    assert.equal(gradeDudo(ch, ch.pRead), false);
-    assert.equal(gradeRaise(s, s.q, s.f, 0, P), true);
-    assert.equal(gradeRaise(s, s.q + 8, s.f, 0.5, P), false);
+    const dudo = { type: 'dudo' };
+    assert.equal(gradeLadder(s, ch.pRead + 0.01, P, dudo).good, true);
+    assert.equal(gradeLadder(s, ch.pRead, P, dudo).good, false);
+    assert.equal(gradeLadder(s, 0.05, P, { type: 'raise', q: s.q, f: s.f + 1 > 6 ? 6 : s.f + 1 }).good, true);
+  });
+  it('если ни один ход не проходит порог, верен ход с наибольшим шансом (как в других режимах)', () => {
+    // порог 0.7: таких ситуаций около 5 %, ищем на фиксированном генераторе
+    const rnd = seededRng(11);
+    let found = 0;
+    for (let i = 0; i < 400 && found < 3; i++) {
+      const s = buildLadder({ rnd, wild: true });
+      const g = gradeLadder(s, 0.7, P, { type: 'dudo' });
+      if (!g.noGoodMove) continue;
+      found++;
+      const ch = ladderChances(s, P);
+      assert.ok(Math.abs(g.chosenSuccess - (1 - ch.pRead)) < 1e-9);
+      const dudoIsBest = g.best.type === 'dudo';
+      assert.equal(g.good, dudoIsBest || g.best.success <= g.chosenSuccess + 1e-9);
+      // выбор самого сильного хода всегда верен
+      const bestChoice = g.best.type === 'dudo' ? { type: 'dudo' } : { type: 'raise', q: g.best.q, f: g.best.f };
+      assert.equal(gradeLadder(s, 0.7, P, bestChoice).good, true);
+      // а более слабый ход неверен, если он действительно слабее
+      const weak = { type: 'raise', q: s.n, f: s.f === 6 ? 5 : 6 };
+      if (legal(weak.q, weak.f, { q: s.q, f: s.f }, { wild: s.wild })) {
+        const w = gradeLadder(s, 0.7, P, weak);
+        assert.equal(w.good, w.chosenSuccess >= g.best.success - 1e-9);
+      }
+    }
+    assert.ok(found >= 1, 'нашлась ситуация без проходящего хода');
+  });
+  it('безвыходных ситуаций нет: для любой найдётся верный ход при любом пороге', () => {
+    const rnd = seededRng(5);
+    for (const thr of [0.1, 0.3, 0.5, 0.7, 0.9]) {
+      for (let i = 0; i < 150; i++) {
+        const s = buildLadder({ rnd, wild: true });
+        const g = gradeLadder(s, thr, P, { type: 'dudo' });
+        const bestChoice = g.best.type === 'dudo' ? { type: 'dudo' } : { type: 'raise', q: g.best.q, f: g.best.f };
+        assert.equal(gradeLadder(s, thr, P, bestChoice).good, true, `порог ${thr}, ситуация ${i}`);
+      }
+    }
   });
 });
 

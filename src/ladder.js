@@ -7,6 +7,7 @@
 
 import { legal } from './rules.js';
 import { TABLE_TRUST } from './table_read.js';
+import { gradeMove } from './trainer_grade.js';
 
 export const LADDER_MIN_BIDS = 3;
 export const LADDER_MAX_BIDS = 5;
@@ -100,14 +101,20 @@ export function ladderLines(sit, ch) {
   return lines;
 }
 
-/** Хорошее ли решение «Не верю»: ставка с учётом стола верна реже порога. */
-export function gradeDudo(ch, threshold) {
-  return ch.pRead < threshold;
-}
-
-/** Хорошее ли решение «Ставлю Q×F»: новая ставка с учётом стола верна не реже порога. */
-export function gradeRaise(sit, Q, F, threshold, P) {
-  return P.probBidRead(Q, F, sit.h, ladderOpponents(sit), sit.wild, TABLE_TRUST) >= threshold;
+/**
+ * Оценка хода в «Лестнице» по тому же правилу, что в остальных режимах (trainer_grade.js): верен любой ход,
+ * проходящий порог; если таких нет (около 4–5 % ситуаций), верен ход с наибольшим шансом успеха.
+ * Шансы считаются «с учётом стола» (история торгов слегка повышает шанс названных цифр).
+ * @param {object} sit ситуация «Лестницы»
+ * @param {{type:'dudo'}|{type:'raise',q:number,f:number}} choice выбранный ход
+ * @returns {{good:boolean, noGoodMove:boolean, chosenSuccess:number, best:object}} как gradeMove
+ */
+export function gradeLadder(sit, threshold, P, choice) {
+  const opps = ladderOpponents(sit);
+  return gradeMove({
+    bid: { q: sit.q, f: sit.f }, total: sit.n, hand: sit.h, wild: sit.wild, threshold, choice,
+    probBid: (q, f, _total, hand, wild) => P.probBidRead(q, f, hand, opps, wild, TABLE_TRUST),
+  });
 }
 
 /** Проверка формы ситуации (из хранилища или очереди): возвращает чистую копию или null. */

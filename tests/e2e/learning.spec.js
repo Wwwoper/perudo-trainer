@@ -1371,6 +1371,28 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tFb')).toContainText('Хорошее решение');
     });
 
+    test('нет хода, проходящего порог: верным считается ход с наибольшим шансом, как в других режимах', async ({ page }) => {
+      // фиксированная ситуация: ставка 5×5 с учётом стола верна с шансом 92 %, лучшее повышение 6×5 — 77 %; при пороге 90 % ходов нет
+      await page.evaluate((it) => localStorage.setItem('perudo.trainingQueue', JSON.stringify([it])), LADDER);
+      await page.addInitScript(() => { Math.random = () => 0; });
+      await page.reload();
+      await pickLadder(page);
+      await page.evaluate(() => { document.querySelector('#tT').value = '0.9'; });
+      await page.click('#tDudo');                                  // «Не верю» слабее повышения: неверно, и разбор называет лучший ход
+      await expect(page.locator('#tFb')).toContainText('Был ход лучше');
+      await expect(page.locator('#tFb')).toContainText('ни один ход не проходит порог');
+      await expect(page.locator('#tFb')).toContainText('Верным было бы повышение');
+      await page.click('#tNext');
+      await page.evaluate((it) => localStorage.setItem('perudo.trainingQueue', JSON.stringify([it])), LADDER);
+      await page.reload();
+      await pickLadder(page);
+      await page.evaluate(() => { document.querySelector('#tT').value = '0.9'; });
+      await page.fill('#tQ', '6');
+      await page.evaluate(() => { document.querySelector('#tF').value = '5'; document.querySelector('#tF').dispatchEvent(new Event('change', { bubbles: true })); });
+      await page.click('#tRaise');
+      await expect(page.locator('#tFb')).toContainText('Лучший из имеющихся ходов');
+    });
+
     test('повтор показывает причину и «N из 2 успешных повторов»; верный ответ засчитывается и убирает ситуацию из очереди', async ({ page }) => {
       await page.evaluate((it) => localStorage.setItem('perudo.trainingQueue', JSON.stringify([{ ...it, streak: 1 }])), LADDER);
       await page.addInitScript(() => { Math.random = () => 0; });

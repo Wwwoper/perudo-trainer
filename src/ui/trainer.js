@@ -17,7 +17,7 @@ import { setupTaskBanner } from './onboarding_tasks.js';
 import { FINISH_TEXT } from '../onboarding.js';
 import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
 import { resetTrainerStats, RESET_CONFIRM } from '../trainer_stats.js';
-import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
+import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeLadder, addLadderResult } from '../ladder.js';
 
 /** @param {{account?: () => ({chooseGuest: () => void, login: () => void}|null)}} [opts] account — получатель облачного API для итогового экрана онбординга */
 export function setupTrainer({ account } = {}) {
@@ -274,6 +274,11 @@ export function setupTrainer({ account } = {}) {
   }
 
   /** Разбор лестницы: шансы последней ставки по вашим кубикам и с учётом стола. */
+  /** Верный ход, если выбран другой (как в «Лучшем ходе» обычных режимов). */
+  function ladderBestHtml(g) {
+    return g.good ? '' : `<p>${correctMoveText(g.best, chanceText, (a, c) => renderBid(a, c))}</p>`;
+  }
+
   function ladderHtml(sit, ch) {
     return '<ul class="read-lines">' + ladderLines(sit, ch).map((l) => `<li>${l}</li>`).join('') + '</ul>';
   }
@@ -293,10 +298,9 @@ export function setupTrainer({ account } = {}) {
     const t = +$('#tT').value;
     if (cur.ladder) {
       const ch = ladderChances(cur.ladder, P);
-      const ok = gradeDudo(ch, t);
-      const msg = ok ? 'С учётом стола ставка верна реже порога: «Не верю» оправдано.'
-        : 'С учётом стола ставка верна не реже порога: проверка здесь рискованна.';
-      answer(ok, `<p>${msg} Порог ${pct(t)}.</p>${ladderHtml(cur.ladder, ch)}`);
+      const g = gradeLadder(cur.ladder, t, P, { type: 'dudo' });
+      answer(g.good, `<p>С учётом стола ставка верна с шансом <b>${chanceText(ch.pRead)}</b> (порог ${pct(t)}): ` +
+        `«Не верю» сработает с шансом ${chanceText(1 - ch.pRead)}.</p>${ladderBestHtml(g)}${ladderHtml(cur.ladder, ch)}`, g);
       return;
     }
     const p = P.probBid(q, f, n, h, m.wild);
@@ -318,8 +322,9 @@ export function setupTrainer({ account } = {}) {
     if (cur.ladder) {
       const ch = ladderChances(cur.ladder, P);
       const pr = P.probBidRead(Q, F, h, cur.ladder.ks.map((k, i) => ({ k, faces: [...new Set(cur.ladder.bids.filter((b) => b.s === i).map((b) => b.f))] })), m.wild, TABLE_TRUST);
-      const ok = gradeRaise(cur.ladder, Q, F, t, P);
-      answer(ok, `<p>Ваша ставка ${renderBid(Q, F)} с учётом стола верна с шансом <b>${pct(pr)}</b> (порог ${pct(t)}).</p>${ladderHtml(cur.ladder, ch)}`);
+      const g = gradeLadder(cur.ladder, t, P, { type: 'raise', q: Q, f: F });
+      answer(g.good, `<p>Ваша ставка ${renderBid(Q, F)} с учётом стола верна с шансом <b>${chanceText(pr)}</b> (порог ${pct(t)}).</p>` +
+        `${ladderBestHtml(g)}${ladderHtml(cur.ladder, ch)}`, g);
       return;
     }
 
