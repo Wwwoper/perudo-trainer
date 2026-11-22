@@ -173,17 +173,17 @@
                   </section>
                   <section class="tset-group" aria-labelledby="tThrLabel">
                     <div class="tset-label" id="tThrLabel">Порог шанса</div>
-                    <p class="tset-note">С какого шанса ставка считается безопасной. При 0.50 ставка безопасна, если сбывается хотя бы в половине случаев:
-                      выше порога — повышайте, ниже — верно «Не верю».</p>
+                    <p class="tset-note">Какая вероятность считается достаточной для хорошего решения. Это критерий оценки, а не гарантия: ход с хорошим шансом иногда проигрывает.</p>
                     <div class="stepper" role="group" aria-label="Порог шанса">
                       <button id="tTMinus" type="button" aria-label="Меньше">−</button>
                       <input id="tT" type="number" min="0.05" max="0.95" step="0.05" value="0.5" inputmode="decimal"
                         aria-label="Порог шанса">
                       <button id="tTPlus" type="button" aria-label="Больше">+</button>
                     </div>
+                    <p id="tThrRule" class="tset-note"></p>
                   </section>
                   <div class="tset-foot">
-                    <span class="tset-default">По умолчанию: «Классика» и порог 0.50. С них удобно начинать.</span>
+                    <span class="tset-default">По умолчанию: «Классика» и порог 50%. С них удобно начинать.</span>
                     <button type="button" id="tReset" class="quiet-btn is-danger">Сбросить статистику тренажёра</button>
                   </div>
                 </div>

@@ -9,7 +9,7 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, moveBreakdown } from '../trainer_text.js';
+import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, moveBreakdown, thresholdPct, thresholdRuleText } from '../trainer_text.js';
 import { gradeMove } from '../trainer_grade.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
@@ -197,8 +197,10 @@ export function setupTrainer({ account } = {}) {
   function updateSettingsHint() {
     const el = $('#tSettingsHint');
     if (!el) return;
-    const thr = (+$('#tT').value || 0.5).toFixed(2);
-    el.textContent = `${modeLabel($('#tMode').value)} · порог ${thr}`;
+    const thr = +$('#tT').value || 0.5;
+    el.textContent = `${modeLabel($('#tMode').value)} · порог ${thresholdPct(thr)}`;
+    const rule = $('#tThrRule');
+    if (rule) rule.textContent = thresholdRuleText(thr);
     syncModePick();
   }
 

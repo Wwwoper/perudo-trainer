@@ -627,10 +627,13 @@ test.describe('Учебные вкладки', () => {
 
     test('порог меняется степпером на 0.05 в пределах 0.05–0.95, подпись обновляется', async ({ page }) => {
       await open(page, 'train');
+      await expect(page.locator('#tSettingsHint')).toContainText('порог 50%');
       await page.click('.trainer-settings-more summary');
+      await expect(page.locator('#tThrRule')).toContainText('Сейчас 50%: повышение хорошее, если ваша ставка верна не реже 50%');
       await page.locator('#tTPlus').click();
       await expect(page.locator('#tT')).toHaveValue('0.55');
-      await expect(page.locator('#tSettingsHint')).toContainText('порог 0.55');
+      await expect(page.locator('#tSettingsHint')).toContainText('порог 55%');
+      await expect(page.locator('#tThrRule')).toContainText('Сейчас 55%');
       await page.locator('#tTMinus').click();
       await page.locator('#tTMinus').click();
       await expect(page.locator('#tT')).toHaveValue('0.45');
