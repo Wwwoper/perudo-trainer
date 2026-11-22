@@ -234,6 +234,12 @@ describe('строка «Первая учебная партия»', () => {
     assert.strictEqual(firstPresetView({ games: 1, matches: false }).visible, false);
     assert.strictEqual(firstPresetView({ games: 12, matches: true }).visible, false);
   });
+  it('после «Я уже знаю правила» не видна, даже если партий ещё не было', () => {
+    assert.strictEqual(firstPresetView({ games: 0, matches: false, skipped: true }).visible, false);
+    assert.strictEqual(firstPresetView({ games: 0, matches: true, skipped: true }).visible, false);
+    assert.strictEqual(firstPresetView({ games: 0, matches: false, skipped: false }).visible, true);
+    assert.strictEqual(firstPresetView({ games: 0, matches: false }).visible, true, 'без поля skipped строка видна');
+  });
   it('мусор вместо числа партий считается нулём партий', () => {
     for (const games of [undefined, null, NaN, -3, 'x']) {
       assert.strictEqual(firstPresetView({ games, matches: false }).visible, true, String(games));

@@ -7,7 +7,8 @@ import { $ } from './common.js';
 import {
   sanitizeGameSettings, defaultGameSettings, isDefaultGameSettings, firstGamePreset, isFirstGamePreset, firstPresetView,
 } from '../game_settings.js';
-import { getLastGameSettings, setLastGameSettings, clearLastGameSettings, getStats } from '../storage.js';
+import { getLastGameSettings, setLastGameSettings, clearLastGameSettings, getStats, getDeviceState } from '../storage.js';
+import { sanitizeOnboarding } from '../onboarding.js';
 
 const num = (id, fallback) => $(id)?.value ?? fallback;
 
@@ -83,11 +84,15 @@ function refreshResetButton() {
   if (btn) btn.hidden = isDefaultGameSettings(readGameSettings());
 }
 
-/** Строка «Первая учебная партия»: исчезает после первой сыгранной, а когда настройки уже выставлены, говорит об этом. */
+/** Строка «Первая учебная партия»: исчезает после первой сыгранной или после «Я уже знаю правила», а когда настройки уже выставлены, говорит об этом. */
 export function refreshFirstPreset() {
   const btn = $('#gFirstPreset');
   if (!btn) return;
-  const v = firstPresetView({ games: getStats().totalGames || 0, matches: isFirstGamePreset(readGameSettings()) });
+  const v = firstPresetView({
+    games: getStats().totalGames || 0,
+    matches: isFirstGamePreset(readGameSettings()),
+    skipped: sanitizeOnboarding(getDeviceState().onboarding).skipped,   // «Я уже знаю правила» — учебная партия не нужна
+  });
   const row = btn.closest('.preset-row');
   if (row) row.hidden = !v.visible;
   btn.setAttribute('aria-pressed', String(v.pressed));

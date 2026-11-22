@@ -127,14 +127,16 @@ export function firstGamePreset() {
 export const FIRST_GAME_APPLIED_HINT = 'Настройки первой партии выставлены. Осталось нажать «Начать партию».';
 
 /**
- * Вид строки с пресетом. Пресет предлагает именно первую партию, поэтому после первой сыгранной он не нужен.
- * @param {{games: number, matches: boolean}} s games — сколько партий сыграно, matches — настройки уже совпадают с пресетом
+ * Вид строки с пресетом. Пресет предлагает именно первую партию, поэтому после первой сыгранной он не нужен;
+ * игроку, который выбрал «Я уже знаю правила», учебная партия тоже не предлагается.
+ * @param {{games: number, matches: boolean, skipped?: boolean}} s games — сколько партий сыграно,
+ *   matches — настройки уже совпадают с пресетом, skipped — знакомство пропущено кнопкой «Я уже знаю правила»
  * @returns {{visible: boolean, pressed: boolean, hint: string}}
  */
-export function firstPresetView({ games, matches }) {
+export function firstPresetView({ games, matches, skipped = false }) {
   const played = Number.isFinite(games) && games > 0;
   return {
-    visible: !played,
+    visible: !played && !skipped,
     pressed: !!matches,
     hint: matches ? FIRST_GAME_APPLIED_HINT : FIRST_GAME_HINT,
   };

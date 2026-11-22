@@ -5,7 +5,7 @@ import { $ } from './common.js';
 import { getStats, getGames, getTrainingQueue, getDeviceState, setDeviceState } from '../storage.js';
 import { isEmptyStats } from '../stats_summary.js';
 import { firstGamePreset } from '../game_settings.js';
-import { applyGameSettings } from './game_settings_ui.js';
+import { applyGameSettings, refreshFirstPreset } from './game_settings_ui.js';
 import { shouldShowWelcome, startGame, skipOnboarding, WELCOME } from '../onboarding.js';
 
 const stepHtml = (s, i) =>
@@ -59,6 +59,7 @@ export function setupWelcome({ startGame: launch } = {}) {
     if (btn.dataset.welcome === 'skip') {
       saveOnboarding(skipOnboarding(state));
       refreshWelcome();
+      refreshFirstPreset();   // знакомство пропущено: учебную партию больше не предлагаем
       return;
     }
     if (btn.dataset.welcome === 'start') {

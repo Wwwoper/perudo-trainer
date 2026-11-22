@@ -46,6 +46,17 @@ test.describe('Экран приветствия', () => {
     await expect(page.locator('#calc')).toBeVisible();
   });
 
+  test('«Я уже знаю правила»: в «Партии» нет предложения «Первая учебная партия»', async ({ page }) => {
+    await expect(page.locator('#gFirstPreset')).toBeHidden();    // пока приветствие закрывает экран, строка не видна
+    await page.locator('[data-welcome="skip"]').click();
+    await openTab(page, 'game');
+    await expect(page.locator('#gSetup')).toBeVisible();
+    await expect(page.locator('#gFirstPreset')).toBeHidden();
+    await page.reload();
+    await openTab(page, 'game');
+    await expect(page.locator('#gFirstPreset')).toBeHidden();
+  });
+
   test('«Начать первую партию»: партия стартует сразу с настройками первой партии, без экрана подготовки', async ({ page }) => {
     await page.locator('[data-welcome="start"]').click();
     await expect(page.locator('#welcome')).toBeHidden();
