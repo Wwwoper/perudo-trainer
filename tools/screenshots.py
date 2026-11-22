@@ -190,6 +190,9 @@ def scene_settings_desktop_tall(page, phone):
     """Весь экран подготовки целиком: окно выше обычного, чтобы кнопка не закрывала карточки."""
     page.set_viewport_size({"width": 1280, "height": 1330})
     scene_settings(page, phone)
+    # экран растёт вместе с карточками: берём высоту страницы, а не число «на глаз»
+    height = page.evaluate("Math.min(2600, Math.ceil(document.documentElement.scrollHeight))")
+    page.set_viewport_size({"width": 1280, "height": max(1330, height)})
     page.wait_for_timeout(300)
 
 
