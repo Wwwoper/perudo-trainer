@@ -25,7 +25,7 @@ describe('тихое действие', () => {
     assert.ok(!/text-decoration: underline/.test(css));
     assert.ok(!/link-btn|link-danger/.test(css + read('index.html')));
   });
-  it('«Сбросить к стандартным» и «Сбросить статистику» используют .quiet-btn', () => {
+  it('«Сбросить к стандартным» и «Сбросить статистику тренажёра» используют .quiet-btn', () => {
     const html = read('index.html');
     assert.match(html, /id="gSettingsReset" class="quiet-btn"/);
     assert.match(html, /id="tReset" class="quiet-btn is-danger"/);

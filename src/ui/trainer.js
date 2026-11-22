@@ -16,6 +16,7 @@ import { setupPracticeTimer } from './practice_timer.js';
 import { setupTaskBanner } from './onboarding_tasks.js';
 import { FINISH_TEXT } from '../onboarding.js';
 import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
+import { resetTrainerStats, RESET_CONFIRM } from '../trainer_stats.js';
 import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeDudo, gradeRaise, addLadderResult } from '../ladder.js';
 
 /** @param {{account?: () => ({chooseGuest: () => void, login: () => void}|null)}} [opts] account — получатель облачного API для итогового экрана онбординга */
@@ -361,11 +362,8 @@ export function setupTrainer({ account } = {}) {
     if ($('#tTPlus')) $('#tTPlus').onclick = () => stepThr(0.05);
   }
   if ($('#tReset')) $('#tReset').onclick = () => {
-    if (!window.confirm('Сбросить статистику тренажёра и очередь повторов?')) return;
-    updateStats((S) => {
-      S.n = 0; S.good = 0; S.byMode = {};
-      S.drill = { A: { n: 0, good: 0 }, B: { n: 0, good: 0 } };
-    });
+    if (!window.confirm(RESET_CONFIRM)) return;
+    updateStats(resetTrainerStats);   // упражнения и чужие темы остаются: стирается только то, что копит сам Тренажёр
     queue = [];
     persist();
     newSituation();

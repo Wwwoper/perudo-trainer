@@ -654,6 +654,27 @@ test.describe('Учебные вкладки', () => {
   });
 
   test.describe('Упражнения', () => {
+    test('сброс статистики тренажёра не стирает упражнения и чужие темы, но стирает тему «Лестницы»', async ({ page }) => {
+      await page.evaluate(() => {
+        localStorage.setItem('perudo.userProfile', JSON.stringify({
+          n: 4, good: 3, byMode: { classic: { n: 4, good: 3 } },
+          drill: { A: { n: 6, good: 4 }, B: { n: 3, good: 1 } },
+          byTag: { endgame: { n: 9, good: 4 }, ladder: { n: 5, good: 2 } },
+        }));
+      });
+      await page.reload();
+      await open(page, 'train');
+      await page.click('.trainer-settings-more summary');
+      page.once('dialog', (d) => { expect(d.message()).toContain('торги с несколькими соперниками'); d.accept(); });
+      await page.locator('#tReset').click();
+      await expect(page.locator('#tStat')).toContainText('Всего: 0');
+      const p = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.userProfile')));
+      expect(p.n).toBe(0);
+      expect(p.drill).toMatchObject({ A: { n: 6, good: 4 }, B: { n: 3, good: 1 } });
+      expect(p.byTag.endgame).toMatchObject({ n: 9, good: 4 });
+      expect(p.byTag.ladder).toBeUndefined();
+    });
+
     test('«Оценка в уме»: проверка даёт разбор и раскрывает подсказку', async ({ page }) => {
       await open(page, 'drill');
       await page.fill('#dA1', '5');
