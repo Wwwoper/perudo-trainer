@@ -1743,6 +1743,36 @@ class LayoutTest(unittest.TestCase):
                     elif r["id"] != "gBots":
                         self.assertGreaterEqual(r["width"], min(r["inner"] - 2, 446), f"{r['id']}: список не на всю ширину")
 
+    def test_keyboard_focus_in_trainer_settings_is_not_hidden_under_dock(self):
+        """Телефон: при переходе Tab по настройкам Тренажёра поле не остаётся под закреплённой панелью ответа."""
+        for w, h in ((360, 640), (390, 844)):
+            with self.subTest(viewport=(w, h)):
+                page = self.open_game(w, h, 1)
+                self.goto_tab(page, "train")
+                page.click(".trainer-settings-more summary")
+                page.wait_for_timeout(200)
+                inset = page.evaluate("parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h'))")
+                dock_h = page.evaluate("document.querySelector('#tDock').getBoundingClientRect().height")
+                self.assertGreater(inset, 100, "высота панели записана в --dock-h")
+                self.assertLessEqual(abs(inset - dock_h), 1)
+                page.evaluate("window.scrollTo(0, 0); document.querySelector('.trainer-settings-more summary').focus()")
+                seen = []
+                for _ in range(30):
+                    page.keyboard.press("Tab")
+                    r = page.evaluate("""() => {
+                        const e = document.activeElement, r = e.getBoundingClientRect();
+                        const d = document.querySelector('#tDock').getBoundingClientRect();
+                        return {id: e.id || e.className.toString().slice(0, 24), bottom: r.bottom, top: r.top,
+                                dockTop: d.top, inside: !!e.closest('.trainer-settings-body')};
+                    }""")
+                    if not r["inside"]:
+                        break
+                    seen.append(r["id"])
+                    self.assertLessEqual(r["bottom"], r["dockTop"] + 0.5,
+                                         f"{r['id']} под закреплённой панелью: низ {r['bottom']}, панель с {r['dockTop']}")
+                self.assertIn("tReset", seen, "дошли до кнопки сброса")
+                self.assertIn("tTPlus", seen, "и до степпера порога")
+
     def test_trainer_settings_panel_layout(self):
         """Настройки тренажёра: плитки режимов и степпер крупные, всё помещается без горизонтальной прокрутки."""
         for w, h in ((1366, 768), (768, 1024), (390, 844), (360, 640), (844, 390)):

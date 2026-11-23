@@ -359,6 +359,11 @@
     display: none;
   }
 
+  /* Фокус и прокрутка к якорю не должны останавливаться под закреплённой панелью (высота — из dock_inset.js) */
+  html {
+    scroll-padding-bottom: calc(var(--dock-h, 0px) + var(--space-3));
+  }
+
   .action-dock {
     position: sticky;
     bottom: 0;

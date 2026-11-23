@@ -44,6 +44,7 @@ import { setupSettingsHelp, setupStylesHelp } from './ui/settings_help.js';
 import { setupConfigSummary } from './config_summary.js';
 import { setupCountPickers } from './ui/count_picker.js';
 import { setupTheme, setupThemeControls, changeThemeMode } from './ui/theme.js';
+import { setupDockInset } from './ui/dock_inset.js';
 import { setupSound, setupSoundControls, playCue, resetSound, changeSoundMode } from './ui/sound.js';
 import { setupGameSettings, rememberGameSettings, refreshFirstPreset } from './ui/game_settings_ui.js';
 import { setupBotMind, clearBotMemoryState, applyBotMindSettings, botMindFor, observeReveal, getBotMind, setBotMind } from './ui/bot_mind.js';
@@ -149,6 +150,7 @@ function setupGame() {
   setupThemeControls();
   setupSound({ getSpeed: () => $('#gSpeed')?.value || 'normal' });
   setupSoundControls();
+  setupDockInset();
   setupGameSettings();     // после списка стилей: возвращает настройки прошлой партии
   $('#gResumeBtn')?.addEventListener('click', resumeGame);
   $('#gResumeDrop')?.addEventListener('click', discardSavedGame);
