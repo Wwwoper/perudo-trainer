@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { verdictText, VERDICT_GOOD, VERDICT_BAD, MODEL_NOTE, chanceText, moveBreakdown, TASK_QUESTION, TASK_RULE, TASK_TEXT, thresholdPct, thresholdRuleText, THRESHOLD_NOTE } from '../src/trainer_text.js';
+import { verdictText, VERDICT_GOOD, VERDICT_BAD, MODEL_NOTE, chanceText, moveBreakdown, TASK_QUESTION, TASK_RULE, TASK_TEXT, thresholdPct, thresholdRuleText, THRESHOLD_NOTE, BID_LABEL, BID_LABEL_LADDER } from '../src/trainer_text.js';
 
 describe('trainer_text', () => {
   it('вердикт: верное и сомнительное решение, оба «по шансу»', () => {
@@ -109,5 +109,33 @@ describe('текст порога шанса', () => {
     assert.ok(!/безопасн/i.test(item));
     for (const part of ['не реже порога', 'реже порога', 'наибольшим шансом', 'не гарантия исхода']) assert.ok(item.includes(part), part);
     assert.match(guide, /пилюле «⚙️ Классика · порог 50%»/);
+  });
+});
+
+describe('подписи Тренажёра', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const trainer = readFileSync(new URL('../src/ui/trainer.js', import.meta.url), 'utf8');
+  const guide = readFileSync(new URL('../docs/guide/trainer.html', import.meta.url), 'utf8');
+  const modes = readFileSync(new URL('../src/ui/modes.js', import.meta.url), 'utf8');
+  it('ставка названа однозначно: «Ставка соперника» и «История ставок»', () => {
+    assert.equal(BID_LABEL, 'Ставка соперника:');
+    assert.equal(BID_LABEL_LADDER, 'История ставок:');
+    assert.match(html, /id="tBidLabel">Ставка соперника:<\/span>/);
+    assert.ok(!/'Соперник:'|'Торги:'/.test(trainer), 'старые подписи не остались в коде');
+  });
+  it('кубики остальных игроков — «у соперников», а не «чужих»', () => {
+    assert.match(trainer, /❓ у соперников <b>/);
+    assert.ok(!/❓ чужих/.test(trainer));
+  });
+  it('у описания режима своя подпись «Описание режима» и название режима', () => {
+    assert.match(html, /<div class="tset-label" id="tDescLabel">Описание режима<\/div>\s*<p id="tDesc" class="tset-desc" aria-labelledby="tDescLabel"><strong id="tDescName"><\/strong> <span id="tDescText"><\/span><\/p>/);
+  });
+  it('описание «Лестницы» говорит про предыдущие ставки соперников', () => {
+    assert.match(modes, /с учётом предыдущих ставок: кто какие цифры называл/);
+  });
+  it('в таблице режимов руководства есть «Лестница ставок» с тем же объяснением', () => {
+    const row = guide.match(/<tr><td>Лестница ставок<\/td><td>([\s\S]*?)<\/td><\/tr>/)?.[1] ?? '';
+    assert.match(row, /предыдущих ставок/);
+    assert.match(row, /table-reading\.html/);
   });
 });

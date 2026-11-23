@@ -169,7 +169,8 @@
                     <p class="tset-note">Какие ситуации вам выпадают: сколько кубиков за столом, есть ли джокеры, как часто соперник блефует.</p>
                     <div id="tModePick" class="mode-pick" role="radiogroup" aria-labelledby="tModeLabel"></div>
                     <select id="tMode" hidden aria-hidden="true" tabindex="-1"></select>
-                    <p id="tDesc" class="tset-desc"></p>
+                    <div class="tset-label" id="tDescLabel">Описание режима</div>
+                    <p id="tDesc" class="tset-desc" aria-labelledby="tDescLabel"><strong id="tDescName"></strong> <span id="tDescText"></span></p>
                   </section>
                   <section class="tset-group" aria-labelledby="tThrLabel">
                     <div class="tset-label" id="tThrLabel">Порог шанса</div>
@@ -202,7 +203,7 @@
             <div id="tHand" class="trainer-hand"></div>
 
             <div class="trainer-bid-row">
-              <span class="muted" id="tBidLabel">Соперник:</span>
+              <span class="muted" id="tBidLabel">Ставка соперника:</span>
               <span id="tBid"></span>
             </div>
           </div>

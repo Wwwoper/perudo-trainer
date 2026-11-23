@@ -9,7 +9,7 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, moveBreakdown, thresholdPct, thresholdRuleText } from '../trainer_text.js';
+import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, moveBreakdown, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleText } from '../trainer_text.js';
 import { gradeMove } from '../trainer_grade.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
@@ -152,7 +152,8 @@ export function setupTrainer({ account } = {}) {
     if (cur.item) seenAt.set(situationKey(cur.item), shownCount);
     answered = false;
     timer.start();
-    if ($('#tDesc')) $('#tDesc').textContent = m.d;
+    if ($('#tDescText')) { $('#tDescName').textContent = m.name; $('#tDescText').textContent = m.d; }
+    else if ($('#tDesc')) $('#tDesc').textContent = m.d;   // старая разметка из кэша
     if ($('#tTask')) {
       // Вопрос крупно, правило — подсказкой; со старой разметкой из кэша весь текст остаётся в одном абзаце
       if ($('#tTaskRule')) { $('#tTask').textContent = TASK_QUESTION; $('#tTaskRule').textContent = TASK_RULE; }
@@ -163,7 +164,7 @@ export function setupTrainer({ account } = {}) {
         (cur.item ? `<span class="trainer-chip trainer-repeat">${repeatChipText(cur.item)}</span>` : '') +
         `<span class="trainer-chip">🎲 всего <b>${cur.n}</b></span>` +
         `<span class="trainer-chip">👤 у вас <b>${cur.h.length}</b></span>` +
-        `<span class="trainer-chip">❓ чужих <b>${cur.n - cur.h.length}</b></span>` +
+        `<span class="trainer-chip">❓ у соперников <b>${cur.n - cur.h.length}</b></span>` +
         (cur.ladder ? `<span class="trainer-chip">👥 соперников <b>${cur.ladder.ks.length}</b></span>` : '') +
         `<span class="trainer-chip ${m.wild ? 'trainer-wild' : ''}">` +
         (m.wild ? '✨ единицы — джокеры' : '⚪ единицы обычные') +
@@ -176,7 +177,7 @@ export function setupTrainer({ account } = {}) {
     }
     if ($('#tHand')) $('#tHand').innerHTML = renderHand(cur.h, m.wild);
     $('#tBid')?.closest('.trainer-bid-row')?.classList.toggle('is-ladder', !!cur.ladder);
-    if ($('#tBidLabel')) $('#tBidLabel').textContent = cur.ladder ? 'Торги:' : 'Соперник:';
+    if ($('#tBidLabel')) $('#tBidLabel').textContent = cur.ladder ? BID_LABEL_LADDER : BID_LABEL;
     if ($('#tBid')) $('#tBid').innerHTML = cur.ladder ? ladderBidsHtml(cur.ladder) : renderBid(cur.q, cur.f);
     const start = defaultRaise(cur);
     if ($('#tQ')) $('#tQ').value = start ? start.q : cur.q;

@@ -623,6 +623,7 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tModePick [data-mode="endgame"]')).toHaveAttribute('aria-checked', 'true');
       await expect(page.locator('#tModePick [aria-checked="true"]')).toHaveCount(1);
       await expect(page.locator('#tDesc')).toContainText('3–6 кубиков');
+      await expect(page.locator('#tDescName')).toHaveText('Эндшпиль (3–6 кубиков всего)');
     });
 
     test('порог меняется степпером на 0.05 в пределах 0.05–0.95, подпись обновляется', async ({ page }) => {
@@ -1291,15 +1292,26 @@ test.describe('Учебные вкладки', () => {
     };
     const queue = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('perudo.trainingQueue') || '[]'));
 
-    test('показана история торгов, подпись «Торги», описание режима', async ({ page }) => {
+    test('показана история торгов, подпись «История ставок», описание режима', async ({ page }) => {
       await pickLadder(page);
-      await expect(page.locator('#tBidLabel')).toHaveText('Торги:');
+      await expect(page.locator('#tBidLabel')).toHaveText('История ставок:');
       const n = await page.locator('#tBid .read-bid').count();
       expect(n).toBeGreaterThanOrEqual(3);
       expect(n).toBeLessThanOrEqual(5);
       await expect(page.locator('#tBid .read-bid').last()).toContainText('последняя');
       await expect(page.locator('#tInfo')).toContainText('соперников');
       await expect(page.locator('#tDesc')).toContainText('Несколько соперников');
+    });
+
+    test('у обычной ситуации подписи «Ставка соперника» и «у соперников», у «Лестницы» — «История ставок»', async ({ page }) => {
+      await open(page, 'train');
+      await expect(page.locator('#tBidLabel')).toHaveText('Ставка соперника:');
+      await expect(page.locator('#tInfo')).toContainText('у соперников');
+      await expect(page.locator('#tInfo')).not.toContainText('чужих');
+      await pickLadder(page);
+      await expect(page.locator('#tBidLabel')).toHaveText('История ставок:');
+      await expect(page.locator('#tDescName')).toHaveText('Лестница ставок (история торгов)');
+      await expect(page.locator('#tDesc')).toContainText('предыдущих ставок');
     });
 
     test('«Не верю» даёт разбор с двумя шансами без списка вариантов хода', async ({ page }) => {
@@ -1344,7 +1356,7 @@ test.describe('Учебные вкладки', () => {
       await expect(item).toContainText('40.0%');
       await item.locator('.weak-train').click();
       await expect(page.locator('#tMode')).toHaveValue('ladder');
-      await expect(page.locator('#tBidLabel')).toHaveText('Торги:');
+      await expect(page.locator('#tBidLabel')).toHaveText('История ставок:');
     });
 
     test('ошибка уходит в очередь вместе с историей торгов', async ({ page }) => {
