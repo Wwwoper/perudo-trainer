@@ -12,8 +12,8 @@ export function optionsHtml(options, threshold, fmt = pct) {
   const rows = options.map((o) => {
     const chip = o.type === 'dudo' ? '' : renderBid(o.q, o.f, 'xs');
     const name = o.type === 'dudo' ? 'Не верю'
-      : o.type === 'safeRaise' ? 'Самая сильная безопасная'
-        : `Минимальное повышение${o.isBestSafe ? ' (она же самая сильная безопасная)' : ''}`;
+      : o.type === 'safeRaise' ? 'Самая сильная из проходящих порог'
+        : `Минимальное повышение${o.isBestSafe ? ' (она же самая сильная из проходящих порог)' : ''}`;
     const what = o.type === 'dudo' ? 'проверка сработает' : 'ставка верна';
     // три колонки: вариант | чип | вероятность; пояснения — второй строкой под названием
     return `<li class="trainer-option${o.chosen ? ' is-chosen' : ''}">` +

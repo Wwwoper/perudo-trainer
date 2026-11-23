@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 
 globalThis.Perudo = { pct: (x) => `${(x * 100).toFixed(1)}%` };
 const { optionsHtml } = await import('../src/ui/options_view.js');
+const { optionsNote } = await import('../src/trainer_text.js');
 
 const dudo = { type: 'dudo', p: 0.7, success: 0.3, meetsThreshold: false };
 const min = { type: 'minRaise', q: 2, f: 1, p: 0.8, success: 0.8, meetsThreshold: true };
@@ -29,12 +30,12 @@ describe('optionsHtml', () => {
     assert.equal((h.match(/ваш выбор/g) || []).length, 1);
   });
   it('минимальное повышение, оно же безопасное — подпись', () => {
-    assert.match(optionsHtml([{ ...min, isBestSafe: true }], 0.5), /она же самая сильная безопасная/);
+    assert.match(optionsHtml([{ ...min, isBestSafe: true }], 0.5), /она же самая сильная из проходящих порог/);
   });
   it('нет безопасных повышений, но «Не верю» проходит порог — подсказка называет «Не верю»', () => {
     const ok = { ...dudo, meetsThreshold: true };
     const h = optionsHtml([ok, { ...min, meetsThreshold: false }], 0.5);
-    assert.match(h, /Безопасных повышений выше порога нет, зато ставка соперника верна реже порога/);
+    assert.match(h, /Ни одно повышение не проходит порог, зато ставка соперника верна реже порога/);
   });
   it('ни один ход не проходит порог — подсказка про наибольший шанс, без «Не верю часто лучший»', () => {
     const h = optionsHtml([dudo, { ...min, meetsThreshold: false }], 0.5);
@@ -43,7 +44,7 @@ describe('optionsHtml', () => {
   });
   it('есть безопасное повышение — подсказки нет', () => {
     const h = optionsHtml([dudo, safe], 0.5);
-    assert.ok(!h.includes('Безопасных повышений') && !h.includes('Ни один ход'));
+    assert.ok(!h.includes('Ни одно повышение') && !h.includes('Ни один ход'));
   });
   it('колонки: вариант | чип | вероятность; у «Не верю» колонка чипа пустая, чипа нет внутри названия', () => {
     const h = optionsHtml([dudo, min], 0.5);
@@ -54,5 +55,19 @@ describe('optionsHtml', () => {
   });
   it('пустой список не падает', () => {
     assert.match(optionsHtml([], 0.5), /<ul class="trainer-options"><\/ul>/);
+  });
+});
+
+describe('подписи вариантов без слова «безопасная»', () => {
+  it('в списке вариантов и в пояснении слова «безопасн» нет: порог — критерий, а не гарантия', () => {
+    const all = optionsHtml([
+      { type: 'dudo', success: 0.4, meetsThreshold: false },
+      { type: 'minRaise', q: 4, f: 3, success: 0.6, meetsThreshold: true, isBestSafe: true },
+      { type: 'safeRaise', q: 5, f: 3, success: 0.5, meetsThreshold: true },
+    ], 0.5);
+    assert.ok(!/безопасн/i.test(all), all);
+    assert.match(all, /Самая сильная из проходящих порог/);
+    assert.ok(!/безопасн/i.test(optionsNote([{ type: 'dudo', success: 0.6, meetsThreshold: true }])));
+    assert.ok(!/безопасн/i.test(optionsNote([{ type: 'dudo', success: 0.2, meetsThreshold: false }])));
   });
 });

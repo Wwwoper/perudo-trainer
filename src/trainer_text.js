@@ -63,11 +63,11 @@ export function moveBreakdown({ kind, p, po, t, good, noGoodMove }) {
   return { mine: { chance: mineChance, passes: mineChance >= t }, opp: { chance: po }, why };
 }
 
-/** Пояснение под списком вариантов: согласовано с оценкой; пусто, если есть безопасное повышение. */
+/** Пояснение под списком вариантов: согласовано с оценкой; пусто, если есть повышение, проходящее порог. */
 export function optionsNote(options) {
   if (options.some((o) => o.type !== 'dudo' && o.meetsThreshold)) return '';
   if (options.some((o) => o.type === 'dudo' && o.meetsThreshold)) {
-    return 'Безопасных повышений выше порога нет, зато ставка соперника верна реже порога: здесь верно «Не верю».';
+    return 'Ни одно повышение не проходит порог, зато ставка соперника верна реже порога: здесь верно «Не верю».';
   }
   return 'Ни один ход не проходит порог. Верным считается ход с наибольшим шансом успеха.';
 }
