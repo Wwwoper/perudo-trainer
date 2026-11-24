@@ -562,16 +562,35 @@ test.describe('Учебные вкладки', () => {
     test('ставка «Ставлю» принимается и оценивается', async ({ page }) => {
       await open(page, 'train');
       await page.click('#tRaise');
-      await expect(page.locator('#tFb')).toContainText('Ваша ставка');
+      await expect(page.locator('#tFb')).toContainText('Шанс вашей ставки');
     });
 
-    test('вердикт назван «по шансу», под ним оговорка: оценка не про выигрыш партии', async ({ page }) => {
+    test('плашка «Хорошее / Сомнительное решение» с шансом и порогом, под ней оговорка: оценка не про итог раунда', async ({ page }) => {
       await open(page, 'train');
       await page.click('#tDudo');
-      const big = page.locator('#tFb .big');
-      await expect(big).toHaveText(/(Хорошее|Сомнительное) решение по шансу$/);
-      await expect(page.locator('#tFb .trainer-model-note')).toHaveText(/по шансу ставки и порогу, а не по выигрышу партии/);
+      await expect(page.locator('#tFb .tm-plaque-title')).toHaveText(/^(Хорошее|Сомнительное) решение$/);
+      await expect(page.locator('#tFb .tm-plaque')).toContainText(/Шанс, что «Не верю» сработает, — (<1|>99|\d+) % при пороге 50 %\./);
+      await expect(page.locator('#tFb .trainer-model-note')).toHaveText(/по шансу, а не по итогу раунда/);
+      await expect(page.locator('#tFb .fb-block').filter({ hasText: 'Шанс при повышении' })).toHaveCount(0);   // для «Не верю» только плашка
       expect(await page.locator('#tFb').textContent()).not.toMatch(/undefined|NaN|блеф|обман/i);
+    });
+
+    test('«Шанс при повышении»: выбранная ставка и соседи на кубик меньше и больше, у выбранной маркер, внизу легенда по порогу', async ({ page }) => {
+      await open(page, 'train');
+      await page.fill('#tQ', '8');
+      await page.evaluate(() => { document.querySelector('#tF').value = '5'; document.querySelector('#tF').dispatchEvent(new Event('change', { bubbles: true })); });
+      await page.click('#tRaise');
+      const block = page.locator('#tFb .fb-block').filter({ hasText: 'Шанс при повышении' });
+      await expect(block).toHaveCount(1);
+      await expect(block.locator('.tm-row')).toHaveCount(3);
+      await expect(block.locator('.tm-row.is-mine')).toHaveCount(1);
+      await expect(block.locator('.tm-row.is-mine')).toContainText('8×');
+      await expect(block.locator('.tm-row.is-mine')).toContainText('ваш выбор');
+      await expect(block.locator('.tm-row').first()).toContainText('7×');
+      await expect(block.locator('.tm-row').last()).toContainText('9×');
+      await expect(block.locator('.tm-row-p span').first()).toHaveText(/ниже порога|небольшой запас|уверенный запас/);
+      await expect(block.locator('.tm-legend-list li')).toHaveText(['51–64 % · небольшой запас', '65–100 % · уверенный запас', '≤ 50 % · ниже порога']);
+      await expect(page.locator('#tFb .trainer-model-note')).toHaveCount(1);
     });
 
     test('условие задачи: вопрос крупно, правило подсказкой', async ({ page }) => {
@@ -583,15 +602,12 @@ test.describe('Учебные вкладки', () => {
       expect(q).toBeGreaterThan(r);
     });
 
-    test('разбор хода блоками: шансы, почему, при ошибке лучший ход; список вариантов свёрнут, проценты без «.0»', async ({ page }) => {
+    test('разбор хода: плашка, при ошибке лучший ход; список вариантов свёрнут, проценты без «.0»', async ({ page }) => {
       await open(page, 'train');
       await page.click('#tDudo');
       const fb = page.locator('#tFb');
-      await expect(fb.locator('.big')).toBeVisible();
-      await expect(fb.locator('.fb-title').nth(0)).toHaveText('Шансы');
-      await expect(fb.locator('.fb-title').nth(1)).toHaveText('Почему');
-      await expect(fb.locator('.fb-chances .fb-row')).toHaveCount(2);
-      const good = /Хорошее/.test(await fb.locator('.big').textContent());
+      await expect(fb.locator('.tm-plaque')).toBeVisible();
+      const good = /Хорошее/.test(await fb.locator('.tm-plaque-title').textContent());
       await expect(fb.locator('.fb-block.is-best')).toHaveCount(good ? 0 : 1);      // лучший ход показан только при ошибке
       await expect(fb.locator('details.trainer-all')).not.toHaveAttribute('open', '');
       await expect(fb.locator('.trainer-option').first()).toBeHidden();             // список вариантов свёрнут
@@ -609,7 +625,7 @@ test.describe('Учебные вкладки', () => {
       await page.click('#tRaise');
       await expect(page.locator('#tFb')).toContainText(/не меньше|нельзя/);
       await expect(page.locator('#tFb')).not.toContainText('Хорошее решение');
-      await expect(page.locator('#tFb')).not.toContainText('не по выигрышу партии');   // оговорка только у оценки
+      await expect(page.locator('#tFb')).not.toContainText('не по итогу раунда');   // оговорка только у оценки
       await expect(page.locator('#tLayout')).not.toHaveClass(/is-answered/);
       expect(await page.locator('#tStat').textContent()).toBe(before);
     });
@@ -1398,7 +1414,7 @@ test.describe('Учебные вкладки', () => {
       await pickLadder(page);
       await page.evaluate(() => { document.querySelector('#tT').value = '0.9'; });
       await page.click('#tDudo');                                  // «Не верю» слабее повышения: неверно, и разбор называет лучший ход
-      await expect(page.locator('#tFb')).toContainText('Был ход лучше');
+      await expect(page.locator('#tFb .tm-plaque-title')).toHaveText('Сомнительное решение');
       await expect(page.locator('#tFb')).toContainText('ни один ход не проходит порог');
       await expect(page.locator('#tFb')).toContainText('Верным было бы повышение');
       await page.click('#tNext');
@@ -1409,7 +1425,8 @@ test.describe('Учебные вкладки', () => {
       await page.fill('#tQ', '6');
       await page.evaluate(() => { document.querySelector('#tF').value = '5'; document.querySelector('#tF').dispatchEvent(new Event('change', { bubbles: true })); });
       await page.click('#tRaise');
-      await expect(page.locator('#tFb')).toContainText('Лучший из имеющихся ходов');
+      await expect(page.locator('#tFb .tm-plaque-title')).toHaveText('Хорошее решение');
+      await expect(page.locator('#tFb')).toContainText('ни один ход не проходит порог');
     });
 
     test('повтор показывает причину и «N из 2 успешных повторов»; верный ответ засчитывается и убирает ситуацию из очереди', async ({ page }) => {

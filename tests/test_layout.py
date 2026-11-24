@@ -827,7 +827,7 @@ class LayoutTest(unittest.TestCase):
             with self.subTest(w=w, h=h):
                 page = self.open_trainer(w, h)
                 page.click("#tDudo")
-                for sel in ("#tFb .big", "#tNext"):
+                for sel in ("#tFb .tm-plaque", "#tNext"):
                     b = page.locator(sel).bounding_box()
                     self.assertGreaterEqual(b["y"], 0, sel)
                     self.assertLessEqual(b["y"] + b["height"], h + 1, sel)

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { gradeMove, bestChanceRaise, applyTrainerRule } from '../src/trainer_grade.js';
-import { gradeVerdictText, correctMoveText, VERDICT_GOOD, VERDICT_BAD, VERDICT_BEST_OF_BAD, VERDICT_WORSE, NO_GOOD_NOTE } from '../src/trainer_text.js';
+import { correctMoveText, NO_GOOD_NOTE } from '../src/trainer_text.js';
 import { legal } from '../src/rules.js';
 
 const sandbox = { self: {} };
@@ -87,12 +87,6 @@ describe('gradeMove: крайние случаи', () => {
 });
 
 describe('тексты', () => {
-  it('заголовок: обычный расклад и расклад без хода по порогу', () => {
-    assert.equal(gradeVerdictText(true, false), VERDICT_GOOD);
-    assert.equal(gradeVerdictText(false, false), VERDICT_BAD);
-    assert.equal(gradeVerdictText(true, true), VERDICT_BEST_OF_BAD);
-    assert.equal(gradeVerdictText(false, true), VERDICT_WORSE);
-  });
   it('строка «верным был бы…»', () => {
     const pct = (x) => `${(x * 100).toFixed(1)}%`;
     const bid = (q, f) => `${q}×${f}`;
@@ -100,7 +94,7 @@ describe('тексты', () => {
     assert.match(correctMoveText({ type: 'raise', q: 4, f: 1, success: 0.468 }, pct, bid), /4×1.*46\.8%/);
   });
   it('без запрещённых слов', () => {
-    for (const t of [VERDICT_BEST_OF_BAD, VERDICT_WORSE, NO_GOOD_NOTE]) assert.doesNotMatch(t, /обманщик|врёт|блеф|гарантир|всегда/i);
+    for (const t of [NO_GOOD_NOTE]) assert.doesNotMatch(t, /обманщик|врёт|блеф|гарантир|всегда/i);
   });
 });
 

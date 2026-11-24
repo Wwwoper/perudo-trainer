@@ -184,7 +184,7 @@ test.describe('Итоговый экран онбординга: выбор «Я
     const before = await boardY();
     await page.locator('#tDudo').click();
     expect(await boardY()).toBe(before);
-    await expect(page.locator('#tFb .big')).toBeVisible();                        // разбор последнего ответа остаётся на виду
+    await expect(page.locator('#tFb .tm-plaque')).toBeVisible();                        // разбор последнего ответа остаётся на виду
     await expect(page.locator('#obFinishDialog')).toHaveCount(0);
     await page.locator('#tNext').click();
     const dlg = page.locator('#obFinishDialog');

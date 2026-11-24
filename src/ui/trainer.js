@@ -9,8 +9,10 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, moveBreakdown, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleText } from '../trainer_text.js';
+import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleText } from '../trainer_text.js';
 import { gradeMove, applyTrainerRule } from '../trainer_grade.js';
+import { plaqueModel, raiseNeighbours } from '../trainer_feedback.js';
+import { plaqueHtml, raiseBlockHtml, feedbackNoteHtml } from './trainer_feedback_view.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
 import { setupTaskBanner } from './onboarding_tasks.js';
@@ -216,23 +218,28 @@ export function setupTrainer({ account } = {}) {
     return optionsHtml(markChosen(applyTrainerRule(options, thr), choice), thr, chanceText);
   }
 
-  /** Разбор хода блоками: шансы, почему, лучший ход; полный список вариантов свёрнут. */
-  function breakdownHtml({ kind, bid, mine, p, po, t, g }) {
-    const b = moveBreakdown({ kind, p, po, t, good: g.good, noGoodMove: !!g.noGoodMove });
-    const mineLabel = kind === 'dudo' ? '«Не верю» сработает' : `Ваша ставка ${renderBid(mine.q, mine.f)} верна`;
-    const row = (cls, label, chance, status) =>
-      `<li class="fb-row ${cls}"><span class="fb-label">${label}</span><b class="fb-chance">${chanceText(chance)}</b>` +
-      `${status ? `<span class="fb-status">${status}</span>` : ''}</li>`;
-    const status = b.mine.passes ? `✓ выше порога ${chanceText(t)}` : `✗ ниже порога ${chanceText(t)}`;
-    return `<section class="fb-block"><h4 class="fb-title">Шансы</h4><ul class="fb-chances">` +
-      row(b.mine.passes ? 'is-pass' : 'is-fail', mineLabel, b.mine.chance, status) +
-      row('', `Ставка соперника ${renderBid(bid.q, bid.f)} верна`, b.opp.chance, '') + '</ul></section>' +
-      `<section class="fb-block"><h4 class="fb-title">Почему</h4><p>${b.why}</p></section>` +
+  /** Плашка итога по ответу: шанс выбранного хода и порог. */
+  function plaque(kind, good, chance, t, grade) {
+    return plaqueHtml(plaqueModel({ kind, good, noGoodMove: !!grade?.noGoodMove, chance, threshold: t, noGoodNote: NO_GOOD_NOTE }));
+  }
+
+  /** Блок «Шанс при повышении» вокруг выбранной ставки; chanceOf — шанс ставки в текущем режиме. */
+  function raiseBlock(mine, t, chanceOf) {
+    return raiseBlockHtml(raiseNeighbours({
+      q: mine.q, f: mine.f, bid: { q: cur.q, f: cur.f }, total: cur.n, wild: cur.m.wild, threshold: t, chanceOf,
+    }), t);
+  }
+
+  /** Разбор хода: для повышения блок шансов, затем оговорка, лучший ход (если ответ неверен) и полный список вариантов. */
+  function breakdownHtml({ kind, mine, t, g }) {
+    const chanceOf = (q, f) => P.probBid(q, f, cur.n, cur.h, cur.m.wild);
+    return (kind === 'raise' ? raiseBlock(mine, t, chanceOf) : '') + feedbackNoteHtml() +
       (g.good ? '' : `<section class="fb-block is-best"><h4 class="fb-title">Лучший ход</h4><p>${correctMoveText(g.best, chanceText, (a, c) => renderBid(a, c))}</p></section>`) +
       `<details class="trainer-all"><summary>Все варианты по шансу</summary>${hint(kind === 'dudo' ? { type: 'dudo' } : { type: 'raise', q: mine.q, f: mine.f })}</details>`;
   }
 
-  function answer(good, html, grade = null) {
+  /** @param {string} top плашка итога; html — остальной разбор */
+  function answer(good, top, html, grade = null) {
     if (answered || !cur) return;
     answered = true;
     timer.stop();
@@ -266,10 +273,7 @@ export function setupTrainer({ account } = {}) {
       tasks.answered();
     }
     if ($('#tFb')) {
-      $('#tFb').innerHTML =
-        `<div class="big ${good ? 'text-ok' : 'text-bad'}">${gradeVerdictText(good, !!grade?.noGoodMove)}</div>` +
-        `<p class="trainer-model-note quiz-hint"><span class="quiz-hint-i" aria-hidden="true">ⓘ</span><span>${grade?.noGoodMove ? NO_GOOD_NOTE : MODEL_NOTE}</span></p>` +
-        (cur.item ? `<p class="trainer-repeat-note">${repeatAfterText(cur.item, good)}</p>` : '') + html;
+      $('#tFb').innerHTML = top + (cur.item ? `<p class="trainer-repeat-note">${repeatAfterText(cur.item, good)}</p>` : '') + html;
     }
     setAnswered(true);
     syncNext();
@@ -297,24 +301,25 @@ export function setupTrainer({ account } = {}) {
   const dudoBtn = $('#tDudo');
   if (dudoBtn) dudoBtn.onclick = () => {
     if (answered || !cur) return;
-    const { m, n, h, f, q } = cur;
+    const { m, h, f, q, n } = cur;
     const t = +$('#tT').value;
     if (cur.ladder) {
       const ch = ladderChances(cur.ladder, P);
       const g = gradeLadder(cur.ladder, t, P, { type: 'dudo' });
-      answer(g.good, `<p>С учётом стола ставка верна с шансом <b>${chanceText(ch.pRead)}</b> (порог ${pct(t)}): ` +
-        `«Не верю» сработает с шансом ${chanceText(1 - ch.pRead)}.</p>${ladderBestHtml(g)}${ladderHtml(cur.ladder, ch)}`, g);
+      answer(g.good, plaque('dudo', g.good, 1 - ch.pRead, t, g),
+        `<p>С учётом стола ставка верна с шансом <b>${chanceText(ch.pRead)}</b> (порог ${pct(t)}): ` +
+        `«Не верю» сработает с шансом ${chanceText(1 - ch.pRead)}.</p>${feedbackNoteHtml()}${ladderBestHtml(g)}${ladderHtml(cur.ladder, ch)}`, g);
       return;
     }
     const p = P.probBid(q, f, n, h, m.wild);
     const g = grade({ type: 'dudo' });
-    answer(g.good, breakdownHtml({ kind: 'dudo', bid: { q, f }, mine: null, p: null, po: p, t, g }), g);
+    answer(g.good, plaque('dudo', g.good, 1 - p, t, g), breakdownHtml({ kind: 'dudo', mine: null, t, g }), g);
   };
 
   const raiseBtn = $('#tRaise');
   if (raiseBtn) raiseBtn.onclick = () => {
     if (answered || !cur) return;
-    const { m, n, h, f, q } = cur;
+    const { m, n, h } = cur;
     const t = +$('#tT').value;
     const Q = +$('#tQ').value;
     const F = +$('#tF').value;
@@ -324,17 +329,19 @@ export function setupTrainer({ account } = {}) {
 
     if (cur.ladder) {
       const ch = ladderChances(cur.ladder, P);
-      const pr = P.probBidRead(Q, F, h, cur.ladder.ks.map((k, i) => ({ k, faces: [...new Set(cur.ladder.bids.filter((b) => b.s === i).map((b) => b.f))] })), m.wild, TABLE_TRUST);
+      const opps = cur.ladder.ks.map((k, i) => ({ k, faces: [...new Set(cur.ladder.bids.filter((b) => b.s === i).map((b) => b.f))] }));
+      const chanceOf = (a, b) => P.probBidRead(a, b, h, opps, m.wild, TABLE_TRUST);
+      const pr = chanceOf(Q, F);
       const g = gradeLadder(cur.ladder, t, P, { type: 'raise', q: Q, f: F });
-      answer(g.good, `<p>Ваша ставка ${renderBid(Q, F)} с учётом стола верна с шансом <b>${chanceText(pr)}</b> (порог ${pct(t)}).</p>` +
-        `${ladderBestHtml(g)}${ladderHtml(cur.ladder, ch)}`, g);
+      answer(g.good, plaque('raise', g.good, pr, t, g), raiseBlock({ q: Q, f: F }, t, chanceOf) +
+        `<p>Ваша ставка ${renderBid(Q, F)} с учётом стола верна с шансом <b>${chanceText(pr)}</b> (порог ${pct(t)}).</p>` +
+        `${feedbackNoteHtml()}${ladderBestHtml(g)}${ladderHtml(cur.ladder, ch)}`, g);
       return;
     }
 
     const p = P.probBid(Q, F, n, h, m.wild);
-    const po = P.probBid(q, f, n, h, m.wild);
     const g = grade({ type: 'raise', q: Q, f: F });
-    answer(g.good, breakdownHtml({ kind: 'raise', bid: { q, f }, mine: { q: Q, f: F }, p, po, t, g }), g);
+    answer(g.good, plaque('raise', g.good, p, t, g), breakdownHtml({ kind: 'raise', mine: { q: Q, f: F }, t, g }), g);
   };
 
   if ($('#tNew')) $('#tNew').onclick = () => newSituation();

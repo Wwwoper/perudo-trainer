@@ -244,8 +244,6 @@
   border-radius: var(--radius-s);
   font-size: var(--fs-ui);
   line-height: 1.45;
-  overflow-y: auto;
-  max-height: 52vh;
 }
 
 .trainer-feedback .big {
@@ -286,33 +284,6 @@
   color: var(--mut);
 }
 
-.fb-chances {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.fb-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  column-gap: var(--space-2);
-  padding: var(--space-1) 0;
-}
-
-.fb-status {
-  grid-column: 1 / -1;
-  font-size: var(--fs-small);
-}
-
-.fb-row.is-pass .fb-status {
-  color: var(--ok);
-}
-
-.fb-row.is-fail .fb-status {
-  color: var(--bad);
-}
-
 .fb-block.is-best {
   padding: var(--space-2) var(--space-3);
   border-left: 3px solid var(--acc);
@@ -324,6 +295,153 @@
   margin-top: var(--space-3);
   padding-top: var(--space-2);
   border-top: 1px solid var(--line);
+}
+
+/* Плашка итога после ответа */
+.tm-plaque {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-2);
+  border-left-width: 4px;
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+}
+
+.tm-plaque.is-good {
+  border-left-color: var(--ok);
+}
+
+.tm-plaque.is-bad {
+  border-left-color: var(--bad);
+}
+
+.tm-plaque-title {
+  font-size: var(--fs-body);
+}
+
+.tm-plaque.is-bad .tm-plaque-title {
+  color: var(--bad-text);
+}
+
+.tm-plaque p {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-ui);
+}
+
+.tm-plaque + .fb-block,
+.tm-plaque + .trainer-model-note,
+.fb-block + .trainer-model-note {
+  margin-top: var(--space-3);
+}
+
+/* Блок «Шанс при повышении»: строки без рамок, у выбранной нейтральный маркер */
+.tm-rows {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tm-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-3);
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-s);
+}
+
+.tm-row .chip {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.tm-row .die {
+  margin: 0;
+}
+
+.tm-row.is-mine::before {
+  content: "";
+  position: absolute;
+  top: var(--space-2);
+  bottom: var(--space-2);
+  left: 0;
+  width: 3px;
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  background: var(--mut);
+}
+
+.tm-row-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.tm-row-sel {
+  color: var(--mut);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+}
+
+.tm-row-p {
+  display: grid;
+  justify-items: end;
+  text-align: right;
+  font-size: var(--fs-caption);
+}
+
+.tm-row-p b {
+  font-size: var(--fs-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.tm-row-p.is-big {
+  color: var(--ok-fg);
+}
+
+.tm-row-p.is-small {
+  color: var(--warn-fg);
+}
+
+.tm-row-p.is-below {
+  color: var(--bad-fg);
+}
+
+.tm-legend-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-small);
+  color: var(--mut);
+}
+
+.tm-dot {
+  display: inline-block;
+  width: var(--space-2);
+  height: var(--space-2);
+  margin-right: var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.tm-dot.is-big {
+  background: var(--ok);
+}
+
+.tm-dot.is-small {
+  background: var(--warn);
+}
+
+.tm-dot.is-below {
+  background: var(--line-2);
 }
 
 /* Статистика — свёрнута */
