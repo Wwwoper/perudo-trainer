@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { gradeMove, bestChanceRaise } from '../src/trainer_grade.js';
+import { gradeMove, bestChanceRaise, applyTrainerRule } from '../src/trainer_grade.js';
 import { gradeVerdictText, correctMoveText, VERDICT_GOOD, VERDICT_BAD, VERDICT_BEST_OF_BAD, VERDICT_WORSE, NO_GOOD_NOTE } from '../src/trainer_text.js';
 import { legal } from '../src/rules.js';
 
@@ -118,5 +118,59 @@ describe('подсказка и задача', () => {
     assert.match(TASK_TEXT, /повысить/);
     assert.match(TASK_TEXT, /«Не верю»/);
     assert.match(TASK_TEXT, /наибольшим шансом/);
+  });
+});
+
+describe('gradeMove: единое правило «шанс успеха выше порога»', () => {
+  // ставка 15×4 при 20 кубиках: «Не верю» сработает почти наверняка
+  const S = { bid: { q: 15, f: 4 }, total: 20, hand: [1, 2, 3, 3, 6], wild: true, probBid };
+
+  it('шанс ровно на пороге его не проходит, на пункт выше — проходит', () => {
+    const fake = (p) => () => p;
+    const at = (p, thr) => gradeMove({ bid: { q: 5, f: 3 }, total: 10, hand: [3], wild: true, threshold: thr, probBid: fake(p), choice: { type: 'dudo' } });
+    // успех «Не верю» = 1 − шанс ставки: ставка 0,5 → 50% ровно на пороге 0,5
+    assert.equal(at(0.5, 0.5).best.success, 0.5);
+    assert.equal(at(0.5, 0.5).noGoodMove, true);
+    assert.equal(at(0.49, 0.5).noGoodMove, false);   // успех 51%
+    assert.equal(at(0.49, 0.5).good, true);
+  });
+
+  it('«Не верю» оценивается своим шансом успеха и при пороге выше 50%', () => {
+    const pBid = probBid(15, 4, 20, S.hand, true);
+    const success = Math.round((1 - pBid) * 100);
+    const below = (success - 5) / 100, above = (success + 5) / 100;
+    assert.equal(gradeMove({ ...S, threshold: below, choice: { type: 'dudo' } }).good, true);
+    const r = gradeMove({ ...S, threshold: above, choice: { type: 'dudo' } });
+    // если выше порога успеха «Не верю» ничего нет, это «нет проходящего хода», а не лёгкое «верно»
+    assert.equal(r.noGoodMove || r.best.type === 'raise', true);
+  });
+
+  it('повышение: проходит шанс выше порога по округлённому проценту', () => {
+    const s = { bid: { q: 3, f: 6 }, total: 20, hand: [6, 6, 6, 1, 2], wild: true, probBid };
+    const p = probBid(4, 6, 20, s.hand, true);
+    const r = Math.round(p * 100);
+    assert.equal(gradeMove({ ...s, threshold: (r - 1) / 100, choice: { type: 'raise', q: 4, f: 6 } }).good, true);
+    const onThreshold = gradeMove({ ...s, threshold: r / 100, choice: { type: 'raise', q: 4, f: 6 } });
+    assert.equal(onThreshold.chosenSuccess, p);
+    // ровно на пороге повышение не проходит: верным остаётся либо другой ход, либо «лучший из плохих»
+    assert.equal(onThreshold.good === false || onThreshold.noGoodMove, true);
+  });
+});
+
+describe('applyTrainerRule', () => {
+  it('«проходит порог» по шансу успеха для всех вариантов, исходные поля сохраняются', () => {
+    const opts = [
+      { type: 'dudo', p: 0.3, success: 0.7, meetsThreshold: true },
+      { type: 'minRaise', q: 4, f: 5, p: 0.5, success: 0.5, meetsThreshold: true },
+      { type: 'safeRaise', q: 5, f: 5, p: 0.52, success: 0.52, meetsThreshold: false },
+    ];
+    const r = applyTrainerRule(opts, 0.5);
+    assert.deepEqual(r.map((o) => o.meetsThreshold), [true, false, true]);
+    assert.equal(r[1].q, 4);
+    assert.equal(opts[1].meetsThreshold, true, 'исходный список не меняется');
+  });
+  it('у «Не верю» при пороге 0,65 шанс проверки 70% проходит, а шанс 0,6 — нет', () => {
+    const r = applyTrainerRule([{ type: 'dudo', p: 0.3, success: 0.7 }, { type: 'dudo', p: 0.4, success: 0.6 }], 0.65);
+    assert.deepEqual(r.map((o) => o.meetsThreshold), [true, false]);
   });
 });

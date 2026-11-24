@@ -2,13 +2,14 @@
 //
 // Правило:
 //  1. Если есть ход, проходящий порог, верен любой такой ход.
-//     «Не верю» проходит порог, когда ставка соперника верна реже порога;
-//     повышение проходит, когда ваша ставка верна не реже порога.
+//     Ход проходит порог, когда его шанс успеха выше порога (целые проценты, как на экране; см. chance_margin.js):
+//     у повышения это шанс, что ваша ставка верна, у «Не верю» — что проверка сработает.
 //  2. Если проходящих ходов нет, верен ход с наибольшим шансом успеха
 //     (у «Не верю» это шанс, что проверка сработает, у повышения — шанс, что ваша ставка верна).
 //  3. Если выбран другой ход, разбор называет верный.
 
 import { legal } from './rules.js';
+import { passesThreshold } from './chance_margin.js';
 
 const EPS = 1e-9;
 
@@ -37,11 +38,11 @@ export function gradeMove({ bid, total, hand, wild = true, threshold = 0.5, prob
   if (typeof probBid !== 'function') throw new TypeError('gradeMove: нужна функция probBid');
   const thr = Number.isFinite(threshold) ? threshold : 0.5;
   const pBid = probBid(bid.q, bid.f, total, hand, wild);
-  const dudo = { type: 'dudo', success: 1 - pBid, passes: pBid < thr };
+  const dudo = { type: 'dudo', success: 1 - pBid, passes: passesThreshold(1 - pBid, thr) };
 
   // повышения: самое сильное по шансу и (если есть) самое сильное из проходящих порог
   const top = bestChanceRaise(bid, total, hand, wild, probBid);
-  const raiseTop = top && { type: 'raise', q: top.q, f: top.f, success: top.p, passes: top.p >= thr };
+  const raiseTop = top && { type: 'raise', q: top.q, f: top.f, success: top.p, passes: passesThreshold(top.p, thr) };
 
   const passing = [dudo, raiseTop].filter((o) => o && o.passes);
   const noGoodMove = passing.length === 0;
@@ -51,9 +52,18 @@ export function gradeMove({ bid, total, hand, wild = true, threshold = 0.5, prob
   const chosen = choice.type === 'dudo'
     ? dudo
     : { type: 'raise', q: choice.q, f: choice.f, success: probBid(choice.q, choice.f, total, hand, wild) };
-  const chosenPasses = choice.type === 'dudo' ? dudo.passes : chosen.success >= thr;
+  const chosenPasses = choice.type === 'dudo' ? dudo.passes : passesThreshold(chosen.success, thr);
   const good = noGoodMove ? chosen.success >= best.success - EPS : chosenPasses;
 
   const { passes: _p, ...bestOut } = best;
   return { good, noGoodMove, chosenSuccess: chosen.success, best: bestOut };
+}
+
+/**
+ * Отметка «проходит порог» у вариантов из compareOptions() по правилу Тренажёра:
+ * шанс успеха выше порога (у «Не верю» — шанс, что проверка сработает). compareOptions считает по-своему
+ * (там «Не верю» проходит при шансе ставки ниже порога) — он нужен игре и разбору партий.
+ */
+export function applyTrainerRule(options, threshold) {
+  return options.map((o) => ({ ...o, meetsThreshold: passesThreshold(o.success, threshold) }));
 }

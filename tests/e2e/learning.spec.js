@@ -630,7 +630,7 @@ test.describe('Учебные вкладки', () => {
       await open(page, 'train');
       await expect(page.locator('#tSettingsHint')).toContainText('порог 50%');
       await page.click('.trainer-settings-more summary');
-      await expect(page.locator('#tThrRule')).toContainText('Сейчас 50%: повышение хорошее, если ваша ставка верна не реже 50%');
+      await expect(page.locator('#tThrRule')).toContainText('Сейчас 50%: ход хороший, если его шанс выше 50%');
       await page.locator('#tTPlus').click();
       await expect(page.locator('#tT')).toHaveValue('0.55');
       await expect(page.locator('#tSettingsHint')).toContainText('порог 55%');
@@ -1360,9 +1360,13 @@ test.describe('Учебные вкладки', () => {
     });
 
     test('ошибка уходит в очередь вместе с историей торгов', async ({ page }) => {
+      await page.addInitScript(() => { Math.random = () => 0; });   // одна и та же ситуация при каждом запуске
+      await page.reload();
       await pickLadder(page);
-      await page.evaluate(() => { document.querySelector('#tT').value = '0'; });   // порог 0: «Не верю» всегда ошибка
-      await page.click('#tDudo');
+      await page.evaluate(() => { document.querySelector('#tT').value = '0.5'; });   // ставка верна с шансом 26 %: «Не верю» проходит порог, повышение — нет
+      await page.fill('#tQ', '6');
+      await page.evaluate(() => { document.querySelector('#tF').value = '2'; document.querySelector('#tF').dispatchEvent(new Event('change', { bubbles: true })); });
+      await page.click('#tRaise');
       await expect(page.locator('#tFb')).toContainText('Сомнительное решение');
       const q = await queue(page);
       expect(q).toHaveLength(1);
@@ -1380,8 +1384,8 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tInfo .trainer-repeat')).toBeVisible();
       await expect(page.locator('#tBid .read-bid')).toHaveCount(3);
       await expect(page.locator('#tBid .read-bid').last()).toContainText('Соперник 3');
-      // порог 0.95: шанс этой ставки ниже, поэтому «Не верю» здесь верное решение
-      await page.evaluate(() => { document.querySelector('#tT').value = '0.95'; });
+      // ставка верна с шансом 92 %, «Не верю» сработает с шансом 8 %: при пороге 5 % это верное решение
+      await page.evaluate(() => { document.querySelector('#tT').value = '0.05'; });
       await page.click('#tDudo');
       await expect(page.locator('#tFb')).toContainText('Хорошее решение');
     });
@@ -1416,7 +1420,7 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tInfo .trainer-repeat')).toContainText('1 из 2 успешных повторов');
       await expect(page.locator('#tRepeatNote')).toBeVisible();
       await expect(page.locator('#tRepeatNote')).toContainText('раньше решение в ней было неудачным');
-      await page.evaluate(() => { document.querySelector('#tT').value = '0.95'; });
+      await page.evaluate(() => { document.querySelector('#tT').value = '0.05'; });
       await page.click('#tDudo');
       await expect(page.locator('#tFb .trainer-repeat-note')).toContainText('убрана из очереди повторов');
       const q = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.trainingQueue') || '[]'));

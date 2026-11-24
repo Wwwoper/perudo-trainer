@@ -88,12 +88,12 @@ describe('ladderLines и оценка решения', () => {
     assert.match(ladderLines(s, { ...ladderChances(s, P), named: 2, opps: 3 }).join(' '), /2 из 3 соперников/);
     assert.match(ladderLines(s, { ...ladderChances(s, P), named: 2, opps: 2 }).join(' '), /2 из 2 соперников|2 из 2 соперника/);
   });
-  it('«Не верю» хорошо при шансе ставки ниже порога, повышение — при шансе не ниже порога', () => {
+  it('«Не верю» хорошо, когда шанс проверки выше порога; повышение — когда шанс ставки выше порога', () => {
     const s = fixed();
     const ch = ladderChances(s, P);
     const dudo = { type: 'dudo' };
-    assert.equal(gradeLadder(s, ch.pRead + 0.01, P, dudo).good, true);
-    assert.equal(gradeLadder(s, ch.pRead, P, dudo).good, false);
+    assert.equal(gradeLadder(s, (1 - ch.pRead) - 0.03, P, dudo).good, true);
+    assert.equal(gradeLadder(s, (1 - ch.pRead) + 0.03, P, dudo).good, false);
     assert.equal(gradeLadder(s, 0.05, P, { type: 'raise', q: s.q, f: s.f + 1 > 6 ? 6 : s.f + 1 }).good, true);
   });
   it('если ни один ход не проходит порог, верен ход с наибольшим шансом (как в других режимах)', () => {

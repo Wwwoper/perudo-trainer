@@ -10,7 +10,7 @@ import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
 import { gradeVerdictText, correctMoveText, MODEL_NOTE, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, moveBreakdown, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleText } from '../trainer_text.js';
-import { gradeMove } from '../trainer_grade.js';
+import { gradeMove, applyTrainerRule } from '../trainer_grade.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
 import { setupTaskBanner } from './onboarding_tasks.js';
@@ -213,7 +213,7 @@ export function setupTrainer({ account } = {}) {
       bid: { q: cur.q, f: cur.f }, total: cur.n, hand: cur.h, wild: cur.m.wild,
       threshold: thr, probBid: (...args) => P.probBid(...args),
     });
-    return optionsHtml(markChosen(options, choice), thr, chanceText);
+    return optionsHtml(markChosen(applyTrainerRule(options, thr), choice), thr, chanceText);
   }
 
   /** Разбор хода блоками: шансы, почему, лучший ход; полный список вариантов свёрнут. */
@@ -223,7 +223,7 @@ export function setupTrainer({ account } = {}) {
     const row = (cls, label, chance, status) =>
       `<li class="fb-row ${cls}"><span class="fb-label">${label}</span><b class="fb-chance">${chanceText(chance)}</b>` +
       `${status ? `<span class="fb-status">${status}</span>` : ''}</li>`;
-    const status = b.mine.passes ? `✓ не ниже порога ${chanceText(t)}` : `✗ ниже порога ${chanceText(t)}`;
+    const status = b.mine.passes ? `✓ выше порога ${chanceText(t)}` : `✗ ниже порога ${chanceText(t)}`;
     return `<section class="fb-block"><h4 class="fb-title">Шансы</h4><ul class="fb-chances">` +
       row(b.mine.passes ? 'is-pass' : 'is-fail', mineLabel, b.mine.chance, status) +
       row('', `Ставка соперника ${renderBid(bid.q, bid.f)} верна`, b.opp.chance, '') + '</ul></section>' +

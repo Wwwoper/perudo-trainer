@@ -1,9 +1,9 @@
 // trainer_solvable.js — есть ли в ситуации Тренажёра ход, проходящий порог. Чистый модуль: без DOM.
 //
-// Ситуация без такого хода учит неверному: «Не верю» ошибочно (ставка верна не реже порога),
-// а любое повышение ниже порога. Генератор такие расклады отбрасывает.
+// Ситуация без такого хода учит неверному: «Не верю» не проходит порог (проверка сработает слишком редко),
+// и любое повышение тоже. Генератор такие расклады отбрасывает.
 
-import { compareOptions } from './compare.js';
+import { gradeMove } from './trainer_grade.js';
 
 /**
  * @param {{bid: {q:number,f:number}, total: number, hand: number[], wild?: boolean,
@@ -11,8 +11,7 @@ import { compareOptions } from './compare.js';
  * @returns {boolean} true, если «Не верю» или хоть одно допустимое повышение проходит порог
  */
 export function hasGoodMove(s) {
-  const { options } = compareOptions(s);
-  return options.some((o) => o.meetsThreshold);
+  return !gradeMove({ ...s, choice: { type: 'dudo' } }).noGoodMove;   // то же правило, что и у оценки ответа
 }
 
 /**

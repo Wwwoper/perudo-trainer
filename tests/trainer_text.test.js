@@ -49,7 +49,7 @@ describe('moveBreakdown', () => {
     const ok = moveBreakdown({ kind: 'raise', p: 0.896, po: 1, t: 0.5, good: true, noGoodMove: false });
     assert.deepEqual(ok.mine, { chance: 0.896, passes: true });
     assert.equal(ok.opp.chance, 1);
-    assert.equal(ok.why, 'Шанс вашей ставки 89,6 % не ниже порога 50 %.');
+    assert.equal(ok.why, 'Шанс вашей ставки 89,6 % выше порога 50 %.');
     const bad = moveBreakdown({ kind: 'raise', p: 0.062, po: 0.1, t: 0.5, good: false, noGoodMove: false });
     assert.equal(bad.mine.passes, false);
     assert.equal(bad.why, 'Шанс вашей ставки 6,2 % ниже порога 50 %.');
@@ -59,7 +59,7 @@ describe('moveBreakdown', () => {
     assert.equal(b.mine.chance, 0.9);
     assert.equal(b.mine.passes, true);
     assert.equal(b.opp.chance, 0.1);
-    assert.equal(b.why, '«Не верю» сработает с шансом 90 %: это не ниже порога 50 %.');
+    assert.equal(b.why, '«Не верю» сработает с шансом 90 %: это выше порога 50 %.');
     const w = moveBreakdown({ kind: 'dudo', po: 0.8, t: 0.5, good: false, noGoodMove: false });
     assert.equal(w.mine.passes, false);
     assert.match(w.why, /ниже порога 50 %/);
@@ -93,8 +93,8 @@ describe('текст порога шанса', () => {
   it('правило называет оба условия для текущего порога', () => {
     const r = thresholdRuleText(0.6);
     assert.match(r, /^Сейчас 60%:/);
-    assert.match(r, /повышение хорошее, если ваша ставка верна не реже 60%/);
-    assert.match(r, /«Не верю» хорошее, если ставка соперника верна реже 60%/);
+    assert.match(r, /ход хороший, если его шанс выше 60%/);
+    assert.match(r, /У повышения это шанс, что ваша ставка верна; у «Не верю» — что проверка сработает/);
     assert.ok(!/безопасн/i.test(r));
   });
   it('в разметке и руководстве то же пояснение, проценты и ни слова «безопасная» про порог', () => {
@@ -107,7 +107,7 @@ describe('текст порога шанса', () => {
     assert.ok(!/безопасн/i.test(thr), 'в настройке порога нет слова «безопасная»');
     const item = guide.slice(guide.indexOf('<strong>Порог шанса</strong>'), guide.indexOf('</li>', guide.indexOf('<strong>Порог шанса</strong>')));
     assert.ok(!/безопасн/i.test(item));
-    for (const part of ['не реже порога', 'реже порога', 'наибольшим шансом', 'не гарантия исхода']) assert.ok(item.includes(part), part);
+    for (const part of ['шанс выше порога', 'проверка сработает', 'наибольшим шансом', 'не гарантия исхода']) assert.ok(item.includes(part), part);
     assert.match(guide, /пилюле «⚙️ Классика · порог 50%»/);
   });
 });
