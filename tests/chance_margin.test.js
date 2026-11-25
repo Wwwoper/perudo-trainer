@@ -99,3 +99,34 @@ describe('marginRanges: легенда', () => {
     assert.deepEqual(Object.values(MARGIN_LABELS), ['ниже порога', 'небольшой запас', 'уверенный запас']);
   });
 });
+
+describe('поле порога в процентах', () => {
+  it('разбор: целые проценты, пусто и мусор — 50 %, границы 5–95', async () => {
+    const { thresholdPercentFromInput, thresholdFromInput } = await import('../src/chance_margin.js');
+    assert.equal(thresholdPercentFromInput('50'), 50);
+    assert.equal(thresholdPercentFromInput(' 65 '), 65);
+    assert.equal(thresholdPercentFromInput('72,6'), 73);
+    assert.equal(thresholdPercentFromInput('72.4'), 72);
+    assert.equal(thresholdPercentFromInput(''), 50);
+    assert.equal(thresholdPercentFromInput('abc'), 50);
+    assert.equal(thresholdPercentFromInput(undefined), 50);
+    assert.equal(thresholdPercentFromInput(null), 50);
+    assert.equal(thresholdPercentFromInput('0'), 5);
+    assert.equal(thresholdPercentFromInput('-10'), 5);
+    assert.equal(thresholdPercentFromInput('100'), 95);
+    assert.equal(thresholdFromInput('35'), 0.35);
+    assert.equal(thresholdFromInput('x'), 0.5);
+  });
+
+  it('шаг «+» и «−» идёт по кратным 5, на границах не выходит за 5–95', async () => {
+    const { stepThresholdPercent } = await import('../src/chance_margin.js');
+    assert.equal(stepThresholdPercent('50', 1), 55);
+    assert.equal(stepThresholdPercent('50', -1), 45);
+    assert.equal(stepThresholdPercent('52', 1), 55);
+    assert.equal(stepThresholdPercent('52', -1), 50);
+    assert.equal(stepThresholdPercent('95', 1), 95);
+    assert.equal(stepThresholdPercent('5', -1), 5);
+    assert.equal(stepThresholdPercent('', 1), 55);
+    assert.equal(stepThresholdPercent('200', -1), 90);   // сначала 95, затем шаг вниз
+  });
+});

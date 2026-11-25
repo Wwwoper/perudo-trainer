@@ -9,9 +9,10 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleText, situationParams } from '../trainer_text.js';
+import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleHtml, situationParams } from '../trainer_text.js';
 import { gradeMove, applyTrainerRule } from '../trainer_grade.js';
 import { plaqueModel, raiseNeighbours } from '../trainer_feedback.js';
+import { thresholdFromInput, thresholdPercentFromInput, stepThresholdPercent } from '../chance_margin.js';
 import { plaqueHtml, raiseBlockHtml, feedbackNoteHtml } from './trainer_feedback_view.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
@@ -102,6 +103,9 @@ export function setupTrainer({ account } = {}) {
   if ($('#tPlus')) $('#tPlus').onclick = () => stepQ(1);
   const setAnswered = (on) => $('#tLayout')?.classList.toggle('is-answered', on);
 
+  /** Порог оценки долей (0,05–0,95) из поля в процентах. */
+  const threshold = () => thresholdFromInput($('#tT')?.value);
+
   function persist() { setTrainingQueue(queue); updateStat(); }
 
   function updateStat() {
@@ -143,7 +147,7 @@ export function setupTrainer({ account } = {}) {
         q = Math.max(1, Math.min(n, q));
         return { n, h, f, q };
       };
-      const thr = +($('#tT')?.value) || 0.5;
+      const thr = threshold();
       // расклады, где ни один ход не проходит порог, не показываем: на них нечему учиться
       const sit = pickSolvable(make, (s) => hasGoodMove({
         bid: { q: s.q, f: s.f }, total: s.n, hand: s.h, wild: m.wild, threshold: thr, probBid: (...a) => P.probBid(...a),
@@ -195,17 +199,17 @@ export function setupTrainer({ account } = {}) {
   function updateSettingsHint() {
     const el = $('#tSettingsHint');
     if (!el) return;
-    const thr = +$('#tT').value || 0.5;
+    const thr = threshold();
     el.textContent = `${modeLabel($('#tMode').value)} · порог ${thresholdPct(thr)}`;
     const rule = $('#tThrRule');
-    if (rule) rule.textContent = thresholdRuleText(thr);
+    if (rule) rule.innerHTML = thresholdRuleHtml(thr, modeLabel($('#tMode').value));
     syncModePick();
   }
 
   /** Варианты хода по шансу ставки; choice — что выбрал игрок: { type: 'dudo' } или { type: 'raise', q, f }. */
   function hint(choice) {
     if (!cur) return '';
-    const thr = +$('#tT').value;
+    const thr = threshold();
     const { options } = compareOptions({
       bid: { q: cur.q, f: cur.f }, total: cur.n, hand: cur.h, wild: cur.m.wild,
       threshold: thr, probBid: (...args) => P.probBid(...args),
@@ -289,7 +293,7 @@ export function setupTrainer({ account } = {}) {
   function grade(choice) {
     return gradeMove({
       bid: { q: cur.q, f: cur.f }, total: cur.n, hand: cur.h, wild: cur.m.wild,
-      threshold: +$('#tT').value, probBid: (...a) => P.probBid(...a), choice,
+      threshold: threshold(), probBid: (...a) => P.probBid(...a), choice,
     });
   }
 
@@ -297,7 +301,7 @@ export function setupTrainer({ account } = {}) {
   if (dudoBtn) dudoBtn.onclick = () => {
     if (answered || !cur) return;
     const { m, h, f, q, n } = cur;
-    const t = +$('#tT').value;
+    const t = threshold();
     if (cur.ladder) {
       const ch = ladderChances(cur.ladder, P);
       const g = gradeLadder(cur.ladder, t, P, { type: 'dudo' });
@@ -315,7 +319,7 @@ export function setupTrainer({ account } = {}) {
   if (raiseBtn) raiseBtn.onclick = () => {
     if (answered || !cur) return;
     const { m, n, h } = cur;
-    const t = +$('#tT').value;
+    const t = threshold();
     const Q = +$('#tQ').value;
     const F = +$('#tF').value;
 
@@ -362,14 +366,15 @@ export function setupTrainer({ account } = {}) {
 
   if ($('#tT')) {
     $('#tT').addEventListener('input', updateSettingsHint);
-    // «−» и «+» двигают порог на 0.05 в пределах 0.05–0.95
-    const stepThr = (d) => {
-      const cur = +$('#tT').value || 0.5;
-      $('#tT').value = String(Math.min(0.95, Math.max(0.05, Math.round((cur + d) * 100) / 100)));
+    // по уходу из поля показываем то значение, которое реально применяется (5–95, целые проценты)
+    $('#tT').addEventListener('change', () => { $('#tT').value = String(thresholdPercentFromInput($('#tT').value)); updateSettingsHint(); });
+    // «−» и «+» двигают порог на 5 процентов в пределах 5–95
+    const stepThr = (dir) => {
+      $('#tT').value = String(stepThresholdPercent($('#tT').value, dir));
       updateSettingsHint();
     };
-    if ($('#tTMinus')) $('#tTMinus').onclick = () => stepThr(-0.05);
-    if ($('#tTPlus')) $('#tTPlus').onclick = () => stepThr(0.05);
+    if ($('#tTMinus')) $('#tTMinus').onclick = () => stepThr(-1);
+    if ($('#tTPlus')) $('#tTPlus').onclick = () => stepThr(1);
   }
   if ($('#tReset')) $('#tReset').onclick = () => {
     if (!window.confirm(RESET_CONFIRM)) return;
@@ -388,7 +393,7 @@ export function setupTrainer({ account } = {}) {
       queue = getTrainingQueue();
       if (tasks.refresh()) {   // начались задачи онбординга: базовые настройки и новая ситуация
         $('#tMode').value = Object.keys(MODES)[0];
-        $('#tT').value = '0.5';
+        $('#tT').value = '50';
         newSituation();
       }
       updateStat();

@@ -161,7 +161,7 @@
               <output id="tTimerOut" class="timer-out" hidden>0:00</output>
               <details class="trainer-settings-more">
                 <summary>
-                  <span aria-hidden="true">⚙️</span> <span id="tSettingsHint">Классика · порог 0.50</span>
+                  <span aria-hidden="true">⚙️</span> <span id="tSettingsHint">Классика · порог 50%</span>
                 </summary>
                 <div class="trainer-settings-body">
                   <section class="tset-group" aria-labelledby="tModeLabel">
@@ -173,17 +173,26 @@
                   </section>
                   <section class="tset-group" aria-labelledby="tThrLabel">
                     <div class="tset-label" id="tThrLabel">Порог шанса</div>
-                    <p class="tset-note">Какая вероятность считается достаточной для хорошего решения. Это критерий оценки, а не гарантия: ход с хорошим шансом иногда проигрывает.</p>
-                    <div class="stepper" role="group" aria-label="Порог шанса">
-                      <button id="tTMinus" type="button" aria-label="Меньше">−</button>
-                      <input id="tT" type="number" min="0.05" max="0.95" step="0.05" value="0.5" inputmode="decimal"
-                        aria-label="Порог шанса">
-                      <button id="tTPlus" type="button" aria-label="Больше">+</button>
+                    <div class="tm-thr">
+                      <div class="tm-thr-ctl">
+                        <div class="stepper" role="group" aria-labelledby="tThrLabel">
+                          <button id="tTMinus" type="button" aria-label="Меньше">−</button>
+                          <input id="tT" type="number" min="5" max="95" step="5" value="50" inputmode="numeric"
+                            aria-label="Порог шанса, %">
+                          <button id="tTPlus" type="button" aria-label="Больше">+</button>
+                        </div>
+                        <span class="tm-pct-sign" aria-hidden="true">%</span>
+                      </div>
+                      <p id="tThrRule" class="tm-thr-result" aria-live="polite"></p>
                     </div>
-                    <p id="tThrRule" class="tset-note"></p>
+                    <details class="help-more tm-thr-help">
+                      <summary>Что такое порог шанса</summary>
+                      <p class="tset-note">Шанс хода — это шанс, что ваше повышение верно, а у «Не верю» — что проверка сработает. Порог — критерий оценки решения, а не гарантия: ход с хорошим шансом иногда проигрывает, а ход с низким иногда выигрывает.</p>
+                      <p class="tset-note">Выше порог — тренажёр строже: хорошими считаются только надёжные ходы. Ниже порог — допускает больше риска. Порог влияет только на оценку, а не на то, какие ситуации выпадают.</p>
+                      <p class="tset-note">По умолчанию 50 % — с него удобно начинать.</p>
+                    </details>
                   </section>
                   <div class="tset-foot">
-                    <span class="tset-default">По умолчанию: «Классика» и порог 50%. С них удобно начинать.</span>
                     <button type="button" id="tReset" class="quiet-btn is-danger">Сбросить статистику тренажёра</button>
                   </div>
                 </div>

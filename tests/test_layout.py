@@ -1749,13 +1749,13 @@ class LayoutTest(unittest.TestCase):
             with self.subTest(viewport=(w, h)):
                 page = self.open_game(w, h, 1)
                 self.goto_tab(page, "train")
-                page.click(".trainer-settings-more summary")
+                page.click(".trainer-settings-more > summary")
                 page.wait_for_timeout(200)
                 inset = page.evaluate("parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h'))")
                 dock_h = page.evaluate("document.querySelector('#tDock').getBoundingClientRect().height")
                 self.assertGreater(inset, 100, "высота панели записана в --dock-h")
                 self.assertLessEqual(abs(inset - dock_h), 1)
-                page.evaluate("window.scrollTo(0, 0); document.querySelector('.trainer-settings-more summary').focus()")
+                page.evaluate("window.scrollTo(0, 0); document.querySelector('.trainer-settings-more > summary').focus()")
                 seen = []
                 for _ in range(30):
                     page.keyboard.press("Tab")
@@ -1779,7 +1779,7 @@ class LayoutTest(unittest.TestCase):
             with self.subTest(w=w, h=h):
                 page = self.open_game(w, h, 1)
                 self.goto_tab(page, "train")
-                page.locator(".trainer-settings-more summary").click()
+                page.locator(".trainer-settings-more > summary").click()
                 tiles = page.locator("#tModePick .mode-btn")
                 self.assertEqual(tiles.count(), 7)
                 card = page.locator(".trainer-top").bounding_box()

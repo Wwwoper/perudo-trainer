@@ -57,3 +57,32 @@ export function marginRanges(threshold = DEFAULT_THRESHOLD) {
     big: bigLo <= 100 ? [bigLo, 100] : null,
   };
 }
+
+// ── Поле порога в настройках: целые проценты, шаг 5, от 5 до 95 ──────────────────────────────
+export const THRESHOLD_MIN_PCT = 5;
+export const THRESHOLD_MAX_PCT = 95;
+export const THRESHOLD_STEP_PCT = 5;
+
+const clampPct = (n) => Math.min(THRESHOLD_MAX_PCT, Math.max(THRESHOLD_MIN_PCT, n));
+
+/** Целые проценты из того, что стоит в поле: пусто или не число — 50 %, дальше округление и границы 5–95. */
+export function thresholdPercentFromInput(raw) {
+  const text = typeof raw === 'string' ? raw.trim().replace(',', '.') : raw;
+  const n = text === '' || text === null || text === undefined ? NaN : Number(text);
+  return Number.isFinite(n) ? clampPct(Math.round(n)) : Math.round(DEFAULT_THRESHOLD * 100);
+}
+
+/** Порог долей (0,05 … 0,95) из значения поля в процентах. */
+export function thresholdFromInput(raw) {
+  return thresholdPercentFromInput(raw) / 100;
+}
+
+/**
+ * Значение поля после «−» (dir = -1) или «+» (dir = 1): к ближайшему кратному 5 в нужную сторону.
+ * Из 52 «+» даёт 55, «−» даёт 50; на границах 5 и 95 остаётся на месте.
+ */
+export function stepThresholdPercent(raw, dir) {
+  const p = thresholdPercentFromInput(raw);
+  const s = THRESHOLD_STEP_PCT;
+  return clampPct(dir > 0 ? (Math.floor(p / s) + 1) * s : (Math.ceil(p / s) - 1) * s);
+}

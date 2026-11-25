@@ -112,7 +112,7 @@ test.describe('Задачи онбординга в Тренажёре', () => {
     await expect(box.locator('progress')).toHaveAttribute('max', '4');
     await expect(box.locator('progress')).toHaveJSProperty('value', 0);
     await expect(box).toContainText('Задач выполнено: 0 из 4');
-    await page.evaluate(() => { document.querySelector('#tT').value = '0.05'; });   // при таком пороге «Не верю» почти всегда неверно: проверяем и промахи
+    await page.evaluate(() => { document.querySelector('#tT').value = '5'; });   // при таком пороге «Не верю» почти всегда неверно: проверяем и промахи
     for (let i = 1; i <= 3; i++) {
       await page.locator('#tDudo').click();
       await expect(box).toContainText(`Задач выполнено: ${i} из 4`);

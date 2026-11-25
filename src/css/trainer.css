@@ -143,17 +143,47 @@
   font-weight: 700;
 }
 
+/* Порог шанса: поле, знак процента и живая фраза в одной строке; пояснение свёрнуто */
+.tm-thr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  justify-self: stretch;
+}
+
+.tm-thr-ctl {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tm-pct-sign {
+  color: var(--mut);
+  font-size: var(--fs-title);
+  font-weight: 700;
+}
+
+.tm-thr-result {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-size: var(--fs-ui);
+}
+
+.tm-thr-result b {
+  white-space: nowrap;
+}
+
+.tm-thr-help .tset-note {
+  margin: var(--space-2) 0 0;
+}
+
 .tset-foot {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
-}
-
-.tset-default {
-  color: var(--mut);
-  font-size: var(--fs-small);
 }
 
 /* Параметры ситуации: модификатор общей метки .chip (подпись и значение) */

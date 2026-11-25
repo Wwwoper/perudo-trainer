@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { chanceText, TASK_QUESTION, TASK_RULE, TASK_TEXT, thresholdPct, thresholdRuleText, THRESHOLD_NOTE, BID_LABEL, BID_LABEL_LADDER, situationParams } from '../src/trainer_text.js';
+import { chanceText, TASK_QUESTION, TASK_RULE, TASK_TEXT, thresholdPct, thresholdRuleHtml, THRESHOLD_HELP, BID_LABEL, BID_LABEL_LADDER, situationParams } from '../src/trainer_text.js';
 
 describe('chanceText', () => {
   it('запятая и без лишнего «.0»', () => {
@@ -38,23 +38,24 @@ describe('текст порога шанса', () => {
     assert.equal(thresholdPct(7), '100%');
     assert.equal(thresholdPct(-1), '0%');
   });
-  it('пояснение: критерий оценки, а не гарантия; без слова «безопасн»', () => {
-    assert.match(THRESHOLD_NOTE, /критерий оценки, а не гарантия/);
-    assert.ok(!/безопасн/i.test(THRESHOLD_NOTE));
+  it('подсказка: критерий оценки, а не гарантия; без слова «безопасн»', () => {
+    const all = THRESHOLD_HELP.join(' ');
+    assert.match(all, /критерий оценки решения, а не гарантия/);
+    assert.match(all, /Выше порог — тренажёр строже/);
+    assert.ok(!/безопасн/i.test(all));
   });
-  it('правило называет оба условия для текущего порога', () => {
-    const r = thresholdRuleText(0.6);
-    assert.match(r, /^Сейчас 60%:/);
-    assert.match(r, /ход хороший, если его шанс выше 60%/);
-    assert.match(r, /У повышения это шанс, что ваша ставка верна; у «Не верю» — что проверка сработает/);
-    assert.ok(!/безопасн/i.test(r));
+  it('живая фраза называет режим и порог в процентах', () => {
+    assert.equal(thresholdRuleHtml(0.6, 'Классика'), 'В режиме «Классика» решение будет считаться хорошим, если шанс <b>выше 60 %</b>.');
+    assert.match(thresholdRuleHtml(0.05, 'Блеф'), /выше 5 %/);
+    assert.match(thresholdRuleHtml(NaN, 'Блеф'), /выше 50 %/);
   });
   it('в разметке и руководстве то же пояснение, проценты и ни слова «безопасная» про порог', () => {
     const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
     const guide = readFileSync(new URL('../docs/guide/trainer.html', import.meta.url), 'utf8');
-    assert.ok(html.includes(`<p class="tset-note">${THRESHOLD_NOTE}</p>`));
-    assert.match(html, /<p id="tThrRule" class="tset-note"><\/p>/);
-    assert.match(html, /порог 50%\. С них/);
+    for (const t of THRESHOLD_HELP) assert.ok(html.includes(`<p class="tset-note">${t}</p>`), t.slice(0, 30));
+    assert.match(html, /<p id="tThrRule" class="tm-thr-result" aria-live="polite"><\/p>/);
+    assert.match(html, /<summary>Что такое порог шанса<\/summary>/);
+    assert.match(html, /<input id="tT" type="number" min="5" max="95" step="5" value="50"/);
     const thr = html.slice(html.indexOf('id="tThrLabel"'), html.indexOf('class="tset-foot"'));
     assert.ok(!/безопасн/i.test(thr), 'в настройке порога нет слова «безопасная»');
     const item = guide.slice(guide.indexOf('<strong>Порог шанса</strong>'), guide.indexOf('</li>', guide.indexOf('<strong>Порог шанса</strong>')));
