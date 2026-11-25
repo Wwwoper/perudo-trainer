@@ -12,6 +12,7 @@ import { TABLE_TRUST } from '../table_read.js';
 import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleHtml, situationParams } from '../trainer_text.js';
 import { gradeMove, applyTrainerRule } from '../trainer_grade.js';
 import { plaqueModel, raiseNeighbours } from '../trainer_feedback.js';
+import { enableRadioKeys } from './radio_keys.js';
 import { thresholdFromInput, thresholdPercentFromInput, stepThresholdPercent } from '../chance_margin.js';
 import { plaqueHtml, raiseBlockHtml, feedbackNoteHtml } from './trainer_feedback_view.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
@@ -65,6 +66,7 @@ export function setupTrainer({ account } = {}) {
       b.onclick = () => { modeSel.value = key; modeSel.onchange?.(); };
       modePick.appendChild(b);
     }
+    enableRadioKeys(modePick);
     syncModePick();
   }
   const faceSel = $('#tF');
@@ -80,6 +82,7 @@ export function setupTrainer({ account } = {}) {
     $$('#tPick .face-btn').forEach((b, i) => {
       b.classList.toggle('sel', i + 1 === cur);
       b.setAttribute('aria-checked', String(i + 1 === cur));
+      b.tabIndex = i + 1 === (cur || 1) ? 0 : -1;   // в группу заходят одним Tab, внутри — стрелки
     });
   };
   if (facePick && faceSel) {
@@ -94,6 +97,8 @@ export function setupTrainer({ account } = {}) {
       b.onclick = () => { faceSel.value = f; syncPick(); };
       facePick.append(b);
     }
+    enableRadioKeys(facePick);
+    syncPick();
   }
   const stepQ = (d) => {
     const q = $('#tQ');

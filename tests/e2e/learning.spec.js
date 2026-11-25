@@ -641,6 +641,65 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tDescName')).toHaveText('Эндшпиль (3–6 кубиков всего)');
     });
 
+    test('панель ответа: сначала грань, затем количество', async ({ page }) => {
+      await open(page, 'train');
+      const [pick, step] = await Promise.all([page.locator('#tPick').boundingBox(), page.locator('#tDock .stepper').boundingBox()]);
+      expect(pick.y < step.y || (Math.abs(pick.y - step.y) < 4 && pick.x < step.x), 'грань раньше количества').toBe(true);
+      const order = await page.evaluate(() => {
+        const a = document.querySelector('#tPick'); const b = document.querySelector('#tDock .stepper');
+        return !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);   // и в порядке обхода Tab
+      });
+      expect(order).toBe(true);
+    });
+
+    test('грани переключаются с клавиатуры: стрелки по кругу, Home и End; в группу заходят одним Tab', async ({ page }) => {
+      await open(page, 'train');
+      const faces = page.locator('#tPick [role="radio"]');
+      const value = () => page.evaluate(() => document.querySelector('#tF').value);
+      await expect(page.locator('#tPick [role="radio"][tabindex="0"]')).toHaveCount(1);
+      await faces.nth(2).click();
+      expect(await value()).toBe('3');
+      await page.keyboard.press('ArrowRight');
+      expect(await value()).toBe('4');
+      await expect(faces.nth(3)).toHaveAttribute('aria-checked', 'true');
+      await expect(faces.nth(3)).toBeFocused();
+      await page.keyboard.press('ArrowDown');
+      expect(await value()).toBe('5');
+      await page.keyboard.press('End');
+      expect(await value()).toBe('6');
+      await page.keyboard.press('ArrowRight');
+      expect(await value()).toBe('1');                   // по кругу
+      await page.keyboard.press('ArrowLeft');
+      expect(await value()).toBe('6');
+      await page.keyboard.press('Home');
+      expect(await value()).toBe('1');
+      await expect(page.locator('#tPick [role="radio"][tabindex="0"]')).toHaveCount(1);
+      await expect(faces.nth(0)).toHaveAttribute('tabindex', '0');
+    });
+
+    test('режимы переключаются с клавиатуры: стрелки, Home и End', async ({ page }) => {
+      await open(page, 'train');
+      await page.click('.trainer-settings-more summary');
+      const tiles = page.locator('#tModePick [role="radio"]');
+      const n = await tiles.count();
+      const on = () => page.evaluate(() => document.querySelector('#tMode').value);
+      await tiles.first().click();
+      const first = await on();
+      await page.keyboard.press('ArrowRight');
+      const second = await on();
+      expect(second).not.toBe(first);
+      await expect(tiles.nth(1)).toBeFocused();
+      await expect(tiles.nth(1)).toHaveAttribute('aria-checked', 'true');
+      await page.keyboard.press('End');
+      await expect(tiles.nth(n - 1)).toBeFocused();
+      await expect(tiles.nth(n - 1)).toHaveAttribute('aria-checked', 'true');
+      await page.keyboard.press('ArrowRight');
+      expect(await on()).toBe(first);                    // по кругу
+      await page.keyboard.press('Home');
+      await expect(tiles.first()).toBeFocused();
+      await expect(page.locator('#tModePick [role="radio"][tabindex="0"]')).toHaveCount(1);
+    });
+
     test('порог — поле в процентах: «−» и «+» двигают на 5 в пределах 5–95, фраза и пилюля обновляются, подсказка свёрнута', async ({ page }) => {
       await open(page, 'train');
       await expect(page.locator('#tSettingsHint')).toContainText('порог 50%');
