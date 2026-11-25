@@ -1792,6 +1792,16 @@ class LayoutTest(unittest.TestCase):
                     self.assertGreaterEqual(b["height"], 44, sel)
                 self.assertTrue(page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
                                 "горизонтальная прокрутка страницы")
+                # плитки режимов — сетка: одна ширина, 4 в ряд на широкой панели и 2 на узкой
+                self.assertEqual(page.locator("#tModeLabel").text_content(), "Выбор режима")
+                body = page.locator(".trainer-settings-body").bounding_box()
+                boxes = [tiles.nth(i).bounding_box() for i in range(tiles.count())]
+                first_row = [b for b in boxes if abs(b["y"] - boxes[0]["y"]) < 1]
+                self.assertEqual(len(first_row), 4 if body["width"] >= 520 else 2, f"плиток в первом ряду при ширине панели {body['width']}")
+                grid = page.locator("#tModePick").bounding_box()
+                self.assertGreaterEqual(grid["width"], body["width"] - 1, "сетка плиток не занимает ширину панели")
+                widths = {round(b["width"]) for b in first_row}
+                self.assertEqual(len(widths), 1, f"плитки первого ряда разной ширины: {widths}")
 
     def test_toast_is_in_flow_and_docks_still_fit(self):
         """Уведомление лежит под шапкой и ничего не перекрывает; с ним правые панели по-прежнему помещаются в экран."""
