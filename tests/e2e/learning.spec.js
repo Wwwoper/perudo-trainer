@@ -1310,22 +1310,36 @@ test.describe('Учебные вкладки', () => {
 
     test('показана история торгов, подпись «История ставок», описание режима', async ({ page }) => {
       await pickLadder(page);
-      await expect(page.locator('#tBidLabel')).toHaveText('История ставок:');
+      await expect(page.locator('#tBidLabel')).toHaveText('История ставок');
       const n = await page.locator('#tBid .read-bid').count();
       expect(n).toBeGreaterThanOrEqual(3);
       expect(n).toBeLessThanOrEqual(5);
       await expect(page.locator('#tBid .read-bid').last()).toContainText('последняя');
-      await expect(page.locator('#tInfo')).toContainText('соперников');
+      await expect(page.locator('#tInfo')).toContainText('Соперников');
       await expect(page.locator('#tDesc')).toContainText('Несколько соперников');
     });
 
-    test('у обычной ситуации подписи «Ставка соперника» и «у соперников», у «Лестницы» — «История ставок»', async ({ page }) => {
+    test('ситуация одной панелью: кубик в ставке того же размера, что в руке, ставка без рамки; параметры под панелью', async ({ page }) => {
       await open(page, 'train');
-      await expect(page.locator('#tBidLabel')).toHaveText('Ставка соперника:');
-      await expect(page.locator('#tInfo')).toContainText('у соперников');
-      await expect(page.locator('#tInfo')).not.toContainText('чужих');
+      const hand = await page.locator('#tHand .die').first().boundingBox();
+      const bid = await page.locator('#tBid .die').boundingBox();
+      expect(Math.round(bid.width)).toBe(Math.round(hand.width));
+      expect(Math.round(bid.height)).toBe(Math.round(hand.height));
+      await expect(page.locator('#tSit .tm-cap')).toHaveText(['Ваши кубики', 'Ставка соперника']);
+      await expect(page.locator('#tBid .chip')).toHaveCount(0);
+      await expect(page.locator('#tInfo .chip.is-param').first()).toHaveText(/^На столе \d+ куб/);
+      const [sit, info] = await Promise.all([page.locator('#tSit').boundingBox(), page.locator('#tInfo').boundingBox()]);
+      expect(info.y).toBeGreaterThanOrEqual(sit.y + sit.height);   // параметры ниже панели
+    });
+
+    test('у обычной ситуации подписи «Ставка соперника» и параметры стола, у «Лестницы» — «История ставок»', async ({ page }) => {
+      await open(page, 'train');
+      await expect(page.locator('#tBidLabel')).toHaveText('Ставка соперника');
+      await expect(page.locator('#tInfo')).toContainText('На столе');
+      await expect(page.locator('#tInfo')).toContainText('Единицы');
+      await expect(page.locator('#tInfo')).not.toContainText('Соперников');   // число соперников — только в «Лестнице»
       await pickLadder(page);
-      await expect(page.locator('#tBidLabel')).toHaveText('История ставок:');
+      await expect(page.locator('#tBidLabel')).toHaveText('История ставок');
       await expect(page.locator('#tDescName')).toHaveText('Лестница ставок (история торгов)');
       await expect(page.locator('#tDesc')).toContainText('предыдущих ставок');
     });
@@ -1372,7 +1386,7 @@ test.describe('Учебные вкладки', () => {
       await expect(item).toContainText('40.0%');
       await item.locator('.weak-train').click();
       await expect(page.locator('#tMode')).toHaveValue('ladder');
-      await expect(page.locator('#tBidLabel')).toHaveText('История ставок:');
+      await expect(page.locator('#tBidLabel')).toHaveText('История ставок');
     });
 
     test('ошибка уходит в очередь вместе с историей торгов', async ({ page }) => {

@@ -138,34 +138,35 @@
   font-size: var(--fs-small);
 }
 
-/* Теги с контекстом */
-.trainer-chips {
+/* Параметры ситуации: модификатор общей метки .chip (подпись и значение) */
+.tm-params {
   display: flex;
   flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.chip.is-param {
   gap: var(--space-1);
-  margin-bottom: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+  font-size: var(--fs-small);
+  font-weight: 400;
 }
 
-.trainer-chip {
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-m);
-  background: var(--surface-2);
-  color: var(--mut);
-  font-size: var(--fs-caption);
-  white-space: nowrap;
+.chip.is-param b {
+  font-size: var(--fs-ui);
 }
 
-.trainer-chip b {
-  color: var(--fg);
-  font-weight: 700;
+.chip.is-param.is-accent {
+  border-color: var(--acc);
 }
 
-.trainer-chip.trainer-wild {
-  background: var(--warn-bg);
-  color: var(--warn-fg);
-}
-
-.trainer-chip.trainer-repeat {
+.chip.is-param.trainer-repeat {
+  border-color: var(--bad-fg);
   background: var(--bad-bg);
   color: var(--bad-fg);
 }
@@ -199,11 +200,53 @@
   display: none;
 }
 
-/* Рука */
-.trainer-hand-label {
+/* Условие: одна панель, кубики и ставка соперника как части одной ситуации */
+.trainer-board {
+  container: tm / inline-size;
+}
+
+.tm-situation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0 0 var(--space-3);
+  background: var(--surface-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-m);
+}
+
+.tm-cell {
+  min-width: 0;
+  padding: var(--space-3);
+}
+
+.tm-cell + .tm-cell {
+  border-top: 1px solid var(--line-2);
+}
+
+.tm-cell.is-bid {
+  background: var(--tint-soft);
+  border-radius: 0 0 var(--radius-m) var(--radius-m);
+}
+
+@container tm (min-width: 520px) {
+  .tm-situation:not(.is-ladder) {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+
+  .tm-situation:not(.is-ladder) .tm-cell + .tm-cell {
+    border-top: 0;
+    border-left: 1px solid var(--line-2);
+  }
+
+  .tm-situation:not(.is-ladder) .tm-cell.is-bid {
+    border-radius: 0 var(--radius-m) var(--radius-m) 0;
+  }
+}
+
+.tm-cap {
+  margin: 0 0 var(--space-2);
   color: var(--mut);
   font-size: var(--fs-caption);
-  margin-bottom: var(--space-1);
   letter-spacing: .04em;
   text-transform: uppercase;
 }
@@ -212,26 +255,29 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
-  margin-bottom: var(--space-3);
 }
 
-.trainer-hand .die {
+/* кубик в ставке того же размера, что в руке */
+.trainer-hand .die,
+.tm-bid-value .die {
   width: 46px;
   height: 46px;
   padding: var(--space-2);
   margin: 0;
 }
 
-/* Ставка соперника */
-.trainer-bid-row {
-  display: flex;
+.tm-bid-value {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-3);
-  background: var(--surface-1);
-  border-radius: var(--radius-s);
-  margin-bottom: var(--space-3);
+  min-height: 46px;
 }
+
+.tm-bid-value b {
+  font-size: var(--fs-title);
+  line-height: 1;
+}
+
 
 /* Фидбек — компактно и только когда есть */
 .trainer-feedback:empty {
@@ -510,15 +556,6 @@
 }
 
 /* «Лестница ставок»: вместо одной ставки — список торгов */
-.trainer-bid-row.is-ladder {
-  align-items: flex-start;
-}
-
-.trainer-bid-row.is-ladder #tBid {
-  flex: 1;
-  min-width: 0;
-}
-
-.trainer-bid-row.is-ladder .read-bids {
+.tm-situation.is-ladder .read-bids {
   margin: 0;
 }

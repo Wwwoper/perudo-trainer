@@ -195,17 +195,19 @@
           <!-- Условие задачи: рука, ставка соперника -->
           <div class="card trainer-board">
             <p id="tTask" class="trainer-question"></p>
-            <p class="quiz-hint trainer-rule"><span class="quiz-hint-i" aria-hidden="true">ⓘ</span><span id="tTaskRule"></span></p>
-            <div id="tInfo" class="trainer-chips"></div>
-            <p id="tRepeatNote" class="muted trainer-repeat-note" hidden></p>
-
-            <div class="trainer-hand-label">Ваши кубики</div>
-            <div id="tHand" class="trainer-hand"></div>
-
-            <div class="trainer-bid-row">
-              <span class="muted" id="tBidLabel">Ставка соперника:</span>
-              <span id="tBid"></span>
+            <div class="tm-situation" id="tSit">
+              <div class="tm-cell">
+                <p class="tm-cap">Ваши кубики</p>
+                <div id="tHand" class="trainer-hand"></div>
+              </div>
+              <div class="tm-cell is-bid">
+                <p class="tm-cap" id="tBidLabel">Ставка соперника</p>
+                <span id="tBid"></span>
+              </div>
             </div>
+            <ul id="tInfo" class="tm-params" aria-label="Параметры ситуации"></ul>
+            <p id="tRepeatNote" class="muted trainer-repeat-note" hidden></p>
+            <p class="quiz-hint trainer-rule"><span class="quiz-hint-i" aria-hidden="true">ⓘ</span><span id="tTaskRule"></span></p>
           </div>
 
           <!-- Статистика — свёрнута -->

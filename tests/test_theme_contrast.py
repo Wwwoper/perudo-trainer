@@ -20,7 +20,7 @@ SEED = "let s = 7; Math.random = () => { s = (s * 16807) % 2147483647; return s 
 
 # Известные места тёмной темы ниже порога (так было до появления тем). Светлая тема исключений не имеет.
 # Ключ: тег и первый класс элемента.
-KNOWN_DARK = {"span.trainer-chip", "em.", "span.seat-style"}
+KNOWN_DARK = {"em.", "span.seat-style"}
 
 MEASURE = r"""() => {
   const parse = (s) => {

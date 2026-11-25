@@ -9,7 +9,7 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleText } from '../trainer_text.js';
+import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleText, situationParams } from '../trainer_text.js';
 import { gradeMove, applyTrainerRule } from '../trainer_grade.js';
 import { plaqueModel, raiseNeighbours } from '../trainer_feedback.js';
 import { plaqueHtml, raiseBlockHtml, feedbackNoteHtml } from './trainer_feedback_view.js';
@@ -163,14 +163,9 @@ export function setupTrainer({ account } = {}) {
     }
     if ($('#tInfo')) {
       $('#tInfo').innerHTML =
-        (cur.item ? `<span class="trainer-chip trainer-repeat">${repeatChipText(cur.item)}</span>` : '') +
-        `<span class="trainer-chip">🎲 всего <b>${cur.n}</b></span>` +
-        `<span class="trainer-chip">👤 у вас <b>${cur.h.length}</b></span>` +
-        `<span class="trainer-chip">❓ у соперников <b>${cur.n - cur.h.length}</b></span>` +
-        (cur.ladder ? `<span class="trainer-chip">👥 соперников <b>${cur.ladder.ks.length}</b></span>` : '') +
-        `<span class="trainer-chip ${m.wild ? 'trainer-wild' : ''}">` +
-        (m.wild ? '✨ единицы — джокеры' : '⚪ единицы обычные') +
-        `</span>`;
+        (cur.item ? `<li class="chip is-param trainer-repeat">${repeatChipText(cur.item)}</li>` : '') +
+        situationParams({ total: cur.n, wild: m.wild, opponents: cur.ladder ? cur.ladder.ks.length : null })
+          .map((p) => `<li class="chip is-param${p.accent ? ' is-accent' : ''}"><span>${p.label}</span> <b>${p.value}</b></li>`).join('');
     }
     const note = $('#tRepeatNote');
     if (note) {
@@ -178,9 +173,9 @@ export function setupTrainer({ account } = {}) {
       note.textContent = cur.item ? repeatReason() : '';
     }
     if ($('#tHand')) $('#tHand').innerHTML = renderHand(cur.h, m.wild);
-    $('#tBid')?.closest('.trainer-bid-row')?.classList.toggle('is-ladder', !!cur.ladder);
+    $('#tSit')?.classList.toggle('is-ladder', !!cur.ladder);
     if ($('#tBidLabel')) $('#tBidLabel').textContent = cur.ladder ? BID_LABEL_LADDER : BID_LABEL;
-    if ($('#tBid')) $('#tBid').innerHTML = cur.ladder ? ladderBidsHtml(cur.ladder) : renderBid(cur.q, cur.f);
+    if ($('#tBid')) $('#tBid').innerHTML = cur.ladder ? ladderBidsHtml(cur.ladder) : `<span class="tm-bid-value"><b>${cur.q}×</b>${renderDie(cur.f, 'md')}</span>`;
     const start = defaultRaise(cur);
     if ($('#tQ')) $('#tQ').value = start ? start.q : cur.q;
     if ($('#tF')) $('#tF').value = start ? start.f : cur.f;

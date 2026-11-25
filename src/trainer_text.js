@@ -49,5 +49,26 @@ export function thresholdRuleText(t) {
 }
 
 /** Подписи у ставки в Тренажёре: у обычной ситуации — ставка соперника, у «Лестницы» — вся история ставок. */
-export const BID_LABEL = 'Ставка соперника:';
-export const BID_LABEL_LADDER = 'История ставок:';
+export const BID_LABEL = 'Ставка соперника';
+export const BID_LABEL_LADDER = 'История ставок';
+
+function diceWord(n) {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 'кубик';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 'кубика';
+  return 'кубиков';
+}
+
+/**
+ * Параметры ситуации для строки под панелью: сколько кубиков на столе и как играют единицы.
+ * У «Лестницы» добавляется число соперников. Кто сколько держит, не повторяем: свои кубики видно на экране.
+ * @returns {{label:string, value:string, accent:boolean}[]}
+ */
+export function situationParams({ total, wild, opponents = null }) {
+  if (!Number.isInteger(total) || total < 1) throw new TypeError('situationParams: число кубиков на столе должно быть целым и положительным');
+  const params = [{ label: 'На столе', value: `${total} ${diceWord(total)}`, accent: false }];
+  if (Number.isInteger(opponents) && opponents > 0) params.push({ label: 'Соперников', value: String(opponents), accent: false });
+  params.push({ label: 'Единицы', value: wild ? 'джокеры' : 'обычные', accent: !!wild });
+  return params;
+}

@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { chanceText, TASK_QUESTION, TASK_RULE, TASK_TEXT, thresholdPct, thresholdRuleText, THRESHOLD_NOTE, BID_LABEL, BID_LABEL_LADDER } from '../src/trainer_text.js';
+import { chanceText, TASK_QUESTION, TASK_RULE, TASK_TEXT, thresholdPct, thresholdRuleText, THRESHOLD_NOTE, BID_LABEL, BID_LABEL_LADDER, situationParams } from '../src/trainer_text.js';
 
 describe('chanceText', () => {
   it('запятая и без лишнего «.0»', () => {
@@ -70,14 +70,10 @@ describe('подписи Тренажёра', () => {
   const guide = readFileSync(new URL('../docs/guide/trainer.html', import.meta.url), 'utf8');
   const modes = readFileSync(new URL('../src/ui/modes.js', import.meta.url), 'utf8');
   it('ставка названа однозначно: «Ставка соперника» и «История ставок»', () => {
-    assert.equal(BID_LABEL, 'Ставка соперника:');
-    assert.equal(BID_LABEL_LADDER, 'История ставок:');
-    assert.match(html, /id="tBidLabel">Ставка соперника:<\/span>/);
+    assert.equal(BID_LABEL, 'Ставка соперника');
+    assert.equal(BID_LABEL_LADDER, 'История ставок');
+    assert.match(html, /id="tBidLabel">Ставка соперника<\/p>/);
     assert.ok(!/'Соперник:'|'Торги:'/.test(trainer), 'старые подписи не остались в коде');
-  });
-  it('кубики остальных игроков — «у соперников», а не «чужих»', () => {
-    assert.match(trainer, /❓ у соперников <b>/);
-    assert.ok(!/❓ чужих/.test(trainer));
   });
   it('у описания режима своя подпись «Описание режима» и название режима', () => {
     assert.match(html, /<div class="tset-label" id="tDescLabel">Описание режима<\/div>\s*<p id="tDesc" class="tset-desc" aria-labelledby="tDescLabel"><strong id="tDescName"><\/strong> <span id="tDescText"><\/span><\/p>/);
@@ -89,5 +85,35 @@ describe('подписи Тренажёра', () => {
     const row = guide.match(/<tr><td>Лестница ставок<\/td><td>([\s\S]*?)<\/td><\/tr>/)?.[1] ?? '';
     assert.match(row, /предыдущих ставок/);
     assert.match(row, /table-reading\.html/);
+  });
+});
+
+describe('situationParams', () => {
+  it('на столе и единицы; джокеры выделены', () => {
+    assert.deepEqual(situationParams({ total: 15, wild: true }), [
+      { label: 'На столе', value: '15 кубиков', accent: false },
+      { label: 'Единицы', value: 'джокеры', accent: true },
+    ]);
+    assert.deepEqual(situationParams({ total: 8, wild: false }).at(-1), { label: 'Единицы', value: 'обычные', accent: false });
+  });
+  it('склонение числа кубиков', () => {
+    const word = (n) => situationParams({ total: n, wild: true })[0].value;
+    assert.equal(word(1), '1 кубик');
+    assert.equal(word(2), '2 кубика');
+    assert.equal(word(4), '4 кубика');
+    assert.equal(word(5), '5 кубиков');
+    assert.equal(word(11), '11 кубиков');
+    assert.equal(word(12), '12 кубиков');
+    assert.equal(word(21), '21 кубик');
+    assert.equal(word(22), '22 кубика');
+  });
+  it('«Лестница» добавляет число соперников; ноль и не число не выводятся', () => {
+    assert.deepEqual(situationParams({ total: 17, wild: true, opponents: 3 }).map((p) => p.label), ['На столе', 'Соперников', 'Единицы']);
+    assert.equal(situationParams({ total: 17, wild: true, opponents: 0 }).length, 2);
+    assert.equal(situationParams({ total: 17, wild: true, opponents: null }).length, 2);
+  });
+  it('число кубиков не число — ошибка, а не «NaN кубиков»', () => {
+    assert.throws(() => situationParams({ total: NaN, wild: true }), TypeError);
+    assert.throws(() => situationParams({ total: 0, wild: true }), TypeError);
   });
 });
