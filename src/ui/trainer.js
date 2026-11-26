@@ -9,7 +9,7 @@ import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleHtml, situationParams } from '../trainer_text.js';
+import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleHtml, situationParams, resultRows } from '../trainer_text.js';
 import { gradeMove, applyTrainerRule } from '../trainer_grade.js';
 import { plaqueModel, raiseNeighbours } from '../trainer_feedback.js';
 import { enableRadioKeys } from './radio_keys.js';
@@ -117,11 +117,8 @@ export function setupTrainer({ account } = {}) {
     const el = $('#tStat');
     if (!el) return;
     const mk = $('#tMode').value;
-    const S = getStats();
-    const b = (S.byMode || {})[mk] || { n: 0, good: 0 };
-    el.innerHTML = `Всего: ${S.n}, верных решений: ${S.good} (${S.n ? pct(S.good / S.n) : '—'}). ` +
-      `В выбранном режиме: ${b.n ? `${b.good}/${b.n} (${pct(b.good / b.n)})` : '—'}. ` +
-      `В очереди повторов: ${queue.length}.`;
+    el.innerHTML = resultRows(getStats(), mk, modeLabel(mk), queue.length)
+      .map((r) => `<dt>${r.label}</dt><dd>${r.value}</dd>`).join('');
   }
 
   /** forced — ситуация из очереди, которую нужно показать именно сейчас (иначе выбирается случайная). */
@@ -353,7 +350,7 @@ export function setupTrainer({ account } = {}) {
   /** После последней задачи знакомства «Новая ситуация» превращается в «Завершить знакомство». */
   function syncNext() {
     const b = $('#tNext');
-    if (b) b.textContent = tasks.finishPending() ? FINISH_TEXT.finishButton : '🔄 Новая ситуация';
+    if (b) b.textContent = tasks.finishPending() ? FINISH_TEXT.finishButton : 'Новая ситуация';
   }
   if ($('#tNext')) {
     $('#tNext').onclick = () => {

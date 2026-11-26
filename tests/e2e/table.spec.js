@@ -1532,7 +1532,7 @@ test.describe('Покерный стол в партии', () => {
     // В тренажёре ситуация ждёт в очереди повторов.
     await page.evaluate(() => { document.querySelector('#gResultDialog')?.close?.(); });
     await page.evaluate(() => document.querySelector('.tab-btn[data-t="train"]').click());   // шторка итога на телефоне перекрывает меню
-    await expect(page.locator('#tStat')).toContainText('В очереди повторов: 1');
+    await expect(page.locator('#tStat')).toContainText('В очереди повторов1');
   });
 
   test('первый ход в раунде (без чужой ставки) в тренажёр не переносится', async ({ page }) => {

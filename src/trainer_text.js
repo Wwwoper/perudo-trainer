@@ -75,3 +75,29 @@ export function situationParams({ total, wild, opponents = null }) {
   params.push({ label: 'Единицы', value: wild ? 'джокеры' : 'обычные', accent: !!wild });
   return params;
 }
+
+/** Доля целым процентом для списка результатов: «75 %». */
+export function resultPercent(x) {
+  if (!Number.isFinite(x)) throw new TypeError('resultPercent: доля должна быть числом');
+  return `${Math.round(x * 100)} %`;
+}
+
+/**
+ * Строки списка «Результаты тренажёра»: всего решений, верных, в выбранном режиме, в очереди повторов.
+ * @param {{n?:number, good?:number, byMode?:object}} stats статистика тренажёра
+ * @param {string} modeKey ключ выбранного режима
+ * @param {string} modeName название режима для подписи
+ * @param {number} queueLength длина очереди повторов
+ * @returns {{label:string, value:string}[]}
+ */
+export function resultRows(stats, modeKey, modeName, queueLength) {
+  const n = Number.isFinite(stats?.n) ? stats.n : 0;
+  const good = Number.isFinite(stats?.good) ? stats.good : 0;
+  const m = (stats?.byMode || {})[modeKey] || { n: 0, good: 0 };
+  return [
+    { label: 'Всего решений', value: String(n) },
+    { label: 'Верных', value: n ? `${good} · ${resultPercent(good / n)}` : '—' },
+    { label: `В режиме «${modeName}»`, value: m.n ? `${m.good} из ${m.n} · ${resultPercent(m.good / m.n)}` : '—' },
+    { label: 'В очереди повторов', value: String(queueLength) },
+  ];
+}

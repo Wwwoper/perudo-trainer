@@ -641,6 +641,31 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tDescName')).toHaveText('Эндшпиль (3–6 кубиков всего)');
     });
 
+    test('до ответа «Новая ситуация» — тихая кнопка, после ответа единственная главная; без эмодзи', async ({ page }) => {
+      await open(page, 'train');
+      await expect(page.locator('#tNew')).toHaveText('Новая ситуация');
+      await expect(page.locator('#tNew')).toHaveClass(/quiet-btn/);
+      await expect(page.locator('#tNew')).not.toHaveClass(/btn-primary/);
+      await expect(page.locator('#tNext')).toBeHidden();
+      await page.click('#tDudo');
+      await expect(page.locator('#tNew')).toBeHidden();
+      await expect(page.locator('#tNext')).toBeVisible();
+      await expect(page.locator('#tNext')).toHaveClass(/btn-primary/);
+      await expect(page.locator('#tNext')).toHaveText('Новая ситуация');
+      await expect(page.locator('#tDock .btn-primary:visible')).toHaveCount(1);   // главная кнопка одна
+    });
+
+    test('«Результаты тренажёра»: список без эмодзи — всего, верных, в режиме, в очереди', async ({ page }) => {
+      await open(page, 'train');
+      await expect(page.locator('.trainer-stats-card > summary')).toHaveText('Результаты тренажёра');
+      await expect(page.locator('#tStat dt')).toHaveText(['Всего решений', 'Верных', /^В режиме «.+»$/, 'В очереди повторов']);
+      await expect(page.locator('#tStat dd')).toHaveText(['0', '—', '—', '0']);
+      await page.click('#tDudo');
+      await expect(page.locator('#tStat dd').first()).toHaveText('1');
+      await expect(page.locator('#tStat dd').nth(1)).toHaveText(/^[01] · (0|100) %$/);
+      expect(await page.locator('.trainer-stats-card').textContent()).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
+    });
+
     test('панель ответа: сначала грань, затем количество', async ({ page }) => {
       await open(page, 'train');
       const [pick, step] = await Promise.all([page.locator('#tPick').boundingBox(), page.locator('#tDock .stepper').boundingBox()]);
@@ -740,14 +765,14 @@ test.describe('Учебные вкладки', () => {
     test('«Сбросить статистику»: без подтверждения ничего не стирается, с подтверждением счётчики обнуляются', async ({ page }) => {
       await open(page, 'train');
       await page.locator('#tDudo').click();
-      await expect(page.locator('#tStat')).toContainText('Всего: 1');
+      await expect(page.locator('#tStat')).toContainText('Всего решений1');
       await page.click('.trainer-settings-more summary');
       page.once('dialog', (d) => d.dismiss());
       await page.locator('#tReset').click();
-      await expect(page.locator('#tStat')).toContainText('Всего: 1');
+      await expect(page.locator('#tStat')).toContainText('Всего решений1');
       page.once('dialog', (d) => d.accept());
       await page.locator('#tReset').click();
-      await expect(page.locator('#tStat')).toContainText('Всего: 0');
+      await expect(page.locator('#tStat')).toContainText('Всего решений0');
     });
   });
 
@@ -765,7 +790,7 @@ test.describe('Учебные вкладки', () => {
       await page.click('.trainer-settings-more summary');
       page.once('dialog', (d) => { expect(d.message()).toContain('торги с несколькими соперниками'); d.accept(); });
       await page.locator('#tReset').click();
-      await expect(page.locator('#tStat')).toContainText('Всего: 0');
+      await expect(page.locator('#tStat')).toContainText('Всего решений0');
       const p = await page.evaluate(() => JSON.parse(localStorage.getItem('perudo.userProfile')));
       expect(p.n).toBe(0);
       expect(p.drill).toMatchObject({ A: { n: 6, good: 4 }, B: { n: 3, good: 1 } });

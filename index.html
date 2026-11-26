@@ -156,7 +156,7 @@
           <!-- Компактная верхняя панель: новая ситуация + свёрнутые настройки -->
           <div class="card trainer-top">
             <div class="trainer-top-row">
-              <button id="tNew" class="trainer-new">🔄 Новая ситуация</button>
+              <button id="tNew" class="quiet-btn" type="button">Новая ситуация</button>
               <label class="timer-opt" title="Время нигде не учитывается"><input type="checkbox" id="tTimerOn"> Показывать время</label>
               <output id="tTimerOut" class="timer-out" hidden>0:00</output>
               <details class="trainer-settings-more">
@@ -220,8 +220,8 @@
 
           <!-- Статистика — свёрнута -->
           <details class="card trainer-stats-card">
-            <summary>📊 Статистика</summary>
-            <div id="tStat" class="muted"></div>
+            <summary>Результаты тренажёра</summary>
+            <dl id="tStat" class="tm-results"></dl>
             <small>Ошибочные ситуации попадают в очередь и возвращаются, пока вы не решите их верно два раза подряд.</small>
           </details>
         </div>
@@ -246,7 +246,7 @@
               <button id="tRaise" class="btn-primary"><span class="btn-main">Ставлю</span></button>
             </div>
           </div>
-          <button id="tNext" class="btn-primary trainer-next" type="button">🔄 Новая ситуация</button>
+          <button id="tNext" class="btn-primary trainer-next" type="button">Новая ситуация</button>
         </div>
       </div>
     </section>

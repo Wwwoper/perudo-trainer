@@ -12,15 +12,22 @@
   flex-wrap: wrap;
 }
 
-.trainer-new {
-  min-height: var(--tap);
-  padding: var(--space-2) var(--space-3);
+/* Результаты тренажёра: подпись слева, значение справа */
+.tm-results {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-3);
+}
+
+.tm-results dt {
+  color: var(--mut);
+}
+
+.tm-results dd {
+  margin: 0;
   font-weight: 700;
-  background: var(--acc);
-  color: var(--on-accent);
-  border: none;
-  border-radius: var(--radius-s);
-  cursor: pointer;
+  text-align: right;
 }
 
 .trainer-settings-more {

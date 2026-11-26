@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { chanceText, TASK_QUESTION, TASK_RULE, TASK_TEXT, thresholdPct, thresholdRuleHtml, THRESHOLD_HELP, BID_LABEL, BID_LABEL_LADDER, situationParams } from '../src/trainer_text.js';
+import { chanceText, TASK_QUESTION, TASK_RULE, TASK_TEXT, thresholdPct, thresholdRuleHtml, THRESHOLD_HELP, BID_LABEL, BID_LABEL_LADDER, situationParams, resultRows, resultPercent } from '../src/trainer_text.js';
 
 describe('chanceText', () => {
   it('запятая и без лишнего «.0»', () => {
@@ -116,5 +116,32 @@ describe('situationParams', () => {
   it('число кубиков не число — ошибка, а не «NaN кубиков»', () => {
     assert.throws(() => situationParams({ total: NaN, wild: true }), TypeError);
     assert.throws(() => situationParams({ total: 0, wild: true }), TypeError);
+  });
+});
+
+describe('результаты тренажёра', () => {
+  it('resultPercent: целые проценты с пробелом', () => {
+    assert.equal(resultPercent(0.75), '75 %');
+    assert.equal(resultPercent(0.784), '78 %');
+    assert.equal(resultPercent(0), '0 %');
+    assert.throws(() => resultPercent(NaN), TypeError);
+  });
+  it('четыре строки: всего, верных, в режиме, в очереди', () => {
+    const rows = resultRows({ n: 12, good: 9, byMode: { classic: { n: 9, good: 7 } } }, 'classic', 'Классика', 2);
+    assert.deepEqual(rows, [
+      { label: 'Всего решений', value: '12' },
+      { label: 'Верных', value: '9 · 75 %' },
+      { label: 'В режиме «Классика»', value: '7 из 9 · 78 %' },
+      { label: 'В очереди повторов', value: '2' },
+    ]);
+  });
+  it('пустая статистика: прочерки вместо «NaN %»', () => {
+    const rows = resultRows({ n: 0, good: 0 }, 'classic', 'Классика', 0);
+    assert.deepEqual(rows.map((r) => r.value), ['0', '—', '—', '0']);
+    assert.ok(!rows.some((r) => /NaN|undefined/.test(r.value)));
+  });
+  it('режим без ответов — прочерк, остальное считается; мусор вместо статистики не ломает', () => {
+    assert.equal(resultRows({ n: 5, good: 2, byMode: { big: { n: 5, good: 2 } } }, 'classic', 'Классика', 0)[2].value, '—');
+    assert.deepEqual(resultRows(null, 'classic', 'Классика', 1).map((r) => r.value), ['0', '—', '—', '1']);
   });
 });
