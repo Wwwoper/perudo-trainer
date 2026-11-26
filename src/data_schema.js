@@ -144,9 +144,9 @@ export function sanitizeQueueItem(raw) {
   if (!isInt(raw.q) || raw.q < 1 || raw.q > MAX_DICE) return null;
   const streak = isInt(raw.streak) && raw.streak >= 0 && raw.streak <= 10 ? raw.streak : 0;
   if (raw.mode === 'ladder') {
-    const l = sanitizeLadder({ wild: raw.wild, n: raw.n, h: raw.h, ks: raw.ks, bids: raw.bids, q: raw.q, f: raw.f });
+    const l = sanitizeLadder({ wild: raw.wild, n: raw.n, h: raw.h, ks: raw.ks, names: raw.names, bids: raw.bids, q: raw.q, f: raw.f });
     if (!l) return null;
-    return { mode: 'ladder', n: l.n, h: l.h, f: l.f, q: l.q, streak, wild: l.wild, ks: l.ks, bids: l.bids };
+    return { mode: 'ladder', n: l.n, h: l.h, f: l.f, q: l.q, streak, wild: l.wild, ks: l.ks, names: l.names, bids: l.bids };
   }
   return { mode: raw.mode, n: raw.n, h: raw.h.slice(), f: raw.f, q: raw.q, streak };
 }

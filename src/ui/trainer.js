@@ -1,7 +1,7 @@
 // src/ui/trainer.js — Тренажёр: разбор ситуаций и очередь повторов.
 
 import { getStats, updateStats, getTrainingQueue, setTrainingQueue } from '../storage.js';
-import { renderDie, renderHand, renderBid } from '../table.js';
+import { escapeHtml, renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct, flash } from './common.js';
 import { MODES, modeLabel } from './modes.js';
 import { compareOptions, markChosen } from '../compare.js';
@@ -21,7 +21,7 @@ import { setupTaskBanner } from './onboarding_tasks.js';
 import { FINISH_TEXT } from '../onboarding.js';
 import { REPEAT_GOAL, repeatChipText, repeatReason, repeatAfterText } from '../repeat_text.js';
 import { resetTrainerStats, RESET_CONFIRM } from '../trainer_stats.js';
-import { buildLadder, sanitizeLadder, ladderChances, ladderLines, gradeLadder, addLadderResult } from '../ladder.js';
+import { buildLadder, sanitizeLadder, ladderNames, ladderChances, ladderLines, gradeLadder, addLadderResult } from '../ladder.js';
 
 /** @param {{account?: () => ({chooseGuest: () => void, login: () => void}|null)}} [opts] account — получатель облачного API для итогового экрана онбординга */
 export function setupTrainer({ account } = {}) {
@@ -197,9 +197,10 @@ export function setupTrainer({ account } = {}) {
   }
   /** История торгов: номер, кто назвал, ставка; последняя отмечена. */
   function ladderBidsHtml(sit) {
+    const names = ladderNames(sit);
     return '<ol class="read-bids" aria-label="Ставки по порядку">' + sit.bids.map((b, i) =>
       `<li class="read-bid${i === sit.bids.length - 1 ? ' is-me' : ''}"><span class="read-bid-n">${i + 1}</span>` +
-      `<span class="read-bid-who">Соперник ${b.s + 1}${i === sit.bids.length - 1 ? ' (последняя)' : ''}</span>${renderBid(b.q, b.f)}</li>`).join('') + '</ol>';
+      `<span class="read-bid-who">${escapeHtml(names[b.s])}${i === sit.bids.length - 1 ? ' (последняя)' : ''}</span>${renderBid(b.q, b.f)}</li>`).join('') + '</ol>';
   }
   function updateSettingsHint() {
     const el = $('#tSettingsHint');
@@ -268,7 +269,7 @@ export function setupTrainer({ account } = {}) {
         }
       } else if (!good) {
         const entry = { mode: mk, n: cur.n, h: cur.h.slice(), f: cur.f, q: cur.q, streak: 0 };
-        if (cur.ladder) Object.assign(entry, { wild: cur.ladder.wild, ks: cur.ladder.ks.slice(), bids: cur.ladder.bids.map((b) => ({ ...b })) });
+        if (cur.ladder) Object.assign(entry, { wild: cur.ladder.wild, ks: cur.ladder.ks.slice(), names: ladderNames(cur.ladder), bids: cur.ladder.bids.map((b) => ({ ...b })) });
         queue.push(entry);
         seenAt.set(situationKey(entry), shownCount);   // только что показана: повтор не раньше чем через паузу
       }

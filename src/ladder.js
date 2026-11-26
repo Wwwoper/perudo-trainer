@@ -1,11 +1,13 @@
 // ladder.js — «Лестница ставок»: ситуации с историей торгов (3–5 ставок), где несколько соперников могли назвать одну цифру.
 //
 // Чистый модуль: без DOM и хранилища, вероятности подаются снаружи (probBid, probBidRead из core.js).
-// Ситуация: { wild, n, h, ks, bids, q, f }
+// Ситуация: { wild, n, h, ks, names, bids, q, f }
 //   n — всего кубиков, h — ваша рука, ks — число кубиков у каждого соперника,
+//   names — имена соперников (по одному на каждого, без повторов),
 //   bids — ставки по порядку { s: номер соперника (0…), q, f }, q и f — последняя ставка.
 
 import { legal } from './rules.js';
+import { BOT_NAMES } from './bots.js';
 import { TABLE_TRUST } from './table_read.js';
 import { gradeMove } from './trainer_grade.js';
 
@@ -21,6 +23,39 @@ const plural = (n, one, few, many) => {
   if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
   return many;
 };
+
+/**
+ * Неповторяющиеся имена ботов для count соперников: случайная выборка без возвращения из списка имён ботов.
+ * @param {number} count
+ * @param {() => number} rnd источник случайных чисел [0, 1)
+ */
+export function pickBotNames(count, rnd = Math.random) {
+  if (!isInt(count) || count < 1 || count > BOT_NAMES.length) throw new RangeError('pickBotNames: число имён вне допустимого');
+  const pool = BOT_NAMES.slice();
+  const out = [];
+  for (let i = 0; i < count; i++) out.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+  return out;
+}
+
+/** Простой детерминированный генератор по строке-зерну: одна и та же ситуация без имён всегда получает одних и тех же ботов. */
+function seededRandom(seed) {
+  let x = 2166136261;
+  for (let i = 0; i < seed.length; i++) x = Math.imul(x ^ seed.charCodeAt(i), 16777619);
+  return () => {
+    x = Math.imul(x ^ (x >>> 15), 2246822507) >>> 0;
+    x = Math.imul(x ^ (x >>> 13), 3266489909) >>> 0;
+    return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+  };
+}
+
+const validNames = (names, count) => Array.isArray(names) && names.length === count &&
+  names.every((x) => typeof x === 'string' && x.trim() && x.length <= 24) && new Set(names).size === count;
+
+/** Имена соперников ситуации: свои, если они есть и корректны, иначе стабильные по содержимому ситуации. */
+export function ladderNames(sit) {
+  if (validNames(sit.names, sit.ks.length)) return sit.names.slice();
+  return pickBotNames(sit.ks.length, seededRandom(`${sit.h.join('')}|${sit.ks.join('')}|${sit.bids.map((b) => `${b.s}${b.q}${b.f}`).join('')}`));
+}
 
 /** Соперники для probBidRead: число кубиков и цифры, которые каждый назвал. */
 export function ladderOpponents(sit) {
@@ -68,7 +103,7 @@ export function buildLadder({ rnd = Math.random, wild = true } = {}) {
   }
   if (bids.length < LADDER_MIN_BIDS) return null;
   const last = bids[bids.length - 1];
-  return { wild, n, h, ks, bids, q: last.q, f: last.f };
+  return { wild, n, h, ks, bids, q: last.q, f: last.f, names: pickBotNames(m, rnd) };
 }
 
 /**
@@ -134,7 +169,9 @@ export function sanitizeLadder(raw) {
   }
   const last = clean[clean.length - 1];
   if (raw.q !== last.q || raw.f !== last.f) return null;
-  return { wild: raw.wild, n, h: h.slice(), ks: ks.slice(), bids: clean, q: last.q, f: last.f };
+  const sit = { wild: raw.wild, n, h: h.slice(), ks: ks.slice(), bids: clean, q: last.q, f: last.f };
+  sit.names = ladderNames({ ...sit, names: raw.names });   // у записей без имён (из старой очереди) они стабильно выводятся из ситуации
+  return sit;
 }
 
 /**

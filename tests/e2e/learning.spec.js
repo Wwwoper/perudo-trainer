@@ -1375,7 +1375,7 @@ test.describe('Учебные вкладки', () => {
 
   test.describe('«Лестница ставок» в «Тренажёре»', () => {
     const LADDER = {
-      mode: 'ladder', n: 14, h: [5, 1, 2, 3], f: 5, q: 5, streak: 0, wild: true, ks: [3, 4, 3],
+      mode: 'ladder', n: 14, h: [5, 1, 2, 3], f: 5, q: 5, streak: 0, wild: true, ks: [3, 4, 3], names: ['Анна', 'Иван', 'Ольга'],
       bids: [{ s: 0, q: 3, f: 5 }, { s: 1, q: 4, f: 5 }, { s: 2, q: 5, f: 5 }],
     };
     const pickLadder = async (page) => {
@@ -1474,14 +1474,33 @@ test.describe('Учебные вкладки', () => {
       await page.evaluate(() => { document.querySelector('#tT').value = '50'; });   // ставка верна с шансом 26 %: «Не верю» проходит порог, повышение — нет
       await page.fill('#tQ', '6');
       await page.evaluate(() => { document.querySelector('#tF').value = '2'; document.querySelector('#tF').dispatchEvent(new Event('change', { bubbles: true })); });
+      const shownNames = (await page.locator('#tBid .read-bid-who').allTextContents()).map((t) => t.replace(' (последняя)', ''));
       await page.click('#tRaise');
       await expect(page.locator('#tFb')).toContainText('Сомнительное решение');
       const q = await queue(page);
       expect(q).toHaveLength(1);
       expect(q[0].mode).toBe('ladder');
+      expect(q[0].names).toHaveLength(q[0].ks.length);               // повтор покажет тех же ботов
+      shownNames.forEach((n) => expect(q[0].names).toContain(n));
       expect(q[0].bids.length).toBeGreaterThanOrEqual(3);
       expect(q[0].ks.length).toBeGreaterThanOrEqual(2);
       expect(q[0].q).toBe(q[0].bids.at(-1).q);
+    });
+
+    test('в истории ставок имена ботов вместо «Соперник N»: разные у разных соперников; ошибка уносит те же имена в очередь', async ({ page }) => {
+      await open(page, 'train');
+      await pickLadder(page);
+      const shown = await page.locator('#tBid .read-bid-who').allTextContents();
+      expect(shown.length).toBeGreaterThanOrEqual(3);
+      shown.forEach((t) => expect(t).not.toMatch(/^Соперник/));
+      const names = shown.map((t) => t.replace(' (последняя)', ''));
+      const authors = await page.evaluate(() => document.querySelectorAll('#tBid .read-bid').length);
+      expect(authors).toBe(shown.length);
+      // у одного и того же автора одно имя; у разных авторов имена не повторяются
+      const info = await page.locator('#tInfo').textContent();
+      const opponents = +info.match(/Соперников\s*(\d+)/)[1];
+      expect(new Set(names).size).toBeLessThanOrEqual(opponents);
+      expect(new Set(names).size).toBeGreaterThanOrEqual(2);
     });
 
     test('повтор из очереди показывает ту же историю и помечен «повтор»', async ({ page }) => {
@@ -1491,7 +1510,8 @@ test.describe('Учебные вкладки', () => {
       await pickLadder(page);
       await expect(page.locator('#tInfo .trainer-repeat')).toBeVisible();
       await expect(page.locator('#tBid .read-bid')).toHaveCount(3);
-      await expect(page.locator('#tBid .read-bid').last()).toContainText('Соперник 3');
+      await expect(page.locator('#tBid .read-bid').last()).toContainText('Ольга (последняя)');
+      await expect(page.locator('#tBid .read-bid-who').first()).toHaveText('Анна');
       // ставка верна с шансом 92 %, «Не верю» сработает с шансом 8 %: при пороге 5 % это верное решение
       await page.evaluate(() => { document.querySelector('#tT').value = '5'; });
       await page.click('#tDudo');

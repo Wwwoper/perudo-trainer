@@ -5,11 +5,12 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import {
-  buildLadder, ladderChances, ladderLines, ladderOpponents, gradeLadder, sanitizeLadder,
+  buildLadder, pickBotNames, ladderNames, ladderChances, ladderLines, ladderOpponents, gradeLadder, sanitizeLadder,
   LADDER_MIN_BIDS, LADDER_MAX_BIDS, addLadderResult,
 } from '../src/ladder.js';
 import { legal } from '../src/rules.js';
 import { seededRng } from '../src/read_sim.js';
+import { BOT_NAMES } from '../src/bots.js';
 import { BANNED } from '../src/situation_text.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -168,5 +169,64 @@ describe('addLadderResult', () => {
       { ladder: { n: 1, good: 5 } }, { ladder: { n: -1, good: -2 } }]) {
       assert.deepEqual(addLadderResult(bad, true).ladder, { n: 1, good: 1 }, JSON.stringify(bad));
     }
+  });
+});
+
+describe('имена соперников', () => {
+  it('pickBotNames: нужное число разных имён из списка ботов; воспроизводимо по зерну', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      for (const count of [1, 2, 3, 4]) {
+        const names = pickBotNames(count, seededRng(seed));
+        assert.equal(names.length, count);
+        assert.equal(new Set(names).size, count, `повтор имён при зерне ${seed}`);
+        assert.ok(names.every((n) => BOT_NAMES.includes(n)));
+      }
+    }
+    assert.deepEqual(pickBotNames(3, seededRng(7)), pickBotNames(3, seededRng(7)));
+  });
+
+  it('pickBotNames: неверное число — ошибка', () => {
+    assert.throws(() => pickBotNames(0), RangeError);
+    assert.throws(() => pickBotNames(2.5), RangeError);
+    assert.throws(() => pickBotNames(BOT_NAMES.length + 1), RangeError);
+  });
+
+  it('у каждой построенной ситуации имена: по одному на соперника, без повторов, не «Соперник N»', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const sit = buildLadder({ rnd: seededRng(seed) });
+      if (!sit) continue;
+      assert.equal(sit.names.length, sit.ks.length);
+      assert.equal(new Set(sit.names).size, sit.names.length);
+      assert.ok(sit.names.every((n) => !/^Соперник/.test(n)));
+    }
+  });
+
+  it('sanitizeLadder сохраняет корректные имена', () => {
+    const raw = { ...fixed(), names: ['Анна', 'Иван', 'Ольга'] };
+    assert.deepEqual(sanitizeLadder(raw).names, ['Анна', 'Иван', 'Ольга']);
+  });
+
+  it('запись без имён (из старой очереди) получает одни и те же имена каждый раз', () => {
+    const a = sanitizeLadder(fixed()).names;
+    const b = sanitizeLadder(fixed()).names;
+    assert.deepEqual(a, b);
+    assert.equal(a.length, 3);
+    assert.equal(new Set(a).size, 3);
+  });
+
+  it('некорректные имена (повтор, не тот размер, не строки, пустые) заменяются', () => {
+    for (const names of [['Анна', 'Анна', 'Ольга'], ['Анна', 'Иван'], [1, 2, 3], ['', 'Иван', 'Ольга'], 'Анна', ['Анна', 'Иван', 'x'.repeat(30)]]) {
+      const got = sanitizeLadder({ ...fixed(), names }).names;
+      assert.equal(got.length, 3);
+      assert.equal(new Set(got).size, 3);
+      assert.ok(got.every((n) => typeof n === 'string' && n && n.length <= 24));
+    }
+  });
+
+  it('ladderNames не меняет ситуацию', () => {
+    const sit = fixed();
+    const copy = JSON.stringify(sit);
+    ladderNames(sit);
+    assert.equal(JSON.stringify(sit), copy);
   });
 });

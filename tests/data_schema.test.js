@@ -111,7 +111,7 @@ import {
 } from '../src/data_schema.js';
 
 const ladderItem = (o = {}) => ({
-  mode: 'ladder', n: 14, h: [5, 1, 2, 3], f: 5, q: 5, streak: 1, wild: true, ks: [3, 4, 3],
+  mode: 'ladder', n: 14, h: [5, 1, 2, 3], f: 5, q: 5, streak: 1, wild: true, ks: [3, 4, 3], names: ['Анна', 'Иван', 'Ольга'],
   bids: [{ s: 0, q: 3, f: 5 }, { s: 1, q: 4, f: 5 }, { s: 2, q: 5, f: 5 }], ...o,
 });
 const item = (o = {}) => ({ mode: 'classic', n: 10, h: [1, 2, 3], f: 4, q: 5, streak: 0, ...o });
@@ -134,6 +134,14 @@ describe('очередь повторов: режим «ladder»', () => {
     ]) {
       assert.equal(sanitizeQueueItem(ladderItem(bad)), null, JSON.stringify(bad));
     }
+  });
+  it('имена соперников сохраняются; у старой записи без имён они появляются и не меняются от раза к разу', () => {
+    assert.deepStrictEqual(sanitizeQueueItem(ladderItem()).names, ['Анна', 'Иван', 'Ольга']);
+    const old = ladderItem({ names: undefined });
+    const a = sanitizeQueueItem(old).names;
+    assert.deepStrictEqual(sanitizeQueueItem(old).names, a);
+    assert.equal(new Set(a).size, 3);
+    assert.equal(sanitizeQueueItem(ladderItem({ names: ['Анна', 'Анна', 'Ольга'] })).names.length, 3);   // повтор заменяется
   });
   it('у остальных режимов лишние ks, bids и wild не переносятся', () => {
     const r = sanitizeQueueItem({ ...item(), ks: [3, 4], bids: ladderItem().bids, wild: true });
