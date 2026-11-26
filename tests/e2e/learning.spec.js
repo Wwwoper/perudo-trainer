@@ -666,6 +666,24 @@ test.describe('Учебные вкладки', () => {
       expect(await page.locator('.trainer-stats-card').textContent()).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
     });
 
+    test('сверка §9: кнопка настроек называет себя настройками и повторяет видимый текст; цели ≥ 44 px; кубики условия одного размера', async ({ page }) => {
+      await open(page, 'train');
+      const trigger = page.locator('.trainer-settings-more > summary');
+      await expect(trigger).toHaveAttribute('aria-label', 'Настройки тренажёра: Классика · порог 50%');
+      await page.click('.trainer-settings-more > summary');
+      await page.locator('#tModePick [role="radio"]').nth(1).click();
+      const label = await trigger.getAttribute('aria-label');
+      expect(label).toMatch(/^Настройки тренажёра: .+ · порог 50%$/);
+      expect(label.endsWith(await page.locator('#tSettingsHint').textContent())).toBe(true);   // видимый текст входит в имя
+      await page.click('.trainer-settings-more > summary');
+      const small = await page.evaluate(() => [...document.querySelectorAll('#tLayout button, #tLayout summary, #tDock button, #tDock [role=radio], #tDock input')]
+        .filter((e) => e.offsetParent).map((e) => { const b = e.getBoundingClientRect(); return [e.id || e.className || e.tagName, Math.round(b.width), Math.round(b.height)]; })
+        .filter((x) => x[1] < 44 || x[2] < 44));
+      expect(small, 'цели нажатия меньше 44 px').toEqual([]);
+      const [hand, bid] = await Promise.all([page.locator('#tHand .die').first().boundingBox(), page.locator('#tBid .die').boundingBox()]);
+      expect([Math.round(hand.width), Math.round(hand.height)]).toEqual([Math.round(bid.width), Math.round(bid.height)]);
+    });
+
     test('панель ответа: сначала грань, затем количество', async ({ page }) => {
       await open(page, 'train');
       const [pick, step] = await Promise.all([page.locator('#tPick').boundingBox(), page.locator('#tDock .stepper').boundingBox()]);

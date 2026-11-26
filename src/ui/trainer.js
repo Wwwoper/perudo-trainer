@@ -204,6 +204,8 @@ export function setupTrainer({ account } = {}) {
     if (!el) return;
     const thr = threshold();
     el.textContent = `${modeLabel($('#tMode').value)} · порог ${thresholdPct(thr)}`;
+    // видимый текст не говорит, что это настройки: добавляем это в доступное имя (видимый текст в нём сохранён)
+    el.closest('summary')?.setAttribute('aria-label', `Настройки тренажёра: ${el.textContent}`);
     const rule = $('#tThrRule');
     if (rule) rule.innerHTML = thresholdRuleHtml(thr, modeLabel($('#tMode').value));
     syncModePick();
