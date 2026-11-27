@@ -229,8 +229,8 @@ def scene_trainer(page, phone):
 
 def scene_trainer_feedback(page, phone):
     scene_trainer(page, phone)
-    page.locator("#tDudo").click()
-    page.wait_for_selector("#tFb .fb-title, #tFb b, #tFb strong")
+    page.locator("#tRaise").click()   # повышение: виден блок «Шанс при повышении»
+    page.wait_for_selector("#tFb .tm-row")
     page.wait_for_timeout(400)
 
 

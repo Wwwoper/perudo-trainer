@@ -68,7 +68,12 @@ class ScreenshotsTest(unittest.TestCase):
         files = sorted(f for f in os.listdir(os.path.join(ROOT, "docs", "img")) if f.endswith(".png"))
         self.assertEqual(sorted(f[:-4] for f in files), sorted(shots.NAMES), "картинки docs/img и список скрипта расходятся")
         for f in files:
-            self.assertIn(png_size(os.path.join(ROOT, "docs", "img", f)), allowed, f"{f}: нестандартный размер")
+            size = png_size(os.path.join(ROOT, "docs", "img", f))
+            if f in ("settings-desktop.png", "settings-dark-desktop.png"):
+                # снимок экрана подготовки берёт высоту страницы (R-08): от 1330 до 2600 px при ширине 1280
+                self.assertTrue(size[0] == 1280 and 1330 <= size[1] <= 2600, f"{f}: нестандартный размер {size}")
+            else:
+                self.assertIn(size, allowed, f"{f}: нестандартный размер")
 
     def test_images_are_optimized(self):
         """Вес всех картинок вместе не растёт неограниченно (сейчас около 5,6 МБ: в основном дерево стола)."""
