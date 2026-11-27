@@ -25,6 +25,11 @@ export function raiseBlockHtml(rows, threshold) {
     `<ul class="tm-rows">${rows.map(optionRowHtml).join('')}</ul><ul class="tm-legend-list">${legend}</ul></section>`;
 }
 
+/** Раскрываемый список «Все варианты»: те же строки, что и в блоке «Шанс при повышении»; note — общая подсказка. */
+export function allOptionsHtml(rows, note = '') {
+  return `<ul class="tm-rows">${rows.map(optionRowHtml).join('')}</ul>${note ? `<p class="muted">${note}</p>` : ''}`;
+}
+
 /** Оговорка: оценка по шансу, а не по итогу раунда. */
 export function feedbackNoteHtml() {
   return `<p class="trainer-model-note quiz-hint"><span class="quiz-hint-i" aria-hidden="true">ⓘ</span><span>${FEEDBACK_NOTE}</span></p>`;

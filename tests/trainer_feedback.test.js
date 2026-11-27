@@ -1,7 +1,7 @@
 // trainer_feedback.test.js — плашка, соседние повышения и легенда разбора ответа.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { plainChance, plaqueModel, raiseNeighbours, legendItems, optionRow, FEEDBACK_NOTE } from '../src/trainer_feedback.js';
+import { plainChance, plaqueModel, raiseNeighbours, legendItems, optionRow, allOptionRows, FEEDBACK_NOTE } from '../src/trainer_feedback.js';
 
 describe('plainChance', () => {
   it('целые проценты, как их видит игрок', () => {
@@ -118,5 +118,34 @@ describe('optionRow: единая строка варианта', () => {
     const rows = raiseNeighbours({ q: 5, f: 5, bid: { q: 3, f: 5 }, total: 15, threshold: 0.5, chanceOf: () => 0.6 });
     for (const r of rows) assert.deepEqual(Object.keys(r), Object.keys(optionRow({ kind: 'raise', q: 1, f: 1, chance: 0.6, threshold: 0.5 })));
     assert.ok(rows.every((r) => r.tag === ''));
+  });
+});
+
+describe('allOptionRows: список «Все варианты»', () => {
+  const dudo = { type: 'dudo', success: 0.3 };
+  const min = { type: 'minRaise', q: 2, f: 1, success: 0.8 };
+  const safe = { type: 'safeRaise', q: 5, f: 3, success: 0.6 };
+  it('строка на каждый вариант, вид и шанс из варианта, метки нет без showBest', () => {
+    const rows = allOptionRows({ options: [dudo, min, safe], threshold: 0.5, best: { type: 'dudo', success: 0.3 } });
+    assert.deepEqual(rows.map((r) => [r.kind, r.q, r.f, r.chance, r.tag]),
+      [['dudo', null, null, 0.3, ''], ['raise', 2, 1, 0.8, ''], ['raise', 5, 3, 0.6, '']]);
+  });
+  it('метка «лучший» на верном ходе, выбранный отмечен', () => {
+    const rows = allOptionRows({ options: [{ ...dudo, chosen: true }, min], threshold: 0.5, best: { type: 'raise', q: 2, f: 1, success: 0.8 }, showBest: true });
+    assert.deepEqual(rows.map((r) => [r.tag, r.chosen]), [['', true], ['лучший', false]]);
+  });
+  it('«Не верю» — лучший ход', () => {
+    const rows = allOptionRows({ options: [dudo, min], threshold: 0.5, best: { type: 'dudo', success: 0.3 }, showBest: true });
+    assert.equal(rows[0].tag, 'лучший');
+    assert.equal(rows.filter((r) => r.tag).length, 1);
+  });
+  it('лучшего повышения нет в списке — добавляется последней строкой', () => {
+    const rows = allOptionRows({ options: [dudo, min], threshold: 0.5, best: { type: 'raise', q: 4, f: 2, success: 0.9 }, showBest: true });
+    assert.equal(rows.length, 3);
+    assert.deepEqual([rows[2].q, rows[2].f, rows[2].tag], [4, 2, 'лучший']);
+  });
+  it('пустой список и не список', () => {
+    assert.deepEqual(allOptionRows({ options: [], threshold: 0.5 }), []);
+    assert.throws(() => allOptionRows({ options: null, threshold: 0.5 }), TypeError);
   });
 });

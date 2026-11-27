@@ -385,13 +385,6 @@
   color: var(--mut);
 }
 
-.fb-block.is-best {
-  padding: var(--space-2) var(--space-3);
-  border-left: 3px solid var(--acc);
-  border-radius: var(--radius-s);
-  background: var(--tint-soft);
-}
-
 .trainer-all {
   margin-top: var(--space-3);
   padding-top: var(--space-2);

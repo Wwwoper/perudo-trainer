@@ -5,16 +5,15 @@ import { escapeHtml, renderDie, renderHand, renderBid } from '../table.js';
 import { P, $, $$, pct, flash } from './common.js';
 import { MODES, modeLabel } from './modes.js';
 import { compareOptions, markChosen } from '../compare.js';
-import { optionsHtml } from './options_view.js';
 import { pickRepeat, situationKey } from '../repeat_pick.js';
 import { checkRaise, defaultRaise } from '../trainer_rules.js';
 import { TABLE_TRUST } from '../table_read.js';
-import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleHtml, situationParams, resultRows } from '../trainer_text.js';
+import { correctMoveText, NO_GOOD_NOTE, TASK_TEXT, TASK_QUESTION, TASK_RULE, chanceText, BID_LABEL, BID_LABEL_LADDER, thresholdPct, thresholdRuleHtml, situationParams, resultRows, optionsNote } from '../trainer_text.js';
 import { gradeMove, applyTrainerRule } from '../trainer_grade.js';
-import { plaqueModel, raiseNeighbours } from '../trainer_feedback.js';
+import { plaqueModel, raiseNeighbours, allOptionRows } from '../trainer_feedback.js';
 import { enableRadioKeys } from './radio_keys.js';
 import { thresholdFromInput, thresholdPercentFromInput, stepThresholdPercent } from '../chance_margin.js';
-import { plaqueHtml, raiseBlockHtml, feedbackNoteHtml } from './trainer_feedback_view.js';
+import { plaqueHtml, raiseBlockHtml, feedbackNoteHtml, allOptionsHtml } from './trainer_feedback_view.js';
 import { hasGoodMove, pickSolvable } from '../trainer_solvable.js';
 import { setupPracticeTimer } from './practice_timer.js';
 import { setupTaskBanner } from './onboarding_tasks.js';
@@ -212,14 +211,15 @@ export function setupTrainer({ account } = {}) {
   }
 
   /** Варианты хода по шансу ставки; choice — что выбрал игрок: { type: 'dudo' } или { type: 'raise', q, f }. */
-  function hint(choice) {
+  function hint(choice, g) {
     if (!cur) return '';
     const thr = threshold();
     const { options } = compareOptions({
       bid: { q: cur.q, f: cur.f }, total: cur.n, hand: cur.h, wild: cur.m.wild,
       threshold: thr, probBid: (...args) => P.probBid(...args),
     });
-    return optionsHtml(markChosen(applyTrainerRule(options, thr), choice), thr, chanceText);
+    const marked = markChosen(applyTrainerRule(options, thr), choice);
+    return allOptionsHtml(allOptionRows({ options: marked, threshold: thr, best: g.best, showBest: !g.good }), optionsNote(marked));
   }
 
   /** Плашка итога по ответу: шанс выбранного хода и порог. */
@@ -238,8 +238,7 @@ export function setupTrainer({ account } = {}) {
   function breakdownHtml({ kind, mine, t, g }) {
     const chanceOf = (q, f) => P.probBid(q, f, cur.n, cur.h, cur.m.wild);
     return (kind === 'raise' ? raiseBlock(mine, t, chanceOf) : '') + feedbackNoteHtml() +
-      (g.good ? '' : `<section class="fb-block is-best"><h4 class="fb-title">Лучший ход</h4><p>${correctMoveText(g.best, chanceText, (a, c) => renderBid(a, c))}</p></section>`) +
-      `<details class="trainer-all"><summary>Все варианты по шансу</summary>${hint(kind === 'dudo' ? { type: 'dudo' } : { type: 'raise', q: mine.q, f: mine.f })}</details>`;
+      `<details class="trainer-all"><summary>Все варианты по шансу</summary>${hint(kind === 'dudo' ? { type: 'dudo' } : { type: 'raise', q: mine.q, f: mine.f }, g)}</details>`;
   }
 
   /** @param {string} top плашка итога; html — остальной разбор */

@@ -49,6 +49,29 @@ export function optionRow({ kind, q = null, f = null, chance, threshold, chosen 
   return { kind, q: kind === 'raise' ? q : null, f: kind === 'raise' ? f : null, chance, margin, label: MARGIN_LABELS[margin], chosen: !!chosen, tag };
 }
 
+export const BEST_TAG = 'лучший';
+
+/**
+ * Строки списка «Все варианты»: «Не верю», минимальное повышение, самое сильное из проходящих порог.
+ * Метка «лучший» ставится на верный ход, если ответ игрока был неверным; если верного повышения нет
+ * в списке (самое сильное по шансу), оно добавляется последней строкой.
+ * @param {{options:{type:string,q?:number,f?:number,success:number,chosen?:boolean}[], threshold:number,
+ *          best?:({type:string,q?:number,f?:number,success:number}|null), showBest?:boolean}} s
+ * @returns {ReturnType<typeof optionRow>[]}
+ */
+export function allOptionRows({ options, threshold, best = null, showBest = false }) {
+  if (!Array.isArray(options)) throw new TypeError('allOptionRows: options должен быть списком');
+  const same = (o, b) => !!b && (b.type === 'dudo' ? o.type === 'dudo' : o.type !== 'dudo' && o.q === b.q && o.f === b.f);
+  const rows = options.map((o) => optionRow({
+    kind: o.type === 'dudo' ? 'dudo' : 'raise', q: o.q, f: o.f, chance: o.success, threshold,
+    chosen: !!o.chosen, tag: showBest && same(o, best) ? BEST_TAG : '',
+  }));
+  if (showBest && best && best.type !== 'dudo' && !options.some((o) => same(o, best))) {
+    rows.push(optionRow({ kind: 'raise', q: best.q, f: best.f, chance: best.success, threshold, tag: BEST_TAG }));
+  }
+  return rows;
+}
+
 /**
  * Строки блока «Шанс при повышении»: ставка на кубик меньше, выбранная и на кубик больше (грань та же).
  * Недопустимые варианты (не выше ставки соперника или выходят за число кубиков на столе) не выводятся.

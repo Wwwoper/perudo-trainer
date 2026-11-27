@@ -511,28 +511,26 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tNext')).toBeHidden();
     });
 
-    test('после «Не верю!» показаны варианты хода, выбранный отмечен', async ({ page }) => {
+    test('после «Не верю!» показаны варианты хода, выбранный отмечен полосой', async ({ page }) => {
       await open(page, 'train');
       await page.click('#tDudo');
-      const rows = page.locator('#tFb .trainer-option');
+      const rows = page.locator('#tFb .trainer-all .tm-row');
       const count = await rows.count();
       expect(count).toBeGreaterThanOrEqual(1);
-      expect(count).toBeLessThanOrEqual(3);
+      expect(count).toBeLessThanOrEqual(4);
       await expect(rows.first()).toContainText('Не верю');
-      await expect(rows.first()).toHaveClass(/is-chosen/);
-      await expect(rows.first()).toContainText('ваш выбор');
-      await expect(rows.first()).toContainText('проверка сработает');
-      await expect(page.locator('#tFb .trainer-option.is-chosen')).toHaveCount(1);
-      await expect(page.locator('#tFb')).toContainText('Варианты по шансу');
+      await expect(rows.first()).toHaveClass(/is-mine/);
+      await expect(page.locator('#tFb .trainer-all .tm-row.is-mine')).toHaveCount(1);
+      await expect(page.locator('#tFb')).not.toContainText(/ваш выбор|проверка сработает|ставка верна|Варианты по шансу|Лучший ход/);
     });
 
     test('после «Ставлю» варианты тоже показаны, проверка не отмечена', async ({ page }) => {
       await open(page, 'train');
       await page.click('#tRaise');   // поля по умолчанию всегда содержат допустимую ставку
-      const rows = page.locator('#tFb .trainer-option');
+      const rows = page.locator('#tFb .trainer-all .tm-row');
       expect(await rows.count()).toBeGreaterThanOrEqual(1);
       await expect(rows.first()).toContainText('Не верю');
-      await expect(rows.first()).not.toHaveClass(/is-chosen/);
+      await expect(rows.first()).not.toHaveClass(/is-mine/);
     });
 
     test('варианты помещаются: разбор и «Новая ситуация» остаются в пределах экрана', async ({ page }) => {
@@ -604,17 +602,19 @@ test.describe('Учебные вкладки', () => {
       expect(q).toBeGreaterThan(r);
     });
 
-    test('разбор хода: плашка, при ошибке лучший ход; список вариантов свёрнут, проценты без «.0»', async ({ page }) => {
+    test('разбор хода: плашка, при ошибке метка «лучший» в списке; список вариантов свёрнут, проценты без «.0»', async ({ page }) => {
       await open(page, 'train');
       await page.click('#tDudo');
       const fb = page.locator('#tFb');
       await expect(fb.locator('.tm-plaque')).toBeVisible();
       const good = /Хорошее/.test(await fb.locator('.tm-plaque-title').textContent());
-      await expect(fb.locator('.fb-block.is-best')).toHaveCount(good ? 0 : 1);      // лучший ход показан только при ошибке
+      await expect(fb.locator('.fb-block.is-best')).toHaveCount(0);                 // отдельного блока «Лучший ход» нет
       await expect(fb.locator('details.trainer-all')).not.toHaveAttribute('open', '');
-      await expect(fb.locator('.trainer-option').first()).toBeHidden();             // список вариантов свёрнут
+      await expect(fb.locator('.trainer-all .tm-row').first()).toBeHidden();        // список вариантов свёрнут
       await fb.locator('details.trainer-all summary').click();
-      await expect(fb.locator('.trainer-option').first()).toBeVisible();
+      await expect(fb.locator('.trainer-all .tm-row').first()).toBeVisible();
+      await expect(fb.locator('.tm-row-tag')).toHaveCount(good ? 0 : 1);            // метка «лучший» — одна и только при ошибке
+      if (!good) await expect(fb.locator('.tm-row-tag')).toHaveText('лучший');
       expect(await fb.textContent()).not.toMatch(/\d\.\d%|\.0\b|undefined|NaN/);   // «6.2%» и «50.0%» заменены на «6,2 %» и «50 %»
     });
 
@@ -1474,7 +1474,7 @@ test.describe('Учебные вкладки', () => {
       await expect(page.locator('#tFb')).toContainText('По вашим кубикам');
       await expect(page.locator('#tFb')).toContainText('с учётом стола');
       await expect(page.locator('#tFb')).toContainText('приблизительная');
-      await expect(page.locator('#tFb .trainer-option')).toHaveCount(0);
+      await expect(page.locator('#tFb .trainer-all')).toHaveCount(0);
       expect(await page.locator('#tFb').textContent()).not.toMatch(/обманщик|врёт/i);
       await page.click('#tNext');
       await expect(page.locator('#tFb')).toBeEmpty();
