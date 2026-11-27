@@ -1,7 +1,7 @@
 // trainer_feedback.test.js — плашка, соседние повышения и легенда разбора ответа.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { plainChance, plaqueModel, raiseNeighbours, legendItems, FEEDBACK_NOTE } from '../src/trainer_feedback.js';
+import { plainChance, plaqueModel, raiseNeighbours, legendItems, optionRow, FEEDBACK_NOTE } from '../src/trainer_feedback.js';
 
 describe('plainChance', () => {
   it('целые проценты, как их видит игрок', () => {
@@ -91,5 +91,32 @@ describe('legendItems', () => {
   it('высокий порог: пустые диапазоны не выводятся, один процент без тире', () => {
     assert.deepEqual(legendItems(0.85).map((i) => i.text), ['86–99 % · небольшой запас', '100 % · уверенный запас', '≤ 85 % · ниже порога']);
     assert.deepEqual(legendItems(0.9).map((i) => i.margin), ['small', 'below']);
+  });
+});
+
+describe('optionRow: единая строка варианта', () => {
+  it('ставка: число, грань, шанс, категория, метка', () => {
+    assert.deepEqual(optionRow({ kind: 'raise', q: 4, f: 5, chance: 0.74, threshold: 0.5, chosen: true, tag: 'лучший' }),
+      { kind: 'raise', q: 4, f: 5, chance: 0.74, margin: 'big', label: 'уверенный запас', chosen: true, tag: 'лучший' });
+  });
+  it('«Не верю»: та же структура, без количества и грани; категория по тому же порогу', () => {
+    const r = optionRow({ kind: 'dudo', chance: 0.55, threshold: 0.5 });
+    assert.deepEqual(r, { kind: 'dudo', q: null, f: null, chance: 0.55, margin: 'small', label: 'небольшой запас', chosen: false, tag: '' });
+    assert.equal(optionRow({ kind: 'dudo', chance: 0.5, threshold: 0.5 }).margin, 'below');
+  });
+  it('у «Не верю» лишние количество и грань отбрасываются', () => {
+    const r = optionRow({ kind: 'dudo', q: 3, f: 2, chance: 0.2, threshold: 0.5 });
+    assert.equal(r.q, null);
+    assert.equal(r.f, null);
+  });
+  it('ошибки: неизвестный вид, ставка без количества, нечисловой шанс', () => {
+    assert.throws(() => optionRow({ kind: 'call', chance: 0.5, threshold: 0.5 }), TypeError);
+    assert.throws(() => optionRow({ kind: 'raise', chance: 0.5, threshold: 0.5 }), TypeError);
+    assert.throws(() => optionRow({ kind: 'dudo', chance: NaN, threshold: 0.5 }), TypeError);
+  });
+  it('соседние повышения строятся тем же компонентом: одинаковые поля и метка по умолчанию пустая', () => {
+    const rows = raiseNeighbours({ q: 5, f: 5, bid: { q: 3, f: 5 }, total: 15, threshold: 0.5, chanceOf: () => 0.6 });
+    for (const r of rows) assert.deepEqual(Object.keys(r), Object.keys(optionRow({ kind: 'raise', q: 1, f: 1, chance: 0.6, threshold: 0.5 })));
+    assert.ok(rows.every((r) => r.tag === ''));
   });
 });

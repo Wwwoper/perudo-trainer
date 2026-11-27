@@ -37,11 +37,24 @@ export function plaqueModel({ kind, good, noGoodMove = false, chance, threshold,
 }
 
 /**
+ * Единая строка варианта — ставка или «Не верю»: что это, шанс целым процентом, категория запаса,
+ * выбор игрока (рисуется полосой, без текста) и короткая метка («лучший»).
+ * @param {{kind:'raise'|'dudo', q?:number, f?:number, chance:number, threshold:number, chosen?:boolean, tag?:string}} s
+ * @returns {{kind:string, q:(number|null), f:(number|null), chance:number, margin:string, label:string, chosen:boolean, tag:string}}
+ */
+export function optionRow({ kind, q = null, f = null, chance, threshold, chosen = false, tag = '' }) {
+  if (kind !== 'raise' && kind !== 'dudo') throw new TypeError(`optionRow: неизвестный вид варианта «${kind}»`);
+  if (kind === 'raise' && !(Number.isInteger(q) && Number.isInteger(f))) throw new TypeError('optionRow: у ставки нужны количество и грань');
+  const margin = marginClass(chance, threshold);   // бросает TypeError на нечисловой шанс
+  return { kind, q: kind === 'raise' ? q : null, f: kind === 'raise' ? f : null, chance, margin, label: MARGIN_LABELS[margin], chosen: !!chosen, tag };
+}
+
+/**
  * Строки блока «Шанс при повышении»: ставка на кубик меньше, выбранная и на кубик больше (грань та же).
  * Недопустимые варианты (не выше ставки соперника или выходят за число кубиков на столе) не выводятся.
  * @param {{q:number, f:number, bid:{q:number,f:number}, total:number, wild?:boolean, threshold:number,
  *          chanceOf:(q:number, f:number) => number}} s
- * @returns {{q:number, f:number, chance:number, margin:string, label:string, chosen:boolean}[]}
+ * @returns {ReturnType<typeof optionRow>[]}
  */
 export function raiseNeighbours({ q, f, bid, total, wild = true, threshold, chanceOf }) {
   if (typeof chanceOf !== 'function') throw new TypeError('raiseNeighbours: нужна функция chanceOf');
@@ -51,9 +64,7 @@ export function raiseNeighbours({ q, f, bid, total, wild = true, threshold, chan
     const n = q + d;
     if (n < 1 || n > total) continue;
     if (!legal(n, f, bid, rules)) continue;
-    const chance = chanceOf(n, f);
-    const margin = marginClass(chance, threshold);
-    rows.push({ q: n, f, chance, margin, label: MARGIN_LABELS[margin], chosen: d === 0 });
+    rows.push(optionRow({ kind: 'raise', q: n, f, chance: chanceOf(n, f), threshold, chosen: d === 0 }));
   }
   return rows;
 }

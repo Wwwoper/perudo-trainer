@@ -584,7 +584,10 @@ test.describe('Учебные вкладки', () => {
       expect(await rows.count()).toBeGreaterThanOrEqual(2);   // недопустимые соседи не показываются, но своя и верхняя есть всегда
       expect(await rows.count()).toBeLessThanOrEqual(3);
       await expect(block.locator('.tm-row.is-mine')).toHaveCount(1);
-      await expect(block.locator('.tm-row.is-mine')).toContainText('ваш выбор');
+      await expect(block.locator('.tm-row.is-mine')).not.toContainText('ваш выбор');   // выбор — только полоса слева
+      const bar = await block.locator('.tm-row.is-mine').evaluate((e) => { const c = getComputedStyle(e, '::before'); return [c.content, c.width]; });
+      expect(bar).toEqual(['""', '3px']);
+      await expect(block.locator('.tm-row:not(.is-mine)').first().evaluate((e) => getComputedStyle(e, '::before').content)).resolves.toBe('none');
       const qs = await rows.evaluateAll((els) => els.map((e) => parseInt(e.querySelector('.chip').textContent, 10)));
       qs.slice(1).forEach((q, i) => expect(q).toBe(qs[i] + 1));   // подряд по возрастанию количества
       await expect(block.locator('.tm-row-p span').first()).toHaveText(/ниже порога|небольшой запас|уверенный запас/);

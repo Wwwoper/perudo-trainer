@@ -484,7 +484,11 @@
   min-width: 0;
 }
 
-.tm-row-sel {
+.tm-row-act {
+  font-size: var(--fs-title);
+}
+
+.tm-row-tag {
   color: var(--mut);
   font-size: var(--fs-caption);
   font-weight: 700;
