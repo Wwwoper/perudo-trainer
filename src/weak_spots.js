@@ -12,8 +12,8 @@ export const READ_TAG = 'read';
 /** Тема «торги с несколькими соперниками»: копится из режима «Лестница ставок», в метки решений партии не входит. */
 export const LADDER_TAG = 'ladder';
 const QUIZ_TAG_LIST = Object.keys(QUIZ_LABELS);
-const WEAK_TAGS = [...MOMENT_TAGS, READ_TAG, LADDER_TAG, ...QUIZ_TAG_LIST];
-const WEAK_LABELS = { ...TAG_LABELS, [READ_TAG]: 'чтение ставок по вскрытию', [LADDER_TAG]: 'торги с несколькими соперниками', ...QUIZ_LABELS };
+export const WEAK_TAGS = [...MOMENT_TAGS, READ_TAG, LADDER_TAG, ...QUIZ_TAG_LIST];
+export const WEAK_LABELS = { ...TAG_LABELS, [READ_TAG]: 'чтение ставок по вскрытию', [LADDER_TAG]: 'торги с несколькими соперниками', ...QUIZ_LABELS };
 
 /** Минимум решений по теме, чтобы делать вывод. */
 export const MIN_DECISIONS = 8;
