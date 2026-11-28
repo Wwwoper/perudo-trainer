@@ -9,6 +9,7 @@ Python-порты логики приложения и скрипт скринш
 | `drill_emulator.py` | «Упражнения»: задачи A и B, ответы «учеников», учёт попыток | `python3 tools/drill_emulator.py --tasks 300` |
 | `strategy_evidence.py` | факты о ботах для текстов тренера: доля ложных ставок по стилям, «прыжки», проверки, первая ставка; пишет `docs/dev/strategy-evidence.md` | `python3 tools/strategy_evidence.py --games 1500 --seed 1 --out docs/dev/strategy-evidence.md` |
 | `screenshots.py` | снимки экрана для README (Playwright, воспроизводимые) | `python3 tools/screenshots.py` (`--list`, `--only имя`, `--out папка`) |
+| `make_profile.py` | тестовый профиль игрока для проверки вёрстки «Результатов»: резервная копия на предельных данных (партии, моменты, раунды, очередь, таблицы на 100 ключей) | `python3 tools/make_profile.py` (`--check`, `--seed`, `--out`); файл — `tools/profiles/perudo-backup-max.json`, загрузка: «Статистика → Данные → Восстановить из файла»; для облака файл кладут в папку приложения на Яндекс Диске под именем `perudo-backup.json` |
 | `quiz_skill.mjs` | решаемость вопросов «Читай стол»: «читающий» против лучшей постоянной догадки по каждому виду | `node tools/quiz_skill.mjs 4000` |
 | `sound_lab.html` | лаборатория звуков: правка нот, проверка, прослушивание, «Сыграть раунд», копирование рецепта в `src/sound_recipes.js` | открыть `/tools/sound_lab.html` на статическом сервере |
 | `emu_cases.py` | случайные входы и ответы эмуляторов для теста `tests/emulators.test.js` | — |
